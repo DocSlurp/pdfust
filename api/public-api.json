@@ -12,6 +12,9 @@
     "DrawingInfo",
     "DrawingItem",
     "EncryptedDocumentError",
+    "FieldCandidate",
+    "FieldResult",
+    "FieldSpec",
     "FontLanguage",
     "FormFieldInfo",
     "FormFieldType",
@@ -34,13 +37,18 @@
     "Page",
     "PageLabelInfo",
     "PageLabelSpec",
+    "PageLayout",
     "PasswordError",
     "PdfError",
     "Permissions",
     "Pixmap",
+    "PlacementModel",
     "Point",
     "PylopdfWarning",
     "Rect",
+    "SpatialCell",
+    "SpatialTable",
+    "SpatialWord",
     "StalePageError",
     "TEXT_ALIGN_CENTER",
     "TEXT_ALIGN_JUSTIFY",
@@ -48,6 +56,7 @@
     "TEXT_ALIGN_RIGHT",
     "Table",
     "TableDiagnostics",
+    "TableField",
     "TableFinder",
     "TextBlock",
     "TextLine",
@@ -1247,6 +1256,194 @@
       "kind": "exception",
       "members": {}
     },
+    "FieldCandidate": {
+      "annotations": {
+        "anchor_ids": "tuple[int, ...]",
+        "bbox": "_BBox",
+        "features": "tuple[float, ...]",
+        "score": "float | None",
+        "text": "str",
+        "word_ids": "tuple[int, ...]"
+      },
+      "dataclass_fields": [
+        "text",
+        "bbox",
+        "word_ids",
+        "anchor_ids",
+        "features",
+        "score"
+      ],
+      "kind": "class",
+      "members": {
+        "score": {
+          "kind": "attribute",
+          "value": null
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "str",
+            "kind": "positional_or_keyword",
+            "name": "text"
+          },
+          {
+            "annotation": "_BBox",
+            "kind": "positional_or_keyword",
+            "name": "bbox"
+          },
+          {
+            "annotation": "tuple[int, ...]",
+            "kind": "positional_or_keyword",
+            "name": "word_ids"
+          },
+          {
+            "annotation": "tuple[int, ...]",
+            "kind": "positional_or_keyword",
+            "name": "anchor_ids"
+          },
+          {
+            "annotation": "tuple[float, ...]",
+            "kind": "positional_or_keyword",
+            "name": "features"
+          },
+          {
+            "annotation": "float | None",
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "score"
+          }
+        ],
+        "returns": "None"
+      }
+    },
+    "FieldResult": {
+      "annotations": {
+        "candidates": "tuple[FieldCandidate, ...]",
+        "name": "str",
+        "selected": "FieldCandidate | None",
+        "status": "Literal['matched', 'missing', 'ambiguous', 'conflict']"
+      },
+      "dataclass_fields": [
+        "name",
+        "status",
+        "selected",
+        "candidates"
+      ],
+      "kind": "class",
+      "members": {
+        "value": {
+          "kind": "property",
+          "returns": "str | None"
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "str",
+            "kind": "positional_or_keyword",
+            "name": "name"
+          },
+          {
+            "annotation": "Literal['matched', 'missing', 'ambiguous', 'conflict']",
+            "kind": "positional_or_keyword",
+            "name": "status"
+          },
+          {
+            "annotation": "FieldCandidate | None",
+            "kind": "positional_or_keyword",
+            "name": "selected"
+          },
+          {
+            "annotation": "tuple[FieldCandidate, ...]",
+            "kind": "positional_or_keyword",
+            "name": "candidates"
+          }
+        ],
+        "returns": "None"
+      }
+    },
+    "FieldSpec": {
+      "annotations": {
+        "anchor": "str | None",
+        "direction": "Literal['right', 'below']",
+        "max_distance": "float",
+        "name": "str",
+        "region": "_BBox | None",
+        "value_type": "_ValueType"
+      },
+      "dataclass_fields": [
+        "name",
+        "region",
+        "anchor",
+        "direction",
+        "max_distance",
+        "value_type"
+      ],
+      "kind": "class",
+      "members": {
+        "anchor": {
+          "kind": "attribute",
+          "value": null
+        },
+        "direction": {
+          "kind": "attribute",
+          "value": "right"
+        },
+        "max_distance": {
+          "kind": "attribute",
+          "value": 144.0
+        },
+        "region": {
+          "kind": "attribute",
+          "value": null
+        },
+        "value_type": {
+          "kind": "attribute",
+          "value": "any"
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "str",
+            "kind": "positional_or_keyword",
+            "name": "name"
+          },
+          {
+            "annotation": "_BBox | None",
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "region"
+          },
+          {
+            "annotation": "str | None",
+            "default": null,
+            "kind": "positional_or_keyword",
+            "name": "anchor"
+          },
+          {
+            "annotation": "Literal['right', 'below']",
+            "default": "right",
+            "kind": "positional_or_keyword",
+            "name": "direction"
+          },
+          {
+            "annotation": "float",
+            "default": 144.0,
+            "kind": "positional_or_keyword",
+            "name": "max_distance"
+          },
+          {
+            "annotation": "_ValueType",
+            "default": "any",
+            "kind": "positional_or_keyword",
+            "name": "value_type"
+          }
+        ],
+        "returns": "None"
+      }
+    },
     "FontLanguage": {
       "kind": "type-alias",
       "target": "Literal['ar', 'he', 'hi', 'ja', 'ko', 'th', 'zh-CN', 'zh-TW']"
@@ -1748,6 +1945,24 @@
               }
             ],
             "returns": "str"
+          }
+        },
+        "get_layout": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "Literal['lines', 'text'] | None",
+                "default": "lines",
+                "kind": "keyword_only",
+                "name": "table_strategy"
+              }
+            ],
+            "returns": "PageLayout"
           }
         },
         "get_links": {
@@ -2444,6 +2659,117 @@
         "startpage"
       ]
     },
+    "PageLayout": {
+      "annotations": {
+        "_y_order": "tuple[tuple[float, int], ...]",
+        "height": "float",
+        "tables": "tuple[SpatialTable, ...]",
+        "width": "float",
+        "words": "tuple[SpatialWord, ...]"
+      },
+      "dataclass_fields": [
+        "width",
+        "height",
+        "words",
+        "tables",
+        "_y_order"
+      ],
+      "kind": "class",
+      "members": {
+        "extract_fields": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "Iterable[FieldSpec]",
+                "kind": "positional_or_keyword",
+                "name": "fields"
+              },
+              {
+                "annotation": "PlacementModel | None",
+                "default": null,
+                "kind": "keyword_only",
+                "name": "model"
+              }
+            ],
+            "returns": "tuple[FieldResult, ...]"
+          }
+        },
+        "grid": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "Sequence[float]",
+                "kind": "keyword_only",
+                "name": "columns"
+              },
+              {
+                "annotation": "Sequence[float]",
+                "kind": "keyword_only",
+                "name": "rows"
+              }
+            ],
+            "returns": "SpatialTable"
+          }
+        },
+        "select": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "Sequence[float]",
+                "kind": "positional_or_keyword",
+                "name": "region"
+              }
+            ],
+            "returns": "tuple[SpatialWord, ...]"
+          }
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "float",
+            "kind": "positional_or_keyword",
+            "name": "width"
+          },
+          {
+            "annotation": "float",
+            "kind": "positional_or_keyword",
+            "name": "height"
+          },
+          {
+            "annotation": "tuple[SpatialWord, ...]",
+            "kind": "positional_or_keyword",
+            "name": "words"
+          },
+          {
+            "annotation": "tuple[SpatialTable, ...]",
+            "kind": "positional_or_keyword",
+            "name": "tables"
+          },
+          {
+            "annotation": "tuple[tuple[float, int], ...]",
+            "kind": "positional_or_keyword",
+            "name": "_y_order"
+          }
+        ],
+        "returns": "None"
+      }
+    },
     "PasswordError": {
       "bases": [
         "pylopdf.PdfError"
@@ -2524,6 +2850,75 @@
       },
       "signature": {
         "parameters": []
+      }
+    },
+    "PlacementModel": {
+      "annotations": {
+        "bias": "float",
+        "margin": "float",
+        "threshold": "float",
+        "weights": "tuple[float, ...]"
+      },
+      "dataclass_fields": [
+        "weights",
+        "bias",
+        "threshold",
+        "margin"
+      ],
+      "kind": "class",
+      "members": {
+        "margin": {
+          "kind": "attribute",
+          "value": 0.2
+        },
+        "score": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "FieldCandidate",
+                "kind": "positional_or_keyword",
+                "name": "candidate"
+              }
+            ],
+            "returns": "float"
+          }
+        },
+        "threshold": {
+          "kind": "attribute",
+          "value": 0.9
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "tuple[float, ...]",
+            "kind": "positional_or_keyword",
+            "name": "weights"
+          },
+          {
+            "annotation": "float",
+            "kind": "positional_or_keyword",
+            "name": "bias"
+          },
+          {
+            "annotation": "float",
+            "default": 0.9,
+            "kind": "positional_or_keyword",
+            "name": "threshold"
+          },
+          {
+            "annotation": "float",
+            "default": 0.2,
+            "kind": "positional_or_keyword",
+            "name": "margin"
+          }
+        ],
+        "returns": "None"
       }
     },
     "Point": {
@@ -2625,6 +3020,231 @@
             "name": "y1"
           }
         ]
+      }
+    },
+    "SpatialCell": {
+      "annotations": {
+        "bbox": "_BBox",
+        "column": "int",
+        "column_span": "int",
+        "id": "int",
+        "row": "int",
+        "row_span": "int",
+        "text": "str",
+        "word_ids": "tuple[int, ...]"
+      },
+      "dataclass_fields": [
+        "id",
+        "row",
+        "column",
+        "row_span",
+        "column_span",
+        "bbox",
+        "text",
+        "word_ids"
+      ],
+      "kind": "class",
+      "members": {},
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "id"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "row"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "column"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "row_span"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "column_span"
+          },
+          {
+            "annotation": "_BBox",
+            "kind": "positional_or_keyword",
+            "name": "bbox"
+          },
+          {
+            "annotation": "str",
+            "kind": "positional_or_keyword",
+            "name": "text"
+          },
+          {
+            "annotation": "tuple[int, ...]",
+            "kind": "positional_or_keyword",
+            "name": "word_ids"
+          }
+        ],
+        "returns": "None"
+      }
+    },
+    "SpatialTable": {
+      "annotations": {
+        "bbox": "_BBox",
+        "cells": "tuple[SpatialCell, ...]",
+        "col_count": "int",
+        "row_count": "int",
+        "slots": "tuple[int, ...]",
+        "strategy": "str"
+      },
+      "dataclass_fields": [
+        "bbox",
+        "row_count",
+        "col_count",
+        "cells",
+        "slots",
+        "strategy"
+      ],
+      "kind": "class",
+      "members": {
+        "records": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "int",
+                "kind": "keyword_only",
+                "name": "header_rows"
+              },
+              {
+                "annotation": "int",
+                "default": 0,
+                "kind": "keyword_only",
+                "name": "row_header_columns"
+              }
+            ],
+            "returns": "tuple[tuple[TableField, ...], ...]"
+          }
+        },
+        "to_bullets": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "int",
+                "kind": "keyword_only",
+                "name": "header_rows"
+              },
+              {
+                "annotation": "int",
+                "default": 0,
+                "kind": "keyword_only",
+                "name": "row_header_columns"
+              },
+              {
+                "annotation": "int",
+                "default": 67108864,
+                "kind": "keyword_only",
+                "name": "max_size"
+              }
+            ],
+            "returns": "str"
+          }
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "_BBox",
+            "kind": "positional_or_keyword",
+            "name": "bbox"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "row_count"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "col_count"
+          },
+          {
+            "annotation": "tuple[SpatialCell, ...]",
+            "kind": "positional_or_keyword",
+            "name": "cells"
+          },
+          {
+            "annotation": "tuple[int, ...]",
+            "kind": "positional_or_keyword",
+            "name": "slots"
+          },
+          {
+            "annotation": "str",
+            "kind": "positional_or_keyword",
+            "name": "strategy"
+          }
+        ],
+        "returns": "None"
+      }
+    },
+    "SpatialWord": {
+      "annotations": {
+        "bbox": "_BBox",
+        "direction": "tuple[float, float]",
+        "id": "int",
+        "line": "int",
+        "text": "str"
+      },
+      "dataclass_fields": [
+        "id",
+        "text",
+        "bbox",
+        "line",
+        "direction"
+      ],
+      "kind": "class",
+      "members": {},
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "id"
+          },
+          {
+            "annotation": "str",
+            "kind": "positional_or_keyword",
+            "name": "text"
+          },
+          {
+            "annotation": "_BBox",
+            "kind": "positional_or_keyword",
+            "name": "bbox"
+          },
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "line"
+          },
+          {
+            "annotation": "tuple[float, float]",
+            "kind": "positional_or_keyword",
+            "name": "direction"
+          }
+        ],
+        "returns": "None"
       }
     },
     "StalePageError": {
@@ -2802,6 +3422,56 @@
             "name": "row_gap_variation_em"
           }
         ]
+      }
+    },
+    "TableField": {
+      "annotations": {
+        "cell": "SpatialCell",
+        "column": "int",
+        "headers": "tuple[SpatialCell, ...]",
+        "row_headers": "tuple[SpatialCell, ...]"
+      },
+      "dataclass_fields": [
+        "column",
+        "headers",
+        "row_headers",
+        "cell"
+      ],
+      "kind": "class",
+      "members": {
+        "name": {
+          "kind": "property",
+          "returns": "str"
+        },
+        "value": {
+          "kind": "property",
+          "returns": "str"
+        }
+      },
+      "signature": {
+        "parameters": [
+          {
+            "annotation": "int",
+            "kind": "positional_or_keyword",
+            "name": "column"
+          },
+          {
+            "annotation": "tuple[SpatialCell, ...]",
+            "kind": "positional_or_keyword",
+            "name": "headers"
+          },
+          {
+            "annotation": "tuple[SpatialCell, ...]",
+            "kind": "positional_or_keyword",
+            "name": "row_headers"
+          },
+          {
+            "annotation": "SpatialCell",
+            "kind": "positional_or_keyword",
+            "name": "cell"
+          }
+        ],
+        "returns": "None"
       }
     },
     "TableFinder": {

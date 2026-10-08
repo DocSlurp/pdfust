@@ -21,7 +21,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, NamedTuple, TypeAlias, TypedDict, cast, overload
 
-from pylopdf import _markdown
+from pylopdf import _markdown, _spatial
+from pylopdf._spatial import (
+    FieldCandidate,
+    FieldResult,
+    FieldSpec,
+    PageLayout,
+    PlacementModel,
+    SpatialCell,
+    SpatialTable,
+    SpatialWord,
+    TableField,
+)
 from pylopdf.pylopdf_core import LimitError, OcrError, PasswordError, PdfError, Pixmap, _Document, _OcrEngine
 
 if TYPE_CHECKING:
@@ -52,6 +63,9 @@ __all__ = [
     "DrawingInfo",
     "DrawingItem",
     "EncryptedDocumentError",
+    "FieldCandidate",
+    "FieldResult",
+    "FieldSpec",
     "FontLanguage",
     "FormFieldInfo",
     "FormFieldType",
@@ -68,14 +82,20 @@ __all__ = [
     "Page",
     "PageLabelInfo",
     "PageLabelSpec",
+    "PageLayout",
     "PasswordError",
     "PdfError",
     "Permissions",
+    "PlacementModel",
     "Point",
     "Rect",
+    "SpatialCell",
+    "SpatialTable",
+    "SpatialWord",
     "StalePageError",
     "Table",
     "TableDiagnostics",
+    "TableField",
     "TableFinder",
     "TextBlock",
     "TextLine",
@@ -1734,6 +1754,27 @@ class Page:
         """
         self._page_number()
         return self._document.get_page_text(self._pno, option)  # type: ignore[call-overload]
+
+    def get_layout(self, *, table_strategy: Literal["lines", "text"] | None = "lines") -> PageLayout:
+        """Capture words and table geometry in one CPU interpretation, without rasterization.
+
+        The immutable snapshot supports repeated spatial field queries after
+        this document is edited or closed. Its source IDs belong only to that
+        snapshot. Cold combined extraction populates the existing text and
+        table caches together; a later cache eviction can require reinterpretation.
+        ``None`` skips table rules and detection. ``"text"`` explicitly enables
+        the geometrically ambiguous borderless detector. This is not a visible-
+        pixel query: clipping/occlusion and missing Unicode retain the ordinary
+        extraction limitations. Snapshots accept at most 65,536 words.
+        """
+        if table_strategy not in (None, "lines", "text"):
+            msg = "table_strategy must be 'lines', 'text', or None"
+            raise PdfError(msg)
+        page_number = self._page_number()
+        self._document._ensure_fallback_fonts()
+        width, height, blocks, tables = self._document._doc.extract_spatial_layout(page_number, table_strategy)
+        self._document._emit_warnings()
+        return _spatial.build_layout(width, height, blocks, tables, table_strategy or "none")
 
     def get_text_ocr(  # noqa: PLR0913 - OCR resource controls are keyword-only.
         self,

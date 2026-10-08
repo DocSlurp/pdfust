@@ -13,13 +13,19 @@ overview.
 
 ## Working conventions
 
-- Development pull requests for this fork target `justsml/pylopdf`. Push work
-  branches to the `fork` remote. Do not open or update upstream pull requests
-  unless the user explicitly requests it.
-- Open a short-lived branch and pull request for each coherent unit of work.
-  `main` is protected: direct pushes are rejected, and merging requires the six
-  required status checks. Squash-merge so one merged pull request becomes one
-  `main` commit.
+- This workspace is private `pdf-master` development. The only configured remote
+  is `private`, targeting `justsml/pdf-master`, verified private on 2026-10-08.
+  Public `origin` and `fork` remotes were disconnected at the user's instruction.
+- Do not push, open public pull requests, publish packages, or upload development
+  artifacts until the user says the work is ready. Keep changes and commits local.
+  A local pre-push hook blocks all pushes during this hold. Do not bypass it.
+  GitHub Actions are disabled on the empty private repository during this hold.
+  Previously published history remains public; disconnection does not retract it.
+- Keep the existing pylopdf import/package identity and license notices while
+  evaluating the working name `pdf-master`; packaging migration is separate work.
+- The user authorizes parallel research/experiment agents using `gpt-6.1-sol`
+  with low or medium reasoning. Give agents disjoint files, CPU-only workloads,
+  and no credential access or network inference unless explicitly coordinated.
 - Write commit messages, code comments, docstrings, repository documentation,
   configuration comments, and user-facing messages in English.
 - Non-English text is allowed only in localized documentation and data required
@@ -179,6 +185,13 @@ overview.
   extraction does not collect or analyze vector rules. It collects at most
   4096 axis-aligned candidates from strokes or thin filled polygons. A table
   requires a connected outer grid with at least two rows and columns.
+  Rule connectivity includes touching/overlapping collinear fragments within
+  the existing snap tolerance, including fragments without perpendicular
+  intersections. Reuse fallible orientation-index buffers for in-place interval
+  sorting; do not extend rule geometry or bypass complete-edge validation.
+  Preserve accepted perpendicular-rule grids first. Repair only unaccepted
+  components and admit repaired bboxes only when they do not overlap retained
+  tables, so nearby form decorations cannot swallow an established grid.
   Rectangular merged cells are tiled from missing internal dividers; covered
   row-major slots are `None`, with an internal anchor map retained for exact
   Markdown span expansion. Coarse grid spans gain synthetic dividers only when
@@ -203,6 +216,16 @@ overview.
   exposes no partial result and preserves the cache. The text strategy
   intentionally does not run as the default because aligned multicolumn prose
   is geometrically ambiguous.
+  `Page.get_layout()` explicitly collects glyphs and rules in one interpretation
+  and populates both bounded caches after one shared text/glyph admission.
+  Normal text remains text-only. Its immutable Python spatial snapshot preserves
+  source IDs and display boxes, with bounded region/anchor queries and explicit
+  header relationships. Optional scalar placement models may only rank retained
+  candidates and must abstain on low score, insufficient margin, duplicate labels,
+  or conflicting source IDs. No model is enabled by default. Snapshots cap words
+  at 65,536, field requests and candidate spans at 256, and explicit grids at 4,096
+  cells. Header bands may not cut merged cells. Source IDs are snapshot-local;
+  snapshots survive document edits/close and do not represent pixel visibility.
   `find_tables(clip=)` returns only complete candidate bboxes inside the
   display-coordinate region; it does not synthesize partial tables or reduce
   the cached full-page interpretation cost. `TableDiagnostics.confidence` is a

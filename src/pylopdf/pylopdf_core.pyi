@@ -1,6 +1,27 @@
 # Type stubs for the Rust extension module pylopdf_core.
 import os
-from typing import BinaryIO
+from typing import BinaryIO, TypeAlias
+
+RawLayoutBlock: TypeAlias = tuple[
+    tuple[float, float, float, float],
+    list[
+        tuple[
+            tuple[float, float, float, float],
+            list[tuple[tuple[float, float, float, float], str, float, tuple[float, float], str, int]],
+            list[tuple[tuple[float, float, float, float], str]],
+            tuple[float, float],
+            int,
+        ]
+    ],
+]
+RawLayoutTable: TypeAlias = tuple[
+    tuple[float, float, float, float],
+    int,
+    int,
+    list[tuple[tuple[float, float, float, float], str] | None],
+    list[int],
+    tuple[float, float | None, float | None, float | None],
+]
 
 class PdfError(ValueError): ...
 class PasswordError(PdfError): ...
@@ -227,6 +248,11 @@ class _Document:
             tuple[float, float | None, float | None, float | None],
         ]
     ]: ...
+    def extract_spatial_layout(
+        self,
+        page_number: int,
+        table_strategy: str | None = "lines",
+    ) -> tuple[float, float, list[RawLayoutBlock], list[RawLayoutTable]]: ...
     def search_page(
         self,
         page_number: int,

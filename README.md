@@ -87,6 +87,10 @@ words = doc[0].get_text("words")             # (x0, y0, x1, y1, word, block, lin
 hits = doc[0].search_for("tax")              # case-insensitive, list[Rect]
 tables = doc[0].find_tables()                # bordered grids incl. merged cells
 markdown = doc.to_markdown()                 # RAG / LLM preprocessing
+layout = doc[0].get_layout()                 # owned CPU snapshot; no rasterization
+fields = layout.extract_fields([
+    pylopdf.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
+])                                          # ambiguous assignments abstain
 
 # Render: PNG / SVG / raw pixels
 png: bytes = doc.render_page(0, dpi=300)

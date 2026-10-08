@@ -72,6 +72,7 @@ from ordinary write failures, but does not provide an `fsync` durability promise
 |---|---|
 | `number` / `parent` / `get_label()` | identity & display label |
 | `get_text(option)` / `search_for(needle, max_hits=4096)` | extraction and bounded case-insensitive search; terms stop at 4,096 UTF-8 bytes and `None` opts trusted result sets out |
+| `get_layout(table_strategy="lines")` | owned spatial snapshot: words, source IDs, merged cells, rectangle/anchor field queries, and declared header relationships; one combined CPU interpretation, no rasterization |
 | `get_text_ocr(dpi=, engine=, tile_size=, overlap=, min_confidence=, rotation=, clip=)` | local PP-OCRv6 positioned words without editing; `rotation` corrects input clockwise and `clip` uses display coordinates |
 | `apply_ocr(..., rotation=, clip=, skip_existing=True)` | recognize and insert an orientation-aware invisible searchable layer; skip existing text in the selected region by default |
 | `find_tables(strategy="lines", clip=None)` | complete or conservatively refined vector-bordered grids and merged cells; `"text"` opts into borderless detection; `clip` is a display-coordinate region |
@@ -142,6 +143,116 @@ minimum gutter and row-gap variation. Complete vector grids score 1.0,
 sparse-rule hybrid grids score 0.95, and both have `None` for those text-only
 metrics. `TableFinder.strategy` and
 `TableFinder.clip` preserve the settings used.
+
+### Spatial fields and header relationships { #spatial-fields }
+
+`Page.get_layout()` collects words and vector table evidence in one CPU
+interpretation. It populates the same bounded caches used by `get_text` and
+`find_tables`. A snapshot owns its data: subsequent edits, cache eviction, and
+closing the document do not change it. Source IDs are local to that snapshot.
+Normal text extraction still skips table-rule collection. With
+`table_strategy=None`, spatial extraction also skips table detection.
+
+```python
+with pylopdf.open("invoice.pdf") as document:
+    layout = document[0].get_layout(table_strategy=None)
+
+# Rectangles are top-left display coordinates, with rotation already applied.
+# Selection uses word centers and half-open bounds, not pixel visibility.
+words = layout.select((300, 80, 550, 110))
+results = layout.extract_fields([
+    pylopdf.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
+    pylopdf.FieldSpec("total", region=(300, 600, 550, 630)),
+])
+for result in results:
+    print(result.name, result.status, result.value)
+    # selected.word_ids and selected.anchor_ids point back to layout.words.
+```
+
+An anchor matches an exact, case-insensitive sequence of words on one line;
+trailing colons are ignored. `direction="right"` (default) and `"below"` use
+display coordinates. `max_distance` bounds the search in PDF points. A `region`
+with an anchor scopes both its label and candidate values; a region alone is an
+authoritative value rectangle. For anchor queries, `value_type="number"`,
+`"date"`, or `"text"` filters candidates by a simple lexical shape; it does not
+validate a locale-specific number, calendar date, or business meaning.
+
+Without a placement model, one eligible candidate is required. Multiple anchors
+or candidate values produce `ambiguous`; absent matches produce `missing`.
+Source words selected by multiple fields produce `conflict` for every affected
+field. These states return `value=None`. Candidate spans remain available for
+review, except when the anchor itself is missing or ambiguous. Labels declared
+in the same batch form barriers so a query cannot reach through a neighboring
+label to steal its value. Callers should scope searches when other labels are
+not known. Rectangles preserve source text without model decisions.
+
+For known table boundaries, `layout.grid(columns=[...], rows=[...])` accepts
+all display-coordinate boundaries, including the outer edges. It needs no table
+detector and groups wrapped words within those explicit cells. A native table
+comes from `layout.tables`; native grids are normalized to their dominant
+right-angle text orientation while every cell retains its display-space box.
+
+```python
+with pylopdf.open("report.pdf") as document:
+    layout = document[0].get_layout()
+table = layout.tables[0]
+for record in table.records(header_rows=2, row_header_columns=1):
+    for field in record:
+        print(field.name, field.value)
+        # field.headers preserves outer-to-inner header cells and their IDs.
+        # field.row_headers retains the declared row-label cells.
+        # field.cell retains its source words, bbox, and merged spans.
+print(table.to_bullets(header_rows=2, row_header_columns=1))
+```
+
+Header bands are explicit; `records()` does not guess that row one is a header.
+Bands cutting through merged cells are rejected. Repeated labels remain distinct
+by cell ID. Multiple fields may reference the same merged value cell; they are
+not independent values. The default detector does not reconstruct every complex
+header, extend a short header into a borderless body, or establish semantic
+scope from language. `table_strategy="text"` retains the existing opt-in
+borderless detector and its ambiguity with aligned prose. Correcting or supplying
+boundaries remains necessary when detection fails.
+
+`PlacementModel(weights, bias, threshold=0.9, margin=0.2)` is an optional,
+six-feature logistic ranker. It uses only existing candidates and cannot rewrite
+their text. An accepted candidate must exceed both the score threshold and the
+margin over the runner-up. It cannot override a duplicated anchor or source-ID
+conflict. Scores are not calibrated correctness probabilities. No pretrained
+model is enabled by default, and no tensor runtime, download, or GPU is required.
+
+The reproducible CPU pilot is `CUDA_VISIBLE_DEVICES='' uv run python -m bench.spatial`.
+It retains fitted weights, inputs, decisions, and separate training, policy-selection,
+and evaluation sets in `bench/results/spatial-artifacts/`. To try the fitted pilot
+on its intended fixture family:
+
+```python
+import json
+from pathlib import Path
+
+state = json.loads(Path("bench/results/spatial-artifacts/placement-model.json").read_text())
+model = pylopdf.PlacementModel(**state["model"])
+results = layout.extract_fields([
+    pylopdf.FieldSpec("account", anchor="Account", value_type="number"),
+], model=model)
+```
+
+The pilot's simple distance/alignment rule outperformed the learned ranker on
+held-out synthetic cases. Those fixtures do not establish real-document accuracy.
+Fit and evaluate coefficients and thresholds on an independent document family
+before enabling them; nearby aligned text can still be semantically wrong.
+The features are reciprocal forward gap and cross-axis offset (normalized by
+anchor height), presence of a value-type constraint, capped candidate word count,
+below/right direction, and relative text height, in that order.
+
+Fixed limits are 65,536 snapshot words, 256 field queries, 256 anchor matches or
+candidate spans per field, and 4,096 explicit grid cells (`spatial_count`).
+`to_bullets(max_size=...)` defaults to 64 MiB of UTF-8 (`spatial_output_size`).
+Existing document interpretation/text limits still apply. The initial snapshot
+interprets the selected page; selection does not seek directly to a PDF byte range.
+Ordinary extraction limitations still apply to clipping, occlusion, mixed writing
+directions, missing Unicode, and image-only content. This API never invokes OCR
+implicitly.
 
 ## Module level { #module-level }
 

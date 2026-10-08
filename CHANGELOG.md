@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `Page.get_layout()` captures an owned spatial snapshot without rasterization,
+  sharing one cold interpretation between text and table caches. Rectangle and
+  label-relative queries preserve source IDs and abstain on ambiguity/conflicts;
+  explicit grids and declared header bands preserve merged-cell relationships.
+  An optional six-feature CPU placement ranker accepts caller-fitted coefficients.
 - Locale/script font providers replace the former Japanese-only CJK product
   boundary. `[jp]`, `[ko]`, `[zh-cn]`, and `[zh-tw]` provide matching Noto
   Sans/Serif fonts for non-embedded Adobe CJK fallback and subset-embedded text
@@ -29,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([LaurenzV/hayro#1331](https://github.com/LaurenzV/hayro/issues/1331)).
 
 ### Fixed
+- Ruled table detection connects touching or overlapping collinear fragments,
+  preserving grids whose outer borders are painted as separate line segments.
+  Existing snap tolerances and complete-edge checks still apply.
 - Non-embedded Adobe Korea1, GB1, and CNS1 fonts no longer render through the
   Japanese fallback merely because it is installed. Each collection now uses
   its matching locale slot, with conservative font-name hints when collection

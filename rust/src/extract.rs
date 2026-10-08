@@ -2177,6 +2177,62 @@ impl TextPage {
             max_glyph_count,
         )?;
         let physical_lines = cluster_lines(marks.glyphs)?;
+        Self::from_lines(
+            width,
+            height,
+            physical_lines,
+            marks.text_size,
+            marks.glyph_count,
+            marks.skipped_no_unicode,
+        )
+    }
+
+    /// Collect glyphs and rules once for the explicit spatial-layout API.
+    pub(crate) fn with_tables<'a>(
+        pdf: &'a Pdf,
+        page: &Page<'a>,
+        cache: &InterpreterCache<'a>,
+        settings: InterpreterSettings,
+        max_text_size: Option<usize>,
+        max_glyph_count: Option<usize>,
+    ) -> Result<(Self, TablePage), TextPageLimit> {
+        let (width, height) = page.render_dimensions();
+        let marks = collect_page_marks(
+            pdf,
+            page,
+            cache,
+            settings,
+            true,
+            max_text_size,
+            max_glyph_count,
+        )?;
+        let physical_lines = cluster_lines(marks.glyphs)?;
+        let tables = TablePage::from_lines(
+            &physical_lines,
+            &marks.rules,
+            marks.text_size,
+            marks.glyph_count,
+            marks.skipped_no_unicode,
+        )?;
+        let text = Self::from_lines(
+            width,
+            height,
+            physical_lines,
+            marks.text_size,
+            marks.glyph_count,
+            marks.skipped_no_unicode,
+        )?;
+        Ok((text, tables))
+    }
+
+    fn from_lines(
+        width: f32,
+        height: f32,
+        physical_lines: Vec<Vec<GlyphRecord>>,
+        text_size: usize,
+        glyph_count: usize,
+        skipped_no_unicode: usize,
+    ) -> Result<Self, TextPageLimit> {
         let mut lines = order_page_lines(physical_lines)?;
         for line in &mut lines {
             logicalize_rtl_line(line);
@@ -2185,9 +2241,9 @@ impl TextPage {
             width: f64::from(width),
             height: f64::from(height),
             lines,
-            text_size: marks.text_size,
-            glyph_count: marks.glyph_count,
-            skipped_no_unicode: marks.skipped_no_unicode,
+            text_size,
+            glyph_count,
+            skipped_no_unicode,
         })
     }
 
@@ -2266,14 +2322,30 @@ impl TablePage {
             max_glyph_count,
         )?;
         let physical_lines = cluster_lines(marks.glyphs)?;
-        let tables = detect_grid_tables(&physical_lines, &marks.rules)?;
-        let text_tables = detect_text_tables(&physical_lines)?;
+        Self::from_lines(
+            &physical_lines,
+            &marks.rules,
+            marks.text_size,
+            marks.glyph_count,
+            marks.skipped_no_unicode,
+        )
+    }
+
+    fn from_lines(
+        physical_lines: &[Vec<GlyphRecord>],
+        rules: &[RuleSegment],
+        text_size: usize,
+        glyph_count: usize,
+        skipped_no_unicode: usize,
+    ) -> Result<Self, TextPageLimit> {
+        let tables = detect_grid_tables(physical_lines, rules)?;
+        let text_tables = detect_text_tables(physical_lines)?;
         Ok(Self {
             tables,
             text_tables,
-            text_size: marks.text_size,
-            glyph_count: marks.glyph_count,
-            skipped_no_unicode: marks.skipped_no_unicode,
+            text_size,
+            glyph_count,
+            skipped_no_unicode,
         })
     }
 
@@ -2904,6 +2976,63 @@ fn rules_intersect(horizontal: RuleSegment, vertical: RuleSegment) -> bool {
         && vertical.x0 <= horizontal.x1 + TABLE_SNAP_TOLERANCE
         && horizontal.y0 >= vertical.y0 - TABLE_SNAP_TOLERANCE
         && horizontal.y0 <= vertical.y1 + TABLE_SNAP_TOLERANCE
+}
+
+/// Join touching or overlapping parallel fragments without extending their geometry.
+///
+/// Sorting by interval start bounds the scan to overlapping interval neighborhoods.
+/// Dense overlapping rules retain quadratic worst-case work under the existing rule
+/// cap, while disjoint fragments stop at their first separated neighbor. The caller's
+/// fallibly collected orientation indices are reused without allocating scratch space.
+fn connect_parallel_rules(
+    rules: &[RuleSegment],
+    indices: &mut [usize],
+    components: &mut RuleComponents,
+    horizontal: bool,
+    protected_roots: &[bool],
+) -> bool {
+    let mut changed = false;
+    let coordinates = |index: usize| {
+        let rule = rules[index];
+        if horizontal {
+            (rule.x0, rule.x1, rule.y0)
+        } else {
+            (rule.y0, rule.y1, rule.x0)
+        }
+    };
+    indices.sort_unstable_by(|&left, &right| {
+        let (left_start, left_end, left_fixed) = coordinates(left);
+        let (right_start, right_end, right_fixed) = coordinates(right);
+        left_start
+            .total_cmp(&right_start)
+            .then_with(|| left_fixed.total_cmp(&right_fixed))
+            .then_with(|| left_end.total_cmp(&right_end))
+            .then_with(|| left.cmp(&right))
+    });
+    for (position, &left) in indices.iter().enumerate() {
+        let (_, left_end, left_fixed) = coordinates(left);
+        for &right in &indices[position + 1..] {
+            let (right_start, _, right_fixed) = coordinates(right);
+            if right_start > left_end + TABLE_SNAP_TOLERANCE {
+                break;
+            }
+            if (left_fixed - right_fixed).abs() <= TABLE_SNAP_TOLERANCE {
+                let left_root = components.find(left);
+                let right_root = components.find(right);
+                // Established grids retain their original rule membership. A
+                // continuation can otherwise merge two tables or add an unclosed
+                // form border that destroys a previously recognized grid.
+                if left_root != right_root
+                    && !protected_roots[left_root]
+                    && !protected_roots[right_root]
+                {
+                    components.union(left_root, right_root);
+                    changed = true;
+                }
+            }
+        }
+    }
+    changed
 }
 
 /// Snap nearby line coordinates to one stable grid coordinate.
@@ -3649,6 +3778,103 @@ fn rule_coordinates(rules: &[RuleSegment], horizontal: bool) -> Result<Vec<f64>,
     Ok(coordinates)
 }
 
+/// Preserve original grids, then admit only non-overlapping repaired components.
+fn append_component_tables(
+    physical_lines: &[Vec<GlyphRecord>],
+    rules: &[RuleSegment],
+    word_lines: &[Vec<BorrowedWord<'_>>],
+    components: &mut RuleComponents,
+    protected_roots: &mut [bool],
+    tables: &mut Vec<TableTuple>,
+    repaired: bool,
+) -> Result<(), TextPageLimit> {
+    let mut grouped_rules = Vec::new();
+    for (index, &rule) in rules.iter().enumerate() {
+        let root = components.find(index);
+        try_push_text(&mut grouped_rules, (root, rule), "connected table rules")?;
+    }
+    grouped_rules.sort_unstable_by_key(|(root, _)| *root);
+
+    let mut group_start = 0;
+    while group_start < grouped_rules.len() {
+        let root = grouped_rules[group_start].0;
+        let mut group_end = group_start + 1;
+        while group_end < grouped_rules.len() && grouped_rules[group_end].0 == root {
+            group_end += 1;
+        }
+        if repaired && protected_roots[root] {
+            group_start = group_end;
+            continue;
+        }
+        let mut component_rules = Vec::new();
+        for &(_, rule) in &grouped_rules[group_start..group_end] {
+            try_push_text(&mut component_rules, rule, "table component rules")?;
+        }
+        group_start = group_end;
+
+        let original_xs = clustered_coordinates(rule_coordinates(&component_rules, false)?);
+        let original_ys = clustered_coordinates(rule_coordinates(&component_rules, true)?);
+        if original_xs.len() < 3 || original_ys.len() < 3 {
+            continue;
+        }
+        let mut inferred_rules =
+            infer_hybrid_grid_rules(physical_lines, &original_ys, &original_xs, true)?;
+        for rule in infer_hybrid_grid_rules(physical_lines, &original_xs, &original_ys, false)? {
+            try_push_text(&mut inferred_rules, rule, "hybrid-grid inferred rules")?;
+        }
+        let is_hybrid = !inferred_rules.is_empty();
+        for rule in inferred_rules {
+            try_push_text(&mut component_rules, rule, "table component rules")?;
+        }
+        let xs = clustered_coordinates(rule_coordinates(&component_rules, false)?);
+        let ys = clustered_coordinates(rule_coordinates(&component_rules, true)?);
+        let bbox = (
+            xs[0],
+            ys[0],
+            *xs.last().expect("three coordinates were checked above"),
+            *ys.last().expect("three coordinates were checked above"),
+        );
+        // Preserve accepted source grids rather than replacing them with a
+        // larger repaired candidate or returning duplicate overlapping tables.
+        if repaired
+            && tables.iter().any(|table| {
+                bbox.0 < table.0.2 && table.0.0 < bbox.2 && bbox.1 < table.0.3 && table.0.1 < bbox.3
+            })
+        {
+            continue;
+        }
+        let row_count_usize = ys.len() - 1;
+        let column_count_usize = xs.len() - 1;
+        let Some((cells, cell_anchors)) =
+            materialize_grid_cells(&component_rules, &xs, &ys, word_lines)?
+        else {
+            continue;
+        };
+        let Ok(row_count) = u32::try_from(row_count_usize) else {
+            continue;
+        };
+        let Ok(column_count) = u32::try_from(column_count_usize) else {
+            continue;
+        };
+        try_push_text(
+            tables,
+            (
+                bbox,
+                row_count,
+                column_count,
+                cells,
+                cell_anchors,
+                (if is_hybrid { 0.95 } else { 1.0 }, None, None, None),
+            ),
+            "bordered tables",
+        )?;
+        if !repaired {
+            protected_roots[root] = true;
+        }
+    }
+    Ok(())
+}
+
 /// Detect high-confidence rectangular tables from connected vector-rule grids.
 fn detect_grid_tables(
     physical_lines: &[Vec<GlyphRecord>],
@@ -3684,72 +3910,40 @@ fn detect_grid_tables(
         }
     }
 
-    let mut grouped_rules = Vec::new();
-    for (index, &rule) in rules.iter().enumerate() {
-        let root = components.find(index);
-        try_push_text(&mut grouped_rules, (root, rule), "connected table rules")?;
-    }
-    grouped_rules.sort_unstable_by_key(|(root, _)| *root);
-
     let mut tables = Vec::new();
-    let mut group_start = 0;
-    while group_start < grouped_rules.len() {
-        let root = grouped_rules[group_start].0;
-        let mut group_end = group_start + 1;
-        while group_end < grouped_rules.len() && grouped_rules[group_end].0 == root {
-            group_end += 1;
-        }
-        let mut component_rules = Vec::new();
-        for &(_, rule) in &grouped_rules[group_start..group_end] {
-            try_push_text(&mut component_rules, rule, "table component rules")?;
-        }
-        group_start = group_end;
-
-        let original_xs = clustered_coordinates(rule_coordinates(&component_rules, false)?);
-        let original_ys = clustered_coordinates(rule_coordinates(&component_rules, true)?);
-        if original_xs.len() < 3 || original_ys.len() < 3 {
-            continue;
-        }
-        let mut inferred_rules =
-            infer_hybrid_grid_rules(physical_lines, &original_ys, &original_xs, true)?;
-        for rule in infer_hybrid_grid_rules(physical_lines, &original_xs, &original_ys, false)? {
-            try_push_text(&mut inferred_rules, rule, "hybrid-grid inferred rules")?;
-        }
-        let is_hybrid = !inferred_rules.is_empty();
-        for rule in inferred_rules {
-            try_push_text(&mut component_rules, rule, "table component rules")?;
-        }
-        let xs = clustered_coordinates(rule_coordinates(&component_rules, false)?);
-        let ys = clustered_coordinates(rule_coordinates(&component_rules, true)?);
-        let row_count_usize = ys.len() - 1;
-        let column_count_usize = xs.len() - 1;
-        let Some((cells, cell_anchors)) =
-            materialize_grid_cells(&component_rules, &xs, &ys, &word_lines)?
-        else {
-            continue;
-        };
-        let Ok(row_count) = u32::try_from(row_count_usize) else {
-            continue;
-        };
-        let Ok(column_count) = u32::try_from(column_count_usize) else {
-            continue;
-        };
-        try_push_text(
+    let mut protected_roots = try_filled_text(rules.len(), false, "accepted table rule roots")?;
+    append_component_tables(
+        physical_lines,
+        rules,
+        &word_lines,
+        &mut components,
+        &mut protected_roots,
+        &mut tables,
+        false,
+    )?;
+    let horizontal_changed = connect_parallel_rules(
+        rules,
+        &mut horizontal_indices,
+        &mut components,
+        true,
+        &protected_roots,
+    );
+    let vertical_changed = connect_parallel_rules(
+        rules,
+        &mut vertical_indices,
+        &mut components,
+        false,
+        &protected_roots,
+    );
+    if horizontal_changed || vertical_changed {
+        append_component_tables(
+            physical_lines,
+            rules,
+            &word_lines,
+            &mut components,
+            &mut protected_roots,
             &mut tables,
-            (
-                (
-                    xs[0],
-                    ys[0],
-                    *xs.last().expect("three coordinates were checked above"),
-                    *ys.last().expect("three coordinates were checked above"),
-                ),
-                row_count,
-                column_count,
-                cells,
-                cell_anchors,
-                (if is_hybrid { 0.95 } else { 1.0 }, None, None, None),
-            ),
-            "bordered tables",
+            true,
         )?;
     }
     tables.sort_unstable_by(|left, right| {

@@ -24,5 +24,9 @@ site/
 /bench/results/structure-artifacts/
 /bench/results/structure-*.json
 /bench/results/structure-*.log
+/bench/results/spatial-artifacts/
 /.env.remote-hosts
 /.env.remote-hosts.swp
+
+# Private experiment inputs, full decisions, and timing traces.
+/bench/results/pdf-master-artifacts/

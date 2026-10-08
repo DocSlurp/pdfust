@@ -506,6 +506,29 @@ def test_rotated_senate_header_and_borderless_body() -> None:
     assert body.extract()[0] == ["BAIN, J MATTHEW", "DISTRICT DIRECTOR", "37,499.96"]
 
 
+@pytest.mark.parametrize(
+    ("name", "region", "expected"),
+    [
+        ("senate-expenditures.pdf", (680, 208, 710, 214), "920.68"),
+        ("nics-background-checks-2015-11.pdf", (950, 79, 980, 88), "71,137"),
+    ],
+)
+def test_spatial_source_fields_on_dense_reports(
+    name: str,
+    region: tuple[int, int, int, int],
+    expected: str,
+) -> None:
+    """Read independently checked values by display geometry after closing the PDF."""
+    with pylopdf.open(ASSETS / name) as document:
+        layout = document[0].get_layout()
+        original_words = document[0].get_text("words")
+    assert [(word.text, word.bbox) for word in layout.words] == [(word[4], word[:4]) for word in original_words]
+    result = layout.extract_fields([pylopdf.FieldSpec("checked_value", region=region)])[0]
+    assert result.value == expected
+    assert result.selected is not None
+    assert " ".join(layout.words[index].text for index in result.selected.word_ids) == expected
+
+
 def test_manuscript_scan_has_no_text_layer() -> None:
     """A pure scan without a text layer correctly extracts as empty."""
     doc = pylopdf.open(ASSETS / "wdl6812-manuscript.pdf")

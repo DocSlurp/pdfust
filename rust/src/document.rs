@@ -6116,6 +6116,76 @@ impl _Document {
             .expect("table page was interpreted immediately before"))
     }
 
+    /// Populate both bounded caches from one interpretation, restoring the
+    /// detached snapshot even when admission or allocation fails.
+    fn spatial_page(&mut self, page_number: u32, settings: InterpreterSettings) -> PyResult<()> {
+        if self.text_pages.contains_key(&page_number) && self.table_pages.contains_key(&page_number)
+        {
+            self.touch_text_page(page_number);
+            self.touch_table_page(page_number);
+            return Ok(());
+        }
+        self.hayro_view()?;
+        let pdf = self
+            .hayro_pdf
+            .take()
+            .expect("hayro view was built immediately before");
+        let cache = InterpreterCache::new();
+        let result = (|| {
+            let pages = pdf.pages();
+            let page = page_number
+                .checked_sub(1)
+                .and_then(|index| pages.get(index as usize))
+                .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
+            let (text, tables) = crate::extract::TextPage::with_tables(
+                &pdf,
+                page,
+                &cache,
+                settings,
+                self.text_budget(page_number)?,
+                self.glyph_budget(page_number)?,
+            )
+            .map_err(text_page_limit_err)?;
+            self.text_pages.try_reserve(1).map_err(|error| {
+                PdfError::new_err(format!("failed to grow spatial text cache: {error}"))
+            })?;
+            self.table_pages.try_reserve(1).map_err(|error| {
+                PdfError::new_err(format!("failed to grow spatial table cache: {error}"))
+            })?;
+            self.text_page_order.try_reserve(1).map_err(|error| {
+                PdfError::new_err(format!("failed to grow spatial text order: {error}"))
+            })?;
+            self.table_page_order.try_reserve(1).map_err(|error| {
+                PdfError::new_err(format!("failed to grow spatial table order: {error}"))
+            })?;
+            self.admit_text_usage(page_number, text.text_size(), text.glyph_count())?;
+            self.warn_skipped_no_unicode(text.skipped_no_unicode());
+            self.text_page_order.retain(|number| *number != page_number);
+            self.table_page_order
+                .retain(|number| *number != page_number);
+            if !self.text_pages.contains_key(&page_number)
+                && self.text_pages.len() >= TEXT_PAGE_CACHE_CAPACITY
+                && let Some(evicted) = self.text_page_order.pop_front()
+            {
+                self.text_pages.remove(&evicted);
+            }
+            if !self.table_pages.contains_key(&page_number)
+                && self.table_pages.len() >= TABLE_PAGE_CACHE_CAPACITY
+                && let Some(evicted) = self.table_page_order.pop_front()
+            {
+                self.table_pages.remove(&evicted);
+            }
+            self.text_pages.insert(page_number, text);
+            self.table_pages.insert(page_number, tables);
+            self.text_page_order.push_back(page_number);
+            self.table_page_order.push_back(page_number);
+            Ok(())
+        })();
+        drop(cache);
+        self.hayro_pdf = Some(pdf);
+        result
+    }
+
     /// Surface glyphs skipped for missing Unicode as one deduplicated warning.
     ///
     /// Extraction silently loses such glyphs (for example a Type 3 font
@@ -7655,6 +7725,52 @@ impl _Document {
             self.text_page(page_number, settings)?
                 .layout(include_spans, include_words)
                 .map_err(text_page_limit_err)
+        })
+    }
+
+    /// Extract an owned spatial snapshot without rasterization. The opt-in
+    /// combined path shares interpretation; ordinary text stays text-only.
+    #[allow(clippy::type_complexity)]
+    #[pyo3(signature = (page_number, table_strategy=Some("lines")))]
+    fn extract_spatial_layout(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+        table_strategy: Option<&str>,
+    ) -> PyResult<(
+        f64,
+        f64,
+        Vec<crate::extract::BlockTuple>,
+        Vec<crate::extract::TableTuple>,
+    )> {
+        if table_strategy.is_some_and(|strategy| strategy != "lines" && strategy != "text") {
+            return Err(PdfError::new_err(
+                "table_strategy must be 'lines', 'text', or None",
+            ));
+        }
+        let settings = self.interpreter_settings();
+        py.detach(|| {
+            if table_strategy.is_none() {
+                let (width, height, blocks) = self
+                    .text_page(page_number, settings)?
+                    .layout(false, true)
+                    .map_err(text_page_limit_err)?;
+                return Ok((width, height, blocks, Vec::new()));
+            }
+            self.spatial_page(page_number, settings)?;
+            let (width, height, blocks) = self
+                .text_pages
+                .get(&page_number)
+                .expect("spatial text was cached")
+                .layout(false, true)
+                .map_err(text_page_limit_err)?;
+            let tables = self
+                .table_pages
+                .get(&page_number)
+                .expect("spatial tables were cached")
+                .tables(table_strategy == Some("text"), None)
+                .map_err(text_page_limit_err)?;
+            Ok((width, height, blocks, tables))
         })
     }
 
