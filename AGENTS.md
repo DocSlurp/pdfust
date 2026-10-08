@@ -59,6 +59,15 @@ overview.
   measurements. Retain original lightweight timings and model run provenance
   separately in `bench/results/features-models.{md,json}`; publish model settings,
   initialization cost, failures, image assets, and structured artifacts together.
+- `bench/DECISION_MODELS.md` — opt-in hosted relationship-decision pilot.
+  `uv run python -m bench.decisions --report-only` evaluates retained evidence
+  locally; add `--controls` for separately labeled existing-PDF region gates.
+  Paid requests require `--run-hosted` and use a persistent reservation ledger
+  within the authorized cumulative cap. Source text stays data, candidate IDs
+  remain snapshot-local, and model confidence is not calibrated correctness.
+  Commit only Markdown summaries; requests, responses, PDFs and ledgers stay in
+  ignored `bench/results/pdf-master-artifacts/decisions/`. No default extraction
+  behavior calls a hosted model or applies these experimental relations.
 - `py -3.14t bench/free_threaded.py` — measure independent-document extraction
   without the GIL. Results are written separately to
   `bench/results/free-threaded-latest.md` so regular benchmark runs cannot
