@@ -20,6 +20,16 @@ IDs, original text, logical and display geometry, spans, evidence and uncertaint
 Render Markdown, HTML, or key/value bullets only after choosing the structure.
 Unresolved words remain attached to the result; they must not silently disappear.
 
+## Business document coverage
+
+The user prioritizes all three families equally: financial reports and statements;
+invoices, purchase orders and forms; and scientific and technical tables.
+Report accuracy, incorrect assignments, abstentions and latency separately for
+each family so aggregate improvements cannot hide family-specific regressions.
+Training, policy selection and evaluation must hold out entire issuers, vendors
+and document templates. Existing synthetic and convenience-corpus measurements
+do not yet establish this business-family coverage.
+
 ## Breadth-first hypothesis queue
 
 | Priority | Hypothesis | Experiment and disproof condition |
