@@ -80,3 +80,23 @@ Actual whole-wave rental charges and region inputs/USD remain pending. Provider 
 Pinned releases: Flash `fde727a287004204b7518dcc983fe64379776712`; PPLX `6195aa55a72ae21e503c8a60198f7b390d42adb5`; Intern `0e5e6aa7d6d750e2b1504ba11a8136cb58aeb3cd`; Clef 27B `ed3eed331870db2eff4b0db01237128ede8a00ce`; Qwen `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a`; Nimble-v3 `8e927b9b4afdbb14479fac10a7364d1a695be208`. See the [self-hosted model notes](../HF_DECISION_MODELS.md). Requests, responses, local scorer results, samples and source-index remain ignored under `.scratch/remote-gpu-20261009/r001/` and `.scratch/council/lowlevel-inventor/`.
 
 Frozen L015 manifest SHA256: `0ddd6c3c02e86a3cd52280446d19112e20ede72dba709c26a1ae07c11d0b3104`. Source-index SHA256: `52e9c5241455cb7877cf0976b4fb4969735b5a0d7841972bfcbc6bee1ad0c0a1`. This is one run per configuration on small authored, correlated cases; no universal quality or deployment-cost ranking is established.
+
+## Additional JPT4 cohort
+
+JPT-4B completed 216/216 inputs with no schema or worker failures. Source request and image bytes match the original L015 evidence; the separately declared transport projection changes only `body.model` to `kirp/jpt-4b`. Its native distribution is scored with the same parser and references. All arms retain 16 known cases and eight ambiguous controls.
+
+| Arm | Known-correct / 16 | Ambiguous-abstain / 8 | Fresh region inputs/min |
+|---|---:|---:|---:|
+| rgb-512 | 10/16 | 0/8 | 391.27 |
+| rgb-768 | 10/16 | 0/8 | 635.18 |
+| rgb-1024 | 9/16 | 0/8 | 608.56 |
+| gray-512 | 10/16 | 1/8 | 654.05 |
+| gray-768 | 9/16 | 0/8 | 624.31 |
+| gray-1024 | 9/16 | 0/8 | 628.55 |
+| lowbit-512 | 10/16 | 0/8 | 646.14 |
+| lowbit-768 | 9/16 | 0/8 | 634.87 |
+| lowbit-1024 | 9/16 | 0/8 | 611.62 |
+
+Across repeated arms, JPT4 scores 85/144 known cases and 1/72 ambiguous abstentions. Its load is 12.56 wall / 13.76 CPU s; prediction totals 21.96 wall / 43.79 CPU s. Worker totals are 35.10 wall / 57.93 CPU s: 590.05 warm region inputs/min and 369.19 worker-inclusive inputs/min. Process peak RSS is 9.32 GiB; initialization-plus-attempt CUDA run peaks are 8.99 GiB allocated / 10.35 GiB reserved. The device-wide one-second sampler has 35/35 available samples, mean utilization 21.11%, and peak device VRAM 11,285 MiB.
+
+JPT4 is a separate noncommercial research candidate; its release license is CC-BY-NC-4.0. The pinned release is `78312f855b8bebf83ae7e9e8f05b5a0f73f519a9`; the retained environment records Torch 2.14.0, Transformers 5.17.0, FLA 0.5.2 and `llm2jev` commit `2b252d504972764211ef172c1155ac0fedc9c3de`. Host assignment remains to be reconciled with run provenance. Costs and full-page throughput remain unavailable; these are conditional region decisions.
