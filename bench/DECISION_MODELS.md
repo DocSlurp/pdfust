@@ -243,3 +243,20 @@ model listing omits them. The runner now accepts those exact IDs on the alpha
 Decisions endpoint, retaining the original default model list. See the separate
 [measured comparison](results/decision-alternatives.md) for successful probes,
 availability failures, prices actually reported, and quality limitations.
+
+## Evidence repair, image retrieval and telemetry
+
+[Evidence experiments](results/evidence-repair.md) retain the actual reconstruction
+results and negative ablations. [Image retrieval](results/image-embedding-retrieval.md)
+is a separate frozen comparison with whole-page and explicitly oracle-crop inputs.
+[Contamination audit](results/evidence-contamination-audit.md) records the limits:
+all these cases are development controls, never untouched release evidence.
+[Experiment index](../EXPERIMENTS_LOG.md) tracks the complete lineage.
+
+CPU image work uses `uv sync --group bench-vision`. Run
+`uv run python -m bench.decision_context_run` or
+`uv run python -m bench.decision_retrieval_run` without `--run-hosted` for preparation
+only; the explicit flag authorizes metered execution through the shared ledger.
+OpenRouter credentials prefer local `.env`, falling back to `.env.remote-hosts`.
+[Langfuse](LANGFUSE.md) uses local keys and preserves reported tokens/costs over
+estimates. No public extraction API invokes these models.

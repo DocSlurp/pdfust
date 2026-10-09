@@ -48,19 +48,29 @@ DEFAULT_MODELS = (
     "qwen/qwen3.5-9b",
     "anthropic/claude-opus-4.6",
 )
+EMBEDDING_MODELS = (
+    "google/gemini-embedding-2",
+    "voyageai/voyage-multimodal-3.5",
+    "nvidia/llama-nemotron-embed-vl-1b-v2:free",
+)
 MODELS = (*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS)
+HOSTED_MODELS = (*MODELS, *EMBEDDING_MODELS)
 
 
 def read_key(root: Path) -> str:
     """Read only the configured key without shell evaluation or logging values."""
-    for line in (root / ".env.remote-hosts").read_text().splitlines():
-        if "=" not in line or line.lstrip().startswith("#"):
+    for filename in (".env", ".env.remote-hosts"):
+        path = root / filename
+        if not path.exists():
             continue
-        key, value = line.split("=", 1)
-        if key.strip().removeprefix("export ") == "OPENROUTER_API_KEY":
-            parts = shlex.split(value, comments=True)
-            if parts:
-                return parts[0]
+        for line in path.read_text().splitlines():
+            if "=" not in line or line.lstrip().startswith("#"):
+                continue
+            key, value = line.split("=", 1)
+            if key.strip().removeprefix("export ") == "OPENROUTER_API_KEY":
+                parts = shlex.split(value, comments=True)
+                if parts and parts[0]:
+                    return parts[0]
     message = "OPENROUTER_API_KEY is not configured locally"
     raise RuntimeError(message)
 
@@ -258,6 +268,12 @@ class DecisionClient:
         self.ledger = self.directory / "ledger.json"
         self.key = read_key(root)
 
+    def _telemetry(self, body: dict[str, Any], result: dict[str, Any], entry: dict[str, Any]) -> dict[str, Any]:
+        """Export optional sanitized telemetry without repeating inference."""
+        from bench.decision_langfuse import emit_request  # noqa: PLC0415 - avoid catalog import cycle.
+
+        return emit_request(self.root, body, result, entry)
+
     def _prior_api_cost(self) -> float:
         old = self.root / "bench/results/structure-artifacts/hosted-ledger.json"
         return sum(accounted_cost(row["accounted_usd"]) for row in json.loads(old.read_text())["requests"])
@@ -267,8 +283,12 @@ class DecisionClient:
         encoded = json.dumps(body, separators=(",", ":")).encode()
         if (
             len(encoded) > MAX_BODY_BYTES
-            or body["model"] not in MODELS
+            or body["model"] not in HOSTED_MODELS
             or (body["model"] in DECISION_MODELS and len(body["questions"]) > MAX_QUESTIONS)
+            or (
+                body["model"] in EMBEDDING_MODELS
+                and (not isinstance(body.get("input"), list) or not 1 <= len(body["input"]) <= MAX_QUESTIONS)
+            )
         ):
             message = "request exceeds the frozen model/input admission"
             raise ValueError(message)
@@ -290,6 +310,9 @@ class DecisionClient:
                 if entry["request_sha256"] == key and entry.get("response_file"):
                     return {
                         "result": json.loads((self.directory / entry["response_file"]).read_text()),
+                        "telemetry": self._telemetry(
+                            body, json.loads((self.directory / entry["response_file"]).read_text()), entry
+                        ),
                         "entry": entry,
                         "replayed": True,
                     }
@@ -306,7 +329,9 @@ class DecisionClient:
                 "requested_model": body["model"],
                 "request_sha256": key,
                 "request_bytes": len(encoded),
-                "case_count": len({name.rsplit("_", 1)[0] for name in body["questions"]})
+                "case_count": len(body["input"])
+                if body["model"] in EMBEDDING_MODELS
+                else len({name.rsplit("_", 1)[0] for name in body["questions"]})
                 if body["model"] in DECISION_MODELS
                 else len(body["response_format"]["json_schema"]["schema"]["properties"]["answers"]["properties"]),
                 "accounted_usd": RESERVATION,
@@ -318,7 +343,13 @@ class DecisionClient:
             checkpoint(self.ledger, ledger)
             request_file = self.directory / f"request-{index:03d}.json"
             request_file.write_bytes(encoded)
-            endpoint = "alpha/decisions" if body["model"] in DECISION_MODELS else "v1/chat/completions"
+            endpoint = (
+                "v1/embeddings"
+                if body["model"] in EMBEDDING_MODELS
+                else "alpha/decisions"
+                if body["model"] in DECISION_MODELS
+                else "v1/chat/completions"
+            )
             request = urllib.request.Request(
                 "https://openrouter.ai/api/" + endpoint,
                 data=encoded,
@@ -351,9 +382,11 @@ class DecisionClient:
                     f"HTTP {error.code}" if isinstance(error, urllib.error.HTTPError) else type(error).__name__
                 )
                 entry["elapsed_ms"] = (time.perf_counter() - start) * 1000
+                entry["telemetry"] = self._telemetry(body, {}, entry)
                 checkpoint(self.ledger, ledger)
                 message = f"hosted call failed ({entry['error']}); reservation retained; no provider error body logged"
                 raise RuntimeError(message) from None
             entry["elapsed_ms"] = (time.perf_counter() - start) * 1000
+            entry["telemetry"] = self._telemetry(body, result, entry)
             checkpoint(self.ledger, ledger)
             return {"result": result, "entry": entry, "replayed": False}

@@ -120,3 +120,5 @@ Audited root file SHA-256 values (source only, no hosted outputs):
 | `bench/decision_context_run.py` | `52311520f82bd9bf10857a9948980528c372c0460c73788eececf8f0e04e00ec` |
 | `bench/decision_retrieval.py` | `45f003a495bd7bf78889c00236928fbd350bbb9d1ff94b20a68bde798af37788` |
 | `bench/decision_retrieval_run.py` | `718ffb58b0c1abb7946ee622e70ab11b0dd0f3bbb93823369e926b2afa64e056` |
+
+Root follow-up: future context runs now capture code identity before calls and include the compact prompt module. This repairs future provenance only; earlier request-body hashes remain the authoritative evidence for those completed DEV runs.

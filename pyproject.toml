@@ -81,6 +81,8 @@ bench-rich = [
     "markdown-it-py>=4.0",
     "mdit-py-plugins>=0.6",
 ]
+# CPU image-evidence and embedding experiments; no GPU runtime required.
+bench-vision = ["pillow>=12.3"]
 # Zensical documentation site. CI uses --only-group docs --no-install-project.
 docs = [
     "zensical>=0.0.51,<0.1",

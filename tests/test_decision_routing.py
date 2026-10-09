@@ -8,14 +8,14 @@ from bench.decision_routing import evaluate_routing
 
 
 def fixture() -> tuple[list[dict], list[dict], list[dict]]:
-    cases = [
+    cases: list[dict] = [
         {"id": "cal", "task": "header", "split": "calibration", "gold": True},
         {"id": "unknown", "task": "header", "split": "calibration", "gold": None},
         {"id": "test", "task": "header", "split": "test", "gold": False},
         {"id": "test-unknown", "task": "header", "split": "test", "gold": None},
     ]
-    predictions = []
-    ledger = []
+    predictions: list[dict] = []
+    ledger: list[dict] = []
     for model, latency in [("a", 20), ("b", 10)]:
         for case in cases:
             index = len(ledger)

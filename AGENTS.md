@@ -13,14 +13,15 @@ overview.
 
 ## Working conventions
 
-- This workspace is private `pdf-master` development. The only configured remote
-  is `private`, targeting `justsml/pdf-master`, verified private on 2026-10-08.
-  Public `origin` and `fork` remotes were disconnected at the user's instruction.
-- Do not push, open public pull requests, publish packages, or upload development
-  artifacts until the user says the work is ready. Keep changes and commits local.
-  A local pre-push hook blocks all pushes during this hold. Do not bypass it.
-  GitHub Actions are disabled on the empty private repository during this hold.
-  Previously published history remains public; disconnection does not retract it.
+- This workspace is private `pdf-master` development. Remotes `origin` and
+  `private` target `justsml/pdf-master`, verified private on 2026-10-08.
+  Public upstream/fork remotes remain disconnected.
+- The user explicitly authorized pushing the completed work to private
+  `origin/main` on 2026-10-08. Keep future pushes within the user's requested
+  scope. Do not open public pull requests, publish packages, or upload raw
+  development artifacts. The local pre-push hook permits only this private
+  repository's main branch and verifies private visibility; do not bypass it.
+  GitHub Actions remain disabled. Previously published history remains public.
 - Keep the existing pylopdf import/package identity and license notices while
   evaluating the working name `pdf-master`; packaging migration is separate work.
 - The user authorizes parallel research/experiment agents using `gpt-6.1-sol`

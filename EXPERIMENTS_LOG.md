@@ -1,7 +1,8 @@
 # PDF-master experiment decision record
 
-This is the versioned experiment index and current evaluation contract. All work
-is local; the publication hold and no-local-GPU requirement remain active.
+This is the versioned experiment index and current evaluation contract. The user explicitly authorized pushing the completed work to private
+`justsml/pdf-master` on2026-10-08. Public publication remains prohibited; the
+no-local-GPU requirement remains active.
 Financial reports, invoices/forms and scientific documents have equal priority.
 Actual reconstruction quality, latency, bytes and cost lead model selection.
 Confidence is an optional routing signal, not a prerequisite for useful decisions.
@@ -87,3 +88,80 @@ A hypothesis can be rejected or remain unresolved; those outcomes are retained.
 | 2026-10-08 | Use actual output quality as primary model criterion | User steering; Luna/Perplexity gains despite uncertain confidence |
 | 2026-10-08 | Reclassify exposed legacy partitions as DEV | Eval-expert audit; no future tuning may access fresh confirmation data |
 | 2026-10-08 | Preserve all council alternatives distinctly | Council-of-Dans contract; user authorizes subsequent experiments |
+
+## Active evidence-repair and retrieval wave
+
+- M004: isolated Luna and Perplexity worktrees; 30 DEV controls (ten correlated
+  templates × three vocabularies) compare current/prior/context/native facts,
+  raw versus observed-history summaries, complete assembly Choice and candidate
+  order. Initial CPU native baseline reaches all 30: model lanes test evidence
+  transport and do not establish an improvement over that native baseline.
+- M005: standalone Rust connected color regions, variable RGB/luminance thresholds,
+  4/8 connectivity, white interiors and vector grouping; CPU timing includes
+  rasterization separately. Experiment only, no public API/default changes.
+- E001: separate page-image embedding retrieval experiment requested by user.
+  Search for expressions spanning lines; compare full-page and cropped imagery
+  with normalized native text against near-wording, reverse-order and cross-cell
+  distractors. Embedding similarity is retrieval evidence, not proof of a phrase
+  or recovered cell ownership. OpenRouter catalog lists Gemini Embedding 2,
+  Voyage multimodal 3.5 and Nemotron VL. Same persistent ledger/$15 cap applies.
+
+First hosted evidence wave freezes two models (Luna, Perplexity), four context
+projections, 64/128/256/512-pixel crop ladder with 128px blur and blank controls,
+maximum 600 new requests and $1 incremental accounted spend, including retained
+failed-call reservations. Start with current/native and 128px on the same 30,
+then target remaining ablations at observed DEV failures. No clean confirmation
+exists: these are controlled development regressions. The eval-expert optimization
+phase's protected-holdout prerequisites are not met; no production candidate will
+be qualified from this wave. Keep any subsequent prompt changes as new cohorts.
+
+### M004 round-one update and next admission
+
+Initial complete-assembly JSON: Luna12/30 with native facts, Perplexity20/30;
+128px crops12/30 and15/30 respectively. Current words/geometry12/30 and13/30.
+Neither improves on30/30native CPU controls. Luna almost always chooses A:
+round2 tests literal compact join/split criteria and separately derived geometry
+facts, preserving scorer/gold/candidates. This is a representation hypothesis,
+not a confidence adjustment. Expand the wave request-count guard from600to1000
+to include paired compact ablations and the subsequently requested separate
+embedding experiment; incremental accounted spending stays capped at$1 and
+the cumulative authorization at$15. All trials and failures remain retained.
+
+Langfuse integration is explicitly authorized by the user. Prefer provider-reported
+usage/cost including zero. Catalog prices are fallback estimates only; unresolved
+reservations are budget encumbrances, never reported charges. Telemetry contains
+request hashes/shapes and compact outcomes; no credentials or embedded images.
+
+## Completed wave and disposition
+
+| ID | Completed result | Decision |
+|---|---|---|
+| M001/M004 | [Evidence repair](bench/results/evidence-repair.md): constructed/nativecontrol30/30; Perplexity20→23→26/30 with compact/derivedfacts; Luna12→10→7, verbalized14. Sourceconservation holds. | Retain PerplexityderivedDEV candidate; no productionmodel/default or independentvalidationclaim |
+| M002 |64/128/256/512px,blur,blank,raw/historysummary/both; no consistent win over matched native/placebo controls. Imagecache/bytebounds implemented. | No automatic screenshotroute justified |
+| M005 | [Rust color regions](bench/results/color-regions.md): native10/10paintboundaries; rasterpale8/8atthreshold8,0/8at18/36; outlines2/2with4extras | Nativepaintfirst; keep bounded rasterprototype experimental |
+| E001 | [Frozen image retrieval](bench/results/image-embedding-retrieval.md): Voyage512wholepage6/6firsthits;128px3/6. Gemini5/6both. Everyforcedrankerfalse-hits2absentqueries. | Candidatefinding only; do not claim exactphraseproof or recoveredstructure |
+| O001 | [Langfuse](bench/LANGFUSE.md):16pricedmodels registered/readback;2144retainedrequests exported/replayed with zeroerrors; exactprovider tokens/cost verified | Providerreported usage/cost authoritative, catalogfallbackonly |
+| V001 | [Contamination audit](bench/results/evidence-contamination-audit.md):732projectioninvariance checks; no directgold/fixture/privateintent fieldleak | DEVtuning staysDEV; authoredROI/oracleandprovenancedefects explicit |
+| M003 | No independently curated protected confirmation set was used | Do not qualify production or generalization from these runs |
+
+Wave accounting:794newactualrequests, $0.0219335368providerreported; no newfailed
+charges. Cumulative provider/rentalreported $2.0688880668 plus $0.60priorunresolved
+reservations = $2.6688880668conservative accounted of$15. Ledgerindices1350–2143.
+Reportedzeroes remainzero, never replaced by catalogestimates. Logical repeated
+conditions sometimes replay identical successful bodies; their historical latency
+and logical requestcost are not fresh paidcalls.
+
+OpenRouter initially used `.env.remote-hosts`. After the user's added `.env` key,
+new clients prefer `.env` with fallback to `.env.remote-hosts`; the active frozen
+embedding client kept its startupkey. No credential values/hashes were logged.
+Both credential files are ignored. Langfuse prefers `.env` as well.
+
+Final validation:1562passed,16skipped,2expectedfailures; Ruffwholeworkspace and
+mypy source/tests plus new runners/adapters pass. All inference was hosted;
+all local preprocessing/tests and the standalone Rust experiment were CPU-only.
+
+The user explicitly released the private pushhold and requested `origin/main`.
+Private visibility was verified before publication. Public upstream/fork remotes
+remain disconnected, GitHubActions remain disabled, and unrelated `mise.toml`
+is excluded. The local pre-push guard is narrowed to the requested private
+repository/main branch, rather than bypassed.

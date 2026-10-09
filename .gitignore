@@ -30,3 +30,6 @@ site/
 
 # Private experiment inputs, full decisions, and timing traces.
 /bench/results/pdf-master-artifacts/
+
+# Local provider and telemetry credentials.
+/.env

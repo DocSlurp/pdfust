@@ -1618,6 +1618,9 @@ bench-rich = [
     { name = "pymupdf4llm" },
     { name = "pypdf" },
 ]
+bench-vision = [
+    { name = "pillow" },
+]
 dev = [
     { name = "maturin" },
     { name = "mypy" },
@@ -1665,6 +1668,7 @@ bench-rich = [
     { name = "pymupdf4llm", specifier = ">=1.28.2" },
     { name = "pypdf", specifier = ">=5" },
 ]
+bench-vision = [{ name = "pillow", specifier = ">=12.3" }]
 dev = [
     { name = "maturin", specifier = ">=1.14.1" },
     { name = "mypy", specifier = ">=1.14" },
