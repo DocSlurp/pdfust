@@ -731,3 +731,25 @@ complete a matched frontier slice sooner. Request bytes, manifest order, referen
 and complete 648-request denominators remain unchanged; execution history records
 the priority. Haiku remains stopped after its HTTP 429. Other unrun arms are
 pending, not discarded or treated as failures of model quality.
+
+### L006 first complete image-factor comparisons
+
+Luna, Clef Flash and Clef each completed all 432 requests (24 logical layouts ×
+18 treatments). PPLX completed eight, then hit HTTP 429; its remaining 423 are
+unattempted. The complete 1,728-body matrix remains in the report.
+
+RGB known scores at 64/128/256/400/500/512 pixels are Luna 7/7/6/8/7/7 out of
+16, Clef Flash 8/8/9/8/8/8, and Clef 7/8/8/8/8/8. Bigger crops did not produce
+monotonic quality gains. RGB/gray/low-bit remain separate treatments at every
+size; do not infer that every format is equivalent. Clef Flash low-bit256 reaches
+12/16, versus RGB256 9/16: three paired ruled-wrap join recoveries, zero losses,
+and still 0/8 unknown abstentions. This is one pass and requires a repeated
+nearby-resolution/quantization control before selecting an optimum. Model/context
+limits and this small authored cohort prevent generalization to arbitrary pages.
+
+[All scores, pages/USD and API pages/min](bench/results/lowlevel-images-focus.md).
+The useful follow-up is a source-frozen 192/224/256/288/320-pixel sweep around the
+Clef Flash result with independent quantization levels and repeated transmissions,
+plus a geometry-first branch. Retain unmodified RGB/gray controls and provider
+cache counters; repetitions alone do not demonstrate cache hits. This follow-up
+is proposed, not executed.
