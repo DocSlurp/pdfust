@@ -201,7 +201,9 @@ def warm_rates(summary: dict[str, Any], hourly_rate: float | None) -> dict[str, 
         "warm_inference_estimated_usd": cost,
         "warm_region_inputs_per_minute": 60 * completed / seconds if seconds is not None and seconds > 0 else None,
         "warm_region_inputs_per_estimated_usd": completed / cost if cost is not None and cost > 0 else None,
-        "cost_scope": "idealized dedicated-GPU warm prediction time; excludes download/load/startup/idle/teardown; not invoice",
+        "cost_scope": (
+            "idealized dedicated-GPU warm prediction time; excludes download/load/startup/idle/teardown; not invoice"
+        ),
     }
 
 
