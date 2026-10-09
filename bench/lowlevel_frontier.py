@@ -331,18 +331,32 @@ def _entries(client: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - root-owned 
     return json.loads(client.ledger.read_bytes())["requests"] if client.ledger.exists() else []
 
 
-def run(directory: Path, *, client: Any = None, max_requests: int | None = None) -> dict[str, Any]:  # noqa: ANN401
+def run(
+    directory: Path,
+    *,
+    client: Any = None,  # noqa: ANN401 - root-owned or mocked transport.
+    max_requests: int | None = None,
+    priority_arms: tuple[str, ...] = (),
+) -> dict[str, Any]:
     """Explicitly execute the frozen frontier wave with no retries or model fallback."""
     manifest = verify(directory)
     if max_requests is not None and (type(max_requests) is not int or max_requests < 1):
         _fail("max_requests must be positive")
+    if len(set(priority_arms)) != len(priority_arms) or any(arm not in ARMS for arm in priority_arms):
+        _fail("priority arms must be distinct existing frozen arms")
     client = DecisionClient() if client is None else client
     with exclusive_lock(client.ledger.parent / "run.lock"):
         manifest = verify(directory)
-        return _run_locked(directory, manifest, client, max_requests)
+        return _run_locked(directory, manifest, client, max_requests, priority_arms)
 
 
-def _run_locked(directory: Path, manifest: dict[str, Any], client: Any, limit: int | None) -> dict[str, Any]:  # noqa: ANN401, C901, PLR0912
+def _run_locked(  # noqa: C901, PLR0912
+    directory: Path,
+    manifest: dict[str, Any],
+    client: Any,  # noqa: ANN401 - root-owned or mocked transport.
+    limit: int | None,
+    priority_arms: tuple[str, ...] = (),
+) -> dict[str, Any]:
     path = _path(directory, "results.json")
     manifest_hash = _hash(_path(directory, "manifest.json").read_bytes())
     results: dict[str, Any] = (
@@ -372,7 +386,9 @@ def _run_locked(directory: Path, manifest: dict[str, Any], client: Any, limit: i
     attempted = 0
     budget_exhausted = slice_limited = False
     start, cpu = time.perf_counter(), time.process_time()
-    for record in manifest["records"]:
+    priorities = {arm: index for index, arm in enumerate(priority_arms)}
+    scheduled = sorted(manifest["records"], key=lambda record: priorities.get(record["arm"], len(priorities)))
+    for record in scheduled:
         digest = record["sha256"]
         if digest in completed:
             continue
@@ -452,6 +468,7 @@ def _run_locked(directory: Path, manifest: dict[str, Any], client: Any, limit: i
         "cpu_seconds": time.process_time() - cpu,
         "peak_rss_bytes": rss_bytes(),
         "attempted_requests": attempted,
+        "priority_arms": list(priority_arms),
     }
     results["execution_history"].append(resources)
     history = results["execution_history"]
@@ -490,6 +507,7 @@ def main() -> None:
     parser.add_argument("--run-hosted", action="store_true")
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--max-requests", type=int)
+    parser.add_argument("--priority-arm", action="append", choices=ARMS, default=[])
     args = parser.parse_args()
     if args.prepare:
         if args.parent is None:
@@ -505,7 +523,7 @@ def main() -> None:
             )
         )
     if args.run_hosted:
-        run(args.directory, max_requests=args.max_requests)
+        run(args.directory, max_requests=args.max_requests, priority_arms=tuple(args.priority_arm))
     if args.report or not (args.prepare or args.run_hosted):
         reporter = importlib.import_module("bench.lowlevel_run")
         print(json.dumps(reporter.report(args.directory)["cohorts"], indent=2))

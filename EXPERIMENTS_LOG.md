@@ -711,3 +711,23 @@ artifact reader before making any provider call. Ledger admission is now an
 explicit 64MiB boundary, independent of small request/response limits. OCR/natural
 runners use the same adequate ledger admission. No historical accounting was
 removed to fit the smaller limit.
+
+### L012 supported text representations and L003 scheduling
+
+L012 freezes all 24 original source observations with minimal/words text for the
+two Laya aliases: 96 configurations, 64 distinct bodies. This explicitly declared
+compatibility subset keeps exact L009 bodies and replays existing successful
+responses locally. It does not delete canonical failures, clear old stops or retry
+failed bodies. Report L009/L010 complete-inventory failures alongside L012 results;
+accepted representations remain worth exploring. No unsupported inference about
+the cause of HTTP 422 follows from the subset.
+
+A bounded HTTP diagnostic now retains only fixed error types, known field paths
+and numeric Retry-After seconds. Raw error messages and reflected input remain
+excluded. Earlier failures cannot retroactively gain diagnostics.
+
+L003 execution now prioritizes the already frozen crop512 arm, then words, to
+complete a matched frontier slice sooner. Request bytes, manifest order, references
+and complete 648-request denominators remain unchanged; execution history records
+the priority. Haiku remains stopped after its HTTP 429. Other unrun arms are
+pending, not discarded or treated as failures of model quality.

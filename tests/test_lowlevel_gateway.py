@@ -66,3 +66,21 @@ def test_gateway_image_translation_preserves_literal_evidence(parent: Path) -> N
             assert gateway["images"] == [
                 part["image_url"]["url"] for part in original["state"] if isinstance(part, dict)
             ]
+
+
+def test_supported_text_cohort_preserves_original_bodies(parent: Path, tmp_path: Path) -> None:
+    catalog = tmp_path / "gateway.json"
+    catalog.write_text(json.dumps({"prices": {m: {"input": 0, "output": 0} for m in MODELS}}))
+    directory = tmp_path / "supported"
+    manifest = prepare(parent, directory, catalog, kind="text-supported")
+    assert manifest["experiment"] == "L012"
+    assert verify(directory) == manifest
+    assert manifest["models"] == list(MODELS[:2])
+    assert manifest["arms"] == ["minimal-resolved", "words-resolved"]
+    assert len(manifest["records"]) == 4 * len(manifest["pages"])
+    for record in manifest["records"]:
+        page = next(row for row in manifest["pages"] if row["id"] == record["page_ids"][0])
+        observed = json.loads((directory / page["observation_file"]).read_text())
+        assert json.loads((directory / record["request"]).read_text()) == request(
+            [observed], record["model"], record["arm"]
+        )

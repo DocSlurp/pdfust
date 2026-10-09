@@ -81,3 +81,13 @@ identical-body retry. It contains 216 records / 144 distinct bodies. The initial
 each Laya alias on compact-canonical inputs. This rejects serialization alone as
 a compatibility fix; the underlying failure remains under investigation. No
 failed body, original response, or reservation was removed.
+
+## L012 supported-format cohort
+
+Retain the complete L009/L010 failures and separately run exact original
+minimal/words bodies for both Laya aliases across every source observation.
+Existing successful requests may replay locally; new calls use L012/shared
+accounting. This compatibility subset is 96 configurations / 64 bodies, not a
+replacement score for the original three-arm matrix. The compact-format cause
+remains unconfirmed; [diagnostic findings](results/lowlevel-laya-diagnostics.md)
+and a source-equivalent expanded control guide the next test.

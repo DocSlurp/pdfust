@@ -21,6 +21,21 @@ TEXT_ARMS = ("minimal-resolved", "words-resolved", "canonical-compact")
 D1 = "liquid/d1"
 TEXT_CAP = 7500
 BODY_CAP = 200000
+SUPPORTED_ARMS = ("minimal-resolved", "words-resolved")
+
+
+def inventory(kind: str) -> tuple[tuple[str, ...], tuple[str, ...], str]:
+    """Keep each predeclared compatibility cohort distinct from the failed matrices."""
+    if kind == "text-supported":
+        return MODELS[:2], SUPPORTED_ARMS, "L012"
+    if kind == "text-serialized":
+        return MODELS, tuple(arm + "-serialized" for arm in TEXT_ARMS), "L010"
+    if kind == "text":
+        return MODELS, TEXT_ARMS, "L009"
+    if kind == "vision":
+        return (D1,), image_arms(), "L009"
+    message = "Unknown Gateway control kind"
+    raise ValueError(message)
 
 
 def image_arms() -> tuple[str, ...]:
@@ -77,18 +92,9 @@ def request(observations: list[dict[str, Any]], model: str, arm: str) -> dict[st
 
 def prepare(parent: Path, directory: Path, catalog: Path, *, kind: str = "text") -> dict[str, Any]:
     """Freeze complete source-based requests before copying scorer-only references."""
-    if kind not in ("text", "text-serialized", "vision"):
-        message = "Unknown Gateway control kind"
-        raise ValueError(message)
     started, cpu = time.perf_counter(), time.process_time()
     parent, original, observations = sources(parent)
-    models, arms = (
-        (MODELS, tuple(arm + "-serialized" for arm in TEXT_ARMS))
-        if kind == "text-serialized"
-        else (MODELS, TEXT_ARMS)
-        if kind == "text"
-        else ((D1,), image_arms())
-    )
+    models, arms, experiment = inventory(kind)
     bodies = [
         (page["id"], model, arm, request([observations[page["id"]]], model, arm))
         for page in original["pages"]
@@ -118,7 +124,7 @@ def prepare(parent: Path, directory: Path, catalog: Path, *, kind: str = "text")
     random.Random(17449).shuffle(records)  # noqa: S311 - reproducible experimental schedule.
     manifest = {
         "schema": 1,
-        "experiment": "L010" if kind == "text-serialized" else "L009",
+        "experiment": experiment,
         "gateway": "vercel",
         "kind": kind,
         "models": list(models),
@@ -148,19 +154,13 @@ def verify(directory: Path) -> dict[str, Any]:
     """Verify exact Gateway translation, complete inventory, lineage and catalog."""
     manifest = json.loads(_file(guard_path(directory), "manifest.json").read_bytes())
     kind = manifest.get("kind")
-    if kind not in ("text", "text-serialized", "vision") or manifest.get("gateway") != "vercel":
+    if not isinstance(kind, str) or manifest.get("gateway") != "vercel":
         message = "Invalid Gateway freeze policy"
         raise ValueError(message)
-    models, arms = (
-        (MODELS, tuple(arm + "-serialized" for arm in TEXT_ARMS))
-        if kind == "text-serialized"
-        else (MODELS, TEXT_ARMS)
-        if kind == "text"
-        else ((D1,), image_arms())
-    )
+    models, arms, experiment = inventory(kind)
     return verify_control(
         directory,
-        experiment="L010" if kind == "text-serialized" else "L009",
+        experiment=experiment,
         models=models,
         arms=arms,
         builder=request,
@@ -174,7 +174,7 @@ def main() -> None:
     parser.add_argument("--parent", type=Path, required=True)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--catalog", type=Path, required=True)
-    parser.add_argument("--kind", choices=("text", "text-serialized", "vision"), default="text")
+    parser.add_argument("--kind", choices=("text", "text-serialized", "text-supported", "vision"), default="text")
     args = parser.parse_args()
     manifest = prepare(args.parent, args.directory, args.catalog, kind=args.kind)
     verify(args.directory)

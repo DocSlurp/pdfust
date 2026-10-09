@@ -256,6 +256,19 @@ def test_root_run_slice_retains_raw_chat_without_probabilities(parent: Path, tmp
     assert len(second["execution_history"]) == 2
 
 
+def test_priority_changes_only_execution_order(parent: Path, tmp_path: Path) -> None:
+    directory = tmp_path / "priority"
+    manifest = prepare(parent, directory, price_source=parent / "prices.json")
+    original = (directory / "manifest.json").read_bytes()
+    client = MockClient(tmp_path / "ledger")
+    result = run(directory, client=client, max_requests=1, priority_arms=("crop512",))
+    record = next(row for row in manifest["records"] if row["arm"] == "crop512")
+    assert client.calls == [json.loads((directory / record["request"]).read_bytes())]
+    assert (directory / "manifest.json").read_bytes() == original
+    assert result["execution_history"][-1]["priority_arms"] == ["crop512"]
+    assert result["planned_requests"] == 648
+
+
 def test_first_model_failure_stops_without_retry(parent: Path, tmp_path: Path) -> None:
     directory = tmp_path / "frontier"
     manifest = prepare(parent, directory, price_source=parent / "prices.json")

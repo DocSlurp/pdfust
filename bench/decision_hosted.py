@@ -444,6 +444,10 @@ class DecisionClient:
                 entry["error"] = (
                     f"HTTP {error.code}" if isinstance(error, urllib.error.HTTPError) else type(error).__name__
                 )
+                if isinstance(error, urllib.error.HTTPError):
+                    from bench.decision_gateway import safe_http_error  # noqa: PLC0415 - shared diagnostic allowlist.
+
+                    entry["http_error_diagnostic"] = safe_http_error(error)
                 entry["elapsed_ms"] = (time.perf_counter() - start) * 1000
                 entry["telemetry"] = self._telemetry(body, {}, entry)
                 checkpoint(self.ledger, ledger)

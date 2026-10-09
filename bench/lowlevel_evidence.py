@@ -382,7 +382,7 @@ def verify(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - all froz
     """Verify every frozen input and reconstruct each body from source observations."""
     directory = guard_path(directory)
     manifest = json.loads((directory / "manifest.json").read_bytes())
-    if manifest.get("experiment") in {"L009", "L010"}:
+    if manifest.get("experiment") in {"L009", "L010", "L012"}:
         from bench.lowlevel_gateway import verify as verify_gateway  # noqa: PLC0415
 
         return verify_gateway(directory)
