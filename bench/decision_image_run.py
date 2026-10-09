@@ -452,7 +452,11 @@ def summarize(manifest: dict[str, Any], report: dict[str, Any]) -> dict[str, Any
         if "entry" in row:
             unique[row["entry"]["index"]] = row
     costs = [
-        request_cost(row["entry"], row.get("usage", {}), manifest["prices"].get(row["model"], {}))
+        request_cost(
+            row["entry"],
+            row.get("usage", {}),
+            row["entry"].get("catalog_rates") or manifest["prices"].get(row["model"], {}),
+        )
         for row in unique.values()
     ]
     summary = []
@@ -538,6 +542,11 @@ def write_report(directory: Path, path: Path) -> dict[str, Any]:
     manifest = json.loads((directory / "manifest.json").read_text())
     report = json.loads((directory / "results.json").read_text())
     summary = summarize(manifest, report)
+    if "declared_axes" in manifest:
+        from bench.image_axes_report import markdown, snapshot  # noqa: PLC0415
+
+        path.write_text(markdown([snapshot(directory)]))
+        return summary
     lines = [
         "# DEV image resolution matrix",
         "",
