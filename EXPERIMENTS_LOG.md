@@ -422,3 +422,48 @@ Validation: full suite 2,027 passed, 16 skipped, two expected failures, followed
 by 40 focused passes covering subsequent changes. Final Ruff and mypy pass.
 The final [wave report](bench/results/tuning-wave-2026-10-09.md) links all successes,
 regressions, scope limitations, CPU/RAM measurements, and future combinations.
+
+### 2026-10-09 — A055 matched Anthropic 5.5 baselines
+
+User requested current Anthropic baselines, including newly released Haiku 5.5.
+Verified all three exact OpenRouter IDs against the live catalog and official
+release/migration documentation; registered their Langfuse models/prices without
+conflicts. Frozen 84 requests before loading scorer targets, using the identical
+reviewed DEV28 sources, image512 bytes, candidate menus and semantic instructions
+as the T005 extent union. Manifest SHA256:
+`f2847cfbb929d0c114c2ecc606287f3059331b0dda08772c0186becad2351ed7`.
+
+All models use explicit medium effort, a 4,096-token output cap and strict
+`answers.q0.choice` JSON. Sonnet's default is high, so this medium setting is
+explicit rather than described as default/maximum capability. Chat transport is
+the only source-evidence change. Four ambiguous pages remain unscored; heldout and
+TRAINING references are untouched. Full setup and reproduction:
+[Anthropic baselines](bench/ANTHROPIC_BASELINES.md).
+
+New wave cap USD 5 with USD 1.25 per-request reservations; every frozen body must
+fit a conservative encoded-byte/output-token cost bound at the provider price
+ceilings before any transmission. Existing generic requests retain their USD 0.30
+reserve. Cumulative user cap stays USD 15; internal campaign cap increases from
+USD 8 to USD 10 for this new work. Historical charges/reservations are unchanged.
+
+A055 completed all **84/84 requests** without errors, retries or budget stops.
+At explicit medium effort, Opus 5.5 recovered 15/16 exact tables and abstained on
+one; Sonnet 5.5 and Haiku 5.5 recovered 16/16. All three had zero incorrectly
+accepted scored tables and 0/8 prose false tables. Ambiguous pages remain unscored.
+PPLX's matched retained 16/16 result ties Sonnet/Haiku and recovers one more table
+than Opus, with substantially lower observed API cost. This single authored DEV
+run does not establish general superiority or unrestricted extraction quality.
+
+Reported charges: Opus USD 2.037944, Sonnet USD 0.992892, Haiku USD 0.0534666;
+total **USD 3.0843026**. All charges were positive provider-reported values. Each
+model processed 493,021 input tokens; no prompt crossed Haiku's pricing threshold
+and no completion reached the cap. All 84 provider cache counters report zero
+cache-read tokens. Langfuse indexed generation/model/cost verification succeeded
+for all three models. Conservative cumulative accounting is **USD 9.3899227568
+of USD 15**, including USD 1.50 earlier unresolved reservations.
+
+Local execution: 383.07 s wall, 26.50 s process CPU, 108.96 MiB peak RSS; provider
+HTTP time summed to 352.51 s. Remote CPU/RAM are unmeasured. Final validation:
+2,049 passed, 16 skipped, two expected failures; Ruff and mypy pass.
+[Baseline details](bench/results/anthropic-baseline.md) and
+[matched configuration comparison](bench/results/anthropic-matched-comparison.md).

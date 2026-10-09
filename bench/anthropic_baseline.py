@@ -23,7 +23,7 @@ TAG_PREFIX = "A055-baseline/"
 WAVE_LIMIT = 5.0
 RESERVATION = 1.25
 MAX_BODY_BYTES = 750_000
-REQUEST_SETTINGS = {
+REQUEST_SETTINGS: dict[str, Any] = {
     "reasoning": {"effort": "medium"},
     "max_tokens": 4096,
     "provider": {
@@ -42,6 +42,7 @@ def translate(body: dict[str, Any], model: str) -> dict[str, Any]:
     if question["type"] != "choice":
         raise ValueError("Matched baseline requires an original Choice menu")
     state = body["state"]
+    content: str | list[dict[str, Any]]
     if isinstance(state, list):
         content = [{"type": "text", "text": item} if isinstance(item, str) else item for item in state]
     elif isinstance(state, str):
