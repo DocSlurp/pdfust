@@ -585,7 +585,7 @@ def report(directory: Path) -> dict[str, Any]:
         ]
     )
     lines.extend(
-        ["Native word baseline:", "", "| Family | Known exact/all | Ambiguous abstain/all |", "|---|---:|---:|"]
+        ["Native word/physical-line proxy:", "", "| Family | Known exact/all | Ambiguous abstain/all |", "|---|---:|---:|"]
     )
     for family in sorted({row["family"] for row in evaluation["native_baseline"]}):
         rows = [row for row in evaluation["native_baseline"] if row["family"] == family]
