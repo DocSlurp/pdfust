@@ -1,5 +1,15 @@
 # A003 fresh DEV row topology check
 
+**Validity notice, 2026-10-09:** This is the historical, cue-bearing v1 cohort.
+Its admission scores are quarantined. The visible instructions disclose the
+intended class, and removing them leaves the eight negative pages as ambiguous
+aligned label/value fragments. Their zero-table references are not justified by
+the remaining source. Keep the original bytes and measurements for provenance;
+do not cite their binary admission rates as semantic quality. Positive-only
+candidate coverage still describes those authored geometries. The corrected
+v2 construction and limitations are documented in
+[the realism review](silver-realism-review.md).
+
 The generator was committed as `e77cbde` before extraction. Fixed seed 813207
 produces 24 new PDFs: 16 borderless tables and eight paired narrative pages.
 Total physical records vary across 2/3/6/8 rows and 2/3/5 columns, with 8/10/14 pt

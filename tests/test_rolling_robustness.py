@@ -12,7 +12,7 @@ def test_generated_sources_are_deterministic_and_cover_predeclared_topologies() 
     cases = generate_cases()
     repeated = generate_cases()
     assert [sha(c["pdf"]) for c in cases] == [sha(c["pdf"]) for c in repeated]
-    assert Counter(c["target"]["kind"] for c in cases) == {"borderless": 16, "prose": 8}
+    assert Counter(c["target"]["kind"] for c in cases) == {"borderless": 16, "prose": 8, "ambiguous": 4}
     targets = [c["target"] for c in cases if c["target"]["kind"] == "borderless"]
     assert {t["row_count"] for t in targets} == set(DESIGN["total_rows"])
     assert {t["columns"] for t in targets} == set(DESIGN["columns"])
