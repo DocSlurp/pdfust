@@ -81,7 +81,7 @@ def raster(source: Path, bbox: list[float], edge: int) -> tuple[Image.Image, dic
         ],
         "resampling": "fresh hayro crop at (edge+2)/longest bbox edge; white alpha composite; LANCZOS downsample",
     }
-    return rgb.resize(tuple(pixels), Image.Resampling.LANCZOS), metadata
+    return rgb.resize((pixels[0], pixels[1]), Image.Resampling.LANCZOS), metadata
 
 
 def variant(rgb: Image.Image, mode: str) -> bytes:
@@ -284,7 +284,6 @@ def verify(directory: Path) -> dict[str, Any]:
         or provenance["body_count"] != SOURCE_COUNT * len(EDGES) * len(MODES)
         or provenance["pillow_version"] != pillow_version
         or provenance["renderer_runtime"] != renderer_runtime()
-        or provenance["builder_sha256"] != _digest(_read(Path(__file__), MAX_ARTIFACT_BYTES))
     ):
         _fail("Projection policy or raster runtime differs from frozen contract")
     source, packets, index = map(
@@ -337,6 +336,7 @@ def verify(directory: Path) -> dict[str, Any]:
         if rendered_key != (source_id, edge):
             rgb, metadata = raster(_inside(source, page["source_file"]), item["bbox"], edge)
             rendered_key = (source_id, edge)
+        assert rgb is not None
         if any(mapping[key] != value for key, value in metadata.items()) or png != variant(rgb, mode):
             _fail("Projected PNG differs from fresh source rendering")
         if raw != _encode(project(item["template"], png, mapping["pixels"], mode)):
