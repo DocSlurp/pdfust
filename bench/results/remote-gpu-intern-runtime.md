@@ -17,12 +17,12 @@ Fast original-host and old-FLA cohorts agree on every choice: each scores 12/16 
 
 | Runtime | Initialization wall/CPU s | Worker wall/CPU s | Peak RSS GiB | CUDA allocated/reserved GiB |
 |---|---:|---:|---:|---:|
-| intern-l015 | 6.500/7.262 | 954.747/975.299 | 8.836 | 8.719/8.961 |
-| intern-new-runtime-l015 | 11.146/12.036 | 31.468/54.011 | 8.868 | 8.681/8.857 |
-| intern-fast-host-l015 | 8.864/9.645 | 26.646/43.848 | 8.874 | 8.681/8.857 |
-| intern-fla-l015 | 8.683/9.238 | 963.148/978.423 | 8.907 | 8.659/9.152 |
-| intern-causal-l015 | 8.380/9.137 | 903.779/923.329 | 8.880 | 8.659/8.836 |
-| intern-tf517-continuation | 8.334/9.100 | 26.527/27.562 | 8.864 | 8.659/8.768 |
+| intern-l015 | 6.500/7.262 | 954.747/975.299 | 8.836 | 8.782/8.961 |
+| intern-new-runtime-l015 | 11.146/12.036 | 31.468/54.011 | 8.868 | 8.725/8.857 |
+| intern-fast-host-l015 | 8.864/9.645 | 26.646/43.848 | 8.874 | 8.725/8.857 |
+| intern-fla-l015 | 8.683/9.238 | 963.148/978.423 | 8.907 | 8.903/9.152 |
+| intern-causal-l015 | 8.380/9.137 | 903.779/923.329 | 8.880 | 8.703/8.836 |
+| intern-tf517-continuation | 8.334/9.100 | 26.527/27.562 | 8.864 | 8.665/8.768 |
 
 The Transformers-only run retains two phases. Phase 1 reached its 900 s hard deadline: 211 completed, one started-but-uncompleted ID `p0211`, supervisor wall 900.390 s; completed inference 886.915 s/CPU 905.998 s, initialization 8.240 s/CPU 8.953 s. Phase 2 completed the five missing successful IDs `p0211`–`p0215`, with inference 18.158 s/CPU 18.453 s and a separate 26.527 s worker lifecycle. Its five successful IDs are disjoint from phase 1’s 211 successes; both phase outputs independently pass original source/hash verification. The original interrupted start remains retained. The combined 905.073 s inference sum excludes time spent in that interrupted attempt, so it is not total execution cost. Phase 1 final worker CPU/RSS is unavailable; completed-attempt peaks remain in retained JSON. Two starts/initializations and separate lifecycles must not be collapsed into a single uninterrupted benchmark.
 
@@ -30,6 +30,6 @@ Retained environment snapshots report old Torch 2.9.1+cu128/Transformers 5.14.1 
 
 Instrumented warm single-call cProfile diagnostics: old 2.029316 s wall/2.073812 s CPU; new 0.091973 s wall/0.135126 s CPU. Old `torch.conv3d` accounts for 1.931 s, about 95% of old wall time. Disabling cuDNN on the old stack gives 1.966680 s wall/2.010555 s CPU, with `torch.conv3d` 1.871 s; this one diagnostic does not show a useful order-of-magnitude improvement. These Python call profiles identify a bottleneck location, not a GPU kernel trace or a controlled single-dependency causal result. Each follows one warm prediction, uses OMP 8, and is not a cohort throughput or quality test.
 
-Inference includes native preprocessing plus prediction; serial summed durations support inputs/min, not full PDF pages/min. CPU covers the worker process/threads; RSS is Linux `getrusage(RUSAGE_SELF).ru_maxrss` lifetime high water including loading. CUDA values are allocator peaks, not total device memory. Device-wide GPU samples are nominally 1 s and separate from allocator counters. No exact lifecycle billing allocation was supplied for this isolation comparison; cost remains unmeasured.
+Inference includes native preprocessing plus prediction; serial summed durations support inputs/min, not full PDF pages/min. CPU covers the worker process/threads; RSS is Linux `getrusage(RUSAGE_SELF).ru_maxrss` lifetime high water including loading. CUDA values are run allocator peaks: the maximum across loading and every completed-attempt counter, not the final status counter or total device memory. Device-wide GPU samples are nominally 1 s and separate from allocator counters. No exact lifecycle billing allocation was supplied for this isolation comparison; cost remains unmeasured.
 
 Local verification/scoring: wall 1.371 s, CPU 1.313 s, peak RSS 41.3 MiB, one CPU process. Retained evaluation: `.scratch/council/lowlevel-eval/intern-runtime-evaluation.json`; reproducible scorer driver: `.scratch/council/lowlevel-eval/intern_runtime_score.py` via root Python/runpy. Runtime outputs: `.scratch/remote-gpu-20261009/r001/results/outputs/`; profiler and frozen environment snapshots: `results/final-host-55084071/outputs/`. No inference was run during this analysis.

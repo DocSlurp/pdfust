@@ -20,7 +20,7 @@ Each cell below shows known-correct/16. Every image arm has 24/24 valid decision
 | lowbit-768 | 11/16 | 11/16 | 12/16 | 9/16 | 10/16 |
 | lowbit-1024 | 11/16 | 12/16 | 12/16 | 9/16 | 9/16 |
 
-Nimble-v3 text-geometry: warm serving estimate **2258 region inputs/USD**; **24/24 valid, 6/16 known-correct, 0/8 ambiguous-abstain**, with no schema or worker failures. Its declared projection removes only image parts from the first 24 RGB512 requests and overrides the transport model; literal source state and questions are preserved exactly. Original image and projected request hashes were verified through separate provenance. Complete visual references can be unrecoverable after image removal, so this is an evidence ablation rather than a matched vision ranking. Nimble-v3 is CC-BY-NC-4.0 and differs from the older Apache-2.0 Nimble release.
+Nimble-v3 text-geometry: warm serving estimate **2258 region inputs/USD**; **24/24 valid, 6/16 known-correct, 0/8 ambiguous-abstain**, with no schema or worker failures. Its declared projection removes only image parts from the first 24 RGB 512 requests and overrides the transport model; literal source state and questions are preserved exactly. Original image and projected request hashes were verified through separate provenance. Complete visual references can be unrecoverable after image removal, so this is an evidence ablation rather than a matched vision ranking. Nimble-v3 is CC-BY-NC-4.0 and differs from the older Apache-2.0 Nimble release.
 
 Compared with the [completed same-source hosted L015 run](lowlevel-images-large.md), these local decision heads do not exactly reproduce hosted choices. Backend arithmetic, prompt assembly and image preprocessing remain separate variables. The local PPLX processor uses its reference 65,536–4,194,304-pixel bounds; the hosted image path is not assumed identical.
 
@@ -30,7 +30,7 @@ Compared with the [completed same-source hosted L015 run](lowlevel-images-large.
 | PPLX 27B | 99/144 | 109/144 | 204/216 |
 | Clef 27B | 92/144 | 83/144 | 196/216 |
 
-Both hosted and local versions have 0/72 ambiguous abstentions across the nine repeated arms. For example, PPLX RGB512 changes from hosted 12/16 to native 9/16; 768 matches 12/16 and 1024 changes 13/16 to 12/16. No cause has been established.
+Both hosted and local versions have 0/72 ambiguous abstentions across the nine repeated arms. For example, PPLX RGB 512 changes from hosted 12/16 to native 9/16; 768 matches 12/16 and 1024 changes 13/16 to 12/16. No cause has been established.
 
 Warm serving estimates use `region inputs/min × 60 ÷ allocation USD/hour`, including the quoted GPU and disk allocation: Flash/Clef $1.275/h; original Intern and stock Qwens $1.3083333333/h; PPLX/JPT/Nimble/new-runtime Intern $1.375/h. They exclude initialization, downloads, idle time and cleanup, and are **not billed costs or end-to-end pages/USD**. One tested region comes from each authored page, so these are conditional page-region input equivalents, not full PDF pages. In rate cells, the first value is measured inputs/min and the second is estimated warm inputs/USD.
 
@@ -148,7 +148,7 @@ The original Intern run above remains unchanged; the returned FLA-added and newe
 
 ## Intern runtime comparison
 
-The original Intern stack, the FLA-added run on its original host, and the newer stack on the PPLX host each completed 216/216 source-verified inputs with no schema or worker failures. All have 0/72 ambiguous abstentions. FLA-added agrees with the original choice on 215/216 inputs and scores 107/144 known cases; the newer stack agrees on 216/216 and preserves 108/144. Adding FLA alone did not improve measured runtime here. The newer stack changes host, Torch and Transformers together, so its speedup does not isolate the cause. Same-host follow-up remains pending.
+The original Intern stack, the FLA-added run on its original host, and the newer stack on the PPLX host each completed 216/216 source-verified inputs with no schema or worker failures. All have 0/72 ambiguous abstentions. FLA-added agrees with the original choice on 215/216 inputs and scores 107/144 known cases; the newer stack agrees on 216/216 and preserves 108/144. Adding FLA alone did not improve measured runtime here. The newer stack changes host, Torch and Transformers together, so its speedup does not isolate the cause. The completed same-host fast-stack follow-up retains 216/216 categorical choices from the FLA-added cohort and reduces summed inference from 951.607 s to 16.651 s. See the [runtime-isolation report](remote-gpu-intern-runtime.md); the same-host fast stack still changes several dependencies together.
 
 | Arm | FLA-added known / 16 | FLA-added inputs/min | FLA-added est. warm inputs/USD | New-stack known / 16 | New-stack inputs/min | New-stack est. warm inputs/USD |
 |---|---:|---:|---:|---:|---:|---:|

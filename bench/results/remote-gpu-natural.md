@@ -1,8 +1,8 @@
 # Native natural DEV comparison
 
-single source-aware provisional review;24 overlapping regions from one Senate page
+single source-aware provisional review; 24 overlapping regions from one Senate page
 
-Original96 L011 request bodies and PNGs are unchanged. Source preparation read no references; all staged/returned hashes were verified before references were opened locally. Full-source reference agreement and admitted-scope agreement are separate measurements.
+Original 96 L011 request bodies and PNGs are unchanged. Source preparation read no references; all staged/returned hashes were verified before references were opened locally. Full-source reference agreement and admitted-scope agreement are separate measurements.
 
 | Model | Arm | Valid/planned | Full-source matches | Scope matches | Abstentions | Inference s | CPU s | RSS MiB |
 |---|---|---:|---:|---:|---:|---:|---:|---:|

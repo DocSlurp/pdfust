@@ -1,6 +1,6 @@
 # Remote GPU prompt screen
 
-Four generic prompt variants were frozen before inference. Each retains the original RGB512 image and literal source state. All source, projection and returned request hashes were verified before local DEV references were opened. No case-specific wording was tuned.
+Four generic prompt variants were frozen before inference. Each retains the original RGB 512 image and literal source state. All source, projection and returned request hashes were verified before local DEV references were opened. No case-specific wording was tuned.
 
 | Model / prompt | Valid/planned | Known correct | Ambiguous abstention | Known abstentions | Partition exact | Conserved | Inference s | CPU s | Peak RSS MiB |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|

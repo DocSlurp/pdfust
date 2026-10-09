@@ -1,0 +1,13 @@
+# R001 final CPU audit
+
+Reviewed the merged README, canonical `EXPERIMENTS_LOG.md`, R001 result summaries and retained worker statuses. No inference, credentials or protected data were accessed.
+
+Corrected the stale “same-host follow-up remains pending” statement in `remote-gpu-r001.md`: the completed fast original-host control preserves all 216 old-FLA categorical choices and reduces summed inference from 951.607 s to 16.651 s. The runtime report now uses actual run CUDA allocator maxima across loading and completed attempts, instead of final reset counters; all six displayed rows were checked against the source-verified evaluation JSON. Reserved maxima and quality counts remain unchanged.
+
+Polished missing prose spaces in the authorized prompt, prompt-size, natural and R001 reports while preserving literal code identifiers, links, numeric tables and frozen artifacts. Report regeneration can reintroduce the natural scorer’s old scope-string spacing; generator wording is a separate follow-up.
+
+Flagged the canonical log’s “all five completed” ambiguity-matrix statement to root. Retained v1 statuses show Flash, Clef and PPLX each stopped after three pre-inference refusals with zero successful outputs out of 288 planned; Intern and Qwen each completed 288. These representation failures are not model-quality decisions. The ambiguity report’s generic pending paragraph also needs its owner to distinguish completed v1 outputs/refusals from the separately queued transport-v2 controls. Root and the ambiguity-report owner retain those edits; this audit does not overwrite their active files.
+
+README serial serving rates use cumulative adapter prediction time and supplied-region denominators. Concurrent reports use measured global wall or first-start-to-last-completion span, with startup/imbalance scope stated; overlapping request latencies are not parallel throughput. Warm cost estimates use the quoted allocation rate and exclude provisioning, downloads, idle and teardown. Actual whole-wave billing remains separately labeled pending. Repeated size/color conditions are explicitly distinguished from independent pages and full extraction.
+
+Combined root validation passed `mypy --explicit-package-bases` on all 80 top-level `bench` helpers prefixed `remote_`, `lowlevel_`, `decision_` or `ambiguity_`. CPU-only checks also verified the six corrected CUDA rows against `.scratch/council/lowlevel-eval/intern-runtime-evaluation.json`. This is a snapshot audit while the final separately declared controls are still being collected, not a claim that every R001 wave is complete.
