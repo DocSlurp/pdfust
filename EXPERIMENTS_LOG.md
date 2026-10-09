@@ -1005,8 +1005,11 @@ resolved 8/16 authored known cases with no wrong decisions and abstained on all
 eight ambiguous cases; all natural conditions were abstained. No policy thresholds
 changed after scoring. Its compact evidence omits choices, references and IDs.
 
-All five models completed the new 288-input evidence matrix: geometry, pixel and
-combined numeric cues at RGB 256/500 px with original/identity wording. A 640 px
+The new evidence matrix contains 288 inputs per model: geometry, pixel and
+combined numeric cues at RGB 256/500 px with original/identity wording. The first
+launcher-level status was misread as all five completing. Source-scored audit
+confirmed only Intern and Qwen completed 288 each; Flash, Clef and PPLX each
+stopped after three adapter refusals before model inference. A 640 px
 source-only pixel probe is separately declared preprocessing. All payloads and
 features were reverified before local scoring. One host's initial tar extraction
 started before its transfer finished and failed before inference; extraction was
@@ -1023,3 +1026,31 @@ was stopped, with the failed attempt retained.
 Provider-posted R001 charges reached USD 8.802. Completed-host artifacts are being
 synced before exact-host retirement; the Clef host remains warm for native batching.
 The USD 18 reservation remains separate until final provider reconciliation.
+
+R001 evidence packaging repair: the v1 matrix appended a text segment after the
+image. Cloudflare requires one literal text segment and PPLX disallows text after
+the image, so these transport failures are not model-quality failures. V2 retains
+the exact original state text as a prefix, followed by a newline and the same
+source-only numeric JSON, then the unchanged image. All 288 corrected bodies
+passed the actual native adapters' CPU-only input admission. Feature values,
+questions and image bytes are unchanged, but presentation versions are reported
+separately. Failed v1 outputs remain retained. The coordinator retired the original
+PPLX host before this status audit; a bounded recovery environment on the remaining
+Clef host avoids another rental allocation. Its CPU/network/disk bootstrap began
+at 21:28:57 UTC during the Clef batch sweep, so those timings carry an explicit
+contention caveat. Flash's five batch configurations completed beforehand.
+
+Native replica comparisons completed seven 216-input cohorts with identical
+choices across replica counts within each model. Flash N1/N2/N4 achieved
+518.66/524.55/503.09 region inputs per elapsed minute, despite greater utilization
+and model memory. Intern N1/N2/N4/N8 achieved 376.88/491.67/503.53/466.55.
+Single-copy true batching is tested separately. Its initial control invocation
+used the historical missing-model control manifest and failed before encoding;
+the corrected retained control manifest passed all three semantic checks.
+
+The fixed natural identity transfer completed 96 inputs each for Flash and Clef.
+Flash's scope-known correctness changed 35/52 to 32/52, wrong decisions 13 to 8,
+known abstentions 4 to 12, and insufficient-scope abstention 5/44 to 19/44. Clef
+did not improve ambiguity. Qwen9's separate original-prompt natural cohort
+completed 96 inputs, with 32/52 scope-known correct and 0/44 ambiguity abstention.
+References remain provisional overlapping regions from one page.

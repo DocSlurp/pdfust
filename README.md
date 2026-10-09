@@ -474,6 +474,12 @@ with eight, over actual elapsed time. Known correctness changes from 99/144 to
 97/144 across repeated DEV arms. Those eight clients share one model allocation;
 throughput is not computed from summed overlapping request latency.
 
+The [natural prompt transfer](bench/results/remote-gpu-natural-transfer.md)
+shows a useful but incomplete Flash tradeoff: identity wording improves
+insufficient-evidence abstention from 5/44 to 19/44, while known correctness falls
+from 35/52 to 32/52. The [Qwen9 natural comparison](bench/results/remote-gpu-natural-qwen.md)
+retains its failures and measured concurrent resource use alongside throughput.
+
 Diagnostic small-model cohorts have valid transports but failed semantic shape
 controls; those failures and all runtime repairs remain visible in the reports.
 No experimental hosted or remote-GPU path is enabled by default in extraction.
