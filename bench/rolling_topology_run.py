@@ -167,10 +167,36 @@ def evaluate(  # noqa: PLR0913, PLR0917
                 "pages": len(rows),
                 "diagnostic_only": cohort_index in diagnostic_cohorts,
             }
-    unique = {r["entry"]["index"]: r for r in calls if "entry" in r}
+    selected_ids = {p["id"] for i in cohort_indices for p in manifest["cohorts"][i]["pages"]}
+    unique = {r["entry"]["index"]: r for r in calls if "entry" in r and r["id"] in selected_ids}
+    model_stats = {}
+    for model in manifest["models"]:
+        retained = [r for r in unique.values() if r["model"] == model]
+        complete_cost = all(r["cost"]["effective_usd"] is not None for r in retained)
+        effective = sum(r["cost"]["effective_usd"] for r in retained) if complete_cost else None
+        elapsed = (
+            sum(r["http_elapsed_ms"] for r in retained)
+            if all(r.get("http_elapsed_ms") is not None for r in retained)
+            else None
+        )
+        model_stats[model] = {
+            "requested_pages": len(retained),
+            "successful_requests": sum(r["status"] == "ok" for r in retained),
+            "planned_requests": sum(
+                r["route"] == "hosted_admission" and r["model"] == model and r["id"] in selected_ids
+                for r in manifest["records"]
+            ),
+            "effective_usd": effective,
+            "http_elapsed_ms": elapsed,
+            "requested_pages_per_usd": len(retained) / effective if effective is not None and effective > 0 else None,
+            "requested_pages_per_http_minute": len(retained) * 60000 / elapsed
+            if elapsed is not None and elapsed > 0
+            else None,
+        }
     costs = [r["cost"] for r in unique.values()]
     return {
         "cohorts": cohorts,
+        "model_stats": model_stats,
         "unique_requests": len(unique),
         "effective_usd": sum(c["effective_usd"] for c in costs)
         if all(c["effective_usd"] is not None for c in costs)
@@ -234,6 +260,21 @@ def report(summary: dict[str, Any]) -> str:
         "",
     ]
     lines += [
+        "| Model | Requested / planned pages | Successful requests | Effective USD | Pages/USD | Pages/HTTP minute |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    for model, stats in summary["model_stats"].items():
+        lines.append(
+            f"| {model} | {stats['requested_pages']}/{stats['planned_requests']} | "
+            f"{stats['successful_requests']} | {stats['effective_usd']} | "
+            f"{stats['requested_pages_per_usd']} | {stats['requested_pages_per_http_minute']} |"
+        )
+    lines += [
+        "",
+        (
+            "Rates count paid requested pages; native zero-call pages are excluded. "
+            "HTTP-minute rates use summed request durations, not end-to-end throughput."
+        ),
         f"API HTTP elapsed milliseconds (complete measured sum): {summary['api_http_elapsed_ms']}.",
         f"Local preparation CPU/RSS metadata: {summary.get('preparation', 'not retained')}.",
         "HTTP durations describe provider requests; they do not measure remote CPU/RAM.",
@@ -358,7 +399,18 @@ def main() -> None:
         indices = args.cohorts if args.cohorts is not None else list(range(len(sources)))
         if len(indices) != len(args.targets):
             parser.error("Targets must match selected cohort count")
-        summary = evaluate(manifest, sources, [], indices, args.targets, set(args.diagnostic_cohorts))
+        retained_path = args.directory / "hosted-results.json"
+        retained = json.loads(retained_path.read_bytes()) if retained_path.exists() else {"calls": []}
+        summary = evaluate(manifest, sources, retained["calls"], indices, args.targets, set(args.diagnostic_cohorts))
+        previous_path = args.directory / "evaluation.json"
+        previous = json.loads(previous_path.read_bytes()) if previous_path.exists() else {}
+        summary.update(
+            {k: previous[k] for k in ("catalog_provenance", "stopped_models", "budget_stopped") if k in previous}
+        )
+        summary.update(
+            frozen_manifest_sha256=hashlib.sha256((args.directory / "manifest.json").read_bytes()).hexdigest(),
+            preparation={k: manifest[k] for k in ("wall_seconds", "cpu_seconds", "peak_rss_bytes", "measurement")},
+        )
         args.report.write_text(report(summary))
     print(json.dumps({k: summary[k] for k in ("unique_requests", "effective_usd", "source_conservation")}, indent=2))
 

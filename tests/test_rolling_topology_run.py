@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import bench.rolling_topology_run as runner
 import pytest
 from bench.rolling_topology import configs, propose, union_candidates, union_request
 from bench.rolling_topology_run import MODELS, TAG_PREFIX, evaluate, materialize, run, verify, wave_admission
@@ -170,4 +171,44 @@ def test_failure_stops_model_persistently(tmp_path: Path) -> None:
     assert client.calls == 1
     assert len(result["stopped_models"]) == 1
     run(directory, [targets], client)
+    assert client.calls == 1
+
+
+def test_offline_cli_uses_retained_calls_without_constructing_client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    directory, targets = fixture(tmp_path)
+    client = FakeClient(tmp_path / "ledger")
+    original = run(directory, [targets], client)
+    retained_before = (directory / "hosted-results.json").read_bytes()
+    report_path = tmp_path / "report.md"
+
+    def forbidden_client() -> None:
+        pytest.fail("Offline report must not construct a credential-reading hosted client")
+
+    monkeypatch.setattr(runner, "DecisionClient", forbidden_client)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "rolling_topology_run",
+            "--directory",
+            str(directory),
+            "--cohorts",
+            "0",
+            "--targets",
+            str(targets),
+            "--report",
+            str(report_path),
+        ],
+    )
+    runner.main()
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["unique_requests"] == original["unique_requests"] == 1
+    assert printed["effective_usd"] == original["effective_usd"] == 0.001
+    assert "Unique requests 1;" in report_path.read_text()
+    assert "Pages/USD" in report_path.read_text()
+    assert (directory / "hosted-results.json").read_bytes() == retained_before
+    stats = next(s for s in original["model_stats"].values() if s["requested_pages"])
+    assert stats["requested_pages_per_usd"] == 1000
+    assert stats["requested_pages_per_http_minute"] == 30000
     assert client.calls == 1
