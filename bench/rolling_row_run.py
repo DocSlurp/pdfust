@@ -192,15 +192,16 @@ def render_report(summary: dict[str, Any]) -> str:
         "",
         (
             "| Model / arm | Borderless exact / 12 | Prose false table / 12 | Controls exact / 4 | "
-            "Unresolved borderless / 12 |"
+            "Unresolved borderless / 12 | Unresolved prose / 12 |"
         ),
-        "| --- | ---: | ---: | ---: | ---: |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for key, cohort in summary["cohorts"].items():
         slices = cohort["slices"]
         lines.append(
             f"| {key} | {slices['borderless']['exact_page']}/12 | {slices['prose']['false_positive_page']}/12 | "
-            f"{slices['ruled-control']['exact_page']}/4 | {slices['borderless']['unresolved_or_unmeasured']}/12 |"
+            f"{slices['ruled-control']['exact_page']}/4 | {slices['borderless']['unresolved_or_unmeasured']}/12 | "
+            f"{slices['prose']['unresolved_or_unmeasured']}/12 |"
         )
     lines += [
         "",
@@ -384,7 +385,13 @@ def main() -> None:
             )
         )
     elif args.targets:
-        summary = evaluate(args.directory, args.targets, [])
+        retained_path = args.directory / "hosted-results.json"
+        calls = json.loads(retained_path.read_text())["calls"] if retained_path.exists() else []
+        summary = evaluate(args.directory, args.targets, calls)
+        manifest = verify(args.directory)
+        summary["preparation"] = {
+            k: manifest[k] for k in ("wall_seconds", "cpu_seconds", "peak_rss_bytes", "measurement")
+        }
         checkpoint(args.directory / "offline-evaluation.json", summary)
         args.report.write_text(render_report(summary))
 
