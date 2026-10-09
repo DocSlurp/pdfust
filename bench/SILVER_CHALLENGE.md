@@ -1,0 +1,158 @@
+# Authored silver PDF challenge
+
+The DEV challenge contains **104 new PDF files: 64 layout cases and 40 math
+encoding probes**. These repository-authored, MIT-licensed inputs supplement
+real-world regressions; they do not establish real-world extraction quality.
+All labels are `silver-authored-unadjudicated`. Source text anchors and declared
+math references are retained separately from the PDF inputs.
+
+A separate sealed set contains **20 files and 26 pages**. Its fixtures use fresh,
+independent construction rather than importing DEV layout or math builders, but
+share a low-level PDF serializer. This is a construction distinction, not proof
+of independent producer diversity. Developer workflows must not read, enumerate,
+search, regenerate, or score `bench/heldout-silver/` or
+`bench/results/pdf-master-artifacts/silver-heldout-v1/`. Sealing is procedural
+protection backed by repository instructions and DEV path guards; it is not an
+OS access boundary. Held-out labels and scores are excluded from DEV reports.
+
+## Reproduce the DEV run
+
+From the repository root, install optional dependencies if needed, then run on
+CPU with one fresh subprocess per document:
+
+```sh
+uv sync --group bench --group bench-vision
+.venv/bin/python -m bench.silver --build --benchmark --gallery --workers 1
+```
+
+`bench` supplies pypdf for metadata inspection; `bench-vision` supplies Pillow
+for the gallery. Extraction uses the local pylopdf extension. No model inference,
+network requests, credentials, or GPU workload is needed. The runner supports
+1–4 workers; record the chosen concurrency when comparing runs.
+
+Generated artifacts stay ignored under
+`bench/results/pdf-master-artifacts/silver-v1/<dataset-hash-prefix>/`.
+`manifest.json` records case IDs, exact PDF hashes, authored features, ancestry,
+DEV membership, and generator hashes. `gold.json` stores authored literal anchors
+and unadjudicated math references. `latest.json` points to the current immutable
+dataset; `latest-run.json` identifies its latest run. The dataset identity hashes
+canonical records and labels. Compare generator hashes as well: implementation
+changes that preserve generated content can preserve the dataset identity.
+
+Each `runs/<UTC-timestamp>/` directory retains complete `.txt` and `.md` outputs,
+per-document JSON observations, `summary.json`, document-level
+**`metadata.jsonl` / `metadata.csv`**, and page-level
+**`pages.jsonl` / `pages.csv`**. CSV uses dotted names for nested scalar fields
+and JSON cells for arrays. JSONL preserves native nested structures. Failures,
+warnings, and unavailable measurements remain explicit. A successful worker
+does not imply that every metadata scope succeeded; inspect `metadata.errors`.
+The gallery renders only page 0 of the first case in each producer group and
+includes a local contact sheet. It is a review aid, not complete visual coverage.
+
+## Coverage and limits
+
+The 64 layout cases use 16 families, each with four related variants:
+
+| Families | Authored interventions |
+| --- | --- |
+| two-column, three-column, reading-order | Dense columns, full-width content, and source paint order differing from geometric order |
+| image-inset, image-flow, mixed-panels | Actual raster placements, captions, text beside and below images, and bordered prose panels |
+| headers-footers, footnotes, sidebar | Repeated page furniture, smaller notes with markers, and separately positioned side content |
+| rotated-page, cropped-page | Page rotations and CropBox offsets, including painted text outside the crop |
+| merged-table, multilevel-table | Vector grids, merged headers, subordinate labels, and group labels |
+| form-fields | AcroForm text widget with appearance plus drawn checkbox marks |
+| duplicate-overprint, vector-noise | Exact/offset/distinct overprints and diagonal decorative rules |
+
+Variants declare PDF 1.3, 1.4, 1.5, and 1.7 headers, alternate plain/Flate
+content and Standard/WinAnsi encodings, and change positions, leading, and page
+count. A changed header does not exercise every feature of that PDF version.
+Standard 14 fonts are unembedded; image resources may be declared without being
+drawn. Family names describe interventions, not validated relationships. Four
+variants share one template ancestry, and these cases use a common producer.
+Keep template siblings together in any future development split.
+
+The 40 math probes repeat four expressions (quadratic, Gaussian integral,
+Fourier series, matrix eigenvalues) across ten encoding variants:
+
+| Encoding | What is actually exercised |
+| --- | --- |
+| literal-tj | Literal ASCII text-showing operands |
+| split-kerned-tj | Character-separated `TJ` operands with spacing adjustments |
+| positioned-math | Raised powers, lowered coefficient suffixes, and additional stacked fractions |
+| tounicode-multichar | Two-character Type 3 glyph mappings through UTF-16BE ToUnicode; not a CID font test |
+| type3-mapped, type3-unmapped | Authored block-letter glyph procedures with or without ToUnicode |
+| actualtext | Marked-content ActualText matching the visible ASCII formula |
+| vector-outlines | Formula drawn as authored paths without formula text operators |
+| raster-image | Formula raster without formula text operators |
+| raster-invisible-text | Formula raster plus an authored invisible text layer |
+
+These encodings are not exhaustive mathematical typography coverage. ASCII
+operator names and block-letter shapes are intentional; radicals are spelled
+`SQRT`. ActualText matching its visible string cannot establish replacement
+support. Invisible text is authored, not measured OCR. Math cases declare only
+their digital title as a literal anchor, so perfect anchor recall can coexist
+with absent formula recovery. Declared LaTeX references require manual review;
+the runner does not score mathematical structure, reading order, table
+relationships, or layout correctness.
+
+## Interpret the observations
+
+`bench/silver_metadata.py` defines the fields and limits. Its image coverage is
+the union of page-clipped, axis-aligned placement bboxes divided by display-page
+area. It is approximate geometry, not visible pixels, clipping-path coverage,
+alpha, or occlusion. Individual area sums count overlap repeatedly and can
+exceed 100%. Effective DPI is source pixels divided by the full placement bbox
+extent in inches, so rotation and shear make it approximate. Image resource
+payload bytes differ from materialized placement PNG/JPEG bytes.
+
+Raw string fractions count literal/hexadecimal source-token bytes outside
+streams; compressed-object strings are excluded. Decoded content fractions
+count original string operand bytes in unique reachable page/Form streams,
+including non-text-showing strings. Executed text-showing bytes count repeated
+Form use and are not Unicode character counts. Compression ratios compare
+encoded with decoded unique content payload bytes. Adjacent repeated characters
+and repeated positioned words/spans are diagnostics, not corruption labels.
+Font declarations do not establish use or visibility. ActualText declarations
+do not establish extraction fidelity. Missing data is null, not zero.
+
+Metadata inspection is bounded to 64 MiB input, 64 pages, 64 MiB unique decoded
+content, 200,000 executed content operations, and Form depth 16. pypdf may
+allocate while parsing/inflating before decoded-size admission; this controlled
+fixture tool is not a hostile-input sandbox.
+
+Cold and reused extraction measurements cover all-page plain text and Markdown.
+Metadata collection occurs first and can initialize library state, so “cold”
+means a newly opened extraction Document, not the first pylopdf operation in
+the worker. Warm output hashes/equality check reproducibility, not correctness.
+Worker resource measurements use `time.process_time`, `os.times`, and OS
+`resource.getrusage(RUSAGE_SELF).ru_maxrss`: cumulative CPU counters and a process
+high-water RSS, with no periodic sampling. Scope includes input reading,
+metadata, imports, and cold/warm extraction in one fresh worker. Parent launch
+overhead is reflected separately in process wall time; gallery rendering is
+outside these worker measurements. Machine/Python settings and worker count
+are retained in the summary. Unavailable RSS is null. Summing worker CPU is
+useful; summing worker peak RSS does not establish concurrent memory use.
+
+## Offline grouping examples
+
+Pass a retained DEV run's document export explicitly. The example refuses
+protected paths before reading, resolves symlink destinations, and refuses the
+complete export if any row is not explicitly `DEV`. It opens no PDFs or labels.
+
+```sh
+.venv/bin/python bench/examples/silver_queries.py \
+  bench/results/pdf-master-artifacts/silver-v1/<dataset>/runs/<run>/metadata.jsonl \
+  --group-by family
+.venv/bin/python bench/examples/silver_queries.py \
+  bench/results/pdf-master-artifacts/silver-v1/<dataset>/runs/<run>/metadata.jsonl \
+  --group-by encoding
+.venv/bin/python bench/examples/silver_queries.py \
+  bench/results/pdf-master-artifacts/silver-v1/<dataset>/runs/<run>/metadata.jsonl \
+  --group-by pdf-version
+```
+
+Groups report completed/error counts, measurement denominators, worker CPU sum,
+maximum individual worker peak RSS, median extraction latency, and aggregate
+literal-anchor recall. Encoding uses the authored case tag; PDF version uses
+measured `metadata.effective_pdf_version`. Review full outputs, warnings,
+metadata errors, and rendered inputs before drawing quality conclusions.

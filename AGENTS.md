@@ -32,8 +32,26 @@ overview.
 - Non-English text is allowed only in localized documentation and data required
   to test Unicode or CJK behavior.
 - Do not place experiments unrelated to PDF processing in this repository.
+- Silver optimization is DEV-only. Do not read, enumerate, search, regenerate,
+  or score `bench/heldout-silver/` or
+  `bench/results/pdf-master-artifacts/silver-heldout-v1/` during tuning.
+  Custodian-only confirmation requires a frozen DEV-selected configuration;
+  this protection is procedural, not an OS access boundary.
+- Prefer positive provider-reported charges. For zero or missing charges, use
+  published serving-provider/catalog rates times reported tokens as labeled
+  estimates, preserving the original reported zero. Missing tokens/rates remain
+  unknown; partial estimates must not become complete totals. Keep ledger
+  reservations separate from reported charges and effective estimates.
 - Do not run benchmark inference or training on the local GPU. Use a remote GPU
   within the user's authorized spending cap; local checks must remain CPU-only.
+- Prefer tracking CPU and RAM usage during benchmarks, performance tests, and
+  optimization experiments alongside elapsed time, throughput, quality, and cost.
+  Record CPU time/utilization and peak resident memory (RSS) where practical,
+  including worker/subprocess usage when applicable. State the measurement tool,
+  sampling interval, process scope, and relevant machine/concurrency settings so
+  comparisons are reproducible. Separate local preprocessing resource usage from
+  remote inference; mark unavailable measurements as unmeasured rather than
+  inferring them from latency or reporting zero.
 
 ## Development commands
 
@@ -48,6 +66,12 @@ overview.
   Reports are written separately to `bench/results/layout-latest.{md,json}`.
   Save a baseline with `--output <path>.json`, then use `--baseline <path>.json`
   to compare matching inputs and complete outputs in the same environment.
+- `uv sync --group bench --group bench-vision`, then
+  `.venv/bin/python -m bench.silver --build --benchmark --gallery --workers 1`
+  builds the 104-file DEV silver challenge and retains metadata, page exports,
+  complete outputs, CPU/RSS measurements, and a gallery under ignored artifacts.
+  See `bench/SILVER_CHALLENGE.md`, `bench/EXPERIMENT_PLAN.md`, and
+  `bench/results/silver-challenge.md`; literal anchors are not structural gold.
 - `uv sync --group bench-rich && uv run python -m bench.features` — compare
   rich-content behavior across PDF text and Markdown converters. Preserve the
   input PDFs, complete outputs, warnings/errors, versions, and options together
