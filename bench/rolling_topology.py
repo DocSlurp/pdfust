@@ -84,6 +84,7 @@ def _native_candidate(page: dict[str, Any], words: list[dict[str, Any]]) -> list
             if len(hits) == 1:
                 cells[hits[0]]["source_ids"].append(word["id"])
         owned = [i for cell in cells for i in cell["source_ids"]]
+        owned_set = set(owned)
         result.append(
             {
                 "name": f"native-vector-{index}",
@@ -92,7 +93,7 @@ def _native_candidate(page: dict[str, Any], words: list[dict[str, Any]]) -> list
                 "values": deepcopy(table["values"]),
                 "spans": deepcopy(table["spans"]),
                 "cells": cells,
-                "unresolved_ids": [w["id"] for w in words if w["id"] not in set(owned)],
+                "unresolved_ids": [w["id"] for w in words if w["id"] not in owned_set],
                 "status": "source-native grid prior; no new merged-cell inference",
             }
         )
@@ -179,6 +180,7 @@ def propose(page: dict[str, Any], config: Config) -> dict[str, Any]:  # noqa: C9
             previous_bottom = bottom
         cell_list = [{"source_ids": ids, "role": "unknown"} for row in rows for ids in row]
         owned = [i for cell in cell_list for i in cell["source_ids"]]
+        owned_set = set(owned)
         table = {
             "name": f"{config['name']}-seed-{seed_band}",
             "row_count": len(rows),
@@ -190,7 +192,7 @@ def propose(page: dict[str, Any], config: Config) -> dict[str, Any]:  # noqa: C9
                 for c in range(len(anchors))
             ],
             "cells": cell_list,
-            "unresolved_ids": [w["id"] for w in words if w["id"] not in set(owned)],
+            "unresolved_ids": [w["id"] for w in words if w["id"] not in owned_set],
             "column_corridor_starts": anchors,
             "physical_bands": physical_bands,
             "header_role": "unknown; seed band is a geometry hypothesis, not an assumed header",

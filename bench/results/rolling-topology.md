@@ -81,3 +81,38 @@ The second command evaluates already frozen bytes and refuses changed source
 identities. Full source/candidate/scoring/request artifacts remain ignored.
 This is a DEV geometry diagnosis, not independent generalization or a default
 extraction recommendation.
+
+T004 uses generic snapshot-local `c0...` IDs for the frozen union of physical,
+rolling and T001–T003 hypotheses. Policy provenance remains outside the request.
+The opt-in runner verifies source/body hashes before constructing a client,
+uses the shared ledger/run lock and a persistent $0.50 tag-prefix cap (next-call
+reservation $0.30), and stops a model after its first failure. Missing calls,
+abstention, rejected tables and accepted wrong structures remain separate.
+Ambiguous and explicitly diagnostic cohorts are unscored; earlier class-cue
+fresh admission outcomes cannot support primary accuracy claims. Catalog rates,
+reported charges, effective estimates and HTTP durations remain in ignored JSON.
+
+Original-only execution (48 requests plus four native zero-call pages):
+
+```sh
+python -m bench.rolling_topology_run --run-hosted \
+  --directory /home/dan/code/oss/pdf-master-designs/bench/results/pdf-master-artifacts/rolling-topology-v1/union-semantic-image512-v1 \
+  --cohorts 0 \
+  --targets /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/borderless-dev-v1/66c3cde77b110038/private-targets.json
+```
+
+Reviewed V2 execution uses the same frozen configurations and semantic prompt
+(56 requests, 16 tables + eight coherent prose + four ambiguous unscored pages):
+
+```sh
+python -m bench.rolling_topology_run --run-hosted \
+  --directory /home/dan/code/oss/pdf-master-designs/bench/results/pdf-master-artifacts/rolling-topology-v1/realism-v2/union-semantic-image512 \
+  --cohorts 0 \
+  --targets /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/silver-realism-v2/124953db381d4aa6/private-targets.json
+```
+
+V2 topology candidate freeze SHA256:
+`8ff8f08d7417a64d12901ed8a516ba8173f2e10390f3906138df41c71e3b55e7`.
+V2 union manifest SHA256:
+`42c8281f2f33b072ed2c5f57613bfda730c2ef13b3f046758a990ae65c8fe295`.
+Both preceded private-reference evaluation. No rules were revised for V2.
