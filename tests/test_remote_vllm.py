@@ -1,6 +1,7 @@
 """CPU-only mocked local server tests; never execute model inference."""
 
 import base64
+import hashlib
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -57,6 +58,55 @@ def test_request_preserves_source_questions_and_order(tmp_path: Path) -> None:
     assert request["chat_template_kwargs"] == {"enable_thinking": False}
     assert request["temperature"] == 0
     assert body == before
+
+
+def test_qwen_request_bytes_preserve_original_prompt() -> None:
+    request = stock.request_body(stock.Engine(stock.MODEL_ID, "http://127.0.0.1:8000/v1"), canonical(), [])
+    raw = json.dumps(request, separators=(",", ":"), allow_nan=False).encode()
+    assert hashlib.sha256(raw).hexdigest() == "cdd7a05a7324aee4122eb507fec0d5a2cd7c4f94cb2d5c94f9aa061349083b0f"
+
+
+@pytest.mark.parametrize(
+    "model_id",
+    ["HuggingFaceTB/SmolVLM2-2.2B-Instruct", "LiquidAI/LFM2-VL-1.6B", "openbmb/MiniCPM-V-4"],
+)
+def test_non_qwen_models_preserve_evidence_without_thinking_args(tmp_path: Path, model_id: str) -> None:
+    directory = tmp_path / model_id.rsplit("/", maxsplit=1)[-1]
+    directory.mkdir()
+    engine = stock.load(directory)
+    assert engine.model_id == model_id
+    image = tmp_path / "retained.png"
+    image.write_bytes(b"frozen source PNG")
+    body = canonical()
+    body["state"].append(
+        {
+            "type": "image_url",
+            "image_url": {"url": "data:image/png;base64," + base64.b64encode(image.read_bytes()).decode()},
+        }
+    )
+    original = deepcopy(body)
+    request = stock.request_body(engine, body, [image])
+    qwen_request = stock.request_body(stock.Engine(stock.MODEL_ID, engine.base_url), body, [image])
+    qwen_request["model"] = model_id
+    del qwen_request["chat_template_kwargs"]
+    assert request == qwen_request
+    assert request["messages"][1]["content"][1] == body["state"][1]
+    assert json.loads(request["messages"][1]["content"][-1]["text"]) == {"questions": body["questions"]}
+    assert body == original
+
+
+def test_smolvlm_single_image_contract_refuses_multiple_images(tmp_path: Path) -> None:
+    image = tmp_path / "source.png"
+    image.write_bytes(b"source")
+    part = {
+        "type": "image_url",
+        "image_url": {"url": "data:image/png;base64," + base64.b64encode(image.read_bytes()).decode()},
+    }
+    body = canonical()
+    body["state"].extend([part, deepcopy(part)])
+    engine = stock.Engine("HuggingFaceTB/SmolVLM2-2.2B-Instruct", "http://127.0.0.1:8000/v1")
+    with pytest.raises(ValueError, match="one image"):
+        stock.request_body(engine, body, [image, image])
 
 
 def test_choice_only_response_retains_usage_without_probability_invention(monkeypatch: pytest.MonkeyPatch) -> None:

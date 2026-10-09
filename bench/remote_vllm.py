@@ -1,4 +1,4 @@
-"""Stock Qwen vision baseline through a loopback-only vLLM OpenAI server.
+"""Stock vision baselines through a loopback-only vLLM OpenAI server.
 
 This generates schema-constrained labels, not trained decision probabilities.
 The coordinator starts and pins the server; load() makes no network/GPU calls.
@@ -17,7 +17,10 @@ import urllib.request
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 from urllib.parse import urlparse
 
 MODELS = {
@@ -25,7 +28,14 @@ MODELS = {
     "Qwen/Qwen3.5-2B": "15852e8c16360a2fea060d615a32b45270f8a8fc",
     "Qwen/Qwen3.5-4B": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
     "Qwen/Qwen3.5-9B": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    # Official HF card: Apache-2.0; SmolLM2 decoder + SigLIP vision.
+    "HuggingFaceTB/SmolVLM2-2.2B-Instruct": "482adb537c021c86670beed01cd58990d01e72e4",
+    # Official pinned LICENSE: LFM Open License v1.0 (not Apache-2.0).
+    "LiquidAI/LFM2-VL-1.6B": "2c2e7f9b0f48a478d7d497ef1864519dfd3994cd",
+    # Official HF card: Apache-2.0; MiniCPM4-3B + SigLIP2, 4.1B total.
+    "openbmb/MiniCPM-V-4": "6f69a8235885be89608f3a71ffd40695b379e1e7",
 }
+QWEN_MODELS = frozenset(model for model in MODELS if model.startswith("Qwen/Qwen3.5-"))
 MODEL_ID = "Qwen/Qwen3.5-4B"
 MODEL_REVISION = MODELS[MODEL_ID]
 CHOICES = ("join", "split", "unresolved")
@@ -111,12 +121,12 @@ def load(
         or url.query
         or url.fragment
     ):
-        message = "Stock vLLM requires an admitted Qwen identity and literal loopback HTTP endpoint"
+        message = "Stock vLLM requires an admitted model identity and literal loopback HTTP endpoint"
         raise ValueError(message)
     return Engine(model_id=model_id, base_url=base_url)
 
 
-def request_body(engine: Engine, body: dict[str, Any], image_paths: list[str | Path]) -> dict[str, Any]:  # noqa: C901
+def request_body(engine: Engine, body: dict[str, Any], image_paths: Sequence[str | Path]) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Preserve source parts and named question criteria; enforce a literal label schema."""
     questions = body.get("questions")
     if not isinstance(questions, dict) or not 1 <= len(questions) <= MAX_QUESTIONS:
@@ -160,6 +170,9 @@ def request_body(engine: Engine, body: dict[str, Any], image_paths: list[str | P
     if image_index != len(image_paths) or image_index > MAX_IMAGES:
         message = "Staged image inventory differs from canonical source order"
         raise ValueError(message)
+    if engine.model_id == "HuggingFaceTB/SmolVLM2-2.2B-Instruct" and image_index > 1:
+        message = "Stock vLLM's documented SmolVLM2 contract admits one image per prompt"
+        raise ValueError(message)
     content.append({"type": "text", "text": json.dumps({"questions": questions}, separators=(",", ":"))})
     schema = {
         "type": "object",
@@ -167,7 +180,7 @@ def request_body(engine: Engine, body: dict[str, Any], image_paths: list[str | P
         "required": list(questions),
         "additionalProperties": False,
     }
-    return {
+    request = {
         "model": engine.model_id,
         "messages": [
             {
@@ -187,9 +200,14 @@ def request_body(engine: Engine, body: dict[str, Any], image_paths: list[str | P
         "chat_template_kwargs": {"enable_thinking": False},
         "structured_outputs": {"json": schema},
     }
+    # Keep all existing Qwen request bytes and template arguments unchanged.
+    # The other official templates do not document Qwen's thinking toggle.
+    if engine.model_id not in QWEN_MODELS:
+        request.pop("chat_template_kwargs")
+    return request
 
 
-def predict(engine: Engine, body: dict[str, Any], image_paths: list[str | Path]) -> dict[str, Any]:
+def predict(engine: Engine, body: dict[str, Any], image_paths: Sequence[str | Path]) -> dict[str, Any]:
     """Return validated labels and reported usage; no fabricated confidence or probabilities."""
     request = request_body(engine, body, image_paths)
     started = time.perf_counter()
