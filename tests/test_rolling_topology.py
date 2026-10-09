@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter
 from copy import deepcopy
 
 import pytest
-from bench.rolling_topology import configs, propose
+from bench.rolling_rows import assemble
+from bench.rolling_topology import Config, configs, propose, union_candidates, union_request
 
 
 def source() -> dict:
@@ -21,7 +23,7 @@ def source() -> dict:
 
 
 @pytest.mark.parametrize("config", configs(), ids=lambda c: c["name"])
-def test_two_row_header_data_corridor_and_complete_id_inventory(config: dict) -> None:
+def test_two_row_header_data_corridor_and_complete_id_inventory(config: Config) -> None:
     page = source()
     result = propose(page, config)
     exact = next(t for t in result["candidates"] if t["values"] == [["Category", "Measure"], ["Node", "12"]])
@@ -57,7 +59,7 @@ def test_two_hanging_lines_have_a_source_owned_rolling_alternative() -> None:
 
 
 @pytest.mark.parametrize("config", configs(), ids=lambda c: c["name"])
-def test_private_metadata_cannot_change_hypotheses(config: dict) -> None:
+def test_private_metadata_cannot_change_hypotheses(config: Config) -> None:
     page = source()
     before = propose(page, config)
     altered = deepcopy(page)
@@ -72,3 +74,23 @@ def test_config_registry_is_independent_and_unknown_rules_are_refused() -> None:
     assert configs()[0]["wrap_gap_heights"] != 99
     with pytest.raises(ValueError, match="frozen"):
         propose(source(), policy)
+
+
+def test_union_generic_ids_preserve_sources_and_exclude_policy_priors() -> None:
+    page = source()
+    originals = [assemble(page, v) for v in ("physical", "rolling")]
+    topologies = [propose(page, c) for c in configs()]
+    candidates, provenance = union_candidates(page, originals, topologies)
+    assert [c["id"] for c in candidates] == [f"c{i}" for i in range(len(candidates))]
+    assert len(candidates) < sum(len(a["candidates"]) for a in topologies)
+    assert all(p["source_policies"] for p in provenance)
+    request = union_request(page, candidates, "test-model")
+    encoded = json.dumps(request)
+    assert "T001" not in encoded
+    assert "T002" not in encoded
+    assert "T003" not in encoded
+    assert set(request["questions"]["q0"]["criteria"]) == {c["id"] for c in candidates} | {"not_table", "unresolved"}
+    assert request["state"]["source_words"] == page["words"]
+    for candidate in candidates:
+        owned = [i for cell in candidate["table"]["cells"] for i in cell["source_ids"]]
+        assert Counter(owned + candidate["unresolved_ids"]) == Counter(w["id"] for w in page["words"])

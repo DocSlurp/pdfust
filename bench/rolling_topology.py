@@ -1,6 +1,6 @@
 """T001–T003 source-only seed-band column corridors and short-table hypotheses."""
 
-# ruff: noqa: EM101, TRY003, PLR2004
+# ruff: noqa: EM101, TRY003, PLR2004, PLC0415
 from __future__ import annotations
 
 import argparse
@@ -249,13 +249,332 @@ def freeze(sources: list[Path], output: Path) -> dict[str, Any]:
     }
 
 
+def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
+    """Private evaluation of already frozen candidates; never call the generator with references."""
+    from bench.borderless_challenge import score
+    from bench.rolling_robustness import exact_source_ownership
+
+    directory = guard_path(directory)
+    frozen_bytes = (directory / "candidates.json").read_bytes()
+    payload = json.loads(frozen_bytes)
+    if payload["configs"] != configs() or len(target_paths) != len(payload["cohorts"]):
+        raise ValueError("Frozen policy/cohort identity mismatch")
+    rows: list[dict[str, Any]] = []
+    for cohort_index, (cohort, target_path) in enumerate(zip(payload["cohorts"], target_paths, strict=True)):
+        raw = guard_path(Path(cohort["source_path"])).read_bytes()
+        if hashlib.sha256(raw).hexdigest() != cohort["source_sha256"]:
+            raise ValueError("Source export changed after candidate freeze")
+        sources = {p["id"]: p for p in json.loads(raw)["pages"]}
+        targets = {p["id"]: p for p in json.loads(guard_path(target_path).read_bytes())}
+        if set(sources) != set(targets):
+            raise ValueError("Private references differ from frozen source cohort")
+        for page in cohort["pages"]:
+            target = targets[page["id"]]
+            for alternative in page["alternatives"]:
+                tables = alternative["candidates"]
+                scored = [score(target, [table]) for table in tables]
+                best_index = max(
+                    range(len(scored)),
+                    key=lambda i: (
+                        scored[i]["exact_page"],
+                        scored[i]["exact_cells"],
+                        scored[i]["owned_values"],
+                        scored[i]["owned_words"],
+                    ),
+                    default=None,
+                )
+                best = scored[best_index] if best_index is not None else score(target, [])
+                ownership = (
+                    exact_source_ownership(
+                        target, sources[page["id"]], tables[best_index] if best_index is not None else None
+                    )
+                    if target.get("authored_slots")
+                    else None
+                )
+                candidate_conservation = all(
+                    Counter([i for cell in t["cells"] for i in cell["source_ids"]] + t["unresolved_ids"])
+                    == Counter(w["id"] for w in sources[page["id"]]["words"])
+                    for t in tables
+                )
+                if not candidate_conservation:
+                    raise ValueError("Frozen topology candidates violate inventory conservation")
+                rows.append(
+                    {
+                        "cohort": cohort_index,
+                        "id": page["id"],
+                        "config": alternative["config"],
+                        "kind": target["kind"],
+                        "candidate_count": len(tables),
+                        "best_index": best_index,
+                        "scores": best,
+                        "ownership": ownership,
+                        "source_conservation": candidate_conservation,
+                        "all_candidate_scores": scored,
+                    }
+                )
+    aggregates: dict[str, Any] = {}
+    for cohort_index in range(len(payload["cohorts"])):
+        aggregates[str(cohort_index)] = {}
+        for policy in payload["configs"]:
+            selected = [r for r in rows if r["cohort"] == cohort_index and r["config"] == policy["name"]]
+            aggregates[str(cohort_index)][policy["name"]] = {
+                "candidate_count": sum(r["candidate_count"] for r in selected),
+                "maximum_candidates_per_page": max(r["candidate_count"] for r in selected),
+                "source_conservation": all(r["source_conservation"] for r in selected),
+                "slices": {
+                    kind: {
+                        "pages": sum(r["kind"] == kind for r in selected),
+                        **{
+                            key: sum(r["scores"][key] for r in selected if r["kind"] == kind)
+                            for key in (
+                                "exact_page",
+                                "exact_cells",
+                                "exact_spans",
+                                "owned_values",
+                                "owned_words",
+                                "false_positive_page",
+                            )
+                        },
+                        "zero_candidate_pages": sum(r["candidate_count"] == 0 for r in selected if r["kind"] == kind),
+                        "wrong_only_candidate_pages": sum(
+                            r["candidate_count"] > 0 and not r["scores"]["exact_page"]
+                            for r in selected
+                            if r["kind"] == kind
+                        ),
+                        "correct_slot_word_ids": sum(
+                            r["ownership"]["correct_slot_word_ids"]
+                            for r in selected
+                            if r["kind"] == kind and r["ownership"]
+                        ),
+                        "intended_word_ids": sum(
+                            r["ownership"]["intended_word_ids"]
+                            for r in selected
+                            if r["kind"] == kind and r["ownership"]
+                        ),
+                    }
+                    for kind in ("borderless", "prose", "ruled-control")
+                },
+            }
+    summary = {
+        "candidate_freeze_sha256": hashlib.sha256(frozen_bytes).hexdigest(),
+        "aggregates": aggregates,
+        "resource_measurements": {
+            k: payload[k] for k in ("wall_seconds", "cpu_seconds", "peak_rss_bytes", "measurement")
+        },
+        "limits": "Oracle over unaccepted source-only candidates. False proposals are not actual admissions. "
+        "Original fresh model results are cue-contaminated; neutral source geometry scoring only.",
+    }
+    (directory / "private-scores.json").write_text(json.dumps({"rows": rows}, indent=2))
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2))
+    return summary
+
+
+def union_candidates(
+    page: dict[str, Any], original: list[dict[str, Any]], topology: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Deduplicate complete source layouts while retaining all technique provenance outside model state."""
+    words = project(page)["words"]
+    retained: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
+    proposed = [(a["variant"], table, a["unresolved_ids"]) for a in original for table in a["candidates"]]
+    proposed += [(a["config"], table, table["unresolved_ids"]) for a in topology for table in a["candidates"]]
+    for name, table, unresolved in proposed:
+        clean = {key: deepcopy(table[key]) for key in ("row_count", "col_count", "values", "spans", "cells")}
+        owned = [i for cell in clean["cells"] for i in cell["source_ids"]]
+        if Counter(owned + unresolved) != Counter(w["id"] for w in words):
+            raise ValueError("Union layout violates complete source conservation")
+        identity = _identity(clean)
+        existing = next((i for i, old in enumerate(retained) if _identity(old["table"]) == identity), None)
+        if existing is None:
+            existing = len(retained)
+            retained.append({"id": f"c{existing}", "table": clean, "unresolved_ids": list(unresolved)})
+            provenance.append({"candidate_id": f"c{existing}", "source_policies": []})
+        provenance[existing]["source_policies"].append(name)
+    return retained, provenance
+
+
+def union_request(
+    page: dict[str, Any],
+    candidates: list[dict[str, Any]],
+    model: str,
+    *,
+    with_image: bool = False,
+    instructions: str | None = None,
+) -> dict[str, Any]:
+    """Build a generic-ID source-only admission body, with no technique name or scorer fields."""
+    import base64
+
+    from bench.rolling_rows import admission_request, assemble, source_image
+
+    source = project(page)
+    originals = [assemble(source, v) for v in ("physical", "rolling")]
+    baseline = admission_request(source, originals, model)["questions"]["q0"]["instructions"]
+    visible: dict[str, Any] = {
+        "coordinates": "display points; y downward; row/column zero-based",
+        "page_size": source["page_size"],
+        "source_words": source["words"],
+        "candidate_tables": {c["id"]: {"table": c["table"], "unresolved_ids": c["unresolved_ids"]} for c in candidates},
+        "header_policy": "All candidate cell roles and first-row header role remain unknown.",
+    }
+    criteria = {
+        c[
+            "id"
+        ]: f"Accept the complete candidate {c['id']} as a source-supported table, preserving its exact word ownership."
+        for c in candidates
+    }
+    criteria.update(
+        {
+            "not_table": "Source supports prose or another non-table structure; keep every word outside table cells.",
+            "unresolved": "Evidence cannot establish a table or choose a complete candidate; "
+            "retain all source words unresolved.",
+        }
+    )
+    state: Any = visible
+    if with_image:
+        data, pixels = source_image(page)
+        visible["image_mapping"] = {
+            "display_bbox": source["page_size"],
+            "pixels": pixels,
+            "scope": "whole source page; native pixels downsampled, white background",
+        }
+        state = [
+            json.dumps(visible, separators=(",", ":")),
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "data:image/png;base64," + base64.b64encode(data).decode("ascii"),
+                    "detail": "high",
+                },
+            },
+        ]
+    body = {
+        "model": model,
+        "state": state,
+        "questions": {
+            "q0": {
+                "type": "choice",
+                "instructions": instructions if instructions is not None else baseline,
+                "criteria": criteria,
+            }
+        },
+    }
+    if len(json.dumps(body).encode()) > 750_000:
+        raise ValueError("Complete union decision body exceeds byte admission")
+    return body
+
+
+def freeze_union(  # noqa: PLR0913 - independent source/candidate/model identities.
+    source_paths: list[Path],
+    original_paths: list[Path],
+    topology_directory: Path,
+    output: Path,
+    models: list[str],
+    *,
+    prompt_variant: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Freeze generic menus using only source and already frozen candidates, with no target input."""
+    from bench.prompt_variants_structure import transform
+    from bench.rolling_rows import _native_inventory
+
+    topology_raw = (guard_path(topology_directory) / "candidates.json").read_bytes()
+    topology = json.loads(topology_raw)
+    if len(source_paths) != len(original_paths) or len(source_paths) != len(topology["cohorts"]):
+        raise ValueError("Union input cohorts do not align")
+    output = guard_path(output)
+    if output.exists():
+        raise ValueError("Union output already exists; preserve frozen requests")
+    output.mkdir(parents=True)
+    start, cpu = time.perf_counter(), time.process_time()
+    records: list[dict[str, Any]] = []
+    cohorts: list[dict[str, Any]] = []
+    for cohort_index, (source_path, original_path, topo) in enumerate(
+        zip(source_paths, original_paths, topology["cohorts"], strict=True)
+    ):
+        source_raw = guard_path(source_path).read_bytes()
+        original_raw = guard_path(original_path).read_bytes()
+        source, original = json.loads(source_raw), json.loads(original_raw)
+        digest = hashlib.sha256(source_raw).hexdigest()
+        if digest != original["source_sha256"] or digest != topo["source_sha256"]:
+            raise ValueError("Union exact source identity does not match candidate freezes")
+        originals = {p["id"]: p["alternatives"] for p in original["pages"]}
+        topologies = {p["id"]: p["alternatives"] for p in topo["pages"]}
+        pages = []
+        for page_index, page in enumerate(source["pages"]):
+            candidates, provenance = union_candidates(page, originals[page["id"]], topologies[page["id"]])
+            local_id = f"cohort{cohort_index}-page{page_index:03}"
+            pages.append({"id": local_id, "source_id": page["id"], "candidates": candidates, "provenance": provenance})
+            if page["vector_candidates"]:
+                records.append(
+                    {"id": local_id, "route": "native_vector", "native_selection": _native_inventory(page), "calls": 0}
+                )
+                continue
+            for model_index, model in enumerate(models):
+                body = union_request(page, candidates, model, with_image=True)
+                if prompt_variant is not None:
+                    body = transform(body, prompt_variant)
+                data = json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+                filename = f"{local_id}-model{model_index}-image512.json"
+                (output / filename).write_bytes(data)
+                records.append(
+                    {
+                        "id": local_id,
+                        "model": model,
+                        "arm": "image512",
+                        "route": "hosted_admission",
+                        "request": filename,
+                        "sha256": hashlib.sha256(data).hexdigest(),
+                        "bytes": len(data),
+                        "choices": list(body["questions"]["q0"]["criteria"]),
+                    }
+                )
+        cohorts.append(
+            {
+                "source_sha256": digest,
+                "source_path": str(source_path.resolve()),
+                "original_candidates_sha256": hashlib.sha256(original_raw).hexdigest(),
+                "pages": pages,
+            }
+        )
+    rss, measurement = process_peak_rss()
+    manifest = {
+        "schema": 1,
+        "models": models,
+        "arms": ["image512"],
+        "prompt_variant": prompt_variant,
+        "topology_freeze_sha256": hashlib.sha256(topology_raw).hexdigest(),
+        "cohorts": cohorts,
+        "records": records,
+        "wall_seconds": time.perf_counter() - start,
+        "cpu_seconds": time.process_time() - cpu,
+        "peak_rss_bytes": rss,
+        "measurement": f"perf_counter/process_time; {measurement}; sequential CPU; lifetime RSS; no sampling",
+    }
+    data = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+    (output / "manifest.json").write_bytes(data)
+    return {
+        "output": str(output),
+        "manifest_sha256": hashlib.sha256(data).hexdigest(),
+        "requests": sum(r["route"] == "hosted_admission" for r in records),
+        "native_pages": sum(r["route"] == "native_vector" for r in records),
+    }
+
+
 def main() -> None:
     """Prepare candidates without targets, credentials or inference."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("sources", type=Path, nargs="+")
+    parser.add_argument("sources", type=Path, nargs="*")
+    parser.add_argument(
+        "--targets", type=Path, nargs="+", help="Evaluate existing frozen candidates only; never regenerate"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(freeze(args.sources, args.output), indent=2))
+    if args.targets:
+        result = score_frozen(args.output, args.targets)
+    else:
+        if not args.sources:
+            parser.error("Preparation requires source exports")
+        result = freeze(args.sources, args.output)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
