@@ -30,3 +30,5 @@ Artifacts: `/home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/source
 <frozen-directory> --output <new-directory>`. Only source preparation is implemented; root owns any paid
 execution and postfreeze scoring. No credentials, inference client, network, GPU, training or heldout access
 is used.
+
+The companion `python -m bench.source_table_gate_run --directory <gate-directory> --targets <private-targets> --report <report.md>` scores retained results without credentials. Add `--run-hosted` only for an authorized paid execution. It verifies every frozen hash before constructing the client, uses the shared ledger and persistent `G001-source-gate/` $0.50 prefix cap, stops each model after its first error, and records charged failures. The shared client also enforces the campaign cap. Actual gate costs and HTTP measurements are reported separately for every model/prompt; ambiguous references remain unscored. No offline cascade implementation is included.
