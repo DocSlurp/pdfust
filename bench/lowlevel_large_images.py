@@ -18,6 +18,7 @@ from PIL import Image
 from PIL import __version__ as pillow_version
 
 import pylopdf
+from bench.decision_gateway_vision import translate, validate_wire
 from bench.lowlevel_control_freeze import begin, encoded_body, finish
 from bench.lowlevel_images import MODELS, non_image_bytes
 from bench.lowlevel_packets import _digest, _file
@@ -107,11 +108,27 @@ def body(
         msg = "Fresh image source text exceeds 1800 bytes"
         raise ValueError(msg)
     if gateway:
-        result.update(state=text, images=[image_part])
+        result.update(state=text, images=[image_part["image_url"]["url"]])
+        result = translate(result)
+        validate_wire(result, BODY_CAP)
+        text_only = deepcopy(result)
+        text_only["input"][0]["content"] = text_only["input"][0]["content"][:1]
+        if len(encoded_body(text_only)) > TEXT_CAP:
+            msg = "Native wire source text exceeds 1800 bytes"
+            raise ValueError(msg)
     if len(encoded_body(result)) > BODY_CAP:
         msg = "Fresh image request exceeds body admission"
         raise ValueError(msg)
     return result
+
+
+def text_bytes(request: dict[str, Any]) -> int:
+    """Count serialized actual-wire text and questions after removing image parts."""
+    if "input" not in request:
+        return non_image_bytes(request)
+    packet = deepcopy(request)
+    packet["input"][0]["content"] = packet["input"][0]["content"][:1]
+    return len(encoded_body(packet))
 
 
 def source_templates(parent: Path, manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -147,10 +164,17 @@ def source_templates(parent: Path, manifest: dict[str, Any]) -> dict[str, dict[s
     return templates
 
 
-def prepare(parent: Path, directory: Path, *, gateway: bool = False, catalog: Path | None = None) -> dict[str, Any]:
+def prepare(
+    parent: Path,
+    directory: Path,
+    *,
+    gateway: bool = False,
+    catalog: Path | None = None,
+    image_freeze: Path | None = None,
+) -> dict[str, Any]:
     """Freeze all complete source requests before the common helper copies scorer targets."""
-    if gateway:
-        msg = "L016 preparation paused pending independently verified Gateway image transport"
+    if gateway and image_freeze is None:
+        msg = "L016 requires verified L015 image_freeze for exact matched pixels"
         raise ValueError(msg)
     started, cpu = time.perf_counter(), time.process_time()
     parent = guard_path(parent).resolve()
@@ -160,6 +184,15 @@ def prepare(parent: Path, directory: Path, *, gateway: bool = False, catalog: Pa
         msg = "Requires exact 24-source L006 focus freeze"
         raise ValueError(msg)
     templates = source_templates(parent, original)
+    retained_images = {}
+    image_manifest = None
+    if image_freeze is not None:
+        image_freeze = guard_path(image_freeze).resolve()
+        image_manifest = verify(image_freeze)
+        if image_manifest["experiment"] != "L015" or image_manifest["parent_manifest_sha256"] != _digest(original_raw):
+            msg = "Matched images must come from L015 with the exact same source parent"
+            raise ValueError(msg)
+        retained_images = {(image["id"], image["arm"]): image for image in image_manifest["images"]}
     models = GATEWAY_MODELS if gateway else MODELS
     catalog_raw = guard_path(catalog).read_bytes() if catalog else _file(parent, "catalog-prices.json").read_bytes()
     if not all(model in json.loads(catalog_raw)["prices"] for model in models):
@@ -188,9 +221,13 @@ def prepare(parent: Path, directory: Path, *, gateway: bool = False, catalog: Pa
             }
         )
         for edge in SIZES:
-            rgb, metadata = raster(_file(directory, page["source_file"]), bbox, edge)
+            rgb, metadata = (None, {}) if retained_images else raster(_file(directory, page["source_file"]), bbox, edge)
             for mode in MODES:
-                png = variant(rgb, mode)
+                if retained_images:
+                    metadata = deepcopy(retained_images[(page["id"], f"fresh-{mode}-{edge}")])
+                    png = _file(image_freeze, metadata["file"]).read_bytes()
+                else:
+                    png = variant(rgb, mode)
                 name = f"image-{page['id']}-{mode}-{edge}.png"
                 _file(directory, name).write_bytes(png)
                 info = {
@@ -232,7 +269,7 @@ def prepare(parent: Path, directory: Path, *, gateway: bool = False, catalog: Pa
                             "png_bytes": len(png),
                             "width": info["width"],
                             "height": info["height"],
-                            "non_image_bytes": non_image_bytes(body(templates[page["id"]], model, png, metadata, mode)),
+                            "non_image_bytes": text_bytes(request),
                         }
                     )
     random.Random(17516).shuffle(records)  # noqa: S311 - reproducible source schedule.
@@ -241,6 +278,11 @@ def prepare(parent: Path, directory: Path, *, gateway: bool = False, catalog: Pa
         "experiment": "L016" if gateway else "L015",
         "kind": "fresh-focus",
         "gateway": "vercel" if gateway else "openrouter",
+        "protocol": "openai-decisions" if gateway else "typesafe",
+        "matched_image_directory": str(image_freeze) if image_freeze else None,
+        "matched_image_manifest_sha256": _digest(_file(image_freeze, "manifest.json").read_bytes())
+        if image_freeze
+        else None,
         "models": list(models),
         "arms": list(ARMS),
         "parent_directory": str(parent),
@@ -280,12 +322,20 @@ def prepare(parent: Path, directory: Path, *, gateway: bool = False, catalog: Pa
     return finish(parent, directory, manifest)
 
 
-def verify(directory: Path) -> dict[str, Any]:
+def verify(directory: Path) -> dict[str, Any]:  # noqa: PLR0912 - verify every frozen source and native-wire admission.
     """Verify frozen source, raster provenance, complete inventory and exact source bodies."""
     directory = guard_path(directory).resolve()
     manifest = json.loads(_file(directory, "manifest.json").read_bytes())
     gateway = manifest["experiment"] == "L016"
     models = GATEWAY_MODELS if gateway else MODELS
+    if gateway and manifest.get("protocol") != "openai-decisions":
+        msg = "Native Gateway protocol provenance changed"
+        raise ValueError(msg)
+    if gateway:
+        matched = guard_path(Path(manifest["matched_image_directory"])).resolve()
+        if _digest(_file(matched, "manifest.json").read_bytes()) != manifest["matched_image_manifest_sha256"]:
+            msg = "Matched L015 image freeze changed"
+            raise ValueError(msg)
     if (
         manifest["experiment"] not in ("L015", "L016")
         or manifest["models"] != list(models)
@@ -324,6 +374,11 @@ def verify(directory: Path) -> dict[str, Any]:
         png = _file(directory, info["file"]).read_bytes()
         raw = _file(directory, record["request"]).read_bytes()
         reconstructed = body(templates[ident], record["model"], png, info, info["mode"], gateway=gateway)
+        if gateway:
+            validate_wire(reconstructed, BODY_CAP)
+            if _file(matched, info["file"]).read_bytes() != png:
+                msg = "L016 pixels differ from matched L015"
+                raise ValueError(msg)
         if (
             len(raw) != record["body_bytes"]
             or len(png) != info["png_bytes"]
@@ -353,12 +408,15 @@ def main() -> None:
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--gateway", action="store_true")
     parser.add_argument("--catalog", type=Path)
+    parser.add_argument("--image-freeze", type=Path)
     parser.add_argument("--verify", action="store_true")
     args = parser.parse_args()
     result = (
         verify(args.directory)
         if args.verify
-        else prepare(args.parent, args.directory, gateway=args.gateway, catalog=args.catalog)
+        else prepare(
+            args.parent, args.directory, gateway=args.gateway, catalog=args.catalog, image_freeze=args.image_freeze
+        )
     )
     print(
         json.dumps(

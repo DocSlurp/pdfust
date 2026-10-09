@@ -31,7 +31,13 @@ def template() -> dict[str, Any]:
                 }
             )
         ],
-        "questions": {"q0": {"type": "Choice", "choices": ["join", "split"]}},
+        "questions": {
+            "q0": {
+                "type": "choice",
+                "instructions": "Choose source relationship",
+                "criteria": {"join": "joined", "split": "separated"},
+            }
+        },
     }
 
 
@@ -62,9 +68,19 @@ def test_independent_color_treatments_and_exact_gateway_translation(mode: str, d
     info = {"pixels": [512, 64], "bbox": [0, 0, 80, 10]}
     native = large.body(original, "liquid/d1", png, info, mode)
     gateway = large.body(original, "liquid/d1", png, info, mode, gateway=True)
-    assert gateway["state"] == native["state"][0]
-    assert gateway["images"] == native["state"][1:]
-    assert gateway["questions"] == original["questions"]
+    assert gateway["input"][0]["content"][0] == {"type": "input_text", "text": native["state"][0]}
+    assert gateway["input"][0]["content"][1] == {
+        "type": "input_image",
+        "image_url": native["state"][1]["image_url"]["url"],
+        "detail": "high",
+    }
+    question = gateway["questions"][0]
+    assert question["name"] == "q0"
+    assert question["instructions"] == original["questions"]["q0"]["instructions"]
+    assert question["choices"] == [
+        {"value": k, "description": v} for k, v in original["questions"]["q0"]["criteria"].items()
+    ]
+    assert large.validate_wire(gateway, large.BODY_CAP) == large.encoded_body(gateway)
     assert original == preserved
     assert json.loads(native["state"][0])["observations"] == json.loads(original["state"][0])["observations"]
 
@@ -84,8 +100,8 @@ def test_admissions_reject_unknown_treatments_and_oversized_text() -> None:
         )
 
 
-def test_gateway_freeze_paused_before_any_artifact_access(tmp_path: Path) -> None:
-    with pytest.raises(ValueError, match="paused"):
+def test_gateway_requires_matched_images_before_any_artifact_access(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="image_freeze"):
         large.prepare(tmp_path / "missing", tmp_path / "out", gateway=True)
     assert not (tmp_path / "out").exists()
 
