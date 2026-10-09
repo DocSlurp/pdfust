@@ -141,3 +141,33 @@ routing tests cover empty-state escalation, native retention, hanging rows,
 small text, conflicting columns, multiline overlap, reversed columns, metadata
 and ID-renaming invariance, admission bounds and compact availability wording.
 No paid requests or reference-based scores were used.
+
+## Independent semantic admission premise
+
+`bench.pipeline_admission.admission_packet(page)` creates a semantic admission
+packet before exposing any proposed table options. It presents every admitted
+source word with its full observed display bbox and page geometry, plus three
+choices: `table`, `prose`, and `unresolved`. This packet does not expose candidate
+topology, candidate values, construction references, filenames or families.
+The default relational premise asks whether aligned bands connect records or
+entities through a common attribute schema, or whether paragraphs independently
+flow downward in separate columns. The optional `premise="minimal"` asks only
+whether the page contains a table. Both premises retain identical evidence and
+choices, allowing a paired instruction comparison without changing evidence.
+
+`pixels_available=True` declares a source image attached separately by the
+runner; the default declares pixels unavailable. Extraction can omit unreadable
+or unmapped text, so absent text remains unknown. The source projection is
+bounded to 4,096 words and 16,000 cumulative ID/text characters, with a 256 KiB
+complete packet boundary. Exceeding a boundary rejects the page rather than
+truncating the source or assigning a semantic label.
+
+The hypothesis is that independent admission before candidate options may reduce
+anchoring toward geometrically plausible tables in parallel prose. It is not a
+quality claim. The helper does not call models, assign confidence, alter current
+pipeline behavior or choose a candidate. Root may evaluate a separately labeled
+cascade with native-vector bypass and at most an admission call plus a candidate
+selection call after the declared first matrix. Five tests verify complete source
+geometry, exclusion of prior options and metadata, identical paired evidence,
+literal handling of instruction-like source text, malformed-source refusal and
+admission limits. Ruff and strict mypy pass; no paid study was performed here.
