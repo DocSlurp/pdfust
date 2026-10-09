@@ -468,9 +468,9 @@ def summarize(output: Path) -> None:
             ),
             "",
             (
-                "Configuration: imgsz640, batch1, confidence0.25, minimum-rectangle padding, "
-                "TF32 disabled, CPU4 threads + "
-                f"interop1; three sequential passes per arm. Torch `{run['torch']}`, "
+                "Configuration: image size 640, batch size 1, confidence threshold 0.25, minimum-rectangle padding, "
+                "TF32 disabled, CPU 4 threads + "
+                f"interop 1; three sequential passes per arm. Torch `{run['torch']}`, "
                 f"Ultralytics `{run['ultralytics']}`; "
                 f"machine `{run['machine']}`, {run['cpu_count']} logical CPUs. "
                 "Cold model load follows imports and input "

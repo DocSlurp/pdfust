@@ -241,3 +241,33 @@ def test_stop_file_and_model_failure_preserve_complete_unattempted_rows(tmp_path
     again = run(directory, manifest, client)
     assert len(again["rows"]) == 256
     assert client.calls.count(MODELS[0]) == 1
+
+
+def test_local_replays_do_not_erase_http_measurement_or_inflate_rates(tmp_path: Path) -> None:
+    records = [{"key": str(i), "model": MODELS[0], "arm": "rgb512", "status": "prepared"} for i in range(16)]
+    (tmp_path / "private-labels.json").write_text(
+        json.dumps(
+            {
+                "observations": [{"key": row["key"], "labels": [False, False, False]} for row in records],
+            }
+        )
+    )
+    manifest = {"requests": records, "arms": ["rgb512"], "prices": {}, "logical_requests": 16, "prep_resources": {}}
+    results = {
+        "rows": [
+            {
+                **row,
+                "status": "ok",
+                "probabilities": [0, 0, 0],
+                "replayed": i > 0,
+                "entry": {"index": 1, "provider_reported_usd": 0.01, "elapsed_ms": 1000},
+            }
+            for i, row in enumerate(records)
+        ]
+    }
+    group = evaluate(tmp_path, manifest, results)["groups"][MODELS[0] + "/rgb512"]
+    assert group["completed_pages"] == 16
+    assert group["unique_completed_requests"] == 1
+    assert group["http_seconds"] == 1
+    assert group["pages_per_minute"] == 60
+    assert group["pages_per_dollar"] == 100

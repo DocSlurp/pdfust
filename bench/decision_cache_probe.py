@@ -78,7 +78,7 @@ def manifest_request_path(manifest_path: Path, record: dict[str, Any]) -> Path:
 
 
 def select_requests(manifest_path: Path, directory: Path = ARTIFACTS) -> list[Path]:
-    """Select successful frozen conditions per model, preferring actual1200/128 RGB8 images."""
+    """Select successful frozen conditions per model, preferring actual 1200/128 RGB8 images."""
     records = manifest_records(manifest_path)
     ledger = load(directory / "ledger.json")["requests"]
     retained: dict[str, list[dict[str, Any]]] = {}
@@ -147,7 +147,7 @@ def prepare_requests(paths: list[Path], directory: Path, *, manifest_path: Path 
         model = body["model"]
         models[model] += 1
         if len(models) > MAX_MODELS or models[model] > MAX_CONDITIONS:
-            raise ValueError("Probe permits at most4models and2conditions per model")
+            raise ValueError("Probe permits at most 4 models and 2 conditions per model")
         if len(json.dumps(body, separators=(",", ":")).encode()) > MAX_IMAGE_BODY_BYTES:
             raise ValueError("Retained body exceeds bounded image request admission")
         previous = [entry for entry in ledger if entry.get("request_sha256") == identity and entry.get("response_file")]
@@ -273,8 +273,8 @@ def report(state: dict[str, Any], path: Path) -> None:
         "cache counters without matching published cache prices produce an unknown total. Raw usage, "
         "ledger entries, fallback assumptions and component prices remain in the adjacent results JSON.",
         "",
-        f"Extra-wave ceiling: ${WAVE_LIMIT:.2f}; at most{MAX_CALLS} actual calls,4models,2conditions/model, "
-        "three submissions/condition. The shared client's cumulative$15 ceiling and reservation ledger also apply.",
+        f"Extra-wave ceiling: ${WAVE_LIMIT:.2f}; at most {MAX_CALLS} actual calls, 4 models, 2 conditions/model, "
+        "three submissions/condition. The shared client's cumulative $15 ceiling and reservation ledger also apply.",
         "",
     ]
     path.write_text("\n".join(lines))

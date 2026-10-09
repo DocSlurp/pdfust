@@ -240,10 +240,20 @@ def parse_response(spec: dict[str, Any], result: dict[str, Any]) -> dict[Any, li
         options = _options(fragment)
         if (
             not isinstance(answer, dict)
-            or set(answer) != {"type", "choice", "probabilities"}
+            or not {"type", "choice", "probabilities"} <= set(answer)
+            or not set(answer) <= {"type", "choice", "probabilities", "confidence"}
             or answer["type"] != "choice"
         ):
             _reject("Unsupported response fields or choice type")
+        if "confidence" in answer:
+            confidence = answer["confidence"]
+            if (
+                isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float))
+                or not math.isfinite(confidence)
+                or not 0 <= confidence <= 1
+            ):
+                _reject("Invalid optional choice confidence")
         probabilities = answer["probabilities"]
         if not isinstance(probabilities, dict) or set(probabilities) != set(options):
             _reject("Choice distribution must match retained row/cell options")

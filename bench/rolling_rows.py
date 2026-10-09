@@ -70,7 +70,8 @@ def _anchors(parts: list[dict[str, Any]], height: float) -> list[dict[str, Any]]
                         "fragment_ids": [p["id"] for p in group],
                     }
                 )
-    selected, owned = [], set()
+    selected: list[dict[str, Any]] = []
+    owned: set[str] = set()
     for proposal in sorted(proposals, key=lambda a: (-a["support"], a["edge"], a["position"])):
         ids = set(proposal["fragment_ids"])
         if not ids & owned:
@@ -318,7 +319,9 @@ def _native_inventory(page: dict[str, Any]) -> dict[str, Any]:
     """Retain source native tables unchanged and map unambiguous source word centers to cells."""
     words = project(page)["words"]
     tables = page["vector_candidates"]
-    cells = {(t, c): [] for t, table in enumerate(tables) for c, box in enumerate(table["cells"]) if box is not None}
+    cells: dict[tuple[int, int], list[str]] = {
+        (t, c): [] for t, table in enumerate(tables) for c, box in enumerate(table["cells"]) if box is not None
+    }
     unresolved = []
     for word in words:
         x = (word["bbox"][0] + word["bbox"][2]) / 2

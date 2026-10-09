@@ -221,20 +221,19 @@ def report(registry: dict[str, Any], measured: dict[str, Any], destination: Path
             "native-PDF extraction failures. No OCR or hosted inference was run."
         ),
         "",
-        (
-            "| # | Page image ID | Source type | Language | Layout | Formula / table blocks | Image "
-            "placements | Native text | Render |"
-        ),
-        "|---|---|---|---|---|---|---|---|---|",
+        "All 16 carrier PDFs have one image placement and zero native text characters.",
+        "Full image IDs, hashes and metadata are retained in the [sample registry](../omnidoc-dev/registry.json).",
+        "",
+        "| Source page | Document type | Language | Layout | Formula / table blocks | Render bytes |",
+        "| --- | --- | --- | --- | ---: | ---: |",
     ]
     for row in registry["rows"]:
         attr = row["attributes"]
         counts = row["category_counts"]
         result = outcomes[row["id"]]
         lines.append(
-            f"| {row['sample']} | `{row['id']}` | {attr['data_source']} | {attr['language']} | "
+            f"| [Page {row['sample']:02d}]({row['source_url']}) | {attr['data_source']} | {attr['language']} | "
             f"{attr['layout']} | {counts.get('equation_isolated', 0)} / {counts.get('table', 0)} | "
-            f"{result['image_placements']} | {result['native_text_characters']} | "
             f"{result['render_png_bytes']:,} B |"
         )
     lines.extend(

@@ -175,7 +175,7 @@ def test_clef_provider_bounds_and_large_image_batch_splitting(cases: list[dict])
     assert sum(len(chosen) for _, chosen, _, _ in clef) == 6
     assert all(len(body["questions"]) <= 4 for _, _, _, body in clef)
     assert all(sum(len(v.encode()) for v in body["state"] if isinstance(v, str)) <= 4000 for _, _, _, body in clef)
-    images = [{"data": b"x" * 120_000}] * 6
+    images: list[dict[str, Any] | None] = [{"data": b"x" * 120_000}] * 6
     batches = runner.admitted_batches(cases[:6], images, "test-model", silver=True)
     assert len(batches) > 1
     assert sum(len(chosen) for _, chosen, _, _ in batches) == 6

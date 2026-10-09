@@ -13,8 +13,8 @@ overview.
 
 ## Working conventions
 
-- This workspace is private `pdf-master` development. Remotes `origin` and
-  `private` target `justsml/pdf-master`, verified private on 2026-10-08.
+- This workspace is private `jev-pdf` development (formerly `pdf-master`). Remotes `origin` and
+  `private` target `justsml/jev-pdf`, renamed and verified private on 2026-10-08.
   Public upstream/fork remotes remain disconnected.
 - The user explicitly authorized pushing the completed work to private
   `origin/main` on 2026-10-08. Keep future pushes within the user's requested
@@ -22,8 +22,10 @@ overview.
   development artifacts. The local pre-push hook permits only this private
   repository's main branch and verifies private visibility; do not bypass it.
   GitHub Actions remain disabled. Previously published history remains public.
-- Keep the existing pylopdf import/package identity and license notices while
-  evaluating the working name `pdf-master`; packaging migration is separate work.
+- The distribution is `jev-pdf`, with public import `jev_pdf`. Keep `pylopdf`
+  as a compatibility import and retain original authors, licenses and notices.
+  Historical artifact directories keep `pdf-master-artifacts` for provenance;
+  do not rename frozen paths or hashes during active experiments.
 - The user authorizes parallel research/experiment agents using `gpt-6.1-sol`
   with low or medium reasoning. Give agents disjoint files, CPU-only workloads,
   and no credential access or network inference unless explicitly coordinated.

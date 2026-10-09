@@ -279,3 +279,43 @@ The user authorized adding 10–20 sampled OmniDocBench rows, pushing to private
 limits, council proposals and reprioritization. Three parallel agents use
 separate worktrees; the coordinator owns hosted requests and shared accounting.
 The protected 20-file holdout remains untouched.
+
+### Measured combinations and planning update
+
+The new [28-page borderless/prose challenge](bench/results/borderless-challenge.md)
+exposed native candidate coverage of only 2/12 borderless positives. The
+[rolling-row candidate assembler](bench/results/rolling-rows.md) reached 12/12,
+but also proposed tables on all 12 prose negatives and lost merged spans.
+[Paired admission](bench/results/rolling-admission.md) combined native vectors,
+rolling candidates and Luna with a 512-pixel source image: 12/12 borderless exact,
+0/12 prose false tables and 4/4 merged controls. This is authored DEV evidence;
+a fresh robustness set already exposes lower candidate coverage. No extraction
+default changed.
+
+The [shared plan](bench/TUNING_WAVE.md#evidence-to-experiment-planning-rule) now
+explicitly maps observed failures to compatible prior techniques, combined
+experiments, removal ablations and failure gates. Next combinations target
+OCR-box overlap, prose admission, merged-span preservation and payload admission.
+
+The user renamed the private repository and package to **jev-pdf**. Remote
+`origin` and `private` now target `justsml/jev-pdf`, verified private; the guard
+continues to permit only private `main` pushes. Package identity uses `jev-pdf`
+and `jev_pdf`, preserving compatible `pylopdf` imports and original notices.
+Historical artifact directories remain unchanged. No package was published.
+
+### 2026-10-09 05:16 UTC — P001 prompt sweep and fresh-layout correction
+
+- Frozen 15 generic q0-only prompt variants from three independent worktree
+  agents; both 24-page hosted cohorts and Luna/PPLX use identical source evidence
+  and candidate menus. Dedicated 05:05–06:05 UTC tuning window, $1 incremental
+  admission cap under the shared $15 cumulative cap.
+- The unchanged Luna 512 selector falls to 3/16 exact tables and 2/8 prose false
+  positives on fresh topology DEV. Candidate coverage is only 4/16. This directly
+  motivates complementary candidate topology work, not confidence tuning alone.
+- A004 OCR overlap ablation improves 1200 px borderless exactness from 6/12 to
+  10/12 to 12/12 at allowances 0, 0.25, 0.5 word heights; all 12 prose false
+  positives remain. No new OCR/model spend. Defaults unchanged.
+- Package/repository renamed jev-pdf, private visibility and scoped pre-push guard
+  retained. Editable migration passes 1,919 tests, 16 skips and two expected
+  failures; no release publication. Provider-page rate regression now excludes
+  local replays from throughput and preserves real HTTP time before later replays.

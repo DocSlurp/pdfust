@@ -202,3 +202,15 @@ def test_pilot_adapter_rejects_non_dev_metadata(split: str | None) -> None:
     case["split"] = split
     with pytest.raises(ValueError, match="only explicitly labeled DEV"):
         pilot_case(case)
+
+
+def test_optional_provider_confidence_is_validated_but_does_not_change_assignment(pilots: list[dict]) -> None:
+    result = response(pilots[0])
+    expected = parse_response(pilots[0]["input"], result)
+    for answer in result["answers"].values():
+        answer["confidence"] = 0.47
+    assert parse_response(pilots[0]["input"], result) == expected
+    for invalid in (True, float("nan"), -0.1, 1.1, "high"):
+        result["answers"]["q0"]["confidence"] = invalid
+        with pytest.raises(ValueError, match="confidence"):
+            parse_response(pilots[0]["input"], result)

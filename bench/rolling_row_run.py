@@ -209,7 +209,10 @@ def render_report(summary: dict[str, Any]) -> str:
             f"{first['pages'] - first['native_zero_call_pages']} pages require admission."
         ),
         "",
-        "| Model / arm | Borderless exact | Prose false table | Controls exact | Unresolved borderless | Unresolved prose |",
+        (
+            "| Model / arm | Borderless exact | Prose false table | Controls exact | "
+            "Unresolved borderless | Unresolved prose |"
+        ),
         "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for key, cohort in summary["cohorts"].items():
