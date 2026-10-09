@@ -94,3 +94,26 @@ Host 55084862: RTX PRO 6000 Blackwell Max-Q Workstation, 97,887 MiB GPU memory, 
 The first control pilot used an older manifest lacking the required model field: all three attempts failed before GPU forward, with failures retained. Corrected batch controls returned all three circle/square/blank decisions correctly. Control attempts are excluded from all 216-input scores and rates. The executed adapter/worker prototype is bound by retained hashes: `remote_clef_batch.py` = `ec9892aa5c5dde26ee35ad2ed21a3891231e33a7105100830d5d2c4aa644104a`; `remote_batch.py` = `3e177d2b22ca8cc8460446dcbfc58e766e4995e10aa41f232a5ec3554b579b3b`. The subsequently committed tested version changes formatting/type annotations, not evidence or response semantics.
 
 Frozen source manifest SHA256 `0ddd6c3c02e86a3cd52280446d19112e20ede72dba709c26a1ae07c11d0b3104`; source-index SHA256 `52e9c5241455cb7877cf0976b4fb4969735b5a0d7841972bfcbc6bee1ad0c0a1`. Requests, responses, unique-batch metrics, scorer outputs and samples remain ignored under `.scratch/remote-gpu-20261009/r001/` and `.scratch/council/lowlevel-inventor/`. No default extraction API uses this worker or the experimental decision models.
+
+## Clef B1/B2 repeats after bootstrap
+
+Two additional source-verified 216-input runs followed completion of the environment bootstrap and all other GPU inference. The original contended sweep above is retained separately. A small archive transfer overlapped the first model load only; no other GPU inference overlapped these repeats. Each uses a fresh worker, one model copy and the unchanged source requests, with a 100-second hard deadline.
+
+| Repeat | Valid / planned | Known / 144 | Abstain / 72 | Same choice as corresponding first sweep / 216 | Same choice as prior serial / 216 |
+|---|---:|---:|---:|---:|---:|
+| B1 | 216/216 | 92/144 | 0/72 | 216/216 | 216/216 |
+| B2 | 216/216 | 92/144 | 0/72 | 216/216 | 214/216 |
+
+Both repeats reproduce every choice of their corresponding initial batch size, including B2’s two changed choices relative to serial/B1. Thus their nine-arm score tables above also remain unchanged. All four B1/B2 invocations score 92/144 known cases and 0/72 ambiguous abstentions, with no schema or worker failures.
+
+| Repeat | Load wall / CPU s | Predict wall / CPU s | Warm inputs/min | Est. warm inputs/USD | Worker wall / CPU s | Worker-inclusive inputs/min |
+|---|---:|---:|---:|---:|---:|---:|
+| B1 | 7.42 / 8.34 | 48.15 / 58.36 | 269.18 | 12667 | 60.97 / 66.95 | 212.56 |
+| B2 | 7.28 / 8.22 | 46.76 / 54.67 | 277.18 | 13044 | 57.29 / 63.04 | 226.21 |
+
+| Repeat | Process peak RSS GiB | CUDA run peak allocated / reserved GiB | Device samples available / total | Mean device utilization | Peak device VRAM MiB |
+|---|---:|---:|---:|---:|---:|
+| B1 | 51.79 | 51.41 / 51.60 | 61/61 | 75.80% | 53,544 |
+| B2 | 51.79 | 51.63 / 52.13 | 58/58 | 80.62% | 54,092 |
+
+Repeat warm rates rise from the initial 266.88/273.08 to 269.18/277.18 inputs/min for B1/B2 (about 0.9%/1.5%). Within the repeat, B2 is about 3.0% faster over unique batch prediction time and 6.4% faster over worker wall. These small one-repeat differences do not isolate a contention effect or establish a universal batch-size optimum. Input/response identity, sampling scope, padding, quote-based estimates and full-page limitations are the same as above. No timings are pooled across the original and repeat invocations; billed costs remain pending.
