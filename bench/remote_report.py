@@ -7,6 +7,7 @@ are verified. This reporter never connects to a host or transfers references.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import math
@@ -16,6 +17,7 @@ from typing import Any
 from bench.lowlevel_run import CHOICES, parse_response, score
 
 MAX_JSON_BYTES = 16 * 1024 * 1024
+TEXT_REGIONS = 24
 PROTECTED_NAMES = {"heldout-silver", "silver-heldout-v1"}
 
 
@@ -100,6 +102,37 @@ def _choice(response: dict[str, Any]) -> dict[str, Any]:
     return {"choice": answer["choice"], "probabilities": None, "calibration": "unavailable: generated label"}
 
 
+def _text_projection(original: bytes, image: bytes, transport_model: str) -> dict[str, Any]:
+    """Admit only removal of a verified image part, preserving literal evidence."""
+    projected = json.loads(original)
+    state = projected.get("state")
+    if not isinstance(state, list):
+        message = "text ablation requires the canonical text/image state list"
+        raise TypeError(message)
+    strings, image_parts = [], []
+    for part in state:
+        if isinstance(part, str):
+            strings.append(part)
+        elif isinstance(part, dict) and part.get("type") == "image_url":
+            image_parts.append(part)
+        else:
+            message = "text ablation cannot discard an unsupported source part"
+            raise ValueError(message)
+    if not strings or len(image_parts) != 1:
+        message = "text ablation requires literal text and exactly one source image"
+        raise ValueError(message)
+    url = image_parts[0].get("image_url", {}).get("url", "")
+    if not isinstance(url, str) or not url.startswith("data:image/png;base64,"):
+        message = "text ablation image must be a frozen PNG data URI"
+        raise ValueError(message)
+    if base64.b64decode(url.split(",", 1)[1], validate=True) != image:
+        message = "canonical image bytes differ from verified source image"
+        raise ValueError(message)
+    projected["state"] = strings
+    projected["model"] = transport_model
+    return projected
+
+
 def evaluate(  # noqa: C901, PLR0913, PLR0912
     source_dir: str | Path,
     source_index: str | Path,
@@ -112,6 +145,9 @@ def evaluate(  # noqa: C901, PLR0913, PLR0912
     rental_cost_scope: str = "whole-run",
     allocated_cost_usd: float | None = None,
     allocation_method: str | None = None,
+    text_ablation: bool = False,
+    provenance: str | Path | None = None,
+    original_packets: str | Path | None = None,
 ) -> dict[str, Any]:
     """Verify all source artifacts before locally reading DEV references.
 
@@ -142,6 +178,36 @@ def evaluate(  # noqa: C901, PLR0913, PLR0912
     source_records = {row["request"]: row for row in manifest["records"]}
     staged_manifest = _dev(packets)
     staged = {row["id"]: row for row in _json(staged_manifest)["records"]}
+    provenance_rows = {}
+    original_rows = {}
+    original_manifest = None
+    if text_ablation:
+        if provenance is None or original_packets is None or transport_model is None:
+            message = "text ablation requires explicit provenance, original packets and transport model"
+            raise ValueError(message)
+        provenance_data = _json(_dev(provenance))
+        original_manifest = _dev(original_packets)
+        original_data = json.loads(_verified(original_manifest, provenance_data["source_manifest_sha256"]))
+        if (
+            provenance_data.get("schema_version") != 1
+            or provenance_data.get("ablation") != "text-geometry"
+            or provenance_data.get("selection") != "first explicitly staged records"
+            or provenance_data.get("limit") != TEXT_REGIONS
+            or len(index) != TEXT_REGIONS
+            or [row["id"] for row in original_data["records"][:TEXT_REGIONS]] != [row["id"] for row in index]
+            or len({row["page_ids"][0] for row in index}) != TEXT_REGIONS
+            or any(row["arm"] != "fresh-rgb-512" for row in index)
+        ):
+            message = "text ablation must retain the first 24 unique RGB512 source regions"
+            raise ValueError(message)
+        provenance_rows = {row["id"]: row for row in provenance_data["records"]}
+        original_rows = {row["id"]: row for row in original_data["records"]}
+        if len(provenance_rows) != TEXT_REGIONS or set(provenance_rows) != set(staged):
+            message = "text provenance inventory differs from staged packets"
+            raise ValueError(message)
+    elif provenance is not None or original_packets is not None:
+        message = "projection provenance requires the explicit text-ablation flag"
+        raise ValueError(message)
     by_id: dict[str, dict[str, Any]] = {}
     observations = {}
     for row in index:
@@ -157,17 +223,54 @@ def evaluate(  # noqa: C901, PLR0913, PLR0912
         image_bytes = _verified(_path(source, row["image_file"]), row["image_sha256"])
         staged_row = staged[row["id"]]
         staged_bytes = _read(_path(staged_manifest.parent, staged_row["request_file"]))
-        if staged_bytes != original:
+        if text_ablation:
+            fact = provenance_rows[row["id"]]
+            prior = original_rows[row["id"]]
+            if original_manifest is None or transport_model is None:
+                message = "original source packet manifest is required"
+                raise ValueError(message)
+            _verified(_path(original_manifest.parent, prior["request_file"]), row["sha256"])
+            if (
+                fact["source_request_sha256"] != row["sha256"]
+                or fact["source_request_file"] != prior["request_file"]
+                or fact["source_image_files"] != prior["image_files"]
+                or fact["source_image_sha256"] != [row["image_sha256"]]
+                or fact["source_model"] != row["model"]
+                or fact["projected_model"] != transport_model
+                or staged_row["image_files"]
+            ):
+                message = "text provenance source/transport facts differ"
+                raise ValueError(message)
+            if len(prior["image_files"]) != 1:
+                message = "text ablation requires exactly one original source crop"
+                raise ValueError(message)
+            _verified(_path(original_manifest.parent, prior["image_files"][0]), row["image_sha256"])
+            projected = _text_projection(original, image_bytes, transport_model)
+            if (
+                json.loads(staged_bytes) != projected
+                or hashlib.sha256(staged_bytes).hexdigest() != fact["projected_request_sha256"]
+                or fact["literal_state_sha256"]
+                != [hashlib.sha256(part.encode()).hexdigest() for part in projected["state"]]
+                or fact["text_projection_fields"]
+                != {
+                    "state": "literal strings retained in source order",
+                    "questions": "unchanged",
+                    "removed": "image_url state parts only",
+                }
+            ):
+                message = "text projection modified evidence or question fields beyond the image ablation"
+                raise ValueError(message)
+        elif staged_bytes != original:
             source_body = json.loads(original)
             staged_body = json.loads(staged_bytes)
             source_body["model"] = transport_model
             if transport_model is None or staged_body != source_body:
                 message = "staged request differs beyond the declared model-only transport override"
                 raise ValueError(message)
-        if len(staged_row["image_files"]) != 1:
+        if not text_ablation and len(staged_row["image_files"]) != 1:
             message = "L015 staging must retain exactly one source crop"
             raise ValueError(message)
-        if _read(_path(staged_manifest.parent, staged_row["image_files"][0])) != image_bytes:
+        if not text_ablation and _read(_path(staged_manifest.parent, staged_row["image_files"][0])) != image_bytes:
             message = "staged image differs from the frozen source crop"
             raise ValueError(message)
         page_id = row["page_ids"][0]
@@ -216,7 +319,7 @@ def evaluate(  # noqa: C901, PLR0913, PLR0912
     results = []
     for source_id, row in by_id.items():
         target = targets_by_id[row["page_ids"][0]]
-        arm = row["arm"]
+        arm = "text-geometry" if text_ablation else row["arm"]
         group = groups.setdefault(
             arm,
             {
@@ -310,6 +413,15 @@ def evaluate(  # noqa: C901, PLR0913, PLR0912
     samples, incomplete_gpu_tail = (
         _jsonl(gpu_samples, allow_incomplete_tail=checkpoint) if gpu_samples.exists() else ([], False)
     )
+    initialization_cuda = status.get("initialization", {}).get("cuda", {})
+    run_cuda = {}
+    for key, group_key in (
+        ("peak_allocated_bytes", "cuda_peak_allocated_bytes"),
+        ("peak_reserved_bytes", "cuda_peak_reserved_bytes"),
+    ):
+        values = [initialization_cuda.get(key)] + [group[group_key] for group in groups.values()]
+        observed = [value for value in values if value is not None]
+        run_cuda[key] = max(observed) if observed else None
     return {
         "experiment": "L015-remote-dev",
         "model": model,
@@ -318,9 +430,15 @@ def evaluate(  # noqa: C901, PLR0913, PLR0912
         "source_manifest_sha256": hashlib.sha256(_read(source / "manifest.json")).hexdigest(),
         "source_index_sha256": hashlib.sha256(_read(_dev(source_index))).hexdigest(),
         "transport_model_override": transport_model,
+        "text_ablation": text_ablation,
+        "projection_provenance_sha256": hashlib.sha256(_read(_dev(provenance))).hexdigest() if provenance else None,
         "worker_status": status,
         "checkpoint": checkpoint,
         "incomplete_final_log_line": incomplete_tail or incomplete_gpu_tail,
+        "cuda_run_peaks": run_cuda,
+        "cuda_run_peak_scope": (
+            "maximum across initialization and completed-attempt counters; active attempt unmeasured"
+        ),
         "gpu_sample_count": len(samples),
         "gpu_available_samples": sum(row.get("raw_csv") is not None for row in samples),
         "gpu_sampling_scope": "device-wide utilization/VRAM, nominal one-second interval",
@@ -425,6 +543,9 @@ def main() -> None:
     for argument in ("source-dir", "source-index", "worker-output", "packets", "model", "markdown"):
         parser.add_argument("--" + argument, required=True)
     parser.add_argument("--transport-model")
+    parser.add_argument("--text-ablation", action="store_true")
+    parser.add_argument("--provenance")
+    parser.add_argument("--original-packets")
     parser.add_argument("--rental-cost-usd", type=float)
     parser.add_argument("--rental-cost-scope", choices=("whole-run", "marginal-estimate"), default="whole-run")
     parser.add_argument("--allocated-cost-usd", type=float)

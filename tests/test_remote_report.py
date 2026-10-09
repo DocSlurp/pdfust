@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -213,3 +214,114 @@ def test_duplicate_attempt_not_counted_as_fresh(fixture: dict[str, Any]) -> None
     path.write_text("\n".join(lines + lines[:2]) + "\n")
     with pytest.raises(ValueError, match="duplicate fresh attempt"):
         evaluate(**fixture)
+
+
+def text_packets(fixture: dict[str, Any]) -> dict[str, Any]:
+    """Derive a test-only source text ablation with independently bound provenance."""
+    source = fixture["source_dir"]
+    original_packets = fixture["packets"]
+    original_staged = json.loads(original_packets.read_text())
+    index = json.loads(fixture["source_index"].read_text())
+    manifest = json.loads((source / "manifest.json").read_text())
+    directory = original_packets.parent.parent / "text-packets"
+    directory.mkdir()
+    projected_records, facts = [], []
+    events = [json.loads(line) for line in (fixture["worker_output"] / "attempts.jsonl").read_text().splitlines()]
+    for number, row in enumerate(index):
+        image = (source / row["image_file"]).read_bytes()
+        original = json.loads((source / row["request"]).read_text())
+        original["state"] = [
+            "unchanged literal text and geometry",
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(image).decode()}},
+        ]
+        source_sha = write(source / row["request"], original)
+        write(original_packets.parent / row["request"], original)
+        row["sha256"] = source_sha
+        manifest["records"][number]["sha256"] = source_sha
+        projected = dict(original, model="unit-text", state=original["state"][:1])
+        projected_sha = write(directory / row["request"], projected)
+        events[2 * number + 1]["request_sha256"] = projected_sha
+        prior = original_staged["records"][number]
+        projected_records.append({"id": row["id"], "request_file": row["request"], "image_files": []})
+        facts.append(
+            {
+                "id": row["id"],
+                "source_request_file": prior["request_file"],
+                "source_request_sha256": source_sha,
+                "source_image_files": prior["image_files"],
+                "source_image_sha256": [row["image_sha256"]],
+                "projected_request_sha256": projected_sha,
+                "source_model": row["model"],
+                "projected_model": "unit-text",
+                "literal_state_sha256": [hashlib.sha256(projected["state"][0].encode()).hexdigest()],
+                "text_projection_fields": {
+                    "state": "literal strings retained in source order",
+                    "questions": "unchanged",
+                    "removed": "image_url state parts only",
+                },
+            }
+        )
+    write(fixture["source_index"], index)
+    write(source / "manifest.json", manifest)
+    (fixture["worker_output"] / "attempts.jsonl").write_text("".join(json.dumps(event) + "\n" for event in events))
+    write(directory / "manifest.json", {"records": projected_records})
+    write(
+        directory / "provenance.json",
+        {
+            "schema_version": 1,
+            "ablation": "text-geometry",
+            "selection": "first explicitly staged records",
+            "limit": 24,
+            "source_manifest_sha256": hashlib.sha256(original_packets.read_bytes()).hexdigest(),
+            "records": facts,
+        },
+    )
+    return dict(
+        fixture,
+        packets=directory / "manifest.json",
+        text_ablation=True,
+        transport_model="unit-text",
+        provenance=directory / "provenance.json",
+        original_packets=original_packets,
+    )
+
+
+def test_explicit_text_ablation_conserves_questions_and_literals(fixture: dict[str, Any]) -> None:
+    arguments = text_packets(fixture)
+    result = evaluate(**arguments)
+    assert result["groups"][0]["arm"] == "text-geometry"
+    assert result["groups"][0]["known_correct"] == 16
+    assert result["groups"][0]["ambiguous_denominator"] == 8
+    assert result["text_ablation"] is True
+    assert result["projection_provenance_sha256"] is not None
+    arguments.pop("provenance")
+    arguments.pop("original_packets")
+    arguments["text_ablation"] = False
+    with pytest.raises(ValueError, match="transport override"):
+        evaluate(**arguments)
+
+
+def test_text_ablation_rejects_question_edit_even_with_new_hash(fixture: dict[str, Any]) -> None:
+    arguments = text_packets(fixture)
+    packet = arguments["packets"].parent / "p0000.json"
+    body = json.loads(packet.read_text())
+    body["questions"]["q0"]["instructions"] = "an unauthorized hint"
+    altered_sha = write(packet, body)
+    facts = json.loads(arguments["provenance"].read_text())
+    facts["records"][0]["projected_request_sha256"] = altered_sha
+    write(arguments["provenance"], facts)
+    with pytest.raises(ValueError, match="question fields"):
+        evaluate(**arguments)
+
+
+def test_cuda_peak_includes_initialization(fixture: dict[str, Any]) -> None:
+    write(
+        fixture["worker_output"] / "status.json",
+        {
+            "status": "complete",
+            "initialization": {"cuda": {"peak_allocated_bytes": 200, "peak_reserved_bytes": 300}},
+            "cuda": {"peak_allocated_bytes": 50, "peak_reserved_bytes": 90},
+        },
+    )
+    result = evaluate(**fixture)
+    assert result["cuda_run_peaks"] == {"peak_allocated_bytes": 200, "peak_reserved_bytes": 300}
