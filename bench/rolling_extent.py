@@ -1,6 +1,6 @@
 """T005 separately frozen source-only local-gap extent alternatives."""
 
-# ruff: noqa: EM101, TRY003, PLR2004
+# ruff: noqa: EM101, TRY003, PLR2004, PLC0415
 from __future__ import annotations
 
 import argparse
@@ -126,13 +126,103 @@ def freeze(sources: list[Path], output: Path) -> dict[str, Any]:
     return {"sha256": hashlib.sha256(data).hexdigest(), "output": str(output)}
 
 
+def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
+    """Evaluate previously frozen variants, excluding ambiguous reference labels."""
+    from bench.borderless_challenge import score
+    from bench.rolling_robustness import exact_source_ownership
+
+    raw = (guard_path(directory) / "candidates.json").read_bytes()
+    frozen = json.loads(raw)
+    if frozen["configs"] != configs() or len(target_paths) != len(frozen["cohorts"]):
+        raise ValueError("Frozen extent identity mismatch")
+    rows = []
+    for index, (cohort, target_path) in enumerate(zip(frozen["cohorts"], target_paths, strict=True)):
+        source_raw = guard_path(Path(cohort["source_path"])).read_bytes()
+        if hashlib.sha256(source_raw).hexdigest() != cohort["source_sha256"]:
+            raise ValueError("Extent source changed after freeze")
+        sources = {p["id"]: p for p in json.loads(source_raw)["pages"]}
+        targets = {p["id"]: p for p in json.loads(guard_path(target_path).read_bytes())}
+        if set(sources) != set(targets):
+            raise ValueError("Extent reference IDs mismatch")
+        for page in cohort["pages"]:
+            target = targets[page["id"]]
+            eligible = target.get("binary_admission_eligible", True) and target["kind"] != "ambiguous"
+            for alternative in page["alternatives"]:
+                tables = alternative["candidates"]
+                scored = [score(target, [t]) for t in tables] if eligible else []
+                best = max(
+                    range(len(scored)),
+                    key=lambda i: (scored[i]["exact_page"], scored[i]["exact_cells"], scored[i]["owned_values"]),
+                    default=None,
+                )
+                scores = (scored[best] if best is not None else score(target, [])) if eligible else None
+                ownership = (
+                    exact_source_ownership(target, sources[page["id"]], tables[best])
+                    if eligible and best is not None and target.get("authored_slots")
+                    else None
+                )
+                rows.append(
+                    {
+                        "cohort": index,
+                        "id": page["id"],
+                        "config": alternative["config"],
+                        "kind": target["kind"],
+                        "eligible": eligible,
+                        "candidate_count": len(tables),
+                        "scores": scores,
+                        "ownership": ownership,
+                    }
+                )
+    summary: dict[str, Any] = {
+        "candidate_sha256": hashlib.sha256(raw).hexdigest(),
+        "aggregates": {},
+        "resources": {k: frozen[k] for k in ("wall_seconds", "cpu_seconds", "peak_rss_bytes", "measurement")},
+    }
+    for index in range(len(frozen["cohorts"])):
+        for policy in configs():
+            for kind in ("borderless", "prose", "ruled-control", "ambiguous"):
+                group = [
+                    r for r in rows if r["cohort"] == index and r["config"] == policy["name"] and r["kind"] == kind
+                ]
+                eligible_rows = [r for r in group if r["eligible"]]
+                summary["aggregates"][f"{index}/{policy['name']}/{kind}"] = {
+                    "pages": len(group),
+                    "scored_pages": len(eligible_rows),
+                    "proposed_pages": sum(r["candidate_count"] > 0 for r in group),
+                    **{
+                        k: sum(r["scores"][k] for r in eligible_rows)
+                        for k in (
+                            "exact_page",
+                            "exact_cells",
+                            "exact_spans",
+                            "owned_values",
+                            "owned_words",
+                            "false_positive_page",
+                        )
+                    },
+                    "failures": [
+                        r["id"] for r in eligible_rows if target_positive(r) and not r["scores"]["exact_page"]
+                    ],
+                }
+    (directory / "private-scores.json").write_text(json.dumps({"rows": rows}, indent=2))
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2))
+    return summary
+
+
+def target_positive(row: dict[str, Any]) -> bool:
+    """Identify scored structural slices, never use reference kind during generation."""
+    return row["kind"] in ("borderless", "ruled-control")
+
+
 def main() -> None:
-    """Source-only preparation; no hosted execution or reference arguments."""
+    """Prepare source-only candidates or score the already frozen artifact."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("sources", type=Path, nargs="+")
+    parser.add_argument("sources", type=Path, nargs="*")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--targets", type=Path, nargs="+")
     args = parser.parse_args()
-    print(json.dumps(freeze(args.sources, args.output)))
+    result = score_frozen(args.output, args.targets) if args.targets else freeze(args.sources, args.output)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
