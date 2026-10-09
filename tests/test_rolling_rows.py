@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections import Counter
 from copy import deepcopy
 
@@ -89,3 +90,31 @@ def test_duplicate_ids_are_refused() -> None:
 @pytest.mark.parametrize(("text", "expected"), [("$1,024", True), ("(12%)", True), ("12kg", False), ("Units", False)])
 def test_literal_numeric_detector(text: str, *, expected: bool) -> None:
     assert numeric(text) is expected
+
+
+def test_overlap_allowance_is_bounded_and_opt_in() -> None:
+    source = {"page_size": [500, 500], "words": []}
+    for value in [True, -0.1, 0.51, math.inf, math.nan, "0.25"]:
+        with pytest.raises(ValueError, match="overlap_heights"):
+            assemble(source, "rolling", overlap_heights=value)
+    assert assemble(source, "rolling") == assemble(source, "rolling", overlap_heights=0.0)
+
+
+def test_overlap_join_applies_only_to_sparse_nonnumeric_continuations() -> None:
+    source = page()
+    for word in source["words"]:
+        word["bbox"][3] = word["bbox"][1] + 20
+    baseline = assemble(source, "rolling")["candidates"][0]
+    allowed = assemble(source, "rolling", overlap_heights=0.25)["candidates"][0]
+    assert baseline["row_count"] == 7
+    assert allowed["row_count"] == 4
+    assert assemble(source, "physical", overlap_heights=0.5) == assemble(source, "physical")
+    assert len({identifier for cell in allowed["cells"] for identifier in cell["source_ids"]}) == sum(
+        len(cell["source_ids"]) for cell in allowed["cells"]
+    )
+    for index, word in enumerate(list(source["words"])):
+        if word["text"] == "depot":
+            y = word["bbox"][1]
+            source["words"].append({"id": f"numeric{index}", "text": "9", "bbox": [110, y, 140, y + 20]})
+    numeric_rows = assemble(source, "rolling", overlap_heights=0.5)["candidates"][0]
+    assert numeric_rows["row_count"] == 7

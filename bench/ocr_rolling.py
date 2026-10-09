@@ -498,16 +498,153 @@ def report(rows: list[dict[str, Any]], output: Path) -> None:
     lines.extend(
         [
             "",
-            (f"Raster and separate native-vector preparation: {preparation['wall_seconds']:.3f}s wall / "
-            f"{preparation['cpu_seconds']:.3f}s CPU; "
-            f"{preparation['peak_rss_kib'] / 1024:.1f} MiB process-lifetime getrusage peak RSS. "
-            "This parent-process lifetime peak is distinct from per-call OCR worker memory and includes "
-            "the complete 56-raster preparation pass. No preparation-memory bound is inferred from the "
-            "smaller OCR worker peaks."),
+            (
+                f"Raster and separate native-vector preparation: {preparation['wall_seconds']:.3f}s wall / "
+                f"{preparation['cpu_seconds']:.3f}s CPU; "
+                f"{preparation['peak_rss_kib'] / 1024:.1f} MiB process-lifetime getrusage peak RSS. "
+                "This parent-process lifetime peak is distinct from per-call OCR worker memory and includes "
+                "the complete 56-raster preparation pass. No preparation-memory bound is inferred from the "
+                "smaller OCR worker peaks."
+            ),
             "",
         ]
     )
     (Path(__file__).parent / "results/ocr-rolling.md").write_text("\n".join(lines))
+
+
+def overlap_ablation(output: Path) -> None:
+    """Freeze three source-only overlap hypotheses before paired DEV scoring."""
+    directory = output / "overlap-a004-v1"
+    paths = [
+        output / str(edge) / f"case-{index:03d}" / "observed.json" for edge in SCALES for index in range(PAGE_COUNT)
+    ]
+    config = {
+        "experiment": "A004",
+        "overlap_heights": [0.0, 0.25, 0.5],
+        "scope": "otherwise eligible sparse nonnumeric rolling continuations only",
+        "source_observations": {str(path.relative_to(output)): sha(path) for path in paths},
+        "assembler_sha256": sha(Path(__file__).parent / "rolling_rows.py"),
+        "default_changed": False,
+        "new_ocr_calls": 0,
+        "provider_charge": 0,
+    }
+    immutable(directory / "frozen-config.json", config)
+    started, cpu = time.perf_counter(), time.process_time()
+    rows = []
+    for path in paths:
+        source = json.loads(path.read_text())
+        hypotheses = {
+            str(value): assemble(source, "rolling", overlap_heights=value) for value in config["overlap_heights"]
+        }
+        baseline = json.loads((path.parent / "candidates.json").read_text())["alternatives"]["rolling"]
+        if hypotheses["0.0"] != baseline:
+            message = "Default assembler no longer matches the original frozen baseline"
+            raise ValueError(message)
+        rows.append(
+            {
+                "id": source["id"],
+                "edge": source["edge"],
+                "source_words": source["words"],
+                "hypotheses": hypotheses,
+                "baseline_matches_original": True,
+            }
+        )
+    immutable(directory / "frozen-candidates.json", rows)
+    after = resource.getrusage(resource.RUSAGE_SELF)
+    (directory / "resources.json").write_text(
+        json.dumps(
+            {
+                "assembly_wall_seconds": time.perf_counter() - started,
+                "assembly_cpu_seconds": time.process_time() - cpu,
+                "peak_rss_kib": after.ru_maxrss,
+                "scope": "single sequential CPU process; getrusage lifetime RSS; no sampling",
+            },
+            indent=2,
+        )
+    )
+    # Only the independent scorer below opens construction references.
+    from bench.borderless_challenge import score as score_target  # noqa: PLC0415
+
+    targets = {target["id"]: target for target in json.loads((CORPUS / "private-targets.json").read_text())}
+    native = {row["id"]: row["tables"] for row in json.loads((output / "native-vector.json").read_text())}
+    scores = []
+    for row in rows:
+        target = targets[row["id"]]
+        for allowance, candidate in row["hypotheses"].items():
+            pure = candidate["candidates"]
+            scores.append(
+                {
+                    "id": row["id"],
+                    "edge": row["edge"],
+                    "allowance": allowance,
+                    "kind": target["kind"],
+                    "wrap": target["wrap"],
+                    "pure": score_target(target, pure),
+                    "hybrid": score_target(target, native[row["id"]] or pure),
+                    "conserved": conservation(row["source_words"], candidate),
+                }
+            )
+    (directory / "scores.json").write_text(json.dumps(scores, indent=2))
+    lines = [
+        "# A004 OCR overlap ablation",
+        "",
+        (
+            "Three allowances (0.0, 0.25, 0.5 median OCR item heights) were frozen before this paired scorer ran. "
+            "All use the same 56 immutable OCR observations; no new OCR, inference, geometry shrinking, "
+            "string splitting, or case-specific rule changes occur. Original A003/default behavior remains unchanged; "
+            "the optional keyword defaults to zero and validates finite values in [0, 0.5]."
+        ),
+        "",
+        (
+            "| Edge | Allowance | Borderless exact /12 | Wrapped exact /6 | Prose FP /12 | "
+            "Pure merged exact /4 | Pure complete /28 | Hybrid complete /28 | OCR IDs conserved /28 |"
+        ),
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for edge in SCALES:
+        for allowance in ("0.0", "0.25", "0.5"):
+            selected = [row for row in scores if row["edge"] == edge and row["allowance"] == allowance]
+            borderless = [row for row in selected if row["kind"] == "borderless"]
+            wrapped = [row for row in borderless if row["wrap"]]
+            lines.append(
+                f"| {edge} | {allowance} | {sum(r['pure']['exact_page'] for r in borderless)}/12 | "
+                f"{sum(r['pure']['exact_page'] for r in wrapped)}/6 | "
+                f"{sum(r['pure']['false_positive_page'] for r in selected if r['kind'] == 'prose')}/12 | "
+                f"{sum(r['pure']['exact_page'] for r in selected if r['kind'] == 'ruled-control')}/4 | "
+                f"{sum(r['pure']['exact_page'] for r in selected)}/28 | "
+                f"{sum(r['hybrid']['exact_page'] for r in selected)}/28 | "
+                f"{sum(r['conserved'] for r in selected)}/28 |"
+            )
+    resources = json.loads((directory / "resources.json").read_text())
+    lines.extend(
+        [
+            "",
+            (
+                "All 56 zero-allowance outputs exactly match the original frozen candidates. "
+                "Missing/refused counts are 0/28 per scale; all denominators include "
+                "12 borderless, 12 prose, and 4 merged pages. "
+                "The lower gap boundary alone becomes -height×allowance; numeric-bearing and complete bands "
+                "still cannot join, and the existing upper-gap, anchor-support, column and source-conservation "
+                "conditions remain active. Native vectors/text are used solely for the separately labeled hybrid."
+            ),
+            "",
+            (
+                f"CPU assembly-only pass: {resources['assembly_wall_seconds']:.3f}s wall / "
+                f"{resources['assembly_cpu_seconds']:.3f}s CPU; {resources['peak_rss_kib'] / 1024:.1f} MiB "
+                "process-lifetime getrusage SELF RSS, single sequential process, no sampling/children/GPU. "
+                "No provider spending or additional OCR resource usage. These are authored correlated DEV results, "
+                "not independent confirmation or production acceptance."
+            ),
+            "",
+            (
+                "Reproduce `.venv/bin/python -m bench.ocr_rolling --overlap` after the frozen baseline exists. "
+                "Config, source hashes, candidate matrices/IDs, full scores and resources remain ignored in "
+                "`ocr-rolling-v1/66c3cde77b110038/overlap-a004-v1/`. The default candidate artifact is preserved."
+            ),
+            "",
+        ]
+    )
+    (Path(__file__).parent / "results/ocr-rolling-overlap.md").write_text("\n".join(lines))
 
 
 def main() -> None:
@@ -517,6 +654,7 @@ def main() -> None:
     parser.add_argument("--prepare", action="store_true")
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--score", action="store_true")
+    parser.add_argument("--overlap", action="store_true")
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--id")
     parser.add_argument("--edge", type=int, choices=SCALES)
@@ -529,6 +667,8 @@ def main() -> None:
         run(args.output)
     if args.score:
         score(args.output)
+    if args.overlap:
+        overlap_ablation(args.output)
 
 
 if __name__ == "__main__":

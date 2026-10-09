@@ -80,10 +80,17 @@ def _anchors(parts: list[dict[str, Any]], height: float) -> list[dict[str, Any]]
     return selected
 
 
-def assemble(page: dict[str, Any], variant: str = "physical") -> dict[str, Any]:  # noqa: C901, PLR0912
+def assemble(page: dict[str, Any], variant: str = "physical", *, overlap_heights: float = 0.0) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Return unaccepted candidate cells and complete unresolved word inventory."""
     if variant not in ("physical", "rolling"):
         raise ValueError("Unknown row hypothesis")
+    if (
+        isinstance(overlap_heights, bool)
+        or not isinstance(overlap_heights, (int, float))
+        or not math.isfinite(overlap_heights)
+        or not 0.0 <= overlap_heights <= 0.5
+    ):
+        raise ValueError("overlap_heights must be finite and between 0.0 and 0.5")
     source = project(page)
     words, lookup = source["words"], {w["id"]: w for w in source["words"]}
     height = median(max(1, w["bbox"][3] - w["bbox"][1]) for w in words) if words else 1
@@ -131,7 +138,9 @@ def assemble(page: dict[str, Any], variant: str = "physical") -> dict[str, Any]:
         bottom = max(p["bbox"][3] for p in items)
         columns = {p["column"] for p in items}
         hanging = len(columns) < len(anchors) and not any(c in numeric_columns for c in columns)
-        close = previous_bottom is not None and 0 <= top - previous_bottom <= height * WRAP_HEIGHTS
+        close = (
+            previous_bottom is not None and -height * overlap_heights <= top - previous_bottom <= height * WRAP_HEIGHTS
+        )
         join = variant == "rolling" and bool(rows) and hanging and close
         if not join:
             rows.append([[] for _ in anchors])
