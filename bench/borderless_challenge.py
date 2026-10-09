@@ -16,7 +16,7 @@ import time
 from collections import Counter
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any
+from typing import Any, TypedDict
 
 from bench.corpus_routes import ROOT, ROUTES, RULES, route_tables
 from bench.feature_cases import text_op
@@ -25,7 +25,23 @@ from bench.silver_layouts import _pdf
 from bench.silver_structure import normalized, observed_table, process_peak_rss
 
 LABEL = "repository-authored DEV silver; not independently adjudicated"
-DESIGN = {
+
+
+class CompanionDesign(TypedDict):
+    """Describe authored geometry and counts without weakening numeric types."""
+
+    version: int
+    positive_pages: int
+    negative_pages: int
+    control_pages: int
+    font_sizes: list[int]
+    row_lead_points: int
+    wrap_lead_points: int
+    columns: list[int]
+    pairs: str
+
+
+DESIGN: CompanionDesign = {
     "version": 1,
     "positive_pages": 12,
     "negative_pages": 12,
@@ -47,16 +63,16 @@ def generate_cases() -> list[dict[str, Any]]:
         for wrap in (False, True):
             for positive in (True, False):
                 ops = [text_op("Quarterly observations", 48, 738, size=18)]
-                values = [["Site", "Units", "Change"]]
-                values += [
+                table_values = [["Site", "Units", "Change"]]
+                table_values += [
                     [f"{name} depot", str(24 + row * 7 + setting), str(3 + row + setting)]
                     for row, name in enumerate(("North", "South", "West"))
                 ]
                 words_by_cell = []
                 if positive:
-                    for row, cells in enumerate(values):
+                    for row, cells in enumerate(table_values):
                         for col, value in enumerate(cells):
-                            x = DESIGN["columns"][col]
+                            x: float = DESIGN["columns"][col]
                             # Standard Helvetica digits have fixed 0.556-em advance.
                             if right_aligned and col > 0:
                                 x += 70 - len(value) * size * 0.556
@@ -68,7 +84,7 @@ def generate_cases() -> list[dict[str, Any]]:
                         {
                             "row_count": 4,
                             "col_count": 3,
-                            "values": values,
+                            "values": table_values,
                             "spans": [
                                 {"row": row, "column": col, "row_span": 1, "column_span": 1}
                                 for row in range(4)
@@ -103,15 +119,15 @@ def generate_cases() -> list[dict[str, Any]]:
                             "awaits review",
                         ],
                     ]
-                    prose_values = []
+                    prose_table_values = []
                     for col, lines in enumerate(columns):
                         for row, value in enumerate(lines):
                             fragments = value.split(maxsplit=1) if wrap else [value]
                             for line, text in enumerate(fragments):
                                 ops.append(text_op(text, DESIGN["columns"][col], 680 - row * 42 - line * 15, size=size))
-                            prose_values.append(value)
+                            prose_table_values.append(value)
                     target_tables = []
-                    prose = " ".join(prose_values) + " Review complete"
+                    prose = " ".join(prose_table_values) + " Review complete"
                 ops.append(text_op("Review complete", 48, 360, size=11))
                 cases.append(
                     {
@@ -128,7 +144,7 @@ def generate_cases() -> list[dict[str, Any]]:
                 )
     for variant in range(4):
         xs, ys = [40, 200, 365, 550], [112, 147, 182, 217, 252, 287]
-        values = [["Area totals", None, "Year"], ["East", "West", "Combined"]]
+        values: list[list[str | None]] = [["Area totals", None, "Year"], ["East", "West", "Combined"]]
         values += [[f"Depot {row + 1} {col + 10 + variant}" for col in range(3)] for row in range(3)]
         ops = [text_op("Quarterly observations", 48, 738, size=18)]
         for y in ys:
@@ -136,11 +152,11 @@ def generate_cases() -> list[dict[str, Any]]:
         for x in xs:
             ops.append(f"{x} {792 - (147 if x == 200 else 112)} m {x} 505 l S")
         spans = []
-        for row, cells in enumerate(values):
-            for col, value in enumerate(cells):
-                if value is None:
+        for row, control_cells in enumerate(values):
+            for col, control_value in enumerate(control_cells):
+                if control_value is None:
                     continue
-                ops.append(text_op(value, xs[col] + 8, 792 - ys[row] - 22, size=11))
+                ops.append(text_op(control_value, xs[col] + 8, 792 - ys[row] - 22, size=11))
                 spans.append(
                     {"row": row, "column": col, "row_span": 1, "column_span": 2 if row == 0 and col == 0 else 1}
                 )
@@ -180,7 +196,9 @@ def score(target: dict[str, Any], observed: list[dict[str, Any]]) -> dict[str, A
         for table in observed
         if table["row_count"] == expected["row_count"] and table["col_count"] == expected["col_count"]
     ]
-    all_values = Counter(normalized(value) for table in observed for row in table["values"] for value in row if value)
+    all_values: Counter[str] = Counter(
+        normalized(value) or "" for table in observed for row in table["values"] for value in row if value
+    )
     best = {"exact_cells": False, "exact_spans": False, "owned_values": 0, "owned_words": 0}
     for table in candidates:
         actual = [normalized(value) for row in table["values"] for value in row]
@@ -304,12 +322,12 @@ def run(directory: Path) -> dict[str, Any]:
     wall, cpu_seconds = time.perf_counter() - began, time.process_time() - cpu
     peak, tool = process_peak_rss()
     target_map = {case["id"]: case["target"] for case in cases}
-    results = {}
+    results: dict[str, dict[str, Any]] = {}
     for route in (*ROUTES, "candidate-ceiling"):
-        selected = [row for row in rows if row["route"] == route]
-        results[route] = {"pages": len(cases), "errors": sum(row["status"] != "ok" for row in selected)}
+        selected_rows = [row for row in rows if row["route"] == route]
+        results[route] = {"pages": len(cases), "errors": sum(row["status"] != "ok" for row in selected_rows)}
         for kind in ("borderless", "prose", "ruled-control"):
-            members = [row for row in selected if target_map[row["id"]]["kind"] == kind]
+            members = [row for row in selected_rows if target_map[row["id"]]["kind"] == kind]
             scores = [row["scores"] for row in members if row["status"] == "ok"]
             results[route][kind] = {
                 "pages": len(members),
@@ -327,7 +345,7 @@ def run(directory: Path) -> dict[str, Any]:
             }
     pairs = []
     for setting in range(6):
-        pair = {
+        pair: dict[str, Any] = {
             "setting": setting,
             "font_size": DESIGN["font_sizes"][setting % 3],
             "numeric_alignment": "right" if setting >= 3 else "left",

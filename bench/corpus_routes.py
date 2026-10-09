@@ -16,14 +16,37 @@ import time
 import warnings
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from bench.silver import canonical, guard_path, load_manifest, sha, verify_input, write_json
 from bench.silver_structure import observed_table, prepare_targets, process_peak_rss, score_page
 
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
 ROOT = Path(__file__).resolve().parents[1]
 ROUTES = ("none", "vector", "raw-text", "vector-veto", "vector-paint")
-RULES = {
+
+
+class RouteRules(TypedDict):
+    """Describe the numeric admissions separately from provenance strings."""
+
+    version: int
+    routes: tuple[str, ...]
+    minimum_rows: int
+    minimum_columns: int
+    maximum_cell_tokens: int
+    maximum_cell_characters: int
+    minimum_numeric_columns_per_row: int
+    minimum_numeric_rows: int
+    paint_horizontal_support: int
+    paint_span_fraction: float
+    paint_tolerance_points: float
+    overlap_policy: str
+    priority: str
+
+
+RULES: RouteRules = {
     "version": 1,
     "routes": ROUTES,
     "minimum_rows": 3,
@@ -65,7 +88,7 @@ def compact_numeric(table: dict[str, Any]) -> bool:
     return numeric_rows >= RULES["minimum_numeric_rows"]
 
 
-def paint_support(table: dict[str, Any], drawings: list[dict[str, Any]]) -> bool:
+def paint_support(table: dict[str, Any], drawings: Sequence[Mapping[str, Any]]) -> bool:
     """Require distinct long horizontal stroke positions within the candidate box."""
     x0, y0, x1, y1 = table["bbox"]
     tolerance = RULES["paint_tolerance_points"]
@@ -92,7 +115,7 @@ def route_tables(
     route: str,
     vector: list[dict[str, Any]],
     text: list[dict[str, Any]],
-    drawings: list[dict[str, Any]],
+    drawings: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     """Route exclusively from native observed geometry, cell text and paint."""
     if route == "none":
@@ -255,7 +278,7 @@ def run(directory: Path, summary_path: Path = ROOT / "bench/results/corpus-route
         "False-positive pages by family (diagnostic grouping only; never routing inputs):",
     ]
     for route in ROUTES:
-        families = {}
+        families: dict[str, int] = {}
         for row in rows:
             if row["route"] == route and row["status"] == "ok" and row["scores"]["false_positive_page"]:
                 families[row["family"]] = families.get(row["family"], 0) + 1
