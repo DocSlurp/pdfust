@@ -1081,3 +1081,10 @@ was released. Prior rows remain byte-equivalent as parsed records. Conservative
 cumulative accounting is USD 28.5288416248 of USD 100, including the unchanged
 USD 6.05 older unresolved reservations. Posted charges are not invoice-finality
 claims. See `bench/results/remote-gpu-costs.md`.
+
+R001 settlement follow-up: a later provider check raised the posted whole-wave
+charge from USD 9.713 to USD 9.727 (USD 0.014 additional settlement after deletion).
+The original receipt is immutable and retained in ledger amendment history. The
+newer positive charge replaces the old amount; conservative campaign accounting
+is now USD 28.5428416248, including unchanged older reservations. The released
+R001 reservation is USD 8.273. No instances remain.
