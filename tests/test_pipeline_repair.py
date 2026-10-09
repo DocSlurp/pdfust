@@ -5,6 +5,7 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
+from bench import pipeline_repair
 from bench.pipeline_repair import apply, operations, packet, validate
 
 
@@ -142,3 +143,11 @@ def test_merged_native_covered_values_are_none() -> None:
     table["values"][0][1] = ""
     with pytest.raises(ValueError, match="span-covered"):
         validate(page, state)
+
+
+def test_packet_admission(monkeypatch: pytest.MonkeyPatch) -> None:
+    page, state = fixture([["Item", "10"], ["continued", ""]])
+    ops = operations(page, state)
+    monkeypatch.setattr(pipeline_repair, "MAX_PACKET_BYTES", 100)
+    with pytest.raises(ValueError, match="Packet admission"):
+        packet(page, state, ops)

@@ -120,7 +120,7 @@ def _native(page: dict[str, Any], table: dict[str, Any]) -> bool:
                 return True
         else:
             lookup = _sources(page)
-            mapped = [[] for _ in prior["cells"]]
+            mapped: list[list[str]] = [[] for _ in prior["cells"]]
             for ident, word in lookup.items():
                 x, y = (word["bbox"][0] + word["bbox"][2]) / 2, (word["bbox"][1] + word["bbox"][3]) / 2
                 hits = [

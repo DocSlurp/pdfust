@@ -59,3 +59,41 @@ and menu generation for both complete alternatives produced by the assembly
 agent. CPU utilization and peak RSS were unmeasured for these brief correctness
 checks. These are harness correctness results, not extraction quality or model
 performance claims.
+
+## Complete DEV source-only integration audit
+
+A subsequent audit projected the frozen DEV manifest immediately to only opaque
+ID, PDF path, source hash and page number. It used extracted source words and
+observed vector grids for all 181 pages; construction references, families and
+provenance were excluded. The audit generated assembly hypotheses, selected the
+same physical seed policy as the runner, generated both one-row and three-row
+packets, and applied every available edit without model requests.
+
+180 pages completed these checks. One source-native 58-by-25 grid had a span
+covering row 0 followed directly by spans at row 2: the entire row 1 lacked
+coverage. Repair validation rejected this incomplete tiling; after assembly's
+strict-span update, assembly rejects the same page earlier. The opaque page ID
+is `pfe3eba53239267b4e870`. No missing spans were fabricated and no native
+coordinates were edited to conceal the refusal.
+
+Across admitted pages, menus contained 116 merge-row proposals, one split-row
+proposal and 64 non-table rejection proposals. Maximum source word count was
+1,504, maximum menu size 27 and maximum packet payload 89,562 UTF-8 bytes.
+These proposal counts and admissions are source-only harness observations;
+no reference-based quality scores were calculated. The existing 2 MiB packet
+admission remains in force for the first wave. A focused contract test now
+verifies packet refusal without truncation by reducing the bound temporarily.
+
+The initial sequential audit took 6.34 seconds wall and 6.41 seconds process CPU
+with 538,996,736 bytes lifetime peak self RSS. A confirmation using strict-span
+assembly took 6.20 seconds wall and 6.28 seconds process CPU with the same peak
+RSS. Measurements used `perf_counter`, `process_time` and Linux
+`resource.getrusage(RUSAGE_SELF).ru_maxrss`; scope was this single process,
+including native extraction; no sampling or subprocess workload was used.
+One extraction warning reported glyphs lacking Unicode mapping. OCR, pixels,
+network inference, credentials, GPU use and protected heldout data were absent.
+
+The runner's physical seed mechanism selection matches `physical` and
+`seed_physical` emitted by assembly. No integration schema changes are required.
+The repair module passes strict mypy with imports skipped, Ruff, and all eleven
+Python contract tests in the existing main-worktree environment.
