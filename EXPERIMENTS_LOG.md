@@ -342,3 +342,11 @@ semantic templates remain narrow DEV evidence. Heldout untouched.
   12/12 but falsely accepts 6/12 prose pages. 48 calls cost USD 0.00808632 effective.
 - Aggregate-selected semantic prompt now being transferred to OCR inventories;
   source-only presence gating prepared as separate decomposition experiment.
+
+### 2026-10-09 06:05 UTC — training references and wider resolution/specialist exploration
+
+- Added 16 additional OmniDocBench TRAINING references and geometry-derived synthetic pages, disjoint by source ID from DEV16. Known document parents stay grouped; unknown parent identity remains explicit. Astra is revising all 16 derivatives after paired visual inspection. Source recognition answers are excluded from generation. Research-only provenance and raw artifacts remain separate from committed metadata.
+- Reopened SLANet with 336 CPU-only DPI/crop combinations. Best observed arm is 72 DPI with 12-point source-derived padding: 7/16 exact tables; every arm still proposes tables on all eight prose pages. Increasing DPI did not consistently improve quality. See [all results](bench/results/specialist-resolution.md).
+- Frozen strict source-ID, shape, span and text agreement between SLANet and T005 accepts seven correct tables, zero wrong scored tables and zero prose false positives, deferring nine positives. Two accepted ambiguous pages remain unscored. A retained PPLX gate conjunction is an offline routing simulation, with no new cost or latency claim. See [agreement results](bench/results/specialist-agreement.md).
+- Image matrix spans 200/300/400/500/600/800 px, separate width/height/longest-edge controls, RGB8/gray8/palette4 and four models. At the 06:04 snapshot, 839/936 unique regular batches completed with no failures; 624 independently frozen anisotropic batches are queued. Exact geometric aliases share quality only, never provider-cache or throughput credit. See [live snapshot](bench/results/image-axes-progress.md).
+- Fixed raw-string metadata scanning of legal compact `>>stream` delimiters. Existing prototype measurements remain historical; new derivative metadata will use the corrected scanner. Thirteen metadata tests pass.

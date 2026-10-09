@@ -254,3 +254,16 @@ wrong, two unresolved), versus 4/16 with the older candidates; Luna reaches 8/16
 A separately frozen local-gap extent ablation restores 16/16 candidate coverage
 without regressing original positive cases; model selection on that expanded
 menu is queued. Candidate coverage still does not establish automatic accuracy.
+
+## 06:05 UTC — preserve broad options, combine complementary errors
+
+| Observation | Combination to retain | Interpretation |
+| --- | --- | --- |
+| SLANet 72 DPI / +12 pt wins over larger renders on this reviewed sample | Low-resolution specialist plus source-ID agreement with T005 | Seven correct accepted tables, no scored wrong accepts, nine deferred positives; selective route, not full extraction |
+| PPLX source-only gate detects all 16 reviewed tables without prose false positives | Presence gate followed by expanded extent candidate selection | Actual selector experiment queued; retained gate conjunction is only an offline simulation |
+| Width400 and height400 produce different actual pixel counts and quality | Explicit axis budget plus grayscale/palette arms | Compare actual W×H, bytes, quality and provider charges, not nominal size alone |
+| Initial Omni TRAINING scaffolds misrepresent typography, masks and density | Pixel-derived line density, category-specific fonts and suppression of redactions | Astra reviewing every pair; photographs and handwriting remain approximations |
+
+All prior moderately plausible arms remain recorded. The next planning pass should
+use per-case failure overlap to propose combinations and removal ablations rather
+than discarding a method solely on its aggregate score. No tuning uses heldout data.
