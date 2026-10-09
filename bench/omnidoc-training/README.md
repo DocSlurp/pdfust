@@ -1,5 +1,16 @@
 # OmniDocBench reference-derived TRAINING layouts
 
+The reviewed v3 derivatives are recorded separately in
+`synthetic-v3-registry.json`; v1/v2 artifacts and the v2 registry remain frozen.
+V3 treats masked regions as blank, suppresses discarded annotations and duplicate
+list containers, measures line/grid geometry from reference pixels without OCR,
+uses serif/sans/monospace and native CJK text, and adds vertical Chinese text,
+page colors, highlights, and newly authored vector illustrations. Every page
+has a measured v2/v3 ink-distribution comparison, including regressions.
+These are approximate reference-derived training layouts, not independently
+validated almost-clones. Handwriting, photographs, exact fonts, scan noise,
+and source table internals remain limitations.
+
 Both the 16 additional references and their synthetic derivatives are **TRAINING** data. They must never be presented as an independent DEV, evaluation or heldout corpus. The existing 16-page DEV sample is excluded by exact source ID and by inferred numbered-page filename parents. UUID filenames and several other filename formats do not supply reliable document identity; parent separation is incomplete and explicitly recorded.
 
 References come from the official public `opendatalab/OmniDocBench` revision `aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec`. The [dataset card](https://huggingface.co/datasets/opendatalab/OmniDocBench/blob/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/README.md) restricts use to research and excludes commercial use. These constraints also govern reference-derived synthetic layouts. Raw images and annotations remain ignored local artifacts; no original prose, formulas or photographs are copied into the synthetic pages.

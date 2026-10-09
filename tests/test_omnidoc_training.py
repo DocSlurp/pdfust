@@ -2,10 +2,25 @@
 
 from __future__ import annotations
 
+import io
 from copy import deepcopy
 from typing import Any
 
-from bench.omnidoc_training import geometry, parent_group, select_rows, synthetic_recipe
+import pytest
+from bench.omnidoc_training import (
+    CJK_FONT,
+    _realism_pdf,
+    geometry,
+    ink_measure,
+    parent_group,
+    realistic_recipe,
+    reference_style,
+    select_rows,
+    suppressed,
+    synthetic_recipe,
+)
+
+import pylopdf
 
 
 def row(identifier: str) -> dict[str, Any]:
@@ -56,3 +71,70 @@ def test_synthetic_recipe_uses_authored_text_and_preserves_envelopes() -> None:
     altered = deepcopy(contract)
     altered["blocks"][0]["text"] = "reference text that must not enter output"
     assert synthetic_recipe(altered, 2) == recipe
+
+
+def test_reference_masks_and_discarded_blocks_are_never_authored_content() -> None:
+    for category in ("chart_mask", "algorithm_mask", "table_mask", "text_mask", "need_mask", "abandon"):
+        assert suppressed(category)
+    assert suppressed("text_block", ignored=True)
+    assert not suppressed("text_block")
+
+
+def test_image_style_projection_ignores_recognition_strings() -> None:
+    image_module = pytest.importorskip("PIL.Image")
+    image = image_module.new("RGB", (100, 200), "white")
+    contract = geometry(row("fixture.png"))
+    style = reference_style(image, contract, {"language": "english", "data_source": "book"})
+    changed = deepcopy(contract)
+    changed["blocks"][0].update(text="REFERENCE SECRET", html="hidden", latex="formula")
+    other = reference_style(image, changed, {"language": "english", "data_source": "book"})
+    assert style == other
+    assert style["recognition_used"] is False
+    assert realistic_recipe(contract, style, 0) == realistic_recipe(changed, other, 0)
+    assert "REFERENCE SECRET" not in str(realistic_recipe(changed, other, 0))
+
+
+def test_masked_region_is_white_in_render_and_has_no_source_words() -> None:
+    image_module = pytest.importorskip("PIL.Image")
+    contract = geometry(row("fixture.png"))
+    contract["blocks"][0]["category"] = "algorithm_mask"
+    style = reference_style(
+        image_module.new("RGB", (100, 200), (240, 180, 200)), contract, {"language": "english", "data_source": "book"}
+    )
+    recipe = realistic_recipe(contract, style, 0)
+    assert recipe["blocks"][0]["paint"].startswith("suppressed")
+    data = _realism_pdf(recipe, b"")
+    with pylopdf.open(stream=data) as document:
+        assert document.get_text() == ""
+        render = image_module.open(io.BytesIO(document[0].render(dpi=72, background=(255, 255, 255))))
+    assert render.getpixel((100, 200))[:3] == (255, 255, 255)
+    assert render.getpixel((10, 10))[:3] != (255, 255, 255)
+
+
+def test_vertical_cjk_authored_render_remains_inside_page() -> None:
+    image_module = pytest.importorskip("PIL.Image")
+    if not CJK_FONT.exists():
+        pytest.skip("Local CJK authoring font is not installed")
+    contract = geometry(row("fixture.png"))
+    contract["blocks"][0]["bbox"] = [10, 20, 15, 190]
+    style = reference_style(
+        image_module.new("RGB", (100, 200), "white"),
+        contract,
+        {"language": "traditional_chinese", "data_source": "historical_document"},
+    )
+    recipe = realistic_recipe(contract, style, 0)
+    assert recipe["blocks"][0]["vertical"]
+    with pylopdf.open(stream=_realism_pdf(recipe, CJK_FONT.read_bytes())) as document:
+        assert document.get_text().strip()
+        for word in document[0].get_text("words"):
+            assert 0 <= word[0] <= word[2] <= 612
+            assert 0 <= word[1] <= word[3] <= recipe["height"]
+
+
+def test_ink_diagnostics_measure_pixels_instead_of_declared_boxes() -> None:
+    image_module = pytest.importorskip("PIL.Image")
+    white = ink_measure(image_module.new("RGB", (32, 32), "white"))
+    black = ink_measure(image_module.new("RGB", (32, 32), "black"))
+    assert white["dark_fraction"] == 0
+    assert black["dark_fraction"] == 1
+    assert black["nonwhite_fraction"] == 1
