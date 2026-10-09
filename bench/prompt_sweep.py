@@ -21,7 +21,7 @@ from bench.silver import guard_path
 from bench.silver_structure import process_peak_rss
 
 TAG = "P001-prompt-sweep/"
-LIMIT = 1.0
+LIMIT = 1.4
 FAMILIES = ("structure", "minimal", "evidence")
 
 
@@ -101,19 +101,21 @@ def report(root: Path, destination: Path) -> None:
         ),
         "",
         (
-            "| Cohort / prompt | Model | Tables exact | Prose FP | Prose unresolved | "
+            "| Cohort / prompt | Model | Completed / planned calls | Tables exact | Prose FP | Prose unresolved | "
             "Values owned | USD | Pages/$ | API pages/min |"
         ),
-        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for path in sorted(root.glob("*/*/*/evaluation.json")):
         summary = json.loads(path.read_bytes())
         calls = json.loads((path.parent / "hosted-results.json").read_bytes())["calls"]
         for name, cohort in summary["cohorts"].items():
             model = name.rsplit("/", 1)[0]
-            unique = {r["entry"]["index"]: r for r in calls if r["model"] == model and "entry" in r}
+            model_calls = [r for r in calls if r["model"] == model]
+            unique = {r["entry"]["index"]: r for r in model_calls if "entry" in r}
             costs = [r["cost"]["effective_usd"] for r in unique.values()]
-            cost = sum(costs) if all(c is not None for c in costs) else None
+            complete_cost = bool(unique) and all("entry" in r for r in model_calls)
+            cost = sum(costs) if complete_cost and all(c is not None for c in costs) else None
             good = sum(r["status"] == "ok" for r in unique.values())
             sent = [r for r in unique.values() if not r.get("replayed")]
             seconds = sum(r.get("http_elapsed_ms") or 0 for r in sent) / 1000
@@ -122,8 +124,9 @@ def report(root: Path, destination: Path) -> None:
             money = f"{cost:.6f}" if cost is not None else "unknown"
             positive, negative = cohort["slices"]["borderless"], cohort["slices"]["prose"]
             label = f"{path.relative_to(root).parts[0]} / {path.parent.name}"
+            planned = cohort["pages"] - cohort["native_zero_call_pages"]
             lines.append(
-                f"| {label} | {model} | {positive['exact_page']}/{positive['pages']} | "
+                f"| {label} | {model} | {good}/{planned} | {positive['exact_page']}/{positive['pages']} | "
                 f"{negative['false_positive_page']}/{negative['pages']} | "
                 f"{negative['unresolved_or_unmeasured']}/{negative['pages']} | "
                 f"{positive['owned_values']}/{positive['expected_values']} | "
@@ -136,7 +139,8 @@ def report(root: Path, destination: Path) -> None:
             "win; reported zero falls back to catalog pricing with observed tokens. "
             "API time excludes local preparation. "
             "Unresolved prose is not a correct rejection. All selections conserve source IDs, "
-            "which is not a correctness score."
+            "which is not a correctness score. Incomplete rows retain fixed quality denominators; "
+            "unmeasured cases are not observed model errors. Missing response charges remain unknown."
         ),
         "",
     ]

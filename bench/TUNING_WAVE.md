@@ -267,3 +267,19 @@ menu is queued. Candidate coverage still does not establish automatic accuracy.
 All prior moderately plausible arms remain recorded. The next planning pass should
 use per-case failure overlap to propose combinations and removal ablations rather
 than discarding a method solely on its aggregate score. No tuning uses heldout data.
+
+## 06:26 UTC — close the authorized two-hour wave
+
+Regular and anisotropic matrices completed all 1,560 unique requests. Expanded-menu
+prompt transfer completed 112 calls, preserving PPLX 16/16 exactness under both
+prompts; Luna improves to 10/16 with cross-cell instructions and regresses to 8/16
+with reading order. Keep both outcomes. Reviewed-set prompt tuning is complete
+for Luna; PPLX remains partial after one interrupted request, with missing work
+explicit and its reservation retained. Internal prompt cap is now USD 1.40;
+cumulative user cap remains USD 15. Conservative accounted total is USD 6.3056201568,
+including USD 1.50 unresolved reservations. No further paid work is queued.
+
+Next planning starts from the [closing report](results/tuning-wave-2026-10-09.md):
+transfer size tests to natural/reviewed sources, measure real routing cascades,
+inspect selective-route deferrals, and freeze arbitration before scoring. The
+additional 16 reference-derived pages remain TRAINING and research-only.

@@ -23,6 +23,22 @@ See the [earlier union](rolling-topology-admission.md) and
 [extent union](rolling-extent-admission.md) for all decisions, source conservation,
 preparation CPU/RSS and cost provenance.
 
+## Prompt transfer on the expanded menu
+
+| Model | Prompt | Exact tables | Incorrectly accepted tables | Prose false tables | Pages/USD | Pages/HTTP minute |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| PPLX | Cross-cell relationships | 16/16 | 0 | 0/8 | 2,769 | 32.4 |
+| PPLX | Reading order | 16/16 | 0 | 0/8 | 2,768 | 36.4 |
+| Luna | Cross-cell relationships | 10/16 | 4 | 0/8 | 785 | 179.4 |
+| Luna | Reading order | 8/16 | 6 | 0/8 | 785 | 183.3 |
+
+The two generic prompts were frozen earlier, then transferred by changing only
+instructions. Four ambiguous pages remain unscored. Cross-cell relationships
+helped Luna by one exact table; reading order reduced exactness and increased
+wrong accepts. Both outcomes remain published. See
+[cross-cell results](extent-prompt-E002_cross_cell_relations.md) and
+[reading-order results](extent-prompt-E003_reading_order.md).
+
 ## Older techniques retained and combined
 
 The [CPU SLANet sweep](specialist-resolution.md) completed 336 outputs across three
@@ -45,7 +61,7 @@ removing those cues left ambiguous negative labels, so that arm is diagnostic to
 
 The [axis matrix](image-axes-progress.md) covers 200, 300, 400, 500, 600 and 800 px;
 width, height and longest-edge limits; RGB8, gray8 and palette4; and four models.
-The regular matrix completed 936 unique requests. Exact geometric aliases share
+The regular matrix completed 936 unique requests; the separate anisotropic matrix completed 624, with no failures. Together they cost USD 0.85793760 for 7,200 transmitted case inputs. Exact geometric aliases share
 quality observations only. They receive no new cost, throughput or provider-cache
 credit. Anisotropic fixed-partner dimensions form a separate matrix.
 
@@ -79,8 +95,9 @@ ignored; registries, code, tests and reports are tracked in Git.
    anything about grayscale or reduced bit depth.
 2. Combine source-only presence gating with expanded extent selection, measuring
    actual two-stage latency and cost rather than adding historical rates.
-3. Test generic cross-cell and reading-order prompts on the expanded menu to
-   investigate Luna's residual selection errors without changing source evidence.
+3. Inspect Luna's residual selection errors after the completed prompt transfer;
+   cross-cell instructions improved one case, while reading-order instructions
+   regressed. Freeze any new rule before measuring another cohort.
 4. Use specialist/geometry agreement as a selective route, then investigate its
    nine deferred positive tables. Keep disagreements as evidence for arbitration.
 5. Freeze any cross-model arbitration rule before scoring it. Oracle unions of
@@ -88,3 +105,22 @@ ignored; registries, code, tests and reports are tracked in Git.
 
 The protected 20-file heldout set remains sealed. No experimental hosted model
 is enabled in default extraction.
+
+## Completion, accounting and validation
+
+The 04:27–06:27 UTC wave stopped paid work before its deadline. Original prompt
+sweeps completed all 15 variants for both models. Reviewed-set Luna completed all
+15; PPLX completed eight and 27/28 calls on a ninth. One interrupted request has
+no retained response and keeps its reservation; the persistent guard leaves six
+PPLX variants unattempted. These missing results are not observed model errors.
+
+Conservative cumulative accounting is **USD 6.3056201568 / USD 15**: USD
+2.7781951488 current provider-reported charges, USD 1.00316290 current catalog
+estimates, USD 1.50 unresolved reservations, and USD 1.024262108 prior
+provider/rental accounting. Reported/estimated costs excluding reservations total
+USD 4.8056201568. No provider-cache savings are inferred from local reuse.
+
+Validation: 2,027 full-suite passes, 16 skips and two expected failures; 40 focused
+passes after subsequent changes; final Ruff and mypy pass. The selected 16-page
+training derivative revision has no page-bound word violations or metadata
+errors. Its research-only provenance and remaining realism limits are retained.

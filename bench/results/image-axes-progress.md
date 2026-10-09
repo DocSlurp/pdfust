@@ -6,7 +6,7 @@ Exact request-hash geometric aliases share quality only. Their cost and latency 
 
 Artifact: `/home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/image-axis-context30-v1`.
 Manifest SHA256 `7deeea36101bba1837659fb53310b1966edc8da1938370f860f0294ba188f1c7`; results SHA256 `6377334b6526cdc5445bfc593c8d5db1671fd1a7f7ef238cbdb8d21024425757`.
-Snapshot 1791526553.4788277; completed unique batches 936/936; failed 0; aliases 468.
+Snapshot 1791526789.1314056; completed unique batches 936/936; failed 0; aliases 468.
 Actual paid unique requests 936; effective USD 0.536571; known partial USD 0.536571; unknown costs 0.
 
 | Model | Arm | Actual W×H | Pixels range | Image bytes range | Measured/declared | Exact/declared | Record F1 | Source conserved | Unresolved | Failed/refused/unmeasured | Alias cases | Paid requests/pages | USD | Pages/USD | Pages/HTTP min |
@@ -275,9 +275,9 @@ All retained numeric score fields and their own denominators, PNG bit depths/col
 **Scope:** Conditional synthetic convention-reading probes. Full-page images contain explicit document-convention notes; scores do not establish natural-table extraction or general image usefulness. Artwork is achromatic, so grayscale comparisons do not establish behavior on colored documents.
 
 Artifact: `/home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/image-anisotropic-only-v1`.
-Manifest SHA256 `d708b7b15ec7ed3fbb539d353b5ce9aa8a357786782040642718081926a573e0`; results SHA256 `de3a9242084c802cf6611a57348a82478f2b4496ed289c8ea9cc242cbd98b3cf`.
-Snapshot 1791526553.8113768; completed unique batches 449/624; failed 0; aliases 0.
-Actual paid unique requests 449; effective USD 0.229339; known partial USD 0.229339; unknown costs 0.
+Manifest SHA256 `d708b7b15ec7ed3fbb539d353b5ce9aa8a357786782040642718081926a573e0`; results SHA256 `1db2ff2fb03e02d702ec836fc03c861b6feb3e49b423e2a63d88faf40cd657fe`.
+Snapshot 1791526789.7351089; completed unique batches 624/624; failed 0; aliases 0.
+Actual paid unique requests 624; effective USD 0.321366; known partial USD 0.321366; unknown costs 0.
 
 | Model | Arm | Actual W×H | Pixels range | Image bytes range | Measured/declared | Exact/declared | Record F1 | Source conserved | Unresolved | Failed/refused/unmeasured | Alias cases | Paid requests/pages | USD | Pages/USD | Pages/HTTP min |
 | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | ---: | --- | ---: | --- | ---: | ---: | ---: |
@@ -289,14 +289,14 @@ Actual paid unique requests 449; effective USD 0.229339; known partial USD 0.229
 | cloudflare/clef | gray8-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [3288, 5003] | 30/30 | 16/30 | 0.533333 | 30/30 | 4 | 0/0/0 | 0 | 8/30 | 0.00615984 | 4870.26 | 242.939 |
 | cloudflare/clef | gray8-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [4021, 6222] | 30/30 | 19/30 | 0.633333 | 30/30 | 3 | 0/0/0 | 0 | 8/30 | 0.00650544 | 4611.53 | 248.188 |
 | cloudflare/clef | gray8-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [4660, 7451] | 30/30 | 18/30 | 0.6 | 30/30 | 1 | 0/0/0 | 0 | 8/30 | 0.00696624 | 4306.48 | 219.638 |
-| cloudflare/clef | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| cloudflare/clef | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 30/30 | 14/30 | 0.466667 | 30/30 | 1 | 0/0/0 | 0 | 8/30 | 0.00581424 | 5159.75 | 253.813 |
+| cloudflare/clef | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 30/30 | 16/30 | 0.533333 | 30/30 | 0 | 0/0/0 | 0 | 8/30 | 0.00615984 | 4870.26 | 226.257 |
+| cloudflare/clef | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 30/30 | 15/30 | 0.5 | 30/30 | 4 | 0/0/0 | 0 | 8/30 | 0.00650544 | 4611.53 | 245.709 |
+| cloudflare/clef | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 30/30 | 19/30 | 0.633333 | 30/30 | 2 | 0/0/0 | 0 | 8/30 | 0.00696624 | 4306.48 | 240.111 |
 | cloudflare/clef | pal4-width-200-anisotropic-fixed512 | 200×512 | [102400, 102400] | [1263, 1913] | 30/30 | 12/30 | 0.4 | 30/30 | 1 | 0/0/0 | 0 | 8/30 | 0.00581424 | 5159.75 | 247.244 |
-| cloudflare/clef | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| cloudflare/clef | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 30/30 | 16/30 | 0.533333 | 30/30 | 3 | 0/0/0 | 0 | 8/30 | 0.00615984 | 4870.26 | 248.812 |
+| cloudflare/clef | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 30/30 | 20/30 | 0.666667 | 30/30 | 2 | 0/0/0 | 0 | 8/30 | 0.00650544 | 4611.53 | 223.838 |
+| cloudflare/clef | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 30/30 | 19/30 | 0.633333 | 30/30 | 3 | 0/0/0 | 0 | 8/30 | 0.00696624 | 4306.48 | 248.821 |
 | cloudflare/clef | rgb8-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [5792, 9091] | 30/30 | 12/30 | 0.4 | 30/30 | 2 | 0/0/0 | 0 | 8/30 | 0.00581424 | 5159.75 | 247.205 |
 | cloudflare/clef | rgb8-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [7444, 12183] | 30/30 | 13/30 | 0.433333 | 30/30 | 2 | 0/0/0 | 0 | 8/30 | 0.00615984 | 4870.26 | 247.227 |
 | cloudflare/clef | rgb8-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [9015, 14822] | 30/30 | 14/30 | 0.466667 | 30/30 | 6 | 0/0/0 | 0 | 8/30 | 0.00650544 | 4611.53 | 230.286 |
@@ -313,14 +313,14 @@ Actual paid unique requests 449; effective USD 0.229339; known partial USD 0.229
 | cloudflare/clef-flash | gray8-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [3288, 5003] | 30/30 | 14/30 | 0.466667 | 30/30 | 7 | 0/0/0 | 0 | 8/30 | 0.00230994 | 12987.4 | 429.802 |
 | cloudflare/clef-flash | gray8-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [4021, 6222] | 30/30 | 14/30 | 0.466667 | 30/30 | 5 | 0/0/0 | 0 | 8/30 | 0.00243954 | 12297.4 | 445.163 |
 | cloudflare/clef-flash | gray8-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [4660, 7451] | 30/30 | 14/30 | 0.466667 | 30/30 | 3 | 0/0/0 | 0 | 8/30 | 0.00261234 | 11484 | 444.981 |
-| cloudflare/clef-flash | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef-flash | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef-flash | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef-flash | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| cloudflare/clef-flash | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 30/30 | 10/30 | 0.333333 | 30/30 | 2 | 0/0/0 | 0 | 8/30 | 0.00218034 | 13759.3 | 473.816 |
+| cloudflare/clef-flash | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 30/30 | 14/30 | 0.466667 | 30/30 | 5 | 0/0/0 | 0 | 8/30 | 0.00230994 | 12987.4 | 390.999 |
+| cloudflare/clef-flash | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 30/30 | 13/30 | 0.433333 | 30/30 | 6 | 0/0/0 | 0 | 8/30 | 0.00243954 | 12297.4 | 406.551 |
+| cloudflare/clef-flash | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 30/30 | 12/30 | 0.4 | 30/30 | 4 | 0/0/0 | 0 | 8/30 | 0.00261234 | 11484 | 447.176 |
 | cloudflare/clef-flash | pal4-width-200-anisotropic-fixed512 | 200×512 | [102400, 102400] | [1263, 1913] | 30/30 | 11/30 | 0.366667 | 30/30 | 8 | 0/0/0 | 0 | 8/30 | 0.00218034 | 13759.3 | 500.015 |
-| cloudflare/clef-flash | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef-flash | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| cloudflare/clef-flash | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| cloudflare/clef-flash | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 30/30 | 13/30 | 0.433333 | 30/30 | 6 | 0/0/0 | 0 | 8/30 | 0.00230994 | 12987.4 | 370.402 |
+| cloudflare/clef-flash | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 30/30 | 16/30 | 0.533333 | 30/30 | 4 | 0/0/0 | 0 | 8/30 | 0.00243954 | 12297.4 | 439.072 |
+| cloudflare/clef-flash | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 30/30 | 13/30 | 0.433333 | 30/30 | 4 | 0/0/0 | 0 | 8/30 | 0.00261234 | 11484 | 459.719 |
 | cloudflare/clef-flash | rgb8-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [5792, 9091] | 30/30 | 9/30 | 0.3 | 30/30 | 7 | 0/0/0 | 0 | 8/30 | 0.00218034 | 13759.3 | 455.118 |
 | cloudflare/clef-flash | rgb8-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [7444, 12183] | 30/30 | 13/30 | 0.433333 | 30/30 | 4 | 0/0/0 | 0 | 8/30 | 0.00230994 | 12987.4 | 340.356 |
 | cloudflare/clef-flash | rgb8-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [9015, 14822] | 30/30 | 13/30 | 0.433333 | 30/30 | 6 | 0/0/0 | 0 | 8/30 | 0.00243954 | 12297.4 | 426.028 |
@@ -338,13 +338,13 @@ Actual paid unique requests 449; effective USD 0.229339; known partial USD 0.229
 | openai/gpt-6-luna-decisions | gray8-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [4021, 6222] | 30/30 | 3/30 | 0.1 | 30/30 | 29 | 0/0/0 | 0 | 5/30 | 0.0024332 | 12329.4 | 1036.47 |
 | openai/gpt-6-luna-decisions | gray8-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [4660, 7451] | 30/30 | 8/30 | 0.266667 | 30/30 | 24 | 0/0/0 | 0 | 5/30 | 0.0025772 | 11640.5 | 1043.25 |
 | openai/gpt-6-luna-decisions | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 30/30 | 3/30 | 0.1 | 30/30 | 30 | 0/0/0 | 0 | 5/30 | 0.0021452 | 13984.7 | 788.789 |
-| openai/gpt-6-luna-decisions | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| openai/gpt-6-luna-decisions | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| openai/gpt-6-luna-decisions | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| openai/gpt-6-luna-decisions | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 30/30 | 3/30 | 0.1 | 30/30 | 30 | 0/0/0 | 0 | 5/30 | 0.0022892 | 13105 | 1134.5 |
+| openai/gpt-6-luna-decisions | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 30/30 | 7/30 | 0.233333 | 30/30 | 24 | 0/0/0 | 0 | 5/30 | 0.0024332 | 12329.4 | 1079.13 |
+| openai/gpt-6-luna-decisions | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 30/30 | 9/30 | 0.3 | 30/30 | 21 | 0/0/0 | 0 | 5/30 | 0.0025772 | 11640.5 | 1133.71 |
 | openai/gpt-6-luna-decisions | pal4-width-200-anisotropic-fixed512 | 200×512 | [102400, 102400] | [1263, 1913] | 30/30 | 4/30 | 0.133333 | 30/30 | 29 | 0/0/0 | 0 | 5/30 | 0.0021452 | 13984.7 | 1025.77 |
-| openai/gpt-6-luna-decisions | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| openai/gpt-6-luna-decisions | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| openai/gpt-6-luna-decisions | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| openai/gpt-6-luna-decisions | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 30/30 | 3/30 | 0.1 | 30/30 | 30 | 0/0/0 | 0 | 5/30 | 0.0022892 | 13105 | 1062.03 |
+| openai/gpt-6-luna-decisions | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 30/30 | 3/30 | 0.1 | 30/30 | 30 | 0/0/0 | 0 | 5/30 | 0.0024332 | 12329.4 | 1064.69 |
+| openai/gpt-6-luna-decisions | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 30/30 | 5/30 | 0.166667 | 30/30 | 28 | 0/0/0 | 0 | 5/30 | 0.0025772 | 11640.5 | 1084.87 |
 | openai/gpt-6-luna-decisions | rgb8-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [5792, 9091] | 30/30 | 3/30 | 0.1 | 30/30 | 29 | 0/0/0 | 0 | 5/30 | 0.0021452 | 13984.7 | 1044.99 |
 | openai/gpt-6-luna-decisions | rgb8-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [7444, 12183] | 30/30 | 3/30 | 0.1 | 30/30 | 30 | 0/0/0 | 0 | 5/30 | 0.0022892 | 13105 | 1091.67 |
 | openai/gpt-6-luna-decisions | rgb8-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [9015, 14822] | 30/30 | 6/30 | 0.2 | 30/30 | 25 | 0/0/0 | 0 | 5/30 | 0.0024332 | 12329.4 | 973.857 |
@@ -361,14 +361,14 @@ Actual paid unique requests 449; effective USD 0.229339; known partial USD 0.229
 | perplexity/pplx-decider-v1.1-27b | gray8-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [3288, 5003] | 30/30 | 22/30 | 0.733333 | 30/30 | 6 | 0/0/0 | 0 | 5/30 | 0.00218128 | 13753.4 | 747.169 |
 | perplexity/pplx-decider-v1.1-27b | gray8-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [4021, 6222] | 30/30 | 23/30 | 0.766667 | 30/30 | 5 | 0/0/0 | 0 | 5/30 | 0.00235408 | 12743.8 | 189.157 |
 | perplexity/pplx-decider-v1.1-27b | gray8-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [4660, 7451] | 30/30 | 21/30 | 0.7 | 30/30 | 7 | 0/0/0 | 0 | 5/30 | 0.00258448 | 11607.8 | 539.465 |
-| perplexity/pplx-decider-v1.1-27b | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 12/30 | 8/30 | 0.666667 | 12/12 | 2 | 0/0/18 | 0 | 2/12 | 0.0008014 | 14973.8 | 126.759 |
-| perplexity/pplx-decider-v1.1-27b | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| perplexity/pplx-decider-v1.1-27b | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| perplexity/pplx-decider-v1.1-27b | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| perplexity/pplx-decider-v1.1-27b | pal4-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [1456, 2343] | 30/30 | 20/30 | 0.666667 | 30/30 | 5 | 0/0/0 | 0 | 5/30 | 0.00200848 | 14936.7 | 258.077 |
+| perplexity/pplx-decider-v1.1-27b | pal4-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [1711, 2990] | 30/30 | 20/30 | 0.666667 | 30/30 | 8 | 0/0/0 | 0 | 5/30 | 0.00218128 | 13753.4 | 215.95 |
+| perplexity/pplx-decider-v1.1-27b | pal4-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [2102, 3473] | 30/30 | 22/30 | 0.733333 | 30/30 | 7 | 0/0/0 | 0 | 5/30 | 0.00235408 | 12743.8 | 760.053 |
+| perplexity/pplx-decider-v1.1-27b | pal4-height-500-anisotropic-fixed512 | 512×500 | [256000, 256000] | [2398, 4015] | 30/30 | 21/30 | 0.7 | 30/30 | 7 | 0/0/0 | 0 | 5/30 | 0.00258448 | 11607.8 | 715.197 |
 | perplexity/pplx-decider-v1.1-27b | pal4-width-200-anisotropic-fixed512 | 200×512 | [102400, 102400] | [1263, 1913] | 30/30 | 16/30 | 0.533333 | 30/30 | 10 | 0/0/0 | 0 | 5/30 | 0.00200848 | 14936.7 | 752.985 |
-| perplexity/pplx-decider-v1.1-27b | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| perplexity/pplx-decider-v1.1-27b | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
-| perplexity/pplx-decider-v1.1-27b | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 0/30 | 0/30 | unmeasured | unmeasured/unmeasured | 0 | 0/0/30 | 0 | 0/0 | unmeasured | unmeasured | unmeasured |
+| perplexity/pplx-decider-v1.1-27b | pal4-width-300-anisotropic-fixed512 | 300×512 | [153600, 153600] | [1643, 2647] | 30/30 | 21/30 | 0.7 | 30/30 | 7 | 0/0/0 | 0 | 5/30 | 0.00218128 | 13753.4 | 712.644 |
+| perplexity/pplx-decider-v1.1-27b | pal4-width-400-anisotropic-fixed512 | 400×512 | [204800, 204800] | [2042, 3310] | 30/30 | 22/30 | 0.733333 | 30/30 | 5 | 0/0/0 | 0 | 5/30 | 0.00235408 | 12743.8 | 757.638 |
+| perplexity/pplx-decider-v1.1-27b | pal4-width-500-anisotropic-fixed512 | 500×512 | [256000, 256000] | [2380, 3954] | 30/30 | 21/30 | 0.7 | 30/30 | 8 | 0/0/0 | 0 | 5/30 | 0.00258448 | 11607.8 | 704.091 |
 | perplexity/pplx-decider-v1.1-27b | rgb8-height-200-anisotropic-fixed512 | 512×200 | [102400, 102400] | [5792, 9091] | 30/30 | 19/30 | 0.633333 | 30/30 | 5 | 0/0/0 | 0 | 5/30 | 0.00200848 | 14936.7 | 663.272 |
 | perplexity/pplx-decider-v1.1-27b | rgb8-height-300-anisotropic-fixed512 | 512×300 | [153600, 153600] | [7444, 12183] | 30/30 | 20/30 | 0.666667 | 30/30 | 7 | 0/0/0 | 0 | 5/30 | 0.00218128 | 13753.4 | 727.467 |
 | perplexity/pplx-decider-v1.1-27b | rgb8-height-400-anisotropic-fixed512 | 512×400 | [204800, 204800] | [9015, 14822] | 30/30 | 23/30 | 0.766667 | 30/30 | 7 | 0/0/0 | 0 | 5/30 | 0.00235408 | 12743.8 | 662.621 |
@@ -384,26 +384,26 @@ Size curves (exact/declared with measured count; shared aliases marked `alias`):
 | --- | --- | --- |
 | cloudflare/clef | gray8 / height / 512 | 200: 12/30 (30 measured); 300: 13/30 (30 measured); 400: 14/30 (30 measured); 500: 19/30 (30 measured) |
 | cloudflare/clef | gray8 / width / 512 | 200: 13/30 (30 measured); 300: 16/30 (30 measured); 400: 19/30 (30 measured); 500: 18/30 (30 measured) |
-| cloudflare/clef | pal4 / height / 512 | 200: 0/30 (0 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
-| cloudflare/clef | pal4 / width / 512 | 200: 12/30 (30 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
+| cloudflare/clef | pal4 / height / 512 | 200: 14/30 (30 measured); 300: 16/30 (30 measured); 400: 15/30 (30 measured); 500: 19/30 (30 measured) |
+| cloudflare/clef | pal4 / width / 512 | 200: 12/30 (30 measured); 300: 16/30 (30 measured); 400: 20/30 (30 measured); 500: 19/30 (30 measured) |
 | cloudflare/clef | rgb8 / height / 512 | 200: 12/30 (30 measured); 300: 13/30 (30 measured); 400: 14/30 (30 measured); 500: 20/30 (30 measured) |
 | cloudflare/clef | rgb8 / width / 512 | 200: 13/30 (30 measured); 300: 16/30 (30 measured); 400: 19/30 (30 measured); 500: 18/30 (30 measured) |
 | cloudflare/clef-flash | gray8 / height / 512 | 200: 9/30 (30 measured); 300: 13/30 (30 measured); 400: 13/30 (30 measured); 500: 11/30 (30 measured) |
 | cloudflare/clef-flash | gray8 / width / 512 | 200: 11/30 (30 measured); 300: 14/30 (30 measured); 400: 14/30 (30 measured); 500: 14/30 (30 measured) |
-| cloudflare/clef-flash | pal4 / height / 512 | 200: 0/30 (0 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
-| cloudflare/clef-flash | pal4 / width / 512 | 200: 11/30 (30 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
+| cloudflare/clef-flash | pal4 / height / 512 | 200: 10/30 (30 measured); 300: 14/30 (30 measured); 400: 13/30 (30 measured); 500: 12/30 (30 measured) |
+| cloudflare/clef-flash | pal4 / width / 512 | 200: 11/30 (30 measured); 300: 13/30 (30 measured); 400: 16/30 (30 measured); 500: 13/30 (30 measured) |
 | cloudflare/clef-flash | rgb8 / height / 512 | 200: 9/30 (30 measured); 300: 13/30 (30 measured); 400: 13/30 (30 measured); 500: 11/30 (30 measured) |
 | cloudflare/clef-flash | rgb8 / width / 512 | 200: 11/30 (30 measured); 300: 14/30 (30 measured); 400: 14/30 (30 measured); 500: 14/30 (30 measured) |
 | openai/gpt-6-luna-decisions | gray8 / height / 512 | 200: 3/30 (30 measured); 300: 3/30 (30 measured); 400: 6/30 (30 measured); 500: 7/30 (30 measured) |
 | openai/gpt-6-luna-decisions | gray8 / width / 512 | 200: 3/30 (30 measured); 300: 4/30 (30 measured); 400: 3/30 (30 measured); 500: 8/30 (30 measured) |
-| openai/gpt-6-luna-decisions | pal4 / height / 512 | 200: 3/30 (30 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
-| openai/gpt-6-luna-decisions | pal4 / width / 512 | 200: 4/30 (30 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
+| openai/gpt-6-luna-decisions | pal4 / height / 512 | 200: 3/30 (30 measured); 300: 3/30 (30 measured); 400: 7/30 (30 measured); 500: 9/30 (30 measured) |
+| openai/gpt-6-luna-decisions | pal4 / width / 512 | 200: 4/30 (30 measured); 300: 3/30 (30 measured); 400: 3/30 (30 measured); 500: 5/30 (30 measured) |
 | openai/gpt-6-luna-decisions | rgb8 / height / 512 | 200: 3/30 (30 measured); 300: 3/30 (30 measured); 400: 6/30 (30 measured); 500: 7/30 (30 measured) |
 | openai/gpt-6-luna-decisions | rgb8 / width / 512 | 200: 3/30 (30 measured); 300: 4/30 (30 measured); 400: 3/30 (30 measured); 500: 8/30 (30 measured) |
 | perplexity/pplx-decider-v1.1-27b | gray8 / height / 512 | 200: 19/30 (30 measured); 300: 20/30 (30 measured); 400: 23/30 (30 measured); 500: 21/30 (30 measured) |
 | perplexity/pplx-decider-v1.1-27b | gray8 / width / 512 | 200: 16/30 (30 measured); 300: 22/30 (30 measured); 400: 23/30 (30 measured); 500: 21/30 (30 measured) |
-| perplexity/pplx-decider-v1.1-27b | pal4 / height / 512 | 200: 8/30 (12 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
-| perplexity/pplx-decider-v1.1-27b | pal4 / width / 512 | 200: 16/30 (30 measured); 300: 0/30 (0 measured); 400: 0/30 (0 measured); 500: 0/30 (0 measured) |
+| perplexity/pplx-decider-v1.1-27b | pal4 / height / 512 | 200: 20/30 (30 measured); 300: 20/30 (30 measured); 400: 22/30 (30 measured); 500: 21/30 (30 measured) |
+| perplexity/pplx-decider-v1.1-27b | pal4 / width / 512 | 200: 16/30 (30 measured); 300: 21/30 (30 measured); 400: 22/30 (30 measured); 500: 21/30 (30 measured) |
 | perplexity/pplx-decider-v1.1-27b | rgb8 / height / 512 | 200: 19/30 (30 measured); 300: 20/30 (30 measured); 400: 23/30 (30 measured); 500: 21/30 (30 measured) |
 | perplexity/pplx-decider-v1.1-27b | rgb8 / width / 512 | 200: 16/30 (30 measured); 300: 22/30 (30 measured); 400: 23/30 (30 measured); 500: 21/30 (30 measured) |
 

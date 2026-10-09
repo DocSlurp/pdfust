@@ -391,3 +391,34 @@ Luna's residual selection errors respond to cross-cell or reading-order evidence
 - Full checks: 2,027 passed, 16 skipped, two expected failures with the explicit
   installed Rust compiler. Subsequent training/metadata changes pass 23 focused
   tests; image reporting passes five tests. Ruff and mypy are clean.
+
+### 2026-10-09 06:26 UTC — bounded wave closure
+
+Both image matrices completed: 936 regular plus 624 anisotropic requests, zero
+failures, USD 0.85793760 effective across 7,200 transmitted case inputs. The two
+expanded-menu prompt transfers completed another 112 requests for USD 0.09158180.
+PPLX remains 16/16 exact with 0/8 prose false tables under both prompts. Luna reaches
+10/16 with cross-cell instructions (four wrong accepts), versus 8/16 with reading
+order (six wrong accepts). Source inventories remain conserved; ambiguous pages
+remain unscored.
+
+All 15 original prompt variants completed for both models. On reviewed DEV28,
+Luna completed all 15; PPLX completed eight, plus 27/28 requests on a ninth.
+One interrupted PPLX request (ledger 8342) retained no response and keeps its USD
+0.30 reservation. The persistent failure guard leaves the remaining PPLX variants
+unattempted; they are not scored as observed failures. Completion denominators
+and unknown missing-response charges now appear explicitly. The internal prompt
+cap increased from USD 1 to USD 1.40 to finish distinct Luna requests while keeping
+that reservation; neither prior accounting nor the user's USD 15 cap was reset.
+
+At closure the shared ledger contains 9,299 entries: USD 2.7781951488 positive
+provider-reported charges, USD 1.00316290 catalog estimates and USD 1.50 unresolved
+reservations. Prior provider/rental accounting is USD 1.024262108. Conservative
+cumulative accounted total is **USD 6.3056201568 of USD 15**; excluding unresolved
+reservations, reported/estimated costs total USD 4.8056201568. These categories
+remain distinct. No further paid work is queued for this bounded wave.
+
+Validation: full suite 2,027 passed, 16 skipped, two expected failures, followed
+by 40 focused passes covering subsequent changes. Final Ruff and mypy pass.
+The final [wave report](bench/results/tuning-wave-2026-10-09.md) links all successes,
+regressions, scope limitations, CPU/RAM measurements, and future combinations.
