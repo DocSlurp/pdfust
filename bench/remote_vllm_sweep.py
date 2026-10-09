@@ -6,7 +6,7 @@ workspace/vllm-sweep. Server resources are measured separately from HTTP worker
 CPU/RSS; device-wide GPU samples do not measure server allocator reservations.
 """
 
-# ruff: noqa: ANN401, PLR0913, S603, PLR0917, PLR2004, TRY301, C901 - explicit coordinator subprocesses and injectable mocks.
+# ruff: noqa: ANN401, PLR0913, S603, PLR0917, PLR2004, TRY301, C901, PLR0911 - explicit coordinator subprocesses and injectable mocks.
 from __future__ import annotations
 
 import argparse
@@ -38,7 +38,7 @@ snapshot_download(sys.argv[1], revision=sys.argv[2], local_dir=sys.argv[3], toke
 """
 
 
-def server_command(model: str, snapshot: Path) -> list[str]:
+def server_command(model: str, snapshot: Path, *, safe_attention: bool = False) -> list[str]:
     """Build the admitted bounded single-image localhost server command."""
     if model not in MODELS:
         message = "Model is outside the explicit admitted inventory"
@@ -74,6 +74,17 @@ def server_command(model: str, snapshot: Path) -> list[str]:
         command.extend(["--chat-template-content-format", "openai"])
     if model == "openbmb/MiniCPM-V-4":
         command.append("--trust-remote-code")
+    if safe_attention:
+        command.extend(
+            [
+                "--attention-backend",
+                "TRITON_ATTN",
+                "--mm-encoder-attn-backend",
+                "TORCH_SDPA",
+                "--kernel-config",
+                '{"enable_flashinfer_autotune":false}',
+            ]
+        )
     return command
 
 
@@ -94,6 +105,45 @@ def controls_pass(directory: Path) -> bool:
         if row.get("status") != "ok" or len(response.get("answers", {})) != 1:
             return False
         if next(iter(response["answers"].values())).get("choice") != expected:
+            return False
+    return True
+
+
+def controls_healthy(directory: Path, model: str) -> bool:
+    """Verify all three schema-valid model-identified replies for a diagnostic gate."""
+    if model not in MODELS:
+        return False
+    status = json.loads((directory / "status.json").read_bytes())
+    if status.get("status") != "complete":
+        return False
+    rows = [json.loads(line) for line in (directory / "attempts.jsonl").read_text().splitlines()]
+    completed = [row for row in rows if row.get("event") == "attempt_completed"]
+    started = [row for row in rows if row.get("event") == "attempt_started"]
+    if len(completed) != 3 or len(started) != 3:
+        return False
+    identities = [row.get("id") for row in completed]
+    if len(set(identities)) != 3 or identities != [row.get("id") for row in started]:
+        return False
+    for row in completed:
+        response = row.get("response", {})
+        if (
+            row.get("status") != "ok"
+            or response.get("model") != model
+            or response.get("model_revision") != MODELS[model]
+            or response.get("backend") != "stock-vllm-json"
+        ):
+            return False
+        answers = response.get("answers")
+        if not isinstance(answers, dict) or set(answers) != {"q0"}:
+            return False
+        answer = answers["q0"]
+        if (
+            not isinstance(answer, dict)
+            or answer.get("type") != "choice"
+            or answer.get("choice") not in ("join", "split", "unresolved")
+            or "confidence" in answer
+            or "probabilities" in answer
+        ):
             return False
     return True
 
@@ -176,10 +226,23 @@ def _worker(workspace: Path, snapshot: Path, directory: Path, packets: str, limi
             stop_group(worker)
 
 
-def run_model(workspace: Path, directory: Path, model: str, deadline: float) -> dict[str, Any]:
+def run_model(
+    workspace: Path,
+    directory: Path,
+    model: str,
+    deadline: float,
+    *,
+    safe_attention: bool = False,
+    allow_semantic_control_failure: bool = False,
+) -> dict[str, Any]:
     """Run one staged model once; retain each phase and always stop its server."""
     snapshot = directory / "models" / model.split("/")[1]
     state: dict[str, Any] = {"model": model, "revision": MODELS[model], "status": "started"}
+    state["safe_attention"] = safe_attention
+    state["allow_semantic_control_failure"] = allow_semantic_control_failure
+    state["runtime_treatment"] = (
+        "triton-main/torch-sdpa-vision/no-flashinfer-autotune" if safe_attention else "original"
+    )
     server = monitor = None
     log = monitor_log = None
     try:
@@ -193,7 +256,7 @@ def run_model(workspace: Path, directory: Path, model: str, deadline: float) -> 
                 check=True,
             )
         state["download_seconds"] = time.monotonic() - began
-        command = server_command(model, snapshot)
+        command = server_command(model, snapshot, safe_attention=safe_attention)
         state["server_command"] = command
         began = time.monotonic()
         log = (directory / "server.log").open("x")
@@ -223,9 +286,17 @@ def run_model(workspace: Path, directory: Path, model: str, deadline: float) -> 
             raise RuntimeError(message)
         _worker(workspace, snapshot, directory / "controls", "controls", 3, deadline)
         state["controls_passed"] = controls_pass(directory / "controls")
-        if not state["controls_passed"]:
-            message = "Transport controls failed; source packets were not attempted"
-            raise RuntimeError(message)
+        state["semantic_passed"] = state["controls_passed"]
+        state["evaluation_admission"] = "semantic-controls-passed" if state["semantic_passed"] else "not-admitted"
+        if not state["semantic_passed"]:
+            if not allow_semantic_control_failure:
+                message = "Semantic controls failed; source packets were not attempted"
+                raise RuntimeError(message)
+            state["controls_schema_healthy"] = controls_healthy(directory / "controls", model)
+            if not state["controls_schema_healthy"]:
+                message = "Control transport/schema/model identity failed; diagnostic admission refused"
+                raise RuntimeError(message)
+            state["evaluation_admission"] = "diagnostic-semantic-control-failure"
         _worker(workspace, snapshot, directory / "worker", "packets", 216, deadline)
         state["status"] = "complete"
     except Exception as error:
@@ -252,7 +323,14 @@ def run_model(workspace: Path, directory: Path, model: str, deadline: float) -> 
     return state
 
 
-def sweep(models: list[str], workspace: Path, deadline_seconds: float = 2700) -> Path:
+def sweep(
+    models: list[str],
+    workspace: Path,
+    deadline_seconds: float = 2700,
+    *,
+    safe_attention: bool = False,
+    allow_semantic_control_failure: bool = False,
+) -> Path:
     """Run explicit unique models serially within one finite global admission."""
     if not models or len(set(models)) != len(models) or any(model not in MODELS for model in models):
         message = "Select explicit unique admitted model IDs"
@@ -284,6 +362,8 @@ def sweep(models: list[str], workspace: Path, deadline_seconds: float = 2700) ->
                 "python": sys.version,
                 "executable": sys.executable,
                 "models": models,
+                "safe_attention": safe_attention,
+                "allow_semantic_control_failure": allow_semantic_control_failure,
                 "deadline_seconds": deadline_seconds,
                 "concurrency": "one server/model at a time",
                 "resources": "server+recursive children sampled separately; HTTP worker process excludes server",
@@ -299,7 +379,14 @@ def sweep(models: list[str], workspace: Path, deadline_seconds: float = 2700) ->
             break
         directory = output / f"{index:02d}-{model.replace('/', '--')}"
         directory.mkdir()
-        result = run_model(workspace, directory, model, deadline)
+        result = run_model(
+            workspace,
+            directory,
+            model,
+            deadline,
+            safe_attention=safe_attention,
+            allow_semantic_control_failure=allow_semantic_control_failure,
+        )
         with (output / "results.jsonl").open("a") as stream:
             stream.write(json.dumps(result) + "\n")
         failures += result["status"] != "complete"
@@ -314,8 +401,22 @@ def main() -> None:
     parser.add_argument("--models", nargs="+", choices=list(MODELS), required=True)
     parser.add_argument("--workspace", type=Path, required=True)
     parser.add_argument("--deadline-seconds", type=float, default=2700)
+    parser.add_argument("--safe-attention", action="store_true", help="Explicit Triton/SDPA/no-autotune treatment")
+    parser.add_argument(
+        "--allow-semantic-control-failure",
+        action="store_true",
+        help="Diagnostic admission only for three schema-valid identified control responses",
+    )
     args = parser.parse_args()
-    print(sweep(args.models, args.workspace, args.deadline_seconds))
+    print(
+        sweep(
+            args.models,
+            args.workspace,
+            args.deadline_seconds,
+            safe_attention=args.safe_attention,
+            allow_semantic_control_failure=args.allow_semantic_control_failure,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -123,7 +123,7 @@ def test_three_failed_models_stop_sweep(monkeypatch, tmp_path):
         (tmp_path / directory).mkdir()
     calls = []
 
-    def run(_workspace, _directory, model, _deadline):
+    def run(_workspace, _directory, model, _deadline, **_options):
         calls.append(model)
         return {"status": "failed", "server_exit_verified": True}
 
@@ -165,3 +165,69 @@ def test_success_runs_controls_then_source_once(monkeypatch, tmp_path):
     result = sweep.run_model(tmp_path, tmp_path, "Qwen/Qwen3.5-2B", sweep.time.monotonic() + 10)
     assert result["status"] == "complete"
     assert workers == [("controls", 3), ("packets", 216)]
+
+
+def test_safe_attention_opt_in_only(tmp_path):
+    ordinary = sweep.server_command("Qwen/Qwen3.5-2B", tmp_path)
+    safe = sweep.server_command("Qwen/Qwen3.5-2B", tmp_path, safe_attention=True)
+    assert safe[: len(ordinary)] == ordinary
+    assert "--attention-backend" not in ordinary
+    assert safe[safe.index("--attention-backend") + 1] == "TRITON_ATTN"
+    assert safe[safe.index("--mm-encoder-attn-backend") + 1] == "TORCH_SDPA"
+    assert json.loads(safe[safe.index("--kernel-config") + 1]) == {"enable_flashinfer_autotune": False}
+
+
+def test_diagnostic_health_requires_identity_and_schema(tmp_path):
+    model = "Qwen/Qwen3.5-0.8B"
+    (tmp_path / "status.json").write_text('{"status":"complete"}')
+    rows = []
+    for index, choice in enumerate(("unresolved", "split", "unresolved")):
+        rows.append({"id": f"c{index}", "event": "attempt_started"})
+        rows.append(
+            {
+                "id": f"c{index}",
+                "event": "attempt_completed",
+                "status": "ok",
+                "response": {
+                    "model": model,
+                    "model_revision": sweep.MODELS[model],
+                    "backend": "stock-vllm-json",
+                    "answers": {"q0": {"type": "choice", "choice": choice}},
+                },
+            }
+        )
+    path = tmp_path / "attempts.jsonl"
+    path.write_text("\n".join(json.dumps(row) for row in rows))
+    assert not sweep.controls_pass(tmp_path)
+    assert sweep.controls_healthy(tmp_path, model)
+    rows[1]["response"]["model"] = "wrong-model"
+    path.write_text("\n".join(json.dumps(row) for row in rows))
+    assert not sweep.controls_healthy(tmp_path, model)
+    rows[1]["response"]["model"] = model
+    rows[1]["response"]["answers"]["q0"]["choice"] = "unknown"
+    path.write_text("\n".join(json.dumps(row) for row in rows))
+    assert not sweep.controls_healthy(tmp_path, model)
+
+
+@pytest.mark.parametrize(("healthy", "admitted"), [(True, True), (False, False)])
+def test_semantic_diagnostic_gate_cannot_bypass_transport(monkeypatch, tmp_path, healthy, admitted):
+    workers = []
+    monkeypatch.setattr(sweep.subprocess, "run", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        sweep.subprocess,
+        "Popen",
+        lambda *_a, **_k: SimpleNamespace(pid=1, wait=lambda **_: 0, returncode=0, poll=lambda: None),
+    )
+    monkeypatch.setattr(sweep, "wait_health", lambda *_a: None)
+    monkeypatch.setattr(sweep, "stop_group", lambda *_a: None)
+    monkeypatch.setattr(sweep, "_worker", lambda *_a: workers.append(_a[3]))
+    monkeypatch.setattr(sweep, "controls_pass", lambda *_a: False)
+    monkeypatch.setattr(sweep, "controls_healthy", lambda *_a: healthy)
+    result = sweep.run_model(
+        tmp_path, tmp_path, "Qwen/Qwen3.5-2B", sweep.time.monotonic() + 10, allow_semantic_control_failure=True
+    )
+    assert not result["semantic_passed"]
+    assert (result["status"] == "complete") == admitted
+    assert ("packets" in workers) == admitted
+    if admitted:
+        assert result["evaluation_admission"] == "diagnostic-semantic-control-failure"
