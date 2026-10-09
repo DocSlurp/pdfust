@@ -45,7 +45,9 @@ def _assignment(weights: list[list[int]]) -> list[tuple[int, int]]:
     size = max(rows, cols)
     if not size:
         return []
-    u, v, p, way = [0] * (size + 1), [0] * (size + 1), [0] * (size + 1), [0] * (size + 1)
+    u: list[float] = [0] * (size + 1)
+    v: list[float] = [0] * (size + 1)
+    p, way = [0] * (size + 1), [0] * (size + 1)
     for i in range(1, size + 1):
         p[0], j0 = i, 0
         minimum, used = [float("inf")] * (size + 1), [False] * (size + 1)

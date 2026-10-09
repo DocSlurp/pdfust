@@ -8,7 +8,7 @@ import argparse
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from bench.silver import canonical, guard_path, sha, write_json
 from bench.silver_structure import TABLE_FAMILIES, authored_table
@@ -27,8 +27,8 @@ def _table(values: list[list[str | None]], merges: tuple[tuple[int, int, int, in
                     covered.add((row, col))
                     values[row][col] = None
     spans = []
-    for r, row in enumerate(values):
-        for c, _value in enumerate(row):
+    for r, cell_row in enumerate(values):
+        for c, _value in enumerate(cell_row):
             if (r, c) not in covered:
                 rs, cs = merged.get((r, c), (1, 1))
                 spans.append({"row": r, "column": c, "row_span": rs, "column_span": cs})
@@ -50,8 +50,9 @@ def build(directory: Path) -> dict[str, Any]:
     directory.mkdir(parents=True, exist_ok=True)
     pdfs = directory / "pdfs"
     pdfs.mkdir(exist_ok=True)
-    records, targets = [], []
-    provenance = []
+    records: list[dict[str, Any]] = []
+    targets: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
 
     def add(data: bytes, name: str, family: str, page_count: int, tables: list[dict[str, Any]] | None) -> None:
         digest = sha(data)
@@ -75,7 +76,7 @@ def build(directory: Path) -> dict[str, Any]:
             targets.append({"id": opaque, "tables": deepcopy(tables or []), "structural_scored": scored})
             provenance.append({"id": opaque, "source_case": name})
 
-    for case in sorted(layouts() + math_cases(), key=lambda item: item["id"]):
+    for case in sorted(layouts() + cast("list[dict[str, Any]]", math_cases()), key=lambda item: item["id"]):
         family = case["family"]
         tables = []
         if family in TABLE_FAMILIES:
@@ -89,11 +90,19 @@ def build(directory: Path) -> dict[str, Any]:
         if target["kind"] == "borderless":
             family += "-wrap" if target["wrap"] else "-plain"
         add(case["pdf"], "companion/" + case["id"], family, 1, target["tables"])
-    for case in build_structure_cases():
-        tables = (
-            None if case.tables is None else [_table([list(row) for row in table], case.spans) for table in case.tables]
+    for structure_case in build_structure_cases():
+        structure_tables = (
+            None
+            if structure_case.tables is None
+            else [_table([list(row) for row in table], structure_case.spans) for table in structure_case.tables]
         )
-        add(case.feature.data, "structure/" + case.feature.name, "structure/" + case.feature.name, 1, tables)
+        add(
+            structure_case.feature.data,
+            "structure/" + structure_case.feature.name,
+            "structure/" + structure_case.feature.name,
+            1,
+            structure_tables,
+        )
 
     # Fixed construction quotas, chosen before extraction; no performance filtering.
     target_map = {target["id"]: target for target in targets}
