@@ -204,3 +204,65 @@ Across repeated arms, known-correct is **43/144** and ambiguous-abstain **7/72**
 At one-second server-plus-recursive-child sampling, the 29.30 s request window has 28 fully contained intervals spanning 28.02 s and observing 19.65 CPU s. Sampled summed server RSS peaks at 3.68 GiB during requests; shared pages can be counted twice and CPU boundary intervals remain unmeasured. Server PyTorch allocation/reservation peaks are unavailable. Device-wide sampling has 30/30 available samples, mean utilization 46.40%, and peak device VRAM 62,534 MiB, including configured KV-cache allocation.
 
 Release: `482adb537c021c86670beed01cd58990d01e72e4`. This uses the stock-Qwen GPU host and $1.3083333333/h GPU-plus-disk quote; warm inputs/USD excludes all three attempts’ startup/download time, idle and cleanup, and is not billed cost. Serial BF16/eager inference, no prefix caching, no image processor cache, and the common source-only transport remain as above. Full PDF throughput is unavailable.
+
+## Recovered LFM, Qwen0.8 and MiniCPM diagnostic cohorts
+
+All three completed 216/216 source-verified inputs with explicit diagnostic admission after semantic controls failed. Separate control accuracy is LFM 1/3, Qwen0.8 2/3 and MiniCPM 1/3; all control responses are schema-valid. Cohort schema/worker failures are zero. These controls are excluded from scores/rates and prevent treating schema acceptance as evidence of visual understanding.
+
+LFM first failed before health admission during CUDA initialization, then reached a healthy server whose controls returned HTTP 400 because its Jinja chat template was missing. The completed diagnostic run pins that template and uses Triton main/Torch SDPA vision/disabled FlashInfer autotuning. Qwen0.8 and MiniCPM previously reached healthy servers but their semantic gates skipped authored requests. A subsequent diagnostic controller was interrupted by host reboot during Qwen0.8 startup, before controls/authored requests; MiniCPM was unattempted in that interrupted sweep. The final two runs use the original attention settings on the recovered host. Completed LFM evidence was preserved across the later interruption; no measurement spans the reboot and no failed attempt is erased.
+
+**LiquidAI/LFM2-VL-1.6B**: known 80/144; ambiguous abstention 0/72 across repeated source pages. Release `2c2e7f9b0f48a478d7d497ef1864519dfd3994cd`.
+
+| Arm | Known / 16 | Abstain / 8 | Inputs/min | Est. warm inputs/USD |
+|---|---:|---:|---:|---:|
+| rgb-512 | 9/16 | 0/8 | 704.34 | 32301 |
+| rgb-768 | 9/16 | 0/8 | 698.16 | 32018 |
+| rgb-1024 | 9/16 | 0/8 | 682.30 | 31290 |
+| gray-512 | 9/16 | 0/8 | 706.64 | 32407 |
+| gray-768 | 9/16 | 0/8 | 692.01 | 31736 |
+| gray-1024 | 9/16 | 0/8 | 680.48 | 31207 |
+| lowbit-512 | 8/16 | 0/8 | 698.49 | 32033 |
+| lowbit-768 | 9/16 | 0/8 | 697.47 | 31986 |
+| lowbit-1024 | 9/16 | 0/8 | 683.98 | 31367 |
+
+Prediction: 18.68 wall / 2.33 client CPU s; worker 20.36 wall / 2.45 client CPU s, client RSS 0.039 GiB. Warm rate 693.65 inputs/min; worker-inclusive 636.59. Separate server startup 13.02 s, download 44.70 s. Client initialization/RSS do not measure model load/memory.
+
+One-second server sampling: 20.35 s request window, 19.01 s fully contained intervals observing 15.78 server-plus-child CPU s; sampled summed RSS peak 3.35 GiB. Boundary CPU is unmeasured and shared RSS pages may be counted twice. Device sampling 21/21, mean utilization 36.86%, peak 63,390 MiB including KV allocation; server PyTorch CUDA peaks are unmeasured.
+
+**Qwen/Qwen3.5-0.8B**: known 72/144; ambiguous abstention 0/72 across repeated source pages. Release `2fc06364715b967f1860aea9cf38778875588b17`.
+
+| Arm | Known / 16 | Abstain / 8 | Inputs/min | Est. warm inputs/USD |
+|---|---:|---:|---:|---:|
+| rgb-512 | 8/16 | 0/8 | 520.46 | 23868 |
+| rgb-768 | 8/16 | 0/8 | 508.18 | 23305 |
+| rgb-1024 | 8/16 | 0/8 | 504.25 | 23125 |
+| gray-512 | 8/16 | 0/8 | 521.76 | 23928 |
+| gray-768 | 8/16 | 0/8 | 498.71 | 22871 |
+| gray-1024 | 8/16 | 0/8 | 497.54 | 22817 |
+| lowbit-512 | 8/16 | 0/8 | 541.60 | 24838 |
+| lowbit-768 | 8/16 | 0/8 | 533.56 | 24469 |
+| lowbit-1024 | 8/16 | 0/8 | 493.36 | 22625 |
+
+Prediction: 25.27 wall / 2.34 client CPU s; worker 29.44 wall / 2.47 client CPU s, client RSS 0.040 GiB. Warm rate 512.78 inputs/min; worker-inclusive 440.20. Separate server startup 28.04 s, download 7.59 s. Client initialization/RSS do not measure model load/memory.
+
+One-second server sampling: 29.42 s request window, 28.02 s fully contained intervals observing 22.29 server-plus-child CPU s; sampled summed RSS peak 5.47 GiB. Boundary CPU is unmeasured and shared RSS pages may be counted twice. Device sampling 30/30, mean utilization 23.17%, peak 62,844 MiB including KV allocation; server PyTorch CUDA peaks are unmeasured.
+
+**openbmb/MiniCPM-V-4**: known 104/144; ambiguous abstention 0/72 across repeated source pages. Release `6f69a8235885be89608f3a71ffd40695b379e1e7`.
+
+| Arm | Known / 16 | Abstain / 8 | Inputs/min | Est. warm inputs/USD |
+|---|---:|---:|---:|---:|
+| rgb-512 | 11/16 | 0/8 | 516.79 | 23700 |
+| rgb-768 | 11/16 | 0/8 | 480.45 | 22033 |
+| rgb-1024 | 12/16 | 0/8 | 475.74 | 21817 |
+| gray-512 | 11/16 | 0/8 | 530.63 | 24335 |
+| gray-768 | 11/16 | 0/8 | 483.03 | 22152 |
+| gray-1024 | 12/16 | 0/8 | 479.60 | 21994 |
+| lowbit-512 | 11/16 | 0/8 | 526.24 | 24133 |
+| lowbit-768 | 12/16 | 0/8 | 480.72 | 22046 |
+| lowbit-1024 | 13/16 | 0/8 | 477.78 | 21911 |
+
+Prediction: 26.25 wall / 2.33 client CPU s; worker 30.36 wall / 2.46 client CPU s, client RSS 0.039 GiB. Warm rate 493.64 inputs/min; worker-inclusive 426.87. Separate server startup 15.02 s, download 91.05 s. Client initialization/RSS do not measure model load/memory.
+
+One-second server sampling: 30.34 s request window, 30.02 s fully contained intervals observing 23.54 server-plus-child CPU s; sampled summed RSS peak 3.87 GiB. Boundary CPU is unmeasured and shared RSS pages may be counted twice. Device sampling 31/31, mean utilization 52.65%, peak 61,710 MiB including KV allocation; server PyTorch CUDA peaks are unmeasured.
+
+All use the recovered stock-vLLM GPU host and quoted $1.3083333333/h GPU-plus-disk allocation, serial BF16/eager requests with no prefix/image-processor cache. MiniCPM enables its pinned remote model code. Estimates exclude failed attempts, initialization, downloads, idle and cleanup; billed costs remain pending. No full-page extraction throughput is established.
