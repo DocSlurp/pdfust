@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import os
 import platform
@@ -30,6 +31,8 @@ from pylopdf import pylopdf_core
 MODES = ("text", "snapshot_text")
 ORIGINAL_COUNT = 104
 DEFAULT_REPEATS = 5
+CONTROL_COUNT = 72
+FONT_DISTRIBUTIONS = ("pylopdf-fonts-jp", "pylopdf-fonts-ko", "pylopdf-fonts-zh-cn", "pylopdf-fonts-zh-tw")
 
 
 def _hash(data: bytes) -> str:
@@ -38,7 +41,11 @@ def _hash(data: bytes) -> str:
 
 def load_inputs(original_manifest: Path | None = None) -> dict[str, list[tuple[str, bytes]]]:
     """Load authored controls and optionally the explicitly named original DEV set."""
-    cohorts = {"cohort72": [(row["id"], row["pdf_bytes"]) for row in cases()]}
+    controls = cases()
+    if len(controls) != CONTROL_COUNT:
+        message = "Authored control count changed; freeze a new benchmark cohort name"
+        raise ValueError(message)
+    cohorts = {"cohort72": [(row["id"], row["pdf_bytes"]) for row in controls]}
     if original_manifest is not None:
         path = guard_path(original_manifest)
         if path.name != "manifest.json":
@@ -98,6 +105,12 @@ def _environment() -> dict[str, Any]:
     source = Path(__file__).resolve()
     core = Path(pylopdf_core.__file__).resolve()
     package = Path(pylopdf.__file__).resolve()
+    font_versions: dict[str, str | None] = {}
+    for distribution in FONT_DISTRIBUTIONS:
+        try:
+            font_versions[distribution] = importlib.metadata.version(distribution)
+        except importlib.metadata.PackageNotFoundError:
+            font_versions[distribution] = None
     revision = subprocess.run(  # noqa: S603 - fixed read-only git arguments; executable resolved locally.
         [shutil.which("git") or "/usr/bin/git", "rev-parse", "HEAD"],
         cwd=source.parent.parent,
@@ -114,6 +127,8 @@ def _environment() -> dict[str, Any]:
         "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
         "rayon_num_threads": os.environ.get("RAYON_NUM_THREADS"),
         "library_version": pylopdf.__version__,
+        "optional_cjk_font_provider_versions": font_versions,
+        "font_configuration": "public automatic fallback configuration included for every fresh Document",
         "benchmark_repository_revision": revision.stdout.strip() if revision.returncode == 0 else None,
         "extension_build_revision": "unmeasured; extension file hash is authoritative",
         "files": {str(path): _hash(path.read_bytes()) for path in (source, package, core)},
@@ -122,12 +137,15 @@ def _environment() -> dict[str, Any]:
     }
 
 
-def benchmark(  # noqa: C901 - explicit warmup, paired measurements and correctness gates.
+def benchmark(  # noqa: C901, PLR0912 - explicit warmup, paired measurements and correctness gates.
     workloads: dict[str, list[tuple[str, bytes]]], *, repeats: int = DEFAULT_REPEATS, inner_repeats: int = 1
 ) -> dict[str, Any]:
     """Alternate balanced same-build arms with fresh Documents and retained failures."""
     if type(repeats) is not int or repeats < 1 or type(inner_repeats) is not int or inner_repeats < 1:
         message = "Both repetition counts must be positive integers"
+        raise ValueError(message)
+    if not workloads:
+        message = "Each workload requires nonempty, unique source identities"
         raise ValueError(message)
     identities: dict[str, list[dict[str, Any]]] = {
         dataset: [{"id": ident, "pdf_sha256": _hash(data), "input_bytes": len(data)} for ident, data in records]

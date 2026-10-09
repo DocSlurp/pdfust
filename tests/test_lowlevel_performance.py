@@ -34,7 +34,7 @@ def test_benchmark_oracles_fail_for_skipped_work(monkeypatch: pytest.MonkeyPatch
 
 
 def test_benchmark_rejects_empty_or_duplicate_workloads() -> None:
-    workloads: list[dict[str, list[tuple[str, bytes]]]] = [{"empty": []}, {"duplicate": [("a", b"x"), ("a", b"y")]}]
+    workloads: list[dict[str, list[tuple[str, bytes]]]] = [{}, {"empty": []}, {"duplicate": [("a", b"x"), ("a", b"y")]}]
     for workload in workloads:
         with pytest.raises(ValueError, match="unique source"):
             benchmark(workload)
