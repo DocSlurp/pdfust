@@ -21,7 +21,7 @@ from bench.decision_evidence import project_case
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "bench/results/pdf-master-artifacts/decisions"
-CAMPAIGN_LIMIT = 8.0
+CAMPAIGN_LIMIT = 10.0
 TOTAL_LIMIT = 15.0
 PRIOR_RENTAL = 0.684
 RESERVATION = 0.30
@@ -55,7 +55,12 @@ EMBEDDING_MODELS = (
     "voyageai/voyage-multimodal-3.5",
     "nvidia/llama-nemotron-embed-vl-1b-v2:free",
 )
-MODELS = (*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS)
+ANTHROPIC_BASELINE_MODELS = (
+    "anthropic/claude-opus-5.5",
+    "anthropic/claude-sonnet-5.5",
+    "anthropic/claude-haiku-5.5",
+)
+MODELS = (*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS, *ANTHROPIC_BASELINE_MODELS)
 HOSTED_MODELS = (*MODELS, *EMBEDDING_MODELS)
 
 
@@ -259,6 +264,18 @@ def parse_answers(model: str, result: dict[str, Any], count: int) -> list[dict[s
     return output
 
 
+def validate_request_reservation(value: float) -> None:
+    """Larger model-specific reserves may tighten, never weaken, default admission."""
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or value < RESERVATION
+    ):
+        message = "request reservation must be finite and at least the default reserve"
+        raise ValueError(message)
+
+
 class DecisionClient:
     """Serialize all metered requests, reserve before transmission, and retain failures."""
 
@@ -304,9 +321,16 @@ class DecisionClient:
                     )
 
     def request(
-        self, body: dict[str, Any], *, tag: str, max_body_bytes: int = MAX_BODY_BYTES, replay: bool = True
+        self,
+        body: dict[str, Any],
+        *,
+        tag: str,
+        max_body_bytes: int = MAX_BODY_BYTES,
+        replay: bool = True,
+        reservation_usd: float = RESERVATION,
     ) -> dict[str, Any]:
         """Replay by default; explicit cache probes may retransmit successful identical bodies."""
+        validate_request_reservation(reservation_usd)
         if type(max_body_bytes) is not int or not 1 <= max_body_bytes <= MAX_IMAGE_BODY_BYTES:
             message = "request byte admission must be within the bounded image ceiling"
             raise ValueError(message)
@@ -351,7 +375,7 @@ class DecisionClient:
                 if entry["request_sha256"] == key:
                     message = "previous identical call failed; explicit investigation required before retry"
                     raise RuntimeError(message)
-            if charged + RESERVATION > CAMPAIGN_LIMIT or prior + charged + RESERVATION > TOTAL_LIMIT:
+            if charged + reservation_usd > CAMPAIGN_LIMIT or prior + charged + reservation_usd > TOTAL_LIMIT:
                 message = "request reservation would exceed campaign or cumulative authorized spend"
                 raise RuntimeError(message)
             index = len(ledger["requests"])
@@ -367,7 +391,8 @@ class DecisionClient:
                 else len({name.rsplit("_", 1)[0] for name in body["questions"]})
                 if body["model"] in DECISION_MODELS
                 else len(body["response_format"]["json_schema"]["schema"]["properties"]["answers"]["properties"]),
-                "accounted_usd": RESERVATION,
+                "accounted_usd": reservation_usd,
+                "reservation_usd": reservation_usd,
                 "cost_status": "reserved",
                 "prior_accounted_usd": prior,
                 "started_at": time.time(),

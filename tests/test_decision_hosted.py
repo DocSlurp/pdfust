@@ -316,3 +316,41 @@ def test_explicit_cache_probe_retransmits_identical_successful_body(
     assert first["entry"]["index"] != second["entry"]["index"]
     assert second["entry"]["force_transmission"] is True
     assert len(json.loads(client.ledger.read_text())["requests"]) == 2
+
+
+@pytest.mark.parametrize("reserve", [True, 0.0, 0.29, float("nan"), float("inf")])
+def test_invalid_custom_reservation_never_transmits(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch, reserve: object
+) -> None:
+    transmit = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", transmit)
+    with pytest.raises(ValueError, match="reservation"):
+        client.request(body(), tag="invalid-reserve", reservation_usd=reserve)  # type: ignore[arg-type]
+    transmit.assert_not_called()
+    assert not client.ledger.exists()
+
+
+def test_larger_request_reservation_is_persisted_before_network_failure(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(*_args: Any, **_kwargs: Any) -> None:  # noqa: ANN401
+        entry = json.loads(client.ledger.read_text())["requests"][0]
+        assert entry["accounted_usd"] == entry["reservation_usd"] == 1.25
+        raise TimeoutError
+
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", fail)
+    with pytest.raises(RuntimeError, match="failed"):
+        client.request(body(), tag="larger-reserve", reservation_usd=1.25)
+    assert json.loads(client.ledger.read_text())["requests"][0]["accounted_usd"] == 1.25
+
+
+def test_larger_reservation_cannot_cross_campaign_cap(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(hosted, "CAMPAIGN_LIMIT", 1.0)
+    transmit = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", transmit)
+    with pytest.raises(RuntimeError, match="authorized spend"):
+        client.request(body(), tag="larger-over-cap", reservation_usd=1.25)
+    transmit.assert_not_called()
+    assert not client.ledger.exists()
