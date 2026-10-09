@@ -180,7 +180,7 @@ All failed/missing inputs retain planned denominators in JSON. N/A means no vali
 | pplx | complete; 288/288 | 92.5098 | 95.8161 | 6085.3 | 186.7910 | 1.2750 | 0.0328 | 8790.1628 |
 | intern | complete; 288/288 | 25.2731 | 32.6075 | 9087.8 | 683.7318 | 1.2750 | 0.0090 | 32175.6131 |
 
-Rates count repeated region inputs, not independent pages. Batch wall includes native worker initialization; Qwen HTTP clients exclude external server initialization. Dollar values use the supplied hourly host quote times observed batch wall: dedicated-GPU-equivalent estimates excluding downloads, provisioning, idle time and teardown. These are not invoices and cannot be added across companion models sharing a GPU. Failed pre-inference rows retain measured overhead but inference rates/cost estimates are N/A. Native CPU/RSS include the model process; Qwen CPU totals cover child clients. Server CPU/RSS and allocator peaks are unmeasured here. Device monitoring and server-tree samples stay separate.
+Rates count repeated region inputs, not independent pages. Batch wall includes native worker initialization; Qwen HTTP clients exclude external server initialization. Dollar values use the supplied hourly host quote times observed batch wall: dedicated-GPU-equivalent estimates excluding downloads, provisioning, idle time and teardown. These are not invoices and cannot be added across companion models sharing a GPU. Failed pre-inference rows retain measured overhead but inference rates/cost estimates are N/A. Native CPU/RSS include the model process; Qwen CPU totals cover child clients. Qwen server-tree samples are summarized below; server PyTorch allocator peaks are unavailable. Device observations are separate from allocator counters.
 
 Native timing includes shared-GPU companion contention; baseline quality is paired but timing is not a controlled speed comparison. Qwen 9B uses eight concurrent HTTP inputs to a shared server: summed request latency is not batch elapsed, and client resources do not measure model-server resources. Group CPU/RSS cover measured model process or HTTP client as labeled. Device-wide GPU monitoring and allocator peaks are separately retained; partial/missing measurements stay unknown.
 
@@ -385,10 +385,17 @@ All failed/missing inputs retain planned denominators in JSON. N/A means no vali
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | flash | failure_limit; 0/288 | 6.0625 | 6.7018 | 18794.8 | N/A | 1.2750 | N/A | N/A |
 | clef | failure_limit; 0/288 | 8.3522 | 9.0862 | 53026.8 | N/A | 1.2750 | N/A | N/A |
-| pplx | failure_limit; 0/288 | 18.8838 | 19.8866 | 6079.3 | N/A | 1.2750 | N/A | N/A |
+| pplx | failure_limit; 0/288 | 18.8838 | 19.8866 | 6079.3 | N/A | 1.3750 | N/A | N/A |
 | intern | complete; 288/288 | 37.6908 | 65.2119 | 9085.6 | 458.4672 | 1.3750 | 0.0144 | 20005.8405 |
 | qwen9 | complete; 288/288 | 20.0625 | 3.5642 | N/A | 861.3069 | 1.3083 | 0.0073 | 39499.4367 |
 
-Rates count repeated region inputs, not independent pages. Batch wall includes native worker initialization; Qwen HTTP clients exclude external server initialization. Dollar values use the supplied hourly host quote times observed batch wall: dedicated-GPU-equivalent estimates excluding downloads, provisioning, idle time and teardown. These are not invoices and cannot be added across companion models sharing a GPU. Failed pre-inference rows retain measured overhead but inference rates/cost estimates are N/A. Native CPU/RSS include the model process; Qwen CPU totals cover child clients. Server CPU/RSS and allocator peaks are unmeasured here. Device monitoring and server-tree samples stay separate.
+Rates count repeated region inputs, not independent pages. Batch wall includes native worker initialization; Qwen HTTP clients exclude external server initialization. Dollar values use the supplied hourly host quote times observed batch wall: dedicated-GPU-equivalent estimates excluding downloads, provisioning, idle time and teardown. These are not invoices and cannot be added across companion models sharing a GPU. Failed pre-inference rows retain measured overhead but inference rates/cost estimates are N/A. Native CPU/RSS include the model process; Qwen CPU totals cover child clients. Qwen server-tree samples are summarized below; server PyTorch allocator peaks are unavailable. Device observations are separate from allocator counters.
 
 Native timing includes shared-GPU companion contention; baseline quality is paired but timing is not a controlled speed comparison. Qwen 9B uses eight concurrent HTTP inputs to a shared server: summed request latency is not batch elapsed, and client resources do not measure model-server resources. Group CPU/RSS cover measured model process or HTTP client as labeled. Device-wide GPU monitoring and allocator peaks are separately retained; partial/missing measurements stay unknown.
+
+The v1 Qwen concurrent run also retained 21 one-second process/device samples.
+The simultaneous supervisor/client/server union peaked at 6.179 GiB RSS and
+observed 25.28 CPU seconds; shared RSS pages may be counted more than once, and
+pre-observation or unsampled exit CPU is unavailable. Device utilization averaged
+91.86%, with peak device memory 63,190 MiB. This includes the server and its KV
+cache; it is not the client RSS or a PyTorch allocator peak.

@@ -466,6 +466,13 @@ preserves 12/16 known correctness at every size ≥256 in every color mode;
 128 px loses accuracy. All 672 ambiguous inputs across the four models remain
 decisive. Image size alone does not solve evidence insufficiency.
 
+The [measured-evidence comparison](bench/results/remote-gpu-ambiguity-evidence.md)
+completed 288 corrected inputs per native model, crossing geometry, pixels and
+combined cues with two image sizes and two prompts. Some known-answer scores
+improved, often at the cost of fewer ambiguity abstentions; no general quality
+improvement was established. Failed input packaging and its corrected runs remain
+separately reported.
+
 The [natural-region comparison](bench/results/remote-gpu-natural.md) retains
 agreement with provisional full-source references separately from agreement with
 the supplied crop's evidence. The [concurrency comparison](bench/results/remote-gpu-concurrency.md)

@@ -1088,3 +1088,18 @@ The original receipt is immutable and retained in ledger amendment history. The
 newer positive charge replaces the old amount; conservative campaign accounting
 is now USD 28.5428416248, including unchanged older reservations. The released
 R001 reservation is USD 8.273. No instances remain.
+
+R001 final verdict: the corrected evidence matrix completed 1,152 native inputs
+with no schema or worker failures. Same-host recovery controls pair PPLX and
+Intern at the exact image sizes and wording. Added geometry/pixel measurements
+produce mixed known-answer changes, while ambiguity abstention remains 0–2/8;
+this is not a general evidence-sufficiency solution. V1 Intern/Qwen retain their
+separate valid results and the three native input-refusal cohorts remain visible.
+The v1 PPLX failed-run hourly metadata was corrected to its actual USD 1.375 host
+quote; no inference rate or cost was assigned to those refused requests.
+
+All work for this bounded GPU wave is complete. The next-wave breadth-preserving
+plan is documented but unexecuted in `bench/EXPERIMENT_PLAN.md`. Local validation:
+259 targeted CPU tests passed; Ruff and strict mypy passed for the new benchmark
+helpers/tests. A documentation-only cherry-pick conflict was resolved by keeping
+the explicit OMP_NUM_THREADS values, followed by a clean diff check.
