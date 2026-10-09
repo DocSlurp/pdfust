@@ -5296,3 +5296,138 @@ fn collect_page_marks<'a>(
         skipped_no_unicode: collector.skipped_no_unicode,
     })
 }
+
+/// Owned pre-clustering evidence for the private experiment API. Source order
+/// counts accepted Unicode glyph callbacks, not original PDF operators.
+pub(crate) type GlyphSnapshotRow = (
+    usize,
+    String,
+    (f64, f64),
+    f64,
+    f64,
+    (f64, f64),
+    String,
+    String,
+    i64,
+    &'static str,
+);
+
+/// Experimental wrapper: ordinary text collection retains its current shape.
+struct GlyphSnapshotCollector {
+    text: TextCollector,
+    modes: Vec<&'static str>,
+}
+
+impl<'a> Device<'a> for GlyphSnapshotCollector {
+    fn set_soft_mask(&mut self, _: Option<SoftMask<'a>>) {}
+    fn set_blend_mode(&mut self, _: BlendMode) {}
+    fn draw_path(&mut self, _: &kurbo::BezPath, _: Affine, _: &Paint<'a>, _: &PathDrawMode) {}
+    fn push_clip_path(&mut self, _: &ClipPath) {}
+    fn pop_clip_path(&mut self) {}
+    fn push_transparency_group(&mut self, _: f32, _: Option<SoftMask<'a>>, _: BlendMode) {}
+    fn pop_transparency_group(&mut self) {}
+    fn draw_image(&mut self, _: Image<'a, '_>, _: Affine) {}
+    fn draw_glyph(
+        &mut self,
+        glyph: &Glyph<'a>,
+        transform: Affine,
+        glyph_transform: Affine,
+        paint: &Paint<'a>,
+        mode: &GlyphDrawMode,
+    ) {
+        let before = self.text.glyphs.len();
+        self.text
+            .draw_glyph(glyph, transform, glyph_transform, paint, mode);
+        if self.text.glyphs.len() > before {
+            let mode = match mode {
+                GlyphDrawMode::Fill => "fill",
+                GlyphDrawMode::Stroke(_) => "stroke",
+                GlyphDrawMode::Invisible => "invisible",
+            };
+            if let Err(error) = try_push_text(&mut self.modes, mode, "glyph snapshot modes") {
+                self.text.limit_error = Some(error);
+            }
+        }
+    }
+}
+
+/// Interpret afresh without populating text/table caches or changing normal
+/// extraction. The caller applies finite budgets and document-wide admission.
+pub(crate) fn glyph_snapshot<'a>(
+    pdf: &'a Pdf,
+    page: &Page<'a>,
+    cache: &InterpreterCache<'a>,
+    settings: InterpreterSettings,
+    max_text_size: usize,
+    max_glyph_count: usize,
+) -> Result<(f64, f64, Vec<GlyphSnapshotRow>, usize, usize), TextPageLimit> {
+    let mut context = extraction_context(pdf, page, cache, settings);
+    let mut collector = GlyphSnapshotCollector {
+        text: TextCollector {
+            glyphs: Vec::new(),
+            rules: Vec::new(),
+            collect_rules: false,
+            font_infos: HashMap::new(),
+            last_font: None,
+            text_size: 0,
+            max_text_size: Some(max_text_size),
+            max_glyph_count: Some(max_glyph_count),
+            limit_error: None,
+            skipped_no_unicode: 0,
+        },
+        modes: Vec::new(),
+    };
+    interpret_page(page, &mut context, &mut collector);
+    if let Some(error) = collector.text.limit_error {
+        return Err(error);
+    }
+    let mut rows = Vec::new();
+    // Font names are metadata, independent of the Unicode mapping budget.
+    // Repeated long names must not amplify a bounded snapshot without limit.
+    let mut font_name_bytes = 0usize;
+    for (glyph, mode) in collector.text.glyphs.into_iter().zip(collector.modes) {
+        font_name_bytes = font_name_bytes
+            .checked_add(glyph.font.name.len())
+            .ok_or_else(|| {
+                TextPageLimit::Allocation("glyph snapshot font metadata size overflow".into())
+            })?;
+        if font_name_bytes > 1_048_576 {
+            return Err(TextPageLimit::Allocation(
+                "glyph snapshot font metadata exceeds 1048576 bytes".into(),
+            ));
+        }
+        let mut text = String::new();
+        try_push_glyph_text(&mut text, &glyph.text, "glyph snapshot text")?;
+        let mut font_name = String::new();
+        try_push_str_text(&mut font_name, &glyph.font.name, "glyph snapshot font name")?;
+        let mut font_key = String::new();
+        font_key.try_reserve_exact(32).map_err(|error| {
+            TextPageLimit::Allocation(format!("failed to allocate glyph font key: {error}"))
+        })?;
+        write!(&mut font_key, "{:032x}", glyph.font_key).expect("reserved 32 hex bytes");
+        try_push_text(
+            &mut rows,
+            (
+                glyph.source_order,
+                text,
+                (glyph.x, glyph.y),
+                glyph.size,
+                glyph.advance,
+                glyph.direction,
+                font_key,
+                font_name,
+                glyph.font.flags,
+                mode,
+            ),
+            "glyph snapshot rows",
+        )?;
+    }
+    let (width, height) = page.render_dimensions();
+    Ok((
+        f64::from(width),
+        f64::from(height),
+        rows,
+        collector.text.skipped_no_unicode,
+        collector.text.text_size,
+    ))
+}

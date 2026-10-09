@@ -7706,6 +7706,63 @@ impl _Document {
         })
     }
 
+    /// Private CPU experiment: return callback-order glyphs before clustering.
+    /// Fresh interpretation shares document resource admission, but does not
+    /// populate text/table caches. Coordinates are display-space approximations.
+    #[pyo3(signature = (page_number, *, max_glyphs=65_536, max_text_bytes=1_048_576))]
+    fn extract_glyph_snapshot(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+        max_glyphs: usize,
+        max_text_bytes: usize,
+    ) -> PyResult<(f64, f64, Vec<crate::extract::GlyphSnapshotRow>, usize)> {
+        if !(1..=65_536).contains(&max_glyphs) || !(1..=1_048_576).contains(&max_text_bytes) {
+            return Err(PyValueError::new_err(
+                "max_glyphs must be 1..65536 and max_text_bytes must be 1..1048576",
+            ));
+        }
+        let settings = self.interpreter_settings();
+        py.detach(|| {
+            self.hayro_view()?;
+            let pdf = self
+                .hayro_pdf
+                .take()
+                .expect("hayro view was built immediately before");
+            let result = (|| {
+                let page = page_number
+                    .checked_sub(1)
+                    .and_then(|index| pdf.pages().get(index as usize))
+                    .ok_or_else(|| {
+                        PdfError::new_err(format!("page {page_number} does not exist"))
+                    })?;
+                let text_budget = self
+                    .text_budget(page_number)?
+                    .unwrap_or(max_text_bytes)
+                    .min(max_text_bytes);
+                let glyph_budget = self
+                    .glyph_budget(page_number)?
+                    .unwrap_or(max_glyphs)
+                    .min(max_glyphs);
+                let cache = InterpreterCache::new();
+                let (width, height, rows, skipped, text_size) = crate::extract::glyph_snapshot(
+                    &pdf,
+                    page,
+                    &cache,
+                    settings,
+                    text_budget,
+                    glyph_budget,
+                )
+                .map_err(text_page_limit_err)?;
+                self.admit_text_usage(page_number, text_size, rows.len())?;
+                self.warn_skipped_no_unicode(skipped);
+                Ok((width, height, rows, skipped))
+            })();
+            self.hayro_pdf = Some(pdf);
+            result
+        })
+    }
+
     /// Return layout for a one-based page.
     ///
     /// Return `(width, height, blocks)`, where block=`(bbox, lines)`,

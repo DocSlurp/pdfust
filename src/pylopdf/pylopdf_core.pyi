@@ -213,6 +213,18 @@ class _Document:
     def set_page_box(self, page_number: int, key: str, x0: float, y0: float, x1: float, y1: float) -> None: ...
     def select(self, page_numbers: list[int]) -> None: ...
     def extract_text(self, page_numbers: list[int]) -> str: ...
+    def extract_glyph_snapshot(
+        self,
+        page_number: int,
+        *,
+        max_glyphs: int = 65536,
+        max_text_bytes: int = 1048576,
+    ) -> tuple[
+        float,
+        float,
+        list[tuple[int, str, tuple[float, float], float, float, tuple[float, float], str, str, int, str]],
+        int,
+    ]: ...
     def extract_layout(
         self, page_number: int, *, include_spans: bool = True, include_words: bool = True
     ) -> tuple[
