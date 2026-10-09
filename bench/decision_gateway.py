@@ -95,6 +95,16 @@ LOCATION_FIELDS = frozenset(
         "gateway",
         "only",
         "images",
+        "input",
+        "content",
+        "role",
+        "image_url",
+        "detail",
+        "choices",
+        "name",
+        "value",
+        "description",
+        "probability",
         "observations",
         "glyphs",
         "fonts",
@@ -257,9 +267,9 @@ def read_gateway_key(root: Path) -> str:
     raise RuntimeError(message)
 
 
-def request_identity(encoded: bytes) -> str:
+def request_identity(encoded: bytes, *, endpoint: str = ENDPOINT) -> str:
     """Namespace exact transport bytes by the fixed serving endpoint."""
-    return hashlib.sha256(ENDPOINT.encode() + b"\0" + encoded).hexdigest()
+    return hashlib.sha256(endpoint.encode() + b"\0" + encoded).hexdigest()
 
 
 def _money(value: object) -> float | None:
@@ -356,6 +366,15 @@ class GatewayDecisionClient(hosted.DecisionClient):
     """Use one shared budget lock, Gateway-specific pricing and route-specific replay."""
 
     gateway = GATEWAY
+    endpoint = ENDPOINT
+
+    def _encode(self, body: dict[str, Any], max_body_bytes: int) -> bytes:
+        """Validate and encode the unchanged TypeSafe transport."""
+        return _validate(body, max_body_bytes)
+
+    def _normalize(self, raw: dict[str, Any], _body: dict[str, Any]) -> dict[str, Any]:
+        """Normalize TypeSafe usage while preserving its native answer shape."""
+        return normalize_response(raw)
 
     def __init__(
         self,
@@ -407,8 +426,8 @@ class GatewayDecisionClient(hosted.DecisionClient):
     ) -> dict[str, Any]:
         """Transmit once with a 90-second timeout; successful exact replays are local."""
         hosted.validate_request_reservation(reservation_usd)
-        encoded = _validate(body, max_body_bytes)
-        body_hash, identity = hashlib.sha256(encoded).hexdigest(), request_identity(encoded)
+        encoded = self._encode(body, max_body_bytes)
+        body_hash, identity = hashlib.sha256(encoded).hexdigest(), request_identity(encoded, endpoint=self.endpoint)
         with hosted.exclusive_lock(self.directory / "ledger.lock"):
             ledger: dict[str, Any] = (
                 json.loads(self.ledger.read_bytes())
@@ -431,8 +450,8 @@ class GatewayDecisionClient(hosted.DecisionClient):
                 if entry.get("response_file"):
                     if not replay:
                         continue
-                    result = normalize_response(
-                        json.loads(guard_path(self.directory / entry["response_file"]).read_bytes())
+                    result = self._normalize(
+                        json.loads(guard_path(self.directory / entry["response_file"]).read_bytes()), body
                     )
                     return {
                         "result": result,
@@ -454,7 +473,7 @@ class GatewayDecisionClient(hosted.DecisionClient):
                 "tag": tag,
                 "gateway": GATEWAY,
                 "provider_gateway": GATEWAY,
-                "endpoint": ENDPOINT,
+                "endpoint": self.endpoint,
                 "requested_model": body["model"],
                 "request_sha256": body_hash,
                 "request_identity_sha256": identity,
@@ -470,8 +489,8 @@ class GatewayDecisionClient(hosted.DecisionClient):
             ledger["requests"].append(entry)
             hosted.checkpoint(self.ledger, ledger)
             (self.directory / f"request-{index:03d}.json").write_bytes(encoded)
-            request = urllib.request.Request(
-                ENDPOINT,
+            request = urllib.request.Request(  # noqa: S310 - class endpoint is a documented fixed HTTPS route.
+                self.endpoint,
                 data=encoded,
                 headers={"Authorization": "Bearer " + self.key, "Content-Type": "application/json"},
                 method="POST",
@@ -499,6 +518,7 @@ class GatewayDecisionClient(hosted.DecisionClient):
                     provider_cost_raw=gateway.get("cost") if isinstance(gateway, dict) else None,
                 )
                 self._account_result(body, result, entry)
+                result = self._normalize(raw, body)
                 if result.get("model") not in (None, body["model"]):
                     message = "Gateway returned a different model; model fallback is disabled"
                     raise ValueError(message)  # noqa: TRY301 - preserve the actual paid response/accounting.
