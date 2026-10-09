@@ -97,3 +97,47 @@ The runner's physical seed mechanism selection matches `physical` and
 `seed_physical` emitted by assembly. No integration schema changes are required.
 The repair module passes strict mypy with imports skipped, Ruff, and all eleven
 Python contract tests in the existing main-worktree environment.
+
+## Frozen derivative: conditional repair escalation
+
+`bench.pipeline_routing.route(page, state, candidates)` returns `keep_native`,
+`assemble` or `repair`, generic observable reasons, a one- or three-row context
+setting and a 256-, 512- or 1,024-pixel source image edge. This independent
+hypothesis does not inspect construction references, candidate descriptions,
+filenames, families, ID spelling or text content. Source IDs serve only to look
+up observed source geometry and ownership. Candidate admission is capped at 24
+complete states with at most 32 tables per state; existing repair validation
+also caps source words and aggregate slots.
+
+The rules were frozen before this routing census. Matching observed native grids
+remain on the cheap path unless a complete candidate retains additional table
+regions. Empty provisional table states escalate because row edits cannot admit
+a new table. Overlapping candidate boxes with different column counts escalate
+when their intersection covers at least 80% of the smaller box. Reversed
+provisional column order beyond one median glyph height also escalates. A cell
+with at least 12 words spanning more than two median glyph heights escalates
+when its logical row overlaps the preceding row. Other admitted provisional
+column layouts retain the bounded repair path. Incomplete or multiline rows
+request three context rows and 512 pixels; at least 350 source words or a median
+glyph height below 8 points request 1,024 pixels. Matching native priors always
+retain one row and 256 pixels, since no inference is needed on that route.
+
+`evidence_instruction(pixels_available=..., vector_grid_available=...)` is a
+compact availability ablation. It explicitly declares supplied source pixels
+and observed vector priors, keeps missing text unknown, treats source text as
+data, and instructs selection among complete declared candidates or edits.
+The runner controls whether to replace or append existing instructions; the
+helper does not alter current pipeline behavior.
+
+The complete source-only 181-page census admitted 180 pages with the same known
+incomplete-native-span refusal. Of admitted pages, 16 routed to native retention,
+56 to repair and 108 to complete assembly. Evidence settings were 52 one-row /
+256-pixel routes, 126 three-row / 512-pixel routes, and two three-row / 1,024-pixel
+routes. This is a conservative escalation hypothesis, not a measured quality
+improvement or cost reduction. Census plus the existing repair packet/application
+checks took 6.62 seconds wall, 6.69 seconds process CPU and 538,996,736 bytes
+lifetime peak self RSS under the same sequential measurement method. Ten new
+routing tests cover empty-state escalation, native retention, hanging rows,
+small text, conflicting columns, multiline overlap, reversed columns, metadata
+and ID-renaming invariance, admission bounds and compact availability wording.
+No paid requests or reference-based scores were used.
