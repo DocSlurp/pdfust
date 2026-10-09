@@ -925,6 +925,15 @@ def ink_measure(image: Any) -> dict[str, Any]:
     }
 
 
+def compact_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    """Retain measured comparison fields, omitting verbose font and image records."""
+    return {
+        **metadata,
+        "content": {k: v for k, v in metadata["content"].items() if k != "font_resources"},
+        "pages": [{k: v for k, v in page.items() if k != "images"} for page in metadata["pages"]],
+    }
+
+
 def build(output: Path, registry_path: Path) -> dict[str, Any]:
     """Freeze reviewed v3 styles and recipes, then build all derivatives and compare pixels."""
     import numpy as np
@@ -1052,7 +1061,7 @@ def build(output: Path, registry_path: Path) -> dict[str, Any]:
     compact = {
         **result,
         "artifact_manifest_sha256": digest((destination / "manifest.json").read_bytes()),
-        "rows": [{k: v for k, v in row.items() if k != "metadata"} for row in rows],
+        "rows": [{**row, "metadata": compact_metadata(row["metadata"])} for row in rows],
     }
     registry_path.write_text(json.dumps(compact, indent=2) + "\n")
     return result

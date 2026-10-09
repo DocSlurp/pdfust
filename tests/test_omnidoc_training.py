@@ -10,6 +10,7 @@ import pytest
 from bench.omnidoc_training import (
     CJK_FONT,
     _realism_pdf,
+    compact_metadata,
     geometry,
     ink_measure,
     parent_group,
@@ -138,3 +139,35 @@ def test_ink_diagnostics_measure_pixels_instead_of_declared_boxes() -> None:
     assert white["dark_fraction"] == 0
     assert black["dark_fraction"] == 1
     assert black["nonwhite_fraction"] == 1
+
+
+def test_narrow_latin_credit_is_rotated_without_off_page_words() -> None:
+    image_module = pytest.importorskip("PIL.Image")
+    contract = geometry(row("fixture.png"))
+    contract["blocks"][0]["bbox"] = [98.5, 20, 99.5, 160]
+    style = reference_style(
+        image_module.new("RGB", (100, 200), "white"), contract, {"language": "english", "data_source": "newspaper"}
+    )
+    recipe = realistic_recipe(contract, style, 0)
+    assert recipe["blocks"][0]["vertical_latin"]
+    with pylopdf.open(stream=_realism_pdf(recipe, b"")) as document:
+        words = document[0].get_text("words")
+        assert len(words) == 3
+        assert all(0 <= word[0] <= word[2] <= 612 for word in words)
+        assert all(0 <= word[1] <= word[3] <= recipe["height"] for word in words)
+
+
+def test_compact_metadata_preserves_measurements_and_unknowns() -> None:
+    metadata: dict[str, Any] = {
+        "effective_pdf_version": "1.7",
+        "raw_string_token_fraction": None,
+        "errors": ["unknown string measurement"],
+        "content": {"font_resources": [{"name": "Verbose"}], "decoded_content_bytes": 123},
+        "pages": [{"images": [], "image_coverage_percent": 0, "text": {"word_count": 12}}],
+    }
+    compact = compact_metadata(metadata)
+    assert compact["raw_string_token_fraction"] is None
+    assert compact["errors"] == metadata["errors"]
+    assert compact["content"] == {"decoded_content_bytes": 123}
+    assert compact["pages"][0]["text"]["word_count"] == 12
+    assert "font_resources" in metadata["content"]

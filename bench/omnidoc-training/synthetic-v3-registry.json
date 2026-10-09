@@ -1,0 +1,2130 @@
+{
+  "split": "TRAINING",
+  "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages",
+  "parent_geometry_sha256": "054b6a8691e2575995c6c3885e3109cf7bef6858deeb8366620e869153bb0139",
+  "design": {
+    "version": 3,
+    "split": "TRAINING",
+    "authoring_inputs": "frozen envelopes, categories, language/genre, image-only line/grid/color measurements",
+    "excluded_inputs": "recognition text, HTML, LaTeX, source prose, source photographs, model outputs",
+    "masks": "all *_mask, need_mask, ignored and abandon blocks retained as correspondence but not painted",
+    "typography": "measured line density; serif/sans/mono; subset-embedded Noto CJK; upright vertical CJK chains",
+    "tables": "image-projection divider hypotheses and authored values; internal structure is approximate",
+    "figures": "procedural vector charts and illustrations; no source pixels embedded",
+    "limitations": "no handwriting, photograph, exact font, curved baseline or scan-noise reproduction",
+    "metrics": "all-page measured dark-ink and nonwhite density differences; not semantic quality",
+    "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+  },
+  "rows": [
+    {
+      "training_id": "training-000",
+      "source_id": "yanbaopptmerge_4304d65458262c3161cf5d0440c6a56851222ce1da3d7886cdd2320ce2222c4a.pdf_7.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "05ba62470aca3df3b7b7dcd3460997094b27b6fe533a622deed12346d4ce7fbc",
+      "render_sha256": "a532e5452dfa11b3c46bb86603644fa12b7ed424c5b32eba458ea72b2e279317",
+      "blocks": 20,
+      "suppressed_blocks": 1,
+      "font_languages": "simplified_chinese",
+      "reference_ink": {
+        "dark_fraction": 0.05426025390625,
+        "nonwhite_fraction": 0.1690673828125
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.03411865234375,
+          "nonwhite_fraction": 0.201873779296875,
+          "absolute_dark_fraction_error": 0.0201416015625,
+          "tile_dark_fraction_mae": 0.047698974609375
+        },
+        "v3": {
+          "dark_fraction": 0.023468017578125,
+          "nonwhite_fraction": 0.162689208984375,
+          "absolute_dark_fraction_error": 0.030792236328125,
+          "tile_dark_fraction_mae": 0.0440673828125
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 1,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 14919,
+          "decoded_content_string_fraction": 0.0598565587505865,
+          "decoded_content_string_operand_bytes": 893,
+          "encoded_content_bytes": 14919,
+          "executed_operations": 841,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 106,
+            "Do": 14,
+            "ET": 106,
+            "G": 5,
+            "Q": 50,
+            "RG": 1,
+            "S": 16,
+            "TJ": 20,
+            "Td": 86,
+            "Tf": 106,
+            "Tj": 86,
+            "Tm": 20,
+            "Tr": 20,
+            "W": 1,
+            "cm": 34,
+            "f": 13,
+            "g": 13,
+            "l": 24,
+            "m": 16,
+            "n": 1,
+            "q": 50,
+            "re": 14,
+            "rg": 34,
+            "w": 5
+          },
+          "text_render_mode_operator_counts": {
+            "0": 20
+          },
+          "text_showing_operand_bytes_executed": 893,
+          "vector_paint_operator_count": 29
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 95765,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.4583
+            ],
+            "display_height_points": 865.4583129882812,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.4583
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 6,
+              "characters": 645,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 29,
+              "non_ascii_characters": 341,
+              "span_count": 32,
+              "text_bbox_coverage_percent": 14.304605137350686,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 1327,
+              "whitespace_characters": 114,
+              "word_count": 114
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 238,
+        "raw_string_token_fraction": 0.0024852503524252076
+      }
+    },
+    {
+      "training_id": "training-001",
+      "source_id": "PPT_ch7_page_142.png",
+      "split": "TRAINING",
+      "source_parent_group": "PPT_ch7",
+      "parent_group_status": "filename numbered-page inference",
+      "pdf_sha256": "f766030a6947c11bac0ca806f243f5b3a5d73d5aae037a6d7bf2abeb3999cee2",
+      "render_sha256": "580d0c0d0d174dd701043c8287f759b1b94b44fe801fcdb31a49ef744468b100",
+      "blocks": 11,
+      "suppressed_blocks": 0,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.157012939453125,
+        "nonwhite_fraction": 0.6291046142578125
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0752716064453125,
+          "nonwhite_fraction": 0.1502685546875,
+          "absolute_dark_fraction_error": 0.0817413330078125,
+          "tile_dark_fraction_mae": 0.1171722412109375
+        },
+        "v3": {
+          "dark_fraction": 0.19683837890625,
+          "nonwhite_fraction": 0.59722900390625,
+          "absolute_dark_fraction_error": 0.039825439453125,
+          "tile_dark_fraction_mae": 0.067108154296875
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 17,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 4215,
+          "decoded_content_string_fraction": 0.1387900355871886,
+          "decoded_content_string_operand_bytes": 585,
+          "encoded_content_bytes": 4215,
+          "executed_operations": 227,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 17,
+            "ET": 17,
+            "Q": 17,
+            "Td": 17,
+            "Tf": 17,
+            "Tj": 17,
+            "W": 17,
+            "f": 10,
+            "g": 10,
+            "n": 17,
+            "q": 17,
+            "re": 27,
+            "rg": 27
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 585,
+          "vector_paint_operator_count": 10
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 5232,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              459.0
+            ],
+            "display_height_points": 459.0,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              459.0
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 16,
+              "characters": 602,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 14,
+              "non_ascii_characters": 0,
+              "span_count": 16,
+              "text_bbox_coverage_percent": 34.31059347633953,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 602,
+              "whitespace_characters": 90,
+              "word_count": 90
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-002",
+      "source_id": "jiaocaineedrop_jiaocai_needrop_en_3937.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "42cec53c90282405284d5dd59ab324b6a38c0af7ac1921507c7a703ec923b373",
+      "render_sha256": "88a92744cc1d7dcac8faabbd3cbbf8339afdf11cd8c015c741baa1bf7310de8f",
+      "blocks": 38,
+      "suppressed_blocks": 9,
+      "font_languages": "simplified_chinese",
+      "reference_ink": {
+        "dark_fraction": 0.0348968505859375,
+        "nonwhite_fraction": 0.2193450927734375
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0323486328125,
+          "nonwhite_fraction": 0.2280120849609375,
+          "absolute_dark_fraction_error": 0.0025482177734375,
+          "tile_dark_fraction_mae": 0.0356903076171875
+        },
+        "v3": {
+          "dark_fraction": 0.02838134765625,
+          "nonwhite_fraction": 0.1988677978515625,
+          "absolute_dark_fraction_error": 0.0065155029296875,
+          "tile_dark_fraction_mae": 0.0201568603515625
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 1,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 29684,
+          "decoded_content_string_fraction": 0.029409783048106725,
+          "decoded_content_string_operand_bytes": 873,
+          "encoded_content_bytes": 29684,
+          "executed_operations": 1034,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 62,
+            "Do": 26,
+            "ET": 62,
+            "G": 2,
+            "Q": 91,
+            "S": 13,
+            "TJ": 37,
+            "Td": 25,
+            "Tf": 62,
+            "Tj": 25,
+            "Tm": 37,
+            "Tr": 37,
+            "W": 1,
+            "c": 96,
+            "cm": 63,
+            "f": 59,
+            "g": 59,
+            "l": 13,
+            "m": 37,
+            "n": 1,
+            "q": 91,
+            "re": 36,
+            "rg": 97,
+            "w": 2
+          },
+          "text_render_mode_operator_counts": {
+            "0": 37
+          },
+          "text_showing_operand_bytes_executed": 873,
+          "vector_paint_operator_count": 72
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 179843,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              851.2143
+            ],
+            "display_height_points": 851.2142944335938,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              851.2143
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 2,
+              "characters": 526,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 31,
+              "non_ascii_characters": 409,
+              "span_count": 42,
+              "text_bbox_coverage_percent": 18.46338257266996,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 1344,
+              "whitespace_characters": 62,
+              "word_count": 62
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 442,
+        "raw_string_token_fraction": 0.002457699215426789
+      }
+    },
+    {
+      "training_id": "training-003",
+      "source_id": "newspaper_The Wall Street Journal - 2025-01-08@magazinesclubnew_page_018.png",
+      "split": "TRAINING",
+      "source_parent_group": "newspaper_The Wall Street Journal - 2025-01-08@magazinesclubnew",
+      "parent_group_status": "filename numbered-page inference",
+      "pdf_sha256": "3a75c6afe8232fa4037526c95d6f8a15962c0b0676ac7c2de72bdbbf79df0ae4",
+      "render_sha256": "bcad0da5376b387d2bc48e79b5748f15f2977558a1f5ee31059c374a166bfb3b",
+      "blocks": 112,
+      "suppressed_blocks": 10,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.1959381103515625,
+        "nonwhite_fraction": 0.736572265625
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0381622314453125,
+          "nonwhite_fraction": 0.528167724609375,
+          "absolute_dark_fraction_error": 0.15777587890625,
+          "tile_dark_fraction_mae": 0.17138671875
+        },
+        "v3": {
+          "dark_fraction": 0.1065673828125,
+          "nonwhite_fraction": 0.5572662353515625,
+          "absolute_dark_fraction_error": 0.0893707275390625,
+          "tile_dark_fraction_mae": 0.1126861572265625
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 453,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 161013,
+          "decoded_content_string_fraction": 0.08622906224963202,
+          "decoded_content_string_operand_bytes": 13884,
+          "encoded_content_bytes": 161013,
+          "executed_operations": 7120,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 699,
+            "ET": 699,
+            "G": 10,
+            "Q": 453,
+            "S": 133,
+            "Td": 699,
+            "Tf": 699,
+            "Tj": 699,
+            "W": 453,
+            "f": 122,
+            "g": 122,
+            "l": 133,
+            "m": 133,
+            "n": 453,
+            "q": 453,
+            "re": 575,
+            "rg": 575,
+            "w": 10
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 13884,
+          "vector_paint_operator_count": 255
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 162040,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              1225.4628
+            ],
+            "display_height_points": 1225.4627685546875,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              1225.4628
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 265,
+              "characters": 14582,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 185,
+              "non_ascii_characters": 0,
+              "span_count": 364,
+              "text_bbox_coverage_percent": 44.80966178085843,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 14582,
+              "whitespace_characters": 2263,
+              "word_count": 2263
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-004",
+      "source_id": "page-25bb22df-f066-42ea-b1a9-e283ec22a303.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "f519d81a3cb221fa49d3e9b2d781a63d0dae96a24f209504f7cd0aa65d8d4bd4",
+      "render_sha256": "75de1046146f7a4b17f17c7c5dc7cfe34191918c70c05a2433de3ff1c485488c",
+      "blocks": 39,
+      "suppressed_blocks": 3,
+      "font_languages": "en_ch_mixed",
+      "reference_ink": {
+        "dark_fraction": 0.019439697265625,
+        "nonwhite_fraction": 0.0806884765625
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0242462158203125,
+          "nonwhite_fraction": 0.0966033935546875,
+          "absolute_dark_fraction_error": 0.0048065185546875,
+          "tile_dark_fraction_mae": 0.0255889892578125
+        },
+        "v3": {
+          "dark_fraction": 0.005157470703125,
+          "nonwhite_fraction": 0.07525634765625,
+          "absolute_dark_fraction_error": 0.0142822265625,
+          "tile_dark_fraction_mae": 0.0152587890625
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 8,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 9136,
+          "decoded_content_string_fraction": 0.07672942206654991,
+          "decoded_content_string_operand_bytes": 701,
+          "encoded_content_bytes": 9136,
+          "executed_operations": 606,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 40,
+            "Do": 32,
+            "ET": 40,
+            "Q": 105,
+            "TJ": 32,
+            "Td": 8,
+            "Tf": 40,
+            "Tj": 8,
+            "Tm": 32,
+            "Tr": 32,
+            "W": 8,
+            "cm": 64,
+            "f": 1,
+            "g": 1,
+            "n": 8,
+            "q": 105,
+            "re": 9,
+            "rg": 41
+          },
+          "text_render_mode_operator_counts": {
+            "0": 32
+          },
+          "text_showing_operand_bytes_executed": 701,
+          "vector_paint_operator_count": 1
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 137886,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.9819
+            ],
+            "display_height_points": 865.9818725585938,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.9819
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 3,
+              "characters": 480,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 40,
+              "non_ascii_characters": 261,
+              "span_count": 40,
+              "text_bbox_coverage_percent": 9.361186609866685,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 1002,
+              "whitespace_characters": 71,
+              "word_count": 55
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 544,
+        "raw_string_token_fraction": 0.003945288136576592
+      }
+    },
+    {
+      "training_id": "training-005",
+      "source_id": "notes_9e951846094758afac08c620144e3a76_15.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "3b03b694a27f1b858bd41a802b89eef472b0e5daef3a0c553378f060617b28df",
+      "render_sha256": "c61e761175b6cf010206f990d6f5be5f1264da4c5414910633eb9d2d2dd115d0",
+      "blocks": 17,
+      "suppressed_blocks": 1,
+      "font_languages": "simplified_chinese",
+      "reference_ink": {
+        "dark_fraction": 0.252105712890625,
+        "nonwhite_fraction": 0.786102294921875
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0409698486328125,
+          "nonwhite_fraction": 0.1114654541015625,
+          "absolute_dark_fraction_error": 0.2111358642578125,
+          "tile_dark_fraction_mae": 0.2206878662109375
+        },
+        "v3": {
+          "dark_fraction": 0.0409088134765625,
+          "nonwhite_fraction": 0.776123046875,
+          "absolute_dark_fraction_error": 0.2111968994140625,
+          "tile_dark_fraction_mae": 0.2165985107421875
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 6,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 6262,
+          "decoded_content_string_fraction": 0.033056531459597575,
+          "decoded_content_string_operand_bytes": 207,
+          "encoded_content_bytes": 6262,
+          "executed_operations": 434,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 16,
+            "Do": 10,
+            "ET": 16,
+            "G": 33,
+            "Q": 37,
+            "RG": 33,
+            "S": 33,
+            "TJ": 10,
+            "Td": 6,
+            "Tf": 16,
+            "Tj": 6,
+            "Tm": 10,
+            "Tr": 10,
+            "W": 6,
+            "cm": 20,
+            "f": 2,
+            "g": 2,
+            "l": 33,
+            "m": 33,
+            "n": 6,
+            "q": 37,
+            "re": 8,
+            "rg": 18,
+            "w": 33
+          },
+          "text_render_mode_operator_counts": {
+            "0": 10
+          },
+          "text_showing_operand_bytes_executed": 207,
+          "vector_paint_operator_count": 35
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 49814,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.4583
+            ],
+            "display_height_points": 865.4583129882812,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.4583
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 0,
+              "characters": 136,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 15,
+              "non_ascii_characters": 87,
+              "span_count": 16,
+              "text_bbox_coverage_percent": 14.138623835919065,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 310,
+              "whitespace_characters": 26,
+              "word_count": 26
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 170,
+        "raw_string_token_fraction": 0.0034126952262416186
+      }
+    },
+    {
+      "training_id": "training-006",
+      "source_id": "docstructbench_llm-raw-scihub-o.O-j.1365-2818.2000.00739.x.pdf_8.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "dc91e31fbea897181a5bcebac489a48daad588256f1e34bf83c99e60a50f0fbc",
+      "render_sha256": "957463c86e4af60d2e8b89ea2e553255f1185190725f821bc137d35713dbdcdf",
+      "blocks": 26,
+      "suppressed_blocks": 0,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.07208251953125,
+        "nonwhite_fraction": 0.3198394775390625
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0850372314453125,
+          "nonwhite_fraction": 0.2798614501953125,
+          "absolute_dark_fraction_error": 0.0129547119140625,
+          "tile_dark_fraction_mae": 0.0511322021484375
+        },
+        "v3": {
+          "dark_fraction": 0.0311737060546875,
+          "nonwhite_fraction": 0.337310791015625,
+          "absolute_dark_fraction_error": 0.0409088134765625,
+          "tile_dark_fraction_mae": 0.0423736572265625
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 107,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 30201,
+          "decoded_content_string_fraction": 0.211781066852091,
+          "decoded_content_string_operand_bytes": 6396,
+          "encoded_content_bytes": 30201,
+          "executed_operations": 1181,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 107,
+            "ET": 107,
+            "Q": 107,
+            "Td": 107,
+            "Tf": 107,
+            "Tj": 107,
+            "W": 107,
+            "f": 1,
+            "g": 1,
+            "n": 107,
+            "q": 107,
+            "re": 108,
+            "rg": 108
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 6396,
+          "vector_paint_operator_count": 1
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 31225,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              804.5227
+            ],
+            "display_height_points": 804.522705078125,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              804.5227
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 57,
+              "characters": 6503,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 98,
+              "non_ascii_characters": 0,
+              "span_count": 106,
+              "text_bbox_coverage_percent": 44.82802160852643,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 6503,
+              "whitespace_characters": 954,
+              "word_count": 954
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-007",
+      "source_id": "page-0c28f48b-33da-489c-bfc1-1fe82e5be68f.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "6cfa92b048d93c25955b18d0b8b3c25a695310f56165b74cae134e5aec640b07",
+      "render_sha256": "390f6d2d728c8837213dcbb805ca054c28324c9398b2447ca409bd05c90ba642",
+      "blocks": 7,
+      "suppressed_blocks": 1,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.0169677734375,
+        "nonwhite_fraction": 0.0601043701171875
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0030670166015625,
+          "nonwhite_fraction": 0.0666351318359375,
+          "absolute_dark_fraction_error": 0.0139007568359375,
+          "tile_dark_fraction_mae": 0.0139007568359375
+        },
+        "v3": {
+          "dark_fraction": 0.0159759521484375,
+          "nonwhite_fraction": 0.0585174560546875,
+          "absolute_dark_fraction_error": 0.0009918212890625,
+          "tile_dark_fraction_mae": 0.0028228759765625
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 26,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 6120,
+          "decoded_content_string_fraction": 0.1173202614379085,
+          "decoded_content_string_operand_bytes": 718,
+          "encoded_content_bytes": 6120,
+          "executed_operations": 290,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 26,
+            "ET": 26,
+            "Q": 26,
+            "Td": 26,
+            "Tf": 26,
+            "Tj": 26,
+            "W": 26,
+            "f": 1,
+            "g": 1,
+            "n": 26,
+            "q": 26,
+            "re": 27,
+            "rg": 27
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 718,
+          "vector_paint_operator_count": 1
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 7142,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              780.4095
+            ],
+            "display_height_points": 780.4094848632812,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              780.4095
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 19,
+              "characters": 744,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 26,
+              "non_ascii_characters": 0,
+              "span_count": 26,
+              "text_bbox_coverage_percent": 7.042628711379982,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 744,
+              "whitespace_characters": 113,
+              "word_count": 113
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-008",
+      "source_id": "page-dad79c54-8125-4927-9988-ee1d2a139d7b.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "bd9500bbda8d5927d655bea8c2748a56ef74e49a8b7589bc9567e28f10fc689d",
+      "render_sha256": "2c019651df6d49432c52e22f27efd41c5e27fb013e29356c5874f0f639caca3b",
+      "blocks": 41,
+      "suppressed_blocks": 0,
+      "font_languages": "traditional_chinese",
+      "reference_ink": {
+        "dark_fraction": 0.075958251953125,
+        "nonwhite_fraction": 0.159393310546875
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.03466796875,
+          "nonwhite_fraction": 0.1927032470703125,
+          "absolute_dark_fraction_error": 0.041290283203125,
+          "tile_dark_fraction_mae": 0.044464111328125
+        },
+        "v3": {
+          "dark_fraction": 0.0558929443359375,
+          "nonwhite_fraction": 0.16094970703125,
+          "absolute_dark_fraction_error": 0.0200653076171875,
+          "tile_dark_fraction_mae": 0.0346527099609375
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 2,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 43624,
+          "decoded_content_string_fraction": 0.01847606821932881,
+          "decoded_content_string_operand_bytes": 806,
+          "encoded_content_bytes": 43624,
+          "executed_operations": 4272,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 403,
+            "Do": 39,
+            "ET": 403,
+            "Q": 482,
+            "Td": 2,
+            "Tf": 403,
+            "Tj": 403,
+            "Tm": 401,
+            "Tr": 401,
+            "W": 2,
+            "cm": 440,
+            "f": 1,
+            "g": 1,
+            "n": 2,
+            "q": 482,
+            "re": 3,
+            "rg": 404
+          },
+          "text_render_mode_operator_counts": {
+            "0": 401
+          },
+          "text_showing_operand_bytes_executed": 806,
+          "vector_paint_operator_count": 1
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 233579,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              430.16965
+            ],
+            "display_height_points": 430.1696472167969,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              430.16965
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 0,
+              "characters": 446,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 40,
+              "non_ascii_characters": 401,
+              "span_count": 41,
+              "text_bbox_coverage_percent": 21.419040511012316,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 1248,
+              "whitespace_characters": 41,
+              "word_count": 41
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 663,
+        "raw_string_token_fraction": 0.0028384400994952456
+      }
+    },
+    {
+      "training_id": "training-009",
+      "source_id": "page-8f6792bd-b5e4-435e-b1b0-1b2daa3f7234.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "cddd32277b0ecd73627934a7cae8f1f6bf1c6ac8fa29bd1628fb507d51969d4e",
+      "render_sha256": "2319181a24ce9e3a3f2290a4715f9c0e0d6af79a05214c23a73001bb277f03bc",
+      "blocks": 33,
+      "suppressed_blocks": 7,
+      "font_languages": "simplified_chinese",
+      "reference_ink": {
+        "dark_fraction": 0.04669189453125,
+        "nonwhite_fraction": 0.213043212890625
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0147247314453125,
+          "nonwhite_fraction": 0.102569580078125,
+          "absolute_dark_fraction_error": 0.0319671630859375,
+          "tile_dark_fraction_mae": 0.0400848388671875
+        },
+        "v3": {
+          "dark_fraction": 0.0313873291015625,
+          "nonwhite_fraction": 0.1489410400390625,
+          "absolute_dark_fraction_error": 0.0153045654296875,
+          "tile_dark_fraction_mae": 0.0261993408203125
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 3,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 74792,
+          "decoded_content_string_fraction": 0.0059765750347630766,
+          "decoded_content_string_operand_bytes": 447,
+          "encoded_content_bytes": 74792,
+          "executed_operations": 1639,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 30,
+            "Do": 19,
+            "ET": 30,
+            "G": 4,
+            "Q": 69,
+            "S": 4,
+            "TJ": 27,
+            "Td": 3,
+            "Tf": 30,
+            "Tj": 3,
+            "Tm": 27,
+            "Tr": 27,
+            "W": 3,
+            "c": 384,
+            "cm": 46,
+            "f": 204,
+            "g": 204,
+            "l": 4,
+            "m": 100,
+            "n": 3,
+            "q": 69,
+            "re": 111,
+            "rg": 234,
+            "w": 4
+          },
+          "text_render_mode_operator_counts": {
+            "0": 27
+          },
+          "text_showing_operand_bytes_executed": 447,
+          "vector_paint_operator_count": 208
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 166180,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              889.25055
+            ],
+            "display_height_points": 889.2505493164062,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              889.25055
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 0,
+              "characters": 261,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 26,
+              "non_ascii_characters": 216,
+              "span_count": 30,
+              "text_bbox_coverage_percent": 11.87265740720073,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 693,
+              "whitespace_characters": 34,
+              "word_count": 34
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 323,
+        "raw_string_token_fraction": 0.0019436755325550608
+      }
+    },
+    {
+      "training_id": "training-010",
+      "source_id": "book_en_\u642c\u4e66\u5320-2253-The Well-Grounded Rubyist 3rd Edition-2019-\u82f1\u6587\u7248_page_194.png",
+      "split": "TRAINING",
+      "source_parent_group": "book_en_\u642c\u4e66\u5320-2253-The Well-Grounded Rubyist 3rd Edition-2019-\u82f1\u6587\u7248",
+      "parent_group_status": "filename numbered-page inference",
+      "pdf_sha256": "787320b3e6837f2cee504f7f955a7835070972122198477aa525c26847e938d2",
+      "render_sha256": "637410720cd48b02418d9070b75c455d8f0abea85e3867eda4809c88535160a3",
+      "blocks": 20,
+      "suppressed_blocks": 0,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.00634765625,
+        "nonwhite_fraction": 0.17205810546875
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0673828125,
+          "nonwhite_fraction": 0.1731719970703125,
+          "absolute_dark_fraction_error": 0.06103515625,
+          "tile_dark_fraction_mae": 0.061737060546875
+        },
+        "v3": {
+          "dark_fraction": 0.001190185546875,
+          "nonwhite_fraction": 0.176727294921875,
+          "absolute_dark_fraction_error": 0.005157470703125,
+          "tile_dark_fraction_mae": 0.005828857421875
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 50,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 14207,
+          "decoded_content_string_fraction": 0.21038924473850917,
+          "decoded_content_string_operand_bytes": 2989,
+          "encoded_content_bytes": 14207,
+          "executed_operations": 554,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 50,
+            "ET": 50,
+            "Q": 50,
+            "Td": 50,
+            "Tf": 50,
+            "Tj": 50,
+            "W": 50,
+            "f": 1,
+            "g": 1,
+            "n": 50,
+            "q": 50,
+            "re": 51,
+            "rg": 51
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 2989,
+          "vector_paint_operator_count": 1
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 15231,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              767.0732
+            ],
+            "display_height_points": 767.0731811523438,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              767.0732
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 51,
+              "characters": 3039,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 49,
+              "non_ascii_characters": 0,
+              "span_count": 50,
+              "text_bbox_coverage_percent": 29.15244883567946,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 3039,
+              "whitespace_characters": 468,
+              "word_count": 428
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-011",
+      "source_id": "page-9390721f-e06c-47ea-8b21-0f27c72df7b7.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "0992b7532de1ce6789807b135547c5e3645a781c8f6f6762959afcac71efe571",
+      "render_sha256": "a2a2147d45807ff9640541122bf046e428f37a713c1ec3ff0912876d14766f83",
+      "blocks": 13,
+      "suppressed_blocks": 2,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.0490264892578125,
+        "nonwhite_fraction": 0.3426971435546875
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0371551513671875,
+          "nonwhite_fraction": 0.1827392578125,
+          "absolute_dark_fraction_error": 0.011871337890625,
+          "tile_dark_fraction_mae": 0.0316162109375
+        },
+        "v3": {
+          "dark_fraction": 0.0327301025390625,
+          "nonwhite_fraction": 0.2823944091796875,
+          "absolute_dark_fraction_error": 0.01629638671875,
+          "tile_dark_fraction_mae": 0.029052734375
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 36,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 25906,
+          "decoded_content_string_fraction": 0.09862580097274763,
+          "decoded_content_string_operand_bytes": 2555,
+          "encoded_content_bytes": 25906,
+          "executed_operations": 1918,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 316,
+            "ET": 316,
+            "G": 1,
+            "Q": 36,
+            "S": 36,
+            "Td": 316,
+            "Tf": 316,
+            "Tj": 316,
+            "W": 36,
+            "f": 3,
+            "g": 3,
+            "l": 36,
+            "m": 36,
+            "n": 36,
+            "q": 36,
+            "re": 39,
+            "rg": 39,
+            "w": 1
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 2555,
+          "vector_paint_operator_count": 39
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 26925,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              792.0
+            ],
+            "display_height_points": 792.0,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              792.0
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 61,
+              "characters": 2871,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 52,
+              "non_ascii_characters": 0,
+              "span_count": 56,
+              "text_bbox_coverage_percent": 32.02609903686604,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 2871,
+              "whitespace_characters": 575,
+              "word_count": 575
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-012",
+      "source_id": "docstructbench_llm-raw-scihub-o.O-adsc.201190003.pdf_6.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "f96a5fcd49f7d675bf5fc88217880c8c7cf32c5dd84ea96edc5c4bc8e6b2d79c",
+      "render_sha256": "3beb2d99f7716ab82c108db1854c2b4e779896e1b59ae0f4838126c6d11e1362",
+      "blocks": 26,
+      "suppressed_blocks": 5,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.023834228515625,
+        "nonwhite_fraction": 0.117218017578125
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0597686767578125,
+          "nonwhite_fraction": 0.22027587890625,
+          "absolute_dark_fraction_error": 0.0359344482421875,
+          "tile_dark_fraction_mae": 0.0550994873046875
+        },
+        "v3": {
+          "dark_fraction": 0.0215911865234375,
+          "nonwhite_fraction": 0.0958709716796875,
+          "absolute_dark_fraction_error": 0.0022430419921875,
+          "tile_dark_fraction_mae": 0.0091400146484375
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 34,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 9354,
+          "decoded_content_string_fraction": 0.16164207825529187,
+          "decoded_content_string_operand_bytes": 1512,
+          "encoded_content_bytes": 9354,
+          "executed_operations": 398,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 34,
+            "ET": 34,
+            "Q": 34,
+            "Td": 34,
+            "Tf": 34,
+            "Tj": 34,
+            "W": 34,
+            "f": 6,
+            "g": 6,
+            "n": 34,
+            "q": 34,
+            "re": 40,
+            "rg": 40
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 1512,
+          "vector_paint_operator_count": 6
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 10377,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.4583
+            ],
+            "display_height_points": 865.4583129882812,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              865.4583
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 21,
+              "characters": 1546,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 32,
+              "non_ascii_characters": 0,
+              "span_count": 34,
+              "text_bbox_coverage_percent": 11.540083215106058,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 1546,
+              "whitespace_characters": 227,
+              "word_count": 227
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-013",
+      "source_id": "page-19300c18-7995-4099-a94c-b4c61d7622cb.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "d4d8c32cf334bfebd94f64c6e2b0c087d27bba46cf0570652e77fba64174c072",
+      "render_sha256": "43ebaab3cc37e600f0880bde88a0f55d561771b0156d4db997674dd1f572ff1a",
+      "blocks": 17,
+      "suppressed_blocks": 2,
+      "font_languages": "other",
+      "reference_ink": {
+        "dark_fraction": 0.163726806640625,
+        "nonwhite_fraction": 0.2832794189453125
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.08233642578125,
+          "nonwhite_fraction": 0.4192352294921875,
+          "absolute_dark_fraction_error": 0.081390380859375,
+          "tile_dark_fraction_mae": 0.171417236328125
+        },
+        "v3": {
+          "dark_fraction": 0.0919189453125,
+          "nonwhite_fraction": 0.1801605224609375,
+          "absolute_dark_fraction_error": 0.071807861328125,
+          "tile_dark_fraction_mae": 0.147979736328125
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 26,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 13038,
+          "decoded_content_string_fraction": 0.06458045712532597,
+          "decoded_content_string_operand_bytes": 842,
+          "encoded_content_bytes": 13038,
+          "executed_operations": 444,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 26,
+            "ET": 26,
+            "G": 2,
+            "Q": 26,
+            "S": 2,
+            "Td": 26,
+            "Tf": 26,
+            "Tj": 26,
+            "W": 26,
+            "c": 24,
+            "f": 31,
+            "g": 31,
+            "l": 2,
+            "m": 8,
+            "n": 26,
+            "q": 26,
+            "re": 51,
+            "rg": 57,
+            "w": 2
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 842,
+          "vector_paint_operator_count": 33
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 14060,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              866.17
+            ],
+            "display_height_points": 866.1699829101562,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              866.17
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 22,
+              "characters": 868,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 15,
+              "non_ascii_characters": 0,
+              "span_count": 23,
+              "text_bbox_coverage_percent": 10.473151371870884,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 868,
+              "whitespace_characters": 136,
+              "word_count": 136
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    },
+    {
+      "training_id": "training-014",
+      "source_id": "page-87866578-c897-404e-b751-51fd444f59b2.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "d70fd1ae66797d38de004d6421711a5aca1e1b14082e1559de59d949898ffbc9",
+      "render_sha256": "d015ffdff0e28ca3a1674290d2fb60646d8feb03d7a8e17ae3e3b1e4641216a9",
+      "blocks": 22,
+      "suppressed_blocks": 15,
+      "font_languages": "simplified_chinese",
+      "reference_ink": {
+        "dark_fraction": 0.00885009765625,
+        "nonwhite_fraction": 0.027099609375
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0161895751953125,
+          "nonwhite_fraction": 0.085906982421875,
+          "absolute_dark_fraction_error": 0.0073394775390625,
+          "tile_dark_fraction_mae": 0.0153961181640625
+        },
+        "v3": {
+          "dark_fraction": 0.002166748046875,
+          "nonwhite_fraction": 0.024993896484375,
+          "absolute_dark_fraction_error": 0.006683349609375,
+          "tile_dark_fraction_mae": 0.0067138671875
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 1,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 3285,
+          "decoded_content_string_fraction": 0.04627092846270928,
+          "decoded_content_string_operand_bytes": 152,
+          "encoded_content_bytes": 3285,
+          "executed_operations": 183,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 8,
+            "Do": 6,
+            "ET": 8,
+            "Q": 21,
+            "TJ": 3,
+            "Td": 1,
+            "Tf": 8,
+            "Tj": 5,
+            "Tm": 7,
+            "Tr": 7,
+            "W": 1,
+            "cm": 13,
+            "f": 16,
+            "g": 16,
+            "n": 1,
+            "q": 21,
+            "re": 17,
+            "rg": 24
+          },
+          "text_render_mode_operator_counts": {
+            "0": 7
+          },
+          "text_showing_operand_bytes_executed": 152,
+          "vector_paint_operator_count": 16
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 31882,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              890.55
+            ],
+            "display_height_points": 890.5499877929688,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              890.55
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 0,
+              "characters": 85,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 7,
+              "non_ascii_characters": 75,
+              "span_count": 8,
+              "text_bbox_coverage_percent": 3.274679323852082,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 235,
+              "whitespace_characters": 8,
+              "word_count": 8
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 102,
+        "raw_string_token_fraction": 0.003199297409196412
+      }
+    },
+    {
+      "training_id": "training-015",
+      "source_id": "page-1f9a7efa-1d99-46c5-a2aa-48402d699f06.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "pdf_sha256": "c2b264d2ef017cda7fbb2647a45a040767e1cd9b2252223fcbcbf22a676e8664",
+      "render_sha256": "d2c6abdd74207877f91a1e977140ab2507d488bee17d3686948d7a7799a1505e",
+      "blocks": 5,
+      "suppressed_blocks": 2,
+      "font_languages": "english",
+      "reference_ink": {
+        "dark_fraction": 0.0089111328125,
+        "nonwhite_fraction": 0.7479248046875
+      },
+      "ink_comparison": {
+        "v2": {
+          "dark_fraction": 0.0257415771484375,
+          "nonwhite_fraction": 0.1564483642578125,
+          "absolute_dark_fraction_error": 0.0168304443359375,
+          "tile_dark_fraction_mae": 0.0341033935546875
+        },
+        "v3": {
+          "dark_fraction": 0.0009918212890625,
+          "nonwhite_fraction": 0.746185302734375,
+          "absolute_dark_fraction_error": 0.0079193115234375,
+          "tile_dark_fraction_mae": 0.0079193115234375
+        }
+      },
+      "metadata": {
+        "catalog_pdf_version": null,
+        "content": {
+          "actual_text_properties": [],
+          "clipping_operator_count": 3,
+          "content_encoded_to_decoded_ratio": 1.0,
+          "decoded_content_bytes": 892,
+          "decoded_content_string_fraction": 0.042600896860986545,
+          "decoded_content_string_operand_bytes": 38,
+          "encoded_content_bytes": 892,
+          "executed_operations": 41,
+          "form_xobjects_descended": true,
+          "image_resource_count": 0,
+          "image_resources": [],
+          "inline_image_operator_count": 0,
+          "operators": {
+            "BT": 3,
+            "ET": 3,
+            "Q": 3,
+            "Td": 3,
+            "Tf": 3,
+            "Tj": 3,
+            "W": 3,
+            "f": 2,
+            "g": 2,
+            "n": 3,
+            "q": 3,
+            "re": 5,
+            "rg": 5
+          },
+          "text_render_mode_operator_counts": {},
+          "text_showing_operand_bytes_executed": 38,
+          "vector_paint_operator_count": 2
+        },
+        "declared_pdf_version": "1.7",
+        "effective_pdf_version": "1.7",
+        "errors": [],
+        "file_bytes": 1914,
+        "image_coverage_bins": {
+          "0-10": 1,
+          "10-25": 0,
+          "25-50": 0,
+          "50-75": 0,
+          "75-100": 0
+        },
+        "page_count": 1,
+        "pages": [
+          {
+            "crop_box": [
+              0.0,
+              0.0,
+              612.0,
+              799.77686
+            ],
+            "display_height_points": 799.77685546875,
+            "display_width_points": 612.0,
+            "image_coverage_percent": 0.0,
+            "image_individual_sum_percent": 0.0,
+            "image_placement_count": 0,
+            "image_placement_coverage_bins": {
+              "0-10": 0,
+              "10-25": 0,
+              "25-50": 0,
+              "50-75": 0,
+              "75-100": 0
+            },
+            "media_box": [
+              0.0,
+              0.0,
+              612.0,
+              799.77686
+            ],
+            "page_number": 0,
+            "rotation_degrees": 0,
+            "text": {
+              "adjacent_repeated_characters": 0,
+              "characters": 41,
+              "duplicate_positioned_glyphs": null,
+              "duplicate_positioned_spans": 0,
+              "duplicate_positioned_words": 0,
+              "line_count": 3,
+              "non_ascii_characters": 0,
+              "span_count": 3,
+              "text_bbox_coverage_percent": 0.29884329375835395,
+              "unicode_control_characters": 0,
+              "unicode_replacement_characters": 0,
+              "utf8_bytes": 41,
+              "whitespace_characters": 7,
+              "word_count": 7
+            }
+          }
+        ],
+        "percent_pages_with_images": 0.0,
+        "raw_string_token_bytes": 0,
+        "raw_string_token_fraction": 0.0
+      }
+    }
+  ],
+  "wall_seconds": 8.078578136002761,
+  "cpu_seconds": 8.151609304,
+  "peak_rss_bytes": 773697536,
+  "measurement": "sequential CPU; perf_counter/process_time; /proc/self/status VmHWM (current executable); lifetime RSS; no sampling",
+  "artifact_manifest_sha256": "a75fb4d0572fa29b49d84b7b1c7c050b88a9e62c0c3a0c65ccf19cace8b99c94",
+  "registry_projection": "Full measured scalar/page metadata retained; verbose font resources and image records remain in immutable manifest."
+}
