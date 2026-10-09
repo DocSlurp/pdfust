@@ -88,13 +88,10 @@ def _native(page: dict[str, Any], words: list[dict[str, Any]]) -> list[dict[str,
     return result
 
 
-def _clean_table(table: dict[str, Any], lookup: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    """Rebuild literal values from ownership, excluding upstream annotations and text."""
+def _span_mask(table: dict[str, Any]) -> set[int]:
+    """Require one complete, nonoverlapping rectangular tiling of row-major slots."""
     rows, columns = table["row_count"], table["col_count"]
-    if rows * columns > MAX_TABLE_SLOTS:
-        raise ValueError("Complete table slots exceed admission")
-    cells = [{"source_ids": list(c["source_ids"]), "role": "unknown"} for c in table["cells"]]
-    values: list[str | None] = [" ".join(lookup[i]["text"] for i in c["source_ids"]) for c in cells]
+    claimed: set[int] = set()
     covered: set[int] = set()
     for span in table["spans"]:
         r, c, rs, cs = (span[k] for k in ("row", "column", "row_span", "column_span"))
@@ -102,7 +99,24 @@ def _clean_table(table: dict[str, Any], lookup: dict[str, dict[str, Any]]) -> di
             0 <= r < rows and 0 <= c < columns and rs > 0 and cs > 0 and r + rs <= rows and c + cs <= columns
         ):
             raise ValueError("Invalid table span")
-        covered.update(rr * columns + cc for rr in range(r, r + rs) for cc in range(c, c + cs) if (rr, cc) != (r, c))
+        slots = {rr * columns + cc for rr in range(r, r + rs) for cc in range(c, c + cs)}
+        if slots & claimed:
+            raise ValueError("Overlapping spans or duplicate span anchors")
+        claimed.update(slots)
+        covered.update(slots - {r * columns + c})
+    if len(claimed) != rows * columns:
+        raise ValueError("Spans do not form a complete table tiling")
+    return covered
+
+
+def _clean_table(table: dict[str, Any], lookup: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Rebuild literal values from ownership, excluding upstream annotations and text."""
+    rows, columns = table["row_count"], table["col_count"]
+    if rows * columns > MAX_TABLE_SLOTS:
+        raise ValueError("Complete table slots exceed admission")
+    cells = [{"source_ids": list(c["source_ids"]), "role": "unknown"} for c in table["cells"]]
+    values: list[str | None] = [" ".join(lookup[i]["text"] for i in c["source_ids"]) for c in cells]
+    covered = _span_mask(table)
     for index in covered:
         if cells[index]["source_ids"]:
             raise ValueError("Covered span slots cannot own source IDs")
@@ -139,6 +153,23 @@ def _regions(source: dict[str, Any]) -> list[dict[str, Any]]:
         groups[-1].extend(i for p in ps for i in p["source_ids"])
     lookup = {w["id"]: w for w in source["words"]}
     return [{"words": [lookup[i] for i in group], "page_size": source["page_size"]} for group in groups]
+
+
+def native_state(page: dict[str, Any]) -> dict[str, Any]:
+    """Build the complete native-only baseline without heuristic proposals."""
+    source = _source(page)
+    lookup = {w["id"]: w for w in source["words"]}
+    tables = [_clean_table(t, lookup) for t in _native(page, source["words"])]
+    owned = set(_owned(tables))
+    state = {
+        "id": "c0",
+        "tables": tables,
+        "unresolved_ids": [w["id"] for w in source["words"] if w["id"] not in owned],
+        "description": "Preserve uniquely owned native vector grids across the full page.",
+        "mechanism": "native_vector" if tables else "none",
+    }
+    validate(page, state)
+    return state
 
 
 def propose(page: dict[str, Any]) -> list[dict[str, Any]]:  # noqa: C901

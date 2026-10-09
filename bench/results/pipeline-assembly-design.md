@@ -18,6 +18,9 @@ span-covered slots use `None`, derived exclusively from topology. Spans preserve
 native merged topology. IDs are consecutive snapshot-local `cN`. Each source ID
 occurs exactly once across cells and unresolved inventory in each alternative.
 `validate(page, state)` checks ownership, dimensions, spans and literal values.
+Spans must tile every slot exactly once: overlaps, duplicate anchors and holes
+are rejected. `native_state(page)` builds and validates the native-only complete
+page without invoking either heuristic proposal generator.
 
 The declared proposal mechanisms are:
 
@@ -62,10 +65,30 @@ non-native content, and omitted extent alternatives when a larger corridor wins.
 The decision model can select only retained alternatives or abstain. This is an
 opt-in benchmark experiment; default extraction behavior is unchanged.
 
-Validation: nine focused Python tests pass, covering source conservation, physical
+Validation: thirteen focused Python tests pass, covering source conservation, physical
 and wrapped row alternatives, prose ambiguity, multiple native tables, separated
 text tables, annotation mutation invariance, duplicate IDs, fabricated values,
 empty pages, merged covered-slot representation and complete-packet refusal. Ruff passes. Checks run sequentially on
 CPU with the existing main-worktree Python environment; no network or inference
 requests were made. These checks are correctness checks, not performance
 measurements; CPU utilization and RSS are unmeasured.
+
+
+Source-only coverage probe on the frozen 181-page DEV manifest admitted 175 complete
+packets. Extraction succeeded on all pages. Five pages refused complete packets at
+the 25,000-character boundary (`p135b05c6626694a9e25a`,
+`p2e823666719c13acd4b9`, `p5005dd1ec0a0e6595b89`,
+`p6333ca96842cead34e25`, `pf2ab4d0b6b137ba48d77`). One native table
+(`pfe3eba53239267b4e870`) exposed an incomplete observed span tiling and was
+refused before proposal admission. No targets or references were opened. This
+is source coverage, not table correctness or candidate quality scoring.
+
+Admitted packets reached 21,761 Unicode characters; candidate count ranged up to
+six. The sequential CPU probe measured 3.19 seconds elapsed, 3.25 seconds process
+CPU and 538,996,736 bytes lifetime peak RSS using `perf_counter`, `process_time`
+and `getrusage(RUSAGE_SELF)` with no sampling or workers. This scope includes PDF
+loading, source extraction, proposal, validation, packet generation and local
+artifact writes; interpreter imports preceded timing, but lifetime RSS includes
+them. Usage is not separated into per-stage peaks. Source and candidate identities
+remain under ignored artifacts in `pipeline-p001-source-coverage`; the provisional
+probe is separate from root's final experiment freeze.

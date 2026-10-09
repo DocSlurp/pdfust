@@ -3,6 +3,7 @@
 from collections import Counter
 from copy import deepcopy
 
+import bench.pipeline_assembly as assembly
 import pytest
 from bench.pipeline_assembly import packet, propose, validate
 
@@ -177,3 +178,34 @@ def test_native_merged_covered_slots_are_none_but_empty_cells_are_strings() -> N
     changed["tables"][0]["values"][0][1] = ""
     with pytest.raises(ValueError, match="owned source"):
         validate(page, changed)
+
+
+def test_native_state_avoids_heuristic_generation(monkeypatch: pytest.MonkeyPatch) -> None:
+    def unexpected(*_args: object, **_kwargs: object) -> None:
+        message = "Heuristic proposal called"
+        raise AssertionError(message)
+
+    monkeypatch.setattr(assembly, "topology_propose", unexpected)
+    monkeypatch.setattr(assembly, "assemble", unexpected)
+    page = native_source()
+    state = assembly.native_state(page)
+    assert len(state["tables"]) == 2
+    validate(page, state)
+    empty = assembly.native_state(source())
+    assert empty["mechanism"] == "none"
+    assert len(empty["unresolved_ids"]) == len(source()["words"])
+
+
+@pytest.mark.parametrize("pathology", ["duplicate", "overlap", "incomplete"])
+def test_span_pathologies_are_rejected(pathology: str) -> None:
+    page = native_source()
+    state = propose(page)[1]
+    spans = state["tables"][0]["spans"]
+    if pathology == "duplicate":
+        spans.append(dict(spans[0]))
+    elif pathology == "overlap":
+        spans[0]["column_span"] = 2
+    else:
+        spans.pop()
+    with pytest.raises(ValueError, match=r"span|Spans"):
+        validate(page, state)
