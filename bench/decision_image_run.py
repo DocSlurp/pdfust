@@ -534,22 +534,46 @@ def write_report(directory: Path, path: Path) -> dict[str, Any]:
         "",
         manifest["dev_status"] + ". These results do not establish real-world quality or generalization.",
         "",
-        "Size, grayscale and reduced color bit depth are separate conditions: RGB8, grayscale8 and indexed color4 each at 128/512/1200. Every image has a matched blank. Six independent observations share each request; cross-observation influence remains possible.",
+        "**Image conditions:** RGB8, grayscale8 and indexed color4, each at 128, 512 and 1200 px. Every image has a matched blank. Batch sizes depend on provider limits and request size; cross-observation influence remains possible.",
         "",
         "Full-source exact recovery is scored through complete record materialization. Transformed-image evidence exactness is not validated. Optional monochrome conversion can erase pale fills; it is excluded from this matrix. Region crops exclude convention notes, while full-page images include them.",
         "",
         f"Unique completed/charged requests: {summary['unique_requests']}; effective USD: {summary['effective_usd']}. Positive provider-reported costs win; other effective costs use retained catalog token rates when available. Reservations remain admission accounting, and missing prices/usage remain unknown.",
         "",
-        "| Model | Scope | Arm | Scored | Errors | Unattempted | Exact | Record F1 | Paired blank n / delta | Input / output tokens | Bytes | API ms | Effective USD |",
-        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
-    for row in summary["rows"]:
-        cost = row["effective_usd"]
-        formatted_cost = "unknown" if cost is None else ("~" if row["cost_estimated"] else "") + f"{cost:.6f}"
-        f1 = "—" if row["record_f1"] is None else f"{row['record_f1']:.3f}"
-        lines.append(
-            f"| {row['model']} | {row['scope']} | {row['arm']} | {row['n']} | {row['errors']} | {row['unattempted']} | {row['exact']} | {f1} | {row['paired_blank_n']} / {row['paired_blank_exact_delta']:+d} | {row['input_tokens']} / {row['output_tokens']} | {row['request_bytes']} | {row['api_elapsed_ms']:.0f} | {formatted_cost} |"
+    for model in dict.fromkeys(row["model"] for row in summary["rows"]):
+        rows = [row for row in summary["rows"] if row["model"] == model]
+        lines.extend(
+            [
+                "",
+                f"## `{model}`",
+                "",
+                "**Quality and completion**",
+                "",
+                "| Scope | Arm | Scored | Errors | Unattempted | Exact | Record F1 | Paired blank n / delta |",
+                "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            ]
         )
+        for row in rows:
+            f1 = "—" if row["record_f1"] is None else f"{row['record_f1']:.3f}"
+            lines.append(
+                f"| {row['scope']} | {row['arm']} | {row['n']} | {row['errors']} | {row['unattempted']} | {row['exact']} | {f1} | {row['paired_blank_n']} / {row['paired_blank_exact_delta']:+d} |"
+            )
+        lines.extend(
+            [
+                "",
+                "**Usage and cost**",
+                "",
+                "| Scope | Arm | Input / output tokens | Request bytes | API ms | Effective USD |",
+                "| --- | --- | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for row in rows:
+            cost = row["effective_usd"]
+            formatted_cost = "unknown" if cost is None else ("~" if row["cost_estimated"] else "") + f"{cost:.6f}"
+            lines.append(
+                f"| {row['scope']} | {row['arm']} | {row['input_tokens']} / {row['output_tokens']} | {row['request_bytes']} | {row['api_elapsed_ms']:.0f} | {formatted_cost} |"
+            )
     if manifest.get("silver_directory"):
         lines.extend(
             [
@@ -566,7 +590,15 @@ def write_report(directory: Path, path: Path) -> dict[str, Any]:
                 f"| {row['model']} | {row['arm']} | {row['tp']} | {row['fp']} | {row['fn']} | {row['tn']} | {' | '.join(metrics)} | {row['unresolved']} |"
             )
     lines.extend(
-        ["", "Local preparation resources: `" + json.dumps(manifest["preparation"], sort_keys=True) + "`.", ""]
+        [
+            "",
+            "## Local preparation resources",
+            "",
+            "```json",
+            json.dumps(manifest["preparation"], sort_keys=True, indent=2),
+            "```",
+            "",
+        ]
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines))

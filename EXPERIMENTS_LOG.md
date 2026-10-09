@@ -256,3 +256,17 @@ The user's continual-experiment steering adds two separate experiments:
 
 Both must distinguish candidate availability from model selection. They supplement
 the image and provider-cache experiments. See the [experiment plan](bench/EXPERIMENT_PLAN.md).
+
+## Report formatting repair
+
+Restored missing word spacing in the historical wave summary and used properly
+separated lists, bold labels, inline code and descriptive links. The image-report
+generator now groups results by model and separates quality from usage and cost,
+so each table is narrower. Preparation metadata uses an indented code block.
+Batching prose now reflects provider-dependent limits.
+
+Regenerated the [initial image matrix](bench/results/image-resolution-matrix.md)
+and [bounded Clef matrix](bench/results/image-resolution-clef.md). Their complete
+machine-readable summaries are unchanged, including scores, usage and costs.
+Validation: eight image-runner tests passed; formatter and Ruff checks passed.
+This repair made no hosted requests.
