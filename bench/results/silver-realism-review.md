@@ -104,6 +104,17 @@ export. The retained freeze keeps its original generator snapshot from
 `cbef3bd`; that annotation does not change PDF or source construction. Rebuilding
 with a different generator hash creates a separate identity.
 
+An independent projection check also covered all 56 frozen request bodies in
+`admission-image512`. All request hashes matched their manifest, full word lists
+and page bounds matched the frozen source, and no private target, setting,
+truth-status, rationale, or authored-ownership fields appeared in the projected
+state. All requests used the same instruction bytes. The 396-by-512 PNGs had
+no metadata keys. Source state contained only coordinates, page size, source
+words, geometric candidate tables, header policy, and image mapping. This check
+read no model responses or private targets; its observations are retained in
+`request-projection-review.json`. It checks known leakage channels, not model
+training contamination or complete causal independence.
+
 ## Remaining limits
 
 This is a repaired synthetic DEV cohort, not an independent test set or a
