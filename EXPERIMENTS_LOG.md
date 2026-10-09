@@ -677,3 +677,37 @@ model/arm combinations. Geometry clipping/decoration and loose-selector caveats
 still apply. Latest integrated suite: 2,274 passed, 14 skipped, two expected
 failures; the subsequent hybrid scorer has a focused regression covering losses,
 missing outcomes and mixed batches.
+
+The same fixed routing policy on the frozen prompt matrix reaches 14/16 known
+choices and 4/8 ambiguous abstentions with PPLX minimal typed/resolved input,
+versus 6/16 known before geometry. PPLX resolved crop512 remains 15/16 and 1/8.
+This suggests a cheap text-plus-rules branch worth retaining alongside vision;
+it does not establish production precision or fresh cascade cost. All 48 prompt
+combinations are in [the paired table](bench/results/lowlevel-hybrid-prompts.md).
+
+Gateway d1 completed all 72 text configurations in each state representation
+(48 distinct bodies per representation). JSON-string state changes minimal
+known choices from 7/16 to 5/16, increases ambiguous abstention 1/8 to 2/8, and
+leaves words/canonical at 8/16 with 0/8 abstentions. Keep both representation
+results and their reported costs; serialization is not universally beneficial.
+
+### Natural visual agreement and row-ownership execution
+
+L008 freezes 108 labeled image/model configurations but sends only 84 distinct
+bodies: six crops have identical 512/native images. No image is upscaled. Seven
+source-aware literal references are primary; the contextual zero/O case is
+separate, and the unavailable degraded transcription receives no invented label.
+Requests contain only native word text, one crop and generic choice instructions.
+
+L011 freezes 480 route/model/image requests over 24 overlapping natural row pairs
+from one Senate page. Four OpenRouter vision models and Gateway d1 receive the
+same source chunks and pixels. Full-record and description-only scope references
+are reported separately. A full outer border encloses multiple business records,
+so the reference notion is semantic record ownership rather than arbitrary outer
+rectangle membership. No post-reference request edits were made.
+
+The L007 pilot initially refused the 11.1MB shared ledger under a generic 8MB
+artifact reader before making any provider call. Ledger admission is now an
+explicit 64MiB boundary, independent of small request/response limits. OCR/natural
+runners use the same adequate ledger admission. No historical accounting was
+removed to fit the smaller limit.
