@@ -8,6 +8,7 @@ import hashlib
 import json
 from collections import Counter
 from pathlib import Path
+from statistics import median
 from typing import Any
 
 from bench.borderless_challenge import score
@@ -160,10 +161,14 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
             }
     unique = {r["entry"]["index"]: r for r in calls if "entry" in r}
     costs = [r["cost"] for r in unique.values()]
+    http_times = [r["http_elapsed_ms"] for r in unique.values() if r.get("http_elapsed_ms") is not None]
     return {
         "cohorts": cohorts,
         "candidate_ceiling_rows": ceiling_rows,
         "unique_requests": len(unique),
+        "http_elapsed_median_ms": median(http_times) if http_times else None,
+        "http_elapsed_total_seconds": sum(http_times) / 1000 if http_times and len(http_times) == len(unique) else None,
+        "http_elapsed_measured_requests": len(http_times),
         "effective_usd": sum(c["effective_usd"] for c in costs)
         if all(c["effective_usd"] is not None for c in costs)
         else None,
@@ -199,6 +204,21 @@ def render_report(summary: dict[str, Any]) -> str:
         )
     lines += [
         "",
+        "| Model / arm | Intended borderless values /144 | Intended borderless words /180 | Source IDs conserved |",
+        "| --- | ---: | ---: | --- |",
+    ]
+    for key, cohort in summary["cohorts"].items():
+        positive = cohort["slices"]["borderless"]
+        conserved = all(row["conservation"] for row in cohort["rows"])
+        lines.append(f"| {key} | {positive['owned_values']}/144 | {positive['owned_words']}/180 | {conserved} |")
+    lines += [
+        "",
+        (
+            f"HTTP median ms: {summary['http_elapsed_median_ms']}; "
+            f"complete summed HTTP seconds: {summary['http_elapsed_total_seconds']}; "
+            f"elapsed measurements: {summary['http_elapsed_measured_requests']} requests. "
+            "Missing elapsed measurements remain unmeasured."
+        ),
         (
             f"Unique retained requests: {summary['unique_requests']}; "
             f"complete effective USD: {summary['effective_usd']}; "
@@ -221,6 +241,15 @@ def render_report(summary: dict[str, Any]) -> str:
         ),
         "",
     ]
+    prep = summary.get("preparation")
+    if prep:
+        lines += [
+            (
+                f"CPU preparation: wall {prep['wall_seconds']:.3f}s; CPU {prep['cpu_seconds']:.3f}s; "
+                f"peak RSS {prep['peak_rss_bytes']} bytes. Measurement: {prep['measurement']}."
+            ),
+            "",
+        ]
     return "\n".join(lines)
 
 
