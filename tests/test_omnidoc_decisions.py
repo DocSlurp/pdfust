@@ -132,3 +132,104 @@ def test_prepare_complete_fixed_manifest_and_refuse_mutation(tmp_path: Path) -> 
     (directory / request["request_file"]).write_text("{}")
     with pytest.raises(ValueError, match="request body changed"):
         verify(directory, manifest)
+
+
+def test_jpeg80_is_named_lossy_rgb_with_same_dimensions_and_bytes() -> None:
+    from bench.omnidoc_decisions import JPEG_ARM  # noqa: PLC0415
+
+    reference = image_variant(png(), "rgb1200")
+    variant = image_variant(png(), JPEG_ARM)
+    assert variant["pixels"] == reference["pixels"]
+    assert variant["mime"] == "image/jpeg"
+    assert variant["data"].startswith(b"\xff\xd8")
+    assert variant["data"].endswith(b"\xff\xd9")
+    assert variant["jpeg_quality"] == 80
+    assert variant["jpeg_precision_bits"] == 8
+    assert variant["original_png_bytes"] == len(reference["data"])
+    assert variant["original_png_sha256"] == sha(reference["data"])
+    with Image.open(io.BytesIO(variant["data"])) as decoded, Image.open(io.BytesIO(reference["data"])) as original:
+        assert decoded.mode == "RGB"
+        assert decoded.format == "JPEG"
+        assert variant["decoded_pixels_changed"] == (decoded.tobytes() != original.tobytes())
+    assert variant["lossy"]
+    body = body_for(MODELS[0], variant)
+    assert isinstance(body["state"][0], str)
+    url = body["state"][1]["image_url"]["url"]
+    assert url.startswith("data:image/jpeg;base64,")
+    import base64  # noqa: PLC0415
+
+    assert base64.b64decode(url.split(",", 1)[1]) == variant["data"]
+    assert sha(json.dumps(body).encode()) != sha(json.dumps(body_for(MODELS[0], reference)).encode())
+
+
+def test_jpeg_model_body_has_no_label_input_and_keeps_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
+    from bench.omnidoc_decisions import JPEG_ARM  # noqa: PLC0415
+
+    variant = image_variant(png(), JPEG_ARM)
+    before = body_for(MODELS[2], variant)
+    row = sample()
+    row["category_counts"] = {}
+    row["attributes"]["layout"] = "other_layout"
+    assert private_labels(row, JPEG_ARM) == [False, False, None]
+    assert body_for(MODELS[2], variant) == before
+    monkeypatch.setattr(omnidoc_decisions, "CLEF_IMAGE_CHARACTERS", 20)
+    with pytest.raises(ValueError, match="no crop or resize"):
+        body_for(MODELS[2], variant)
+    assert variant["pixels"] == [800, 1200]
+
+
+def test_stop_file_and_model_failure_preserve_complete_unattempted_rows(tmp_path: Path) -> None:
+    from bench.omnidoc_decisions import run  # noqa: PLC0415
+
+    images = tmp_path / "images"
+    images.mkdir()
+    (images / "source.png").write_bytes(png())
+    registry = tmp_path / "registry.json"
+    registry.write_text(
+        json.dumps(
+            {
+                "purpose": "DEV tuning",
+                "revision": "pinned",
+                "license": "research-only",
+                "contamination": "unknown",
+                "rows": [sample() for _ in range(16)],
+            }
+        )
+    )
+    directory = tmp_path / "pilot"
+    manifest = prepare(directory, registry, images)
+
+    class FakeClient:
+        ledger = tmp_path / "ledger.json"
+
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def request(self, body: dict, *, tag: str, max_body_bytes: int) -> dict:
+            assert tag.startswith("omnidoc-dev/")
+            assert max_body_bytes > 0
+            self.calls.append(body["model"])
+            if body["model"] == MODELS[0]:
+                raise RuntimeError("simulated provider failure")  # noqa: EM101, TRY003
+            return {
+                "entry": {"index": len(self.calls), "accounted_usd": 0.00001, "cost_status": "provider-reported USD"},
+                "result": {"answers": {f"q{i}": {"noul": 0.1} for i in range(3)}},
+                "replayed": False,
+            }
+
+    client = FakeClient()
+    (directory / "STOP").touch()
+    stopped = run(directory, manifest, client)
+    assert len(stopped["rows"]) == 256
+    assert not client.calls
+    assert all(row["status"] == "unattempted" for row in stopped["rows"])
+    (directory / "STOP").unlink()
+    results = run(directory, manifest, client)
+    assert len(results["rows"]) == 256
+    assert client.calls.count(MODELS[0]) == 1
+    failed_model = [row for row in results["rows"] if row["model"] == MODELS[0]]
+    assert sum(row["status"] == "failed" for row in failed_model) == 1
+    assert sum(row["status"] == "unattempted" for row in failed_model) == 63
+    again = run(directory, manifest, client)
+    assert len(again["rows"]) == 256
+    assert client.calls.count(MODELS[0]) == 1

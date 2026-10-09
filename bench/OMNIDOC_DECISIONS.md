@@ -11,7 +11,7 @@ Prepare locally without constructing a credential-bearing client:
 ```bash
 PYTHONPATH=. /home/dan/code/oss/pylopdf/.venv/bin/python -m bench.omnidoc_decisions \
   --prepare \
-  --directory /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/decisions/omnidoc-dev-presence-v3 \
+  --directory /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/decisions/omnidoc-dev-presence-v4 \
   --registry /home/dan/code/oss/pylopdf/bench/omnidoc-dev/registry.json \
   --image-root /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/omnidoc-dev/images \
   --prices /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/decisions/langfuse/catalog-prices.json
@@ -24,3 +24,13 @@ Bodies and private labels are hashed, prices and their provenance are snapshotte
 Reports retain every logical observation, including refused, unattempted, failed and malformed responses. Confusion counts distinguish unknown references from unscored requests. Provider charges are deduplicated by shared-ledger index. Positive reported charges take precedence; zero or missing reported charges can use frozen catalog rates and reported token counts as labeled estimates. Missing usage/rates remain unknown, and partial estimates do not become complete totals. Ledger reservations remain separate from effective charges.
 
 Pages/min uses transmitted page observations divided by total serial HTTP time; preparation and replay are excluded. Pages/$ uses completed logical observations and known effective charges, with replay retained explicitly. Resource measurements cover CPU image preparation, encoding, lossless transport and artifact writes, with current-executable high-water RSS. They are separate from hosted HTTP timing. No local GPU is used.
+
+## Corrected baseline and JPEG transport intervention
+
+The original v3 run used an undocumented text-object item in `state`; its image and question fields were documented, but text handling remains unverified. Preserve its artifacts as diagnostic evidence. The corrected v4 baseline uses plain-string text state and is the primary comparison. It has the same 256 logical conditions and provider admission bounds.
+
+`--prepare --jpeg80-only` prepares the separately named `jpeg80-rgb1200` arm in `omnidoc-dev-presence-v5-jpeg80`: 64 logical requests on the same 16 pages and four models. It keeps the exact RGB1200 dimensions, encodes actual 8-bit RGB JPEG at quality 80 with 4:2:0 sampling, and records original resized PNG bytes/hash, JPEG bytes/hash and actual decoded-pixel-change status. This is lossy evidence, distinct from PNG/WebP pixels. It does not adapt quality, crop or silently resize. All directories share the same tagged $0.50 cap.
+
+To halt gracefully after the current in-flight request, create `STOP` in the pilot directory or `omnidoc-dev.STOP` next to the shared ledger. Remaining logical requests stay unattempted. Remove the marker to resume. A model also stops after its first provider failure or malformed response; its remaining requests stay unattempted, including on resume. Other models continue within the shared cap. Failed identical requests are not retried.
+
+The [official OpenRouter guide](https://openrouter.ai/docs/guides/community/multimodal-decisions), checked 2026-10-08, requires top-level image parts and plain-string text items, accepts PNG/JPEG/WebP data URLs, and limits Clef to four images. It describes admission from base64 length at approximately four characters per token against a 65,536-token window, with images below roughly 300 KB advised. Our 200,000-character base64 cap and 4,000-byte text cap are local conservative bounds, rather than documented exact provider maxima. They remain unchanged in this intervention.
