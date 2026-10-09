@@ -89,3 +89,37 @@ paint/context baseline and candidate oracle 30/30; current/prior/context modes
 CPU tests/source conservation pass. Paid work delegated to root; no publication
 or held-out claims. Next: actual retained Luna/Perplexity DEV calls and error-led
 prompt/evidence loop.
+
+## Measured DEV loop: literal local semantic choice
+
+Root supplied actual first-round Luna DEV hard selections: current 30/30 A
+(12/30 full-document exact, 0/30 evidence-supported); native 30/30 A
+(12/30 full-document exact); image128 29 A plus scientific absent-cue case04 B
+(still 12/30 full-document exact). These are attributed root-run aggregates,
+not independent reexecution here. Constant A selection despite native facts
+motivates testing request representation before shopping for another model.
+It does not establish an API failure or a universal model limitation.
+
+Hypothesis: bulky nested cells/records plus "Exact declared assembly A/B"
+criteria make the semantic alternatives too indirect for this decision endpoint.
+`decision_context_compact.make_request` places literal source text and one-entry
+versus two-entry semantics directly in each criterion and the question. It
+retains original source-span IDs/boxes, notes and exact paint facts in a compact
+state. Selection still feeds the same complete deterministic materializer; it
+does not downgrade complete-record scoring or change gold.
+
+Two separate representations are available: raw compact (`derived=False`)
+contains exact raw boxes and paint; enriched compact (`derived=True`) adds
+separator-between-description-centers and per-fill center membership computed
+from admitted source geometry. Derived booleans describe observed facts, never
+choices or labels. Missing paint observations cannot establish document absence.
+Current paired observations remain byte-equivalent in either representation.
+State is capped at 4,000 serialized bytes. Candidate reversal changes declaration
+order while preserving A/B semantics. Four extra CPU tests verify these contracts.
+
+Alternatives considered: relabeling native errors to a preferred assembly would
+invalidate scoring; adding a hand-coded selected answer to model state would
+replace selection with answer copying; shipping only derived baseline output
+would conceal evidence transport. We retain raw and derived arms separately,
+unchanged gold, original materialization and the strong native baseline. Round2
+paid requests and measured accuracy remain root-owned and pending.
