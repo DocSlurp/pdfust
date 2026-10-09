@@ -1,0 +1,241 @@
+{
+  "split": "TRAINING",
+  "parent_geometry_sha256": "054b6a8691e2575995c6c3885e3109cf7bef6858deeb8366620e869153bb0139",
+  "design": {
+    "version": 2,
+    "split": "TRAINING",
+    "page_width_points": 612,
+    "text": "new fictional English prose; no reference recognition strings consumed",
+    "tables": "authored 3-column 3-to-8-row complete vector grids inside annotated table boxes",
+    "figures": "procedural RGB geometric illustrations; no reference photographs",
+    "math": "authored ASCII algebra expressions; approximate geometry, not original formula transcription",
+    "noise": "none injected; reference scan/font/language realism not claimed"
+  },
+  "artifact_manifest_sha256": "0153303244f0472645a0c41a6db9a65736fc027d18e73cd9b670d0e5d2681677",
+  "rows": [
+    {
+      "training_id": "training-000",
+      "source_id": "yanbaopptmerge_4304d65458262c3161cf5d0440c6a56851222ce1da3d7886cdd2320ce2222c4a.pdf_7.jpg",
+      "split": "TRAINING",
+      "pdf_sha256": "b4b0e286e398f1d7a1bd07a10a967b77385c19b38d080b0205ea1e6678c2b293",
+      "render_sha256": "d30a745af0c62d7df464ede72040f3ffb38e17142e38a22e8fa28250db407dfe",
+      "blocks": 20,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-001",
+      "source_id": "PPT_ch7_page_142.png",
+      "split": "TRAINING",
+      "pdf_sha256": "dc6322774c7ec112c9490d20b68a3f1d49b25ba18b2b04e50484ec0f4f5002b2",
+      "render_sha256": "5ce8fcb15dba310dc199b615b4f491fc182db6a90fb8fe76d027b13c67b715c6",
+      "blocks": 11,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-002",
+      "source_id": "jiaocaineedrop_jiaocai_needrop_en_3937.jpg",
+      "split": "TRAINING",
+      "pdf_sha256": "982b037b9b810c1f8bb1ac64887a54e57acbad8f1abfcae2d1cbde3de0d08e34",
+      "render_sha256": "2e24933b3890acf882112c6a96086df6fef9140ccf5b8a025ef4c0c04efbf367",
+      "blocks": 38,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-003",
+      "source_id": "newspaper_The Wall Street Journal - 2025-01-08@magazinesclubnew_page_018.png",
+      "split": "TRAINING",
+      "pdf_sha256": "5a651ee12de534c71ec43fb37c709c7197df64b16e0179689144c7cb93a239d7",
+      "render_sha256": "97c5bc26ea1431cc42e1c8e7b219a7101d8d63f028e1aacdf7a7b1ded012e68e",
+      "blocks": 112,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-004",
+      "source_id": "page-25bb22df-f066-42ea-b1a9-e283ec22a303.png",
+      "split": "TRAINING",
+      "pdf_sha256": "03614ee0f1f209665f15852d939dd9756e7d928d28051b3c752a778aca95162a",
+      "render_sha256": "00ab0cda3c1942bd59a48015d1d443ba9ed679569474d79a7dc754f1ed706757",
+      "blocks": 39,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-005",
+      "source_id": "notes_9e951846094758afac08c620144e3a76_15.jpg",
+      "split": "TRAINING",
+      "pdf_sha256": "087c5ed29be0373bae478fa8c682d4c0e35b6b28e84ae4af8be8f626985ca97e",
+      "render_sha256": "24143af16b8dd981cf7c90beba12728d73ae605e01b0bee0d0d346c5f7866f27",
+      "blocks": 17,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-006",
+      "source_id": "docstructbench_llm-raw-scihub-o.O-j.1365-2818.2000.00739.x.pdf_8.jpg",
+      "split": "TRAINING",
+      "pdf_sha256": "cc4a8e36b4c8f186574b0aa3a3a40e0a009af8eefaae8e1205d1ad041b88a307",
+      "render_sha256": "c2c5c1ace6f9213edc0dc57fc84ba93e460ebb74b059f44eb773da8612dcd399",
+      "blocks": 26,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-007",
+      "source_id": "page-0c28f48b-33da-489c-bfc1-1fe82e5be68f.png",
+      "split": "TRAINING",
+      "pdf_sha256": "48e958d7751b09cda190d2e8b997df632a4bf434666b79f2145814c550156b85",
+      "render_sha256": "f91225da43df77507e6a37dd7fa326664b5683d565b63c6b11b72f410e4ef4ef",
+      "blocks": 7,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-008",
+      "source_id": "page-dad79c54-8125-4927-9988-ee1d2a139d7b.png",
+      "split": "TRAINING",
+      "pdf_sha256": "655e0c99e4106645d4359b3111050f51bc72b92b132a6ca73fdcbb003f9085e6",
+      "render_sha256": "326bdb0df8b71002fd357c38fe33a7c2b07ffb3e1ac650e62b9e03a65f55d491",
+      "blocks": 41,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-009",
+      "source_id": "page-8f6792bd-b5e4-435e-b1b0-1b2daa3f7234.png",
+      "split": "TRAINING",
+      "pdf_sha256": "bae798d9f558cea011be4c9e06d0869c27709091cca7c3ffdd47572377b0c633",
+      "render_sha256": "1b88fea2785bee1e28fefa9f557dfd88b265446895ad9a6331cfcc31e74d5abd",
+      "blocks": 33,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-010",
+      "source_id": "book_en_\u642c\u4e66\u5320-2253-The Well-Grounded Rubyist 3rd Edition-2019-\u82f1\u6587\u7248_page_194.png",
+      "split": "TRAINING",
+      "pdf_sha256": "a8210d186bf2f77fc885133d55e4d6c88555282b963fda5c2aa7c1c013711f8c",
+      "render_sha256": "4f3b59d172eadf628d22ce5a5d7fd64c96c6c73a86b904f97d19a37497011ce1",
+      "blocks": 20,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-011",
+      "source_id": "page-9390721f-e06c-47ea-8b21-0f27c72df7b7.png",
+      "split": "TRAINING",
+      "pdf_sha256": "936639a152f27339b4b3fbbd2e88850edf92af023a13330a906ce6cd96c2b490",
+      "render_sha256": "da6cc539f1e1b111b805bdedea9493a8115b20bafd588ca3e0422b6cc2a14251",
+      "blocks": 13,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-012",
+      "source_id": "docstructbench_llm-raw-scihub-o.O-adsc.201190003.pdf_6.jpg",
+      "split": "TRAINING",
+      "pdf_sha256": "6422425f93b71eb2dd5b3ea14e7330c6e19fac3da3dca7719b8966d27bbb75a9",
+      "render_sha256": "6de0295500078220c5e797178afcc96564f5e551edcdb5c3f9da2926ecf30ae9",
+      "blocks": 26,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-013",
+      "source_id": "page-19300c18-7995-4099-a94c-b4c61d7622cb.png",
+      "split": "TRAINING",
+      "pdf_sha256": "5c70093556ce48cf5a16dcc3eecc646926fe3dca099ff388fa5ae332c76b4584",
+      "render_sha256": "749a7572b2342a2ff738fa3b4be209e28ae757bf17fdbf17244a78b1b5838d96",
+      "blocks": 17,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-014",
+      "source_id": "page-87866578-c897-404e-b751-51fd444f59b2.png",
+      "split": "TRAINING",
+      "pdf_sha256": "71ddcf044a2da30ff264aaf62220aa42074f4ab4c9bb0a5ce4db4364e954e912",
+      "render_sha256": "1b7ef1d6f9f2f345d1f15bd205a2a7bc674995c9f4d34d19f33e5428e8a89b26",
+      "blocks": 22,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    },
+    {
+      "training_id": "training-015",
+      "source_id": "page-1f9a7efa-1d99-46c5-a2aa-48402d699f06.png",
+      "split": "TRAINING",
+      "pdf_sha256": "b682896f6b553285a600ce563abe535f64242726cb2c311b755faebd22b3e5ae",
+      "render_sha256": "d917e73dd3c04a9d76171b987dd2f15b4bb64c1dbfa3de218738218b4080a243",
+      "blocks": 5,
+      "layout_distance": {
+        "normalized_bbox_mean_absolute_error": 0.0,
+        "definition": "authored block envelopes vs projected reference envelopes; not measured ink/image similarity",
+        "pixel_similarity": null,
+        "text_similarity": "intentionally unrelated"
+      }
+    }
+  ]
+}

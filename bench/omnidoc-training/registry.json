@@ -1,0 +1,615 @@
+{
+  "schema": 1,
+  "split": "TRAINING",
+  "purpose": "reference-derived training layouts; never independent evaluation",
+  "dataset": "opendatalab/OmniDocBench",
+  "revision": "aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec",
+  "source": "https://huggingface.co/datasets/opendatalab/OmniDocBench",
+  "annotation_sha256": "a45cd84b04ad8b793e775089640e6b681209abea33ead54c1828ddca35fae496",
+  "excluded_dev_registry_sha256": "f29c04d8a82825ff67f01900e1e23279b7495d249faa3bfffd7ea78e5a61ded4",
+  "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages",
+  "license_source": "https://huggingface.co/datasets/opendatalab/OmniDocBench/blob/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/README.md",
+  "selection": {
+    "seed": "jev-pdf-omnidoc-training-layout-v1",
+    "count": 16,
+    "recognition_text_used": false,
+    "rule": "greedy metadata/category-density coverage, hashed ties, exclude DEV IDs and known filename parents"
+  },
+  "parent_separation_limit": "UUID-style filenames have unknown parents; document separation cannot be guaranteed",
+  "geometry_sha256": "054b6a8691e2575995c6c3885e3109cf7bef6858deeb8366620e869153bb0139",
+  "rows": [
+    {
+      "training_id": "training-000",
+      "id": "yanbaopptmerge_4304d65458262c3161cf5d0440c6a56851222ce1da3d7886cdd2320ce2222c4a.pdf_7.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/yanbaopptmerge_4304d65458262c3161cf5d0440c6a56851222ce1da3d7886cdd2320ce2222c4a.pdf_7.jpg",
+      "image_sha256": "9e427331dc32d84894a3b86ab8a4156ca520984693e1afddadcb4aec766d3d4c",
+      "image_bytes": 310527,
+      "annotation_sha256": "0befbd83ec0c7449ea25913c38c90d89f6463b564a8bd744d31818d70919725f",
+      "geometry_sha256": "7b25fcb36a3b3aad09a3bae103f5d5f7ecb74ae20e3a393c0dccb6e02909b632",
+      "width": 1654,
+      "height": 2339,
+      "attributes": {
+        "data_source": "research_report",
+        "language": "simplified_chinese",
+        "layout": "1andmore_column",
+        "special_issue": [
+          "table_fewer_line",
+          "table_horizontal",
+          "table_span"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "abandon": 1,
+        "figure": 2,
+        "figure_caption": 2,
+        "figure_footnote": 2,
+        "footer": 1,
+        "header": 2,
+        "page_number": 1,
+        "table": 2,
+        "table_caption": 2,
+        "table_footnote": 2,
+        "text_block": 1,
+        "title": 2
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-001",
+      "id": "PPT_ch7_page_142.png",
+      "split": "TRAINING",
+      "source_parent_group": "PPT_ch7",
+      "parent_group_status": "filename numbered-page inference",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/PPT_ch7_page_142.png",
+      "image_sha256": "71effd062c07c947e4feeed1f7140b4574e2c1aa64698acfbd6cbe5a1918ef82",
+      "image_bytes": 240023,
+      "annotation_sha256": "51b6e80d6d1207e075f4020697fcd7c5808c4e13a7b2257967fef59a64ea4492",
+      "geometry_sha256": "d37389e5b6ad3d258eb4d1d0836f104c98419b0deaac5fd60cc44559b6ad75c0",
+      "width": 2000,
+      "height": 1500,
+      "attributes": {
+        "data_source": "PPT2PDF",
+        "language": "english",
+        "layout": "single_column",
+        "special_issue": [
+          "None"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "equation_caption": 1,
+        "equation_explanation": 1,
+        "equation_isolated": 1,
+        "footer": 1,
+        "header": 1,
+        "page_footnote": 1,
+        "page_number": 1,
+        "text_block": 4
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-002",
+      "id": "jiaocaineedrop_jiaocai_needrop_en_3937.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/jiaocaineedrop_jiaocai_needrop_en_3937.jpg",
+      "image_sha256": "64bc436d54380bb3923ebeca9acc179626de0021553fd7dfeba901222d836fe7",
+      "image_bytes": 298621,
+      "annotation_sha256": "072f5c30f4fb261ef5c681e353a2794deb0b035941a0ec31375a2bfd1da2d495",
+      "geometry_sha256": "f4d47393e67f9f817598be07a0cffa71c22cbcb3cbe622381a18848a450a4743",
+      "width": 1512,
+      "height": 2103,
+      "attributes": {
+        "data_source": "exam_paper",
+        "language": "simplified_chinese",
+        "layout": "double_column",
+        "special_issue": [
+          "table_full_line",
+          "table_horizontal",
+          "table_with_img"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "figure": 1,
+        "footer": 2,
+        "header": 1,
+        "page_number": 1,
+        "table": 1,
+        "table_mask": 4,
+        "text_block": 20,
+        "text_mask": 5,
+        "title": 3
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-003",
+      "id": "newspaper_The Wall Street Journal - 2025-01-08@magazinesclubnew_page_018.png",
+      "split": "TRAINING",
+      "source_parent_group": "newspaper_The Wall Street Journal - 2025-01-08@magazinesclubnew",
+      "parent_group_status": "filename numbered-page inference",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/newspaper_The%20Wall%20Street%20Journal%20-%202025-01-08%40magazinesclubnew_page_018.png",
+      "image_sha256": "c65e0039aa37812192c5ed13d8b9d54e29a8c570c126f226a90f4074ef870b5a",
+      "image_bytes": 4775082,
+      "annotation_sha256": "84c0af4720655c983a7d9e38d6a44255e27d0f68779ce33336956baa8d38d6af",
+      "geometry_sha256": "f7e3af3900642d69e53ce661a402057db1e6ddbe09f8ba9a7fa1b5031ea7b723",
+      "width": 2092,
+      "height": 4189,
+      "attributes": {
+        "data_source": "newspaper",
+        "language": "english",
+        "layout": "other_layout",
+        "special_issue": [
+          "None"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "abandon": 5,
+        "figure": 4,
+        "figure_caption": 4,
+        "figure_footnote": 4,
+        "header": 2,
+        "page_footnote": 4,
+        "page_number": 1,
+        "table": 6,
+        "text_block": 66,
+        "title": 11,
+        "unknown_mask": 5
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-004",
+      "id": "page-25bb22df-f066-42ea-b1a9-e283ec22a303.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-25bb22df-f066-42ea-b1a9-e283ec22a303.png",
+      "image_sha256": "e77b9eea263dcce466caea30b26acc4d27112e74347de24009a692dc1464ceb1",
+      "image_bytes": 535532,
+      "annotation_sha256": "33eec5b55bae636a35ecccf3cb4a6361106fce01f4fd5d7b811de1af8b60f1ff",
+      "geometry_sha256": "e7598949bc054f84257a1e205c3ec7c04cf9dc730ada82599aea69ad17873e5a",
+      "width": 1653,
+      "height": 2339,
+      "attributes": {
+        "data_source": "book",
+        "language": "en_ch_mixed",
+        "layout": "single_column",
+        "special_issue": [],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "code_txt": 3,
+        "equation_semantic": 1,
+        "list_group": 3,
+        "text_block": 30,
+        "title": 2
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-005",
+      "id": "notes_9e951846094758afac08c620144e3a76_15.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/notes_9e951846094758afac08c620144e3a76_15.jpg",
+      "image_sha256": "7ac5590f50030be0b5d1a0dc91156687f901ce5dcce725be119d1e45ab7242a3",
+      "image_bytes": 346251,
+      "annotation_sha256": "985057b00bfc4b7a8faafd8da10c53867c337e53123c24c6743d6d9fa3d8f5b7",
+      "geometry_sha256": "83e1b23d89cf3b3cf5e2fa315da9ef64906cc34839fe6a2f64158b115543969b",
+      "width": 1654,
+      "height": 2339,
+      "attributes": {
+        "data_source": "note",
+        "language": "simplified_chinese",
+        "layout": "single_column",
+        "special_issue": [],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "abandon": 1,
+        "equation_isolated": 5,
+        "footer": 1,
+        "header": 2,
+        "page_number": 1,
+        "text_block": 7
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-006",
+      "id": "docstructbench_llm-raw-scihub-o.O-j.1365-2818.2000.00739.x.pdf_8.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/docstructbench_llm-raw-scihub-o.O-j.1365-2818.2000.00739.x.pdf_8.jpg",
+      "image_sha256": "51935d5465a32c9c219b084219c30d69d4a134236b3dfbf4a2e71ef9937d4a6d",
+      "image_bytes": 947551,
+      "annotation_sha256": "283492b04aa12df50beb8c396f319b3c52ae89db9a5e6a4c41bfc2587be94b51",
+      "geometry_sha256": "53160940ea72523509b28127dc5d81965446082377d3de1c872beebd5d4416c6",
+      "width": 1653,
+      "height": 2173,
+      "attributes": {
+        "data_source": "academic_literature",
+        "language": "english",
+        "layout": "double_column",
+        "special_issue": [
+          "None"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "footer": 1,
+        "header": 1,
+        "page_number": 1,
+        "reference": 15,
+        "text_block": 5,
+        "title": 3
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-007",
+      "id": "page-0c28f48b-33da-489c-bfc1-1fe82e5be68f.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-0c28f48b-33da-489c-bfc1-1fe82e5be68f.png",
+      "image_sha256": "b8bf5d09e21c41ccd4e78b0862bb1b88748dec43c5fa9273d8853c1caaef38e4",
+      "image_bytes": 475105,
+      "annotation_sha256": "1991a8e9bc9ac1d5641cd4800b9937e000f3ba7ea2b33f3ef3749b3e31b88fd2",
+      "geometry_sha256": "db2dfb4dea104eed0101e967f9cae815e5b2fd511a89e7b43cb5657447cbe6cc",
+      "width": 1817,
+      "height": 2317,
+      "attributes": {
+        "data_source": "magazine",
+        "language": "english",
+        "layout": "three_column",
+        "special_issue": [],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "abandon": 1,
+        "header": 1,
+        "page_number": 1,
+        "text_block": 3,
+        "title": 1
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-008",
+      "id": "page-dad79c54-8125-4927-9988-ee1d2a139d7b.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-dad79c54-8125-4927-9988-ee1d2a139d7b.png",
+      "image_sha256": "e604a10cc9e6ca8a466c0c73dd09fcc430aa6eca006ae9215822534eefceb782",
+      "image_bytes": 2831558,
+      "annotation_sha256": "3609117b80fce26349e2b23a6ba6b163500ea1fa49972b8d021587918a5c2d35",
+      "geometry_sha256": "7293f6e5892a4a2cb4e096ec6970ede34339b5ad79d322b33383c628f06c2a4a",
+      "width": 8300,
+      "height": 5834,
+      "attributes": {
+        "data_source": "historical_document",
+        "language": "traditional_chinese",
+        "layout": "other_layout",
+        "special_issue": [
+          "geometric_deformation"
+        ],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "page_number": 2,
+        "text_block": 39
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-009",
+      "id": "page-8f6792bd-b5e4-435e-b1b0-1b2daa3f7234.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-8f6792bd-b5e4-435e-b1b0-1b2daa3f7234.png",
+      "image_sha256": "33c95a984c3f22a6534c7fa003d12616fb7ac6344d19367fc00080507ec42ddd",
+      "image_bytes": 11559162,
+      "annotation_sha256": "d109b719228863e2f377dacce6c7f201837d196255d39b83f5a55dc6bfe05b31",
+      "geometry_sha256": "7280de5a9bf93d3b36d4f2b60bc1abf62e7e33abad25a06698f9bd695e128cdf",
+      "width": 5556,
+      "height": 8073,
+      "attributes": {
+        "data_source": "colorful_textbook",
+        "language": "simplified_chinese",
+        "layout": "other_layout",
+        "special_issue": [
+          "text_O-shaped_wrap"
+        ],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "abandon": 7,
+        "equation_isolated": 2,
+        "figure": 4,
+        "footer": 1,
+        "header": 2,
+        "page_number": 1,
+        "text_block": 15,
+        "title": 1
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-010",
+      "id": "book_en_搬书匠-2253-The Well-Grounded Rubyist 3rd Edition-2019-英文版_page_194.png",
+      "split": "TRAINING",
+      "source_parent_group": "book_en_搬书匠-2253-The Well-Grounded Rubyist 3rd Edition-2019-英文版",
+      "parent_group_status": "filename numbered-page inference",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/book_en_%E6%90%AC%E4%B9%A6%E5%8C%A0-2253-The%20Well-Grounded%20Rubyist%203rd%20Edition-2019-%E8%8B%B1%E6%96%87%E7%89%88_page_194.png",
+      "image_sha256": "7cc47183de889416075f177fb9e6ed370ef79a644b6222d50eabb92169fcc953",
+      "image_bytes": 258220,
+      "annotation_sha256": "613638ae056cd96e1bbffafb67e692d88f4b5d8e3290feff04e4d10c5b43857d",
+      "geometry_sha256": "62a3f4e4aca180cdea9b3e10b13adf57365473cbe3460652a2c68b232b81ba73",
+      "width": 1476,
+      "height": 1850,
+      "attributes": {
+        "data_source": "book",
+        "language": "english",
+        "layout": "single_column",
+        "special_issue": [
+          "None"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "code_txt": 4,
+        "code_txt_caption": 3,
+        "header": 1,
+        "page_number": 1,
+        "text_block": 9,
+        "title": 2
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-011",
+      "id": "page-9390721f-e06c-47ea-8b21-0f27c72df7b7.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-9390721f-e06c-47ea-8b21-0f27c72df7b7.png",
+      "image_sha256": "b6649d559b373dc48bd2944d96d790117fa89be78169cf62b0f851231dc111b3",
+      "image_bytes": 670720,
+      "annotation_sha256": "e47605f3f8a77dccb477ed7380b229e58c925a79294ae11ee3182b956e0ec726",
+      "geometry_sha256": "c6e04fcad4757a12e585e5c0e1123d37ce30190498c592f3bbfb3310e7ad31c1",
+      "width": 1700,
+      "height": 2200,
+      "attributes": {
+        "data_source": "academic_literature",
+        "language": "english",
+        "layout": "other_layout",
+        "special_issue": [],
+        "subset": "table_hard"
+      },
+      "category_counts": {
+        "chart_mask": 2,
+        "figure_caption": 2,
+        "header": 1,
+        "page_number": 1,
+        "table": 1,
+        "table_caption": 1,
+        "text_block": 5
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-012",
+      "id": "docstructbench_llm-raw-scihub-o.O-adsc.201190003.pdf_6.jpg",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/docstructbench_llm-raw-scihub-o.O-adsc.201190003.pdf_6.jpg",
+      "image_sha256": "ae25ff0172fa283d8d218e42ab63d2e2711bc4eea1ba7942f372429ca8565372",
+      "image_bytes": 237506,
+      "annotation_sha256": "d5a441ef9380a2d9719c3e53874ecdd60cfcf6d4c7cd2b7712b327c03810bcff",
+      "geometry_sha256": "762f33f41ac3e4c722914369d41b6da5f511539316417a73fe195f2976374ac2",
+      "width": 1654,
+      "height": 2339,
+      "attributes": {
+        "data_source": "magazine",
+        "language": "english",
+        "layout": "other_layout",
+        "special_issue": [
+          "None"
+        ],
+        "subset": "v1.5"
+      },
+      "category_counts": {
+        "footer": 3,
+        "header": 1,
+        "need_mask": 5,
+        "page_number": 1,
+        "text_block": 15,
+        "title": 1
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-013",
+      "id": "page-19300c18-7995-4099-a94c-b4c61d7622cb.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-19300c18-7995-4099-a94c-b4c61d7622cb.png",
+      "image_sha256": "e8b8d03036fd56b79556a000c6a6ea7a01e122b4364d06b3ef24a20d9f3a9c4c",
+      "image_bytes": 2212415,
+      "annotation_sha256": "c66a0c3f6dda401623d821afe08e62fbd2f54b99f5c61d840fa0f6f8883e52bc",
+      "geometry_sha256": "9cf72cd2b2750b0108656069f109092654e7fcee9e194d044992aa1d3fa8ca8c",
+      "width": 1659,
+      "height": 2348,
+      "attributes": {
+        "data_source": "magazine",
+        "language": "other",
+        "layout": "other_layout",
+        "special_issue": [],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "figure": 2,
+        "footer": 3,
+        "list_group": 2,
+        "text_block": 7,
+        "title": 3
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-014",
+      "id": "page-87866578-c897-404e-b751-51fd444f59b2.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-87866578-c897-404e-b751-51fd444f59b2.png",
+      "image_sha256": "11bbc53dc51c328d8fb41b328e76bf6a45cf1852adb78b8565fee6eb4e896805",
+      "image_bytes": 166653,
+      "annotation_sha256": "e94e5ab524a51f6aa392882ed99ea3b02b5a1129905fec92035b90ada1186d15",
+      "geometry_sha256": "c2f21ba8b093b8e0b6c2de9a238bf291791a0497c3a30d73723f7b5dcd80aab5",
+      "width": 1360,
+      "height": 1979,
+      "attributes": {
+        "data_source": "book",
+        "language": "simplified_chinese",
+        "layout": "single_column",
+        "special_issue": [],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "header": 1,
+        "organic_chemical_formula_mask": 15,
+        "page_number": 1,
+        "text_block": 5
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    },
+    {
+      "training_id": "training-015",
+      "id": "page-1f9a7efa-1d99-46c5-a2aa-48402d699f06.png",
+      "split": "TRAINING",
+      "source_parent_group": null,
+      "parent_group_status": "unknown; no document identity supplied",
+      "source_url": "https://huggingface.co/datasets/opendatalab/OmniDocBench/resolve/aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec/images/page-1f9a7efa-1d99-46c5-a2aa-48402d699f06.png",
+      "image_sha256": "8473a0c5cd857b4412978b8cd48dfa5ca1e61d93ad86549bef4eeccad34fec39",
+      "image_bytes": 986610,
+      "annotation_sha256": "1a1e9228c401bdca635011afad281755e2d83d0806c156cb5f920cae8fd05588",
+      "geometry_sha256": "464edbc8347fc4bb3c05fb5452f83df21f8ed2d6a45b7b81d04f0d6383507588",
+      "width": 1685,
+      "height": 2202,
+      "attributes": {
+        "data_source": "book",
+        "language": "english",
+        "layout": "single_column",
+        "special_issue": [],
+        "subset": "layout_hard"
+      },
+      "category_counts": {
+        "abandon": 1,
+        "algorithm_mask": 1,
+        "title": 3
+      },
+      "reference_pdf_metadata": {
+        "pdf_version": null,
+        "reason": "official page image; original PDF unavailable"
+      },
+      "derived_split": "TRAINING",
+      "license": "Research purposes only; not for commercial use; inherited by reference-derived synthetic pages"
+    }
+  ],
+  "preparation": {
+    "wall_seconds": 10.002893101001973,
+    "cpu_seconds": 0.30822045499999995
+  }
+}
