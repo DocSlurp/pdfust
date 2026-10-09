@@ -22,7 +22,7 @@ from bench.silver import rss_bytes
 
 CHOICES = ("join", "split", "unresolved")
 SUM_TOLERANCE = 0.015000001
-WAVE_LIMIT = 1.50
+WAVE_LIMIT = 5.0
 TAG_PREFIX = "L001/"
 MAX_BODY_BYTES = 200_000
 MAX_BATCH = 3
@@ -163,11 +163,13 @@ def score(observation: dict[str, Any], target: dict[str, Any], choice: str) -> d
     }
 
 
-def wave_admission(entries: list[dict[str, Any]]) -> None:
+def wave_admission(
+    entries: list[dict[str, Any]], *, tag_prefix: str = TAG_PREFIX, wave_limit: float = WAVE_LIMIT
+) -> None:
     """Enforce the persistent cap including failed reservations."""
-    charged = sum(accounted_cost(row["accounted_usd"]) for row in entries if row.get("tag", "").startswith(TAG_PREFIX))
-    if charged + RESERVATION > WAVE_LIMIT + 1e-12:
-        message = "L001 persistent wave cap exhausted"
+    charged = sum(accounted_cost(row["accounted_usd"]) for row in entries if row.get("tag", "").startswith(tag_prefix))
+    if charged + RESERVATION > wave_limit + 1e-12:
+        message = f"{tag_prefix} persistent wave cap exhausted"
         raise RuntimeError(message)
 
 
@@ -175,30 +177,39 @@ def _entries(client: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - shared or i
     return json.loads(client.ledger.read_text())["requests"] if client.ledger.exists() else []
 
 
-def persistent_stops(client: Any, models: list[str], calls: list[dict[str, Any]]) -> dict[str, Any]:  # noqa: ANN401
+def persistent_stops(
+    client: Any,  # noqa: ANN401
+    models: list[str],
+    calls: list[dict[str, Any]],
+    *,
+    tag_prefix: str = TAG_PREFIX,
+) -> dict[str, Any]:
     """Retain model failures across L001 freezes without altering provider charges."""
-    path = client.ledger.parent / "L001-model-stops.json"
+    path = client.ledger.parent / f"{tag_prefix.rstrip('/')}-model-stops.json"
     registry: dict[str, Any] = json.loads(path.read_text()) if path.exists() else {"schema": 1, "models": {}}
     if registry.get("schema") != 1 or not isinstance(registry.get("models"), dict):
         _fail("persistent model-stop registry is malformed")
     stops = registry["models"]
     for entry in _entries(client):
         tag = entry.get("tag", "")
-        if not tag.startswith(TAG_PREFIX) or (not entry.get("error") and entry.get("response_file")):
+        if not tag.startswith(tag_prefix) or (not entry.get("error") and entry.get("response_file")):
             continue
         model = entry.get("requested_model") or next(
-            (model for model in models if tag.startswith(f"{TAG_PREFIX}{model}/")), None
+            (model for model in models if tag.startswith(f"{tag_prefix}{model}/")), None
         )
         if model is not None:
             stops.setdefault(
                 model,
-                {"reason": "failed or unsettled L001 ledger request", "request_sha256": entry.get("request_sha256")},
+                {
+                    "reason": f"failed or unsettled {tag_prefix} ledger request",
+                    "request_sha256": entry.get("request_sha256"),
+                },
             )
     for row in calls:
         if row["status"] == "failed":
             stops.setdefault(
                 row["model"],
-                {"reason": row.get("reason", "failed L001 request"), "request_sha256": row["request_sha256"]},
+                {"reason": row.get("reason", f"failed {tag_prefix} request"), "request_sha256": row["request_sha256"]},
             )
     checkpoint(path, registry)
     return stops
@@ -207,6 +218,14 @@ def persistent_stops(client: Any, models: list[str], calls: list[dict[str, Any]]
 def _price(directory: Path, model: str) -> dict[str, Any]:
     path = _path(directory, "catalog-prices.json")
     return json.loads(path.read_text()).get("prices", {}).get(model, {}) if path.exists() else {}
+
+
+def _evaluation_answers(result: dict[str, Any], count: int, experiment: str | None) -> list[dict[str, Any]]:
+    if experiment == "L003":
+        from bench.lowlevel_frontier import parse_response as parse_frontier  # noqa: PLC0415
+
+        return parse_frontier(result, count)
+    return parse_response(result, count)
 
 
 def reservation_preflight(request_bytes: int, price: dict[str, Any]) -> float:
@@ -224,24 +243,39 @@ def reservation_preflight(request_bytes: int, price: dict[str, Any]) -> float:
     return forecast
 
 
-def run(directory: Path, *, client: Any = None, max_requests: int | None = None) -> dict[str, Any]:  # noqa: ANN401
+def run(
+    directory: Path,
+    *,
+    client: Any = None,  # noqa: ANN401
+    max_requests: int | None = None,
+    tag_prefix: str = TAG_PREFIX,
+    wave_limit: float = WAVE_LIMIT,
+) -> dict[str, Any]:
     """Execute only through the root-owned client, preserving resumable checkpoints."""
+    if tag_prefix not in {"L001/", "L004/"} or not 0 < wave_limit <= WAVE_LIMIT:
+        _fail("unknown wave or unsupported wave cap")
     manifest = verify_directory(directory)
+    if (manifest.get("experiment") == "L004") != (tag_prefix == "L004/"):
+        _fail("wave policy differs from frozen experiment")
     if max_requests is not None and (type(max_requests) is not int or max_requests < 1):
         _fail("max_requests must be a positive integer")
     client = DecisionClient() if client is None else client
     with exclusive_lock(client.ledger.parent / "run.lock"):
         # Reverify inside serialization boundary before any body reaches transport.
         manifest = verify_directory(directory)
-        return _run_locked(directory, manifest, client, max_requests=max_requests)
+        return _run_locked(
+            directory, manifest, client, max_requests=max_requests, tag_prefix=tag_prefix, wave_limit=wave_limit
+        )
 
 
-def _run_locked(  # noqa: C901, PLR0912
+def _run_locked(  # noqa: C901, PLR0912, PLR0913
     directory: Path,
     manifest: dict[str, Any],
     client: Any,  # noqa: ANN401 - shared or mocked transport.
     *,
     max_requests: int | None = None,
+    tag_prefix: str = TAG_PREFIX,
+    wave_limit: float = WAVE_LIMIT,
 ) -> dict[str, Any]:
     result_path = _path(directory, "results.json")
     manifest_hash = hashlib.sha256(_path(directory, "manifest.json").read_bytes()).hexdigest()
@@ -257,7 +291,7 @@ def _run_locked(  # noqa: C901, PLR0912
     )
     if results.get("manifest_sha256") != manifest_hash:
         _fail("retained results belong to another frozen manifest")
-    stop_details = persistent_stops(client, manifest["models"], results["calls"])
+    stop_details = persistent_stops(client, manifest["models"], results["calls"], tag_prefix=tag_prefix)
     stopped = set(stop_details).intersection(manifest["models"])
     completed = {row["request_sha256"] for row in results["calls"] if row["status"] in {"ok", "failed"}}
     budget_exhausted = False
@@ -303,10 +337,10 @@ def _run_locked(  # noqa: C901, PLR0912
                 message = "Previous identical request failed; no retry"
                 raise RuntimeError(message)  # noqa: TRY301
             if known is None:
-                wave_admission(entries)
+                wave_admission(entries, tag_prefix=tag_prefix, wave_limit=wave_limit)
             attempted += 1
             response = client.request(
-                body, tag=f"{TAG_PREFIX}{record['model']}/{record['arm']}/{digest}", max_body_bytes=MAX_BODY_BYTES
+                body, tag=f"{tag_prefix}{record['model']}/{record['arm']}/{digest}", max_body_bytes=MAX_BODY_BYTES
             )
             row.update(response=response["result"], entry=response["entry"], replayed=response["replayed"])
             row["usage"] = response["result"].get("usage", {})
@@ -329,7 +363,7 @@ def _run_locked(  # noqa: C901, PLR0912
             else:
                 stopped.add(record["model"])
                 row["refused"] = retained is None
-                stop_details = persistent_stops(client, manifest["models"], results["calls"])
+                stop_details = persistent_stops(client, manifest["models"], results["calls"], tag_prefix=tag_prefix)
         checkpoint(result_path, results)
     resources = {
         "wall_seconds": time.perf_counter() - start,
@@ -356,7 +390,8 @@ def _run_locked(  # noqa: C901, PLR0912
         stopped_models=sorted(stopped),
         model_stop_details={model: stop_details[model] for model in sorted(stopped)},
         budget_exhausted=budget_exhausted,
-        wave_limit_usd=WAVE_LIMIT,
+        wave_limit_usd=wave_limit,
+        wave_tag_prefix=tag_prefix,
         execution_resources={
             "wall_seconds": sum(row["wall_seconds"] for row in history),
             "cpu_seconds": sum(row["cpu_seconds"] for row in history),
@@ -374,7 +409,7 @@ def _run_locked(  # noqa: C901, PLR0912
     return results
 
 
-def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort denominators.
+def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explicit cohort denominators.
     """Verify every frozen input before reading private targets or retained results."""
     manifest = verify_directory(directory)
     targets_path = _path(directory, "private-targets.json")
@@ -403,7 +438,11 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
     for record in manifest["records"]:
         call = calls.get(record["sha256"], {})
         cohort_calls[record["model"], record["arm"]].append(call)
-        answers = parse_response(call["response"], len(record["page_ids"])) if call.get("status") == "ok" else []
+        answers = (
+            _evaluation_answers(call["response"], len(record["page_ids"]), manifest.get("experiment"))
+            if call.get("status") == "ok"
+            else []
+        )
         for index, page_id in enumerate(record["page_ids"]):
             target = by_id[page_id]
             choice = answers[index]["choice"] if answers else None
@@ -442,12 +481,20 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
                 continue
             entries = cohort_calls[model, arm]
             unique = {row["entry"]["index"]: row for row in entries if row.get("entry")}
-            costs = [row.get("cost", {}).get("effective_usd") for row in unique.values()]
+            fresh = [row for row in unique.values() if not row.get("replayed")]
+            costs = [row.get("cost", {}).get("effective_usd") for row in fresh]
             total = sum(costs) if costs and all(value is not None for value in costs) else None
             partial = sum(value for value in costs if value is not None)
-            http = sum(
-                row.get("http_elapsed_ms") or row.get("entry", {}).get("elapsed_ms", 0) or 0 for row in unique.values()
-            )
+            http = sum(row.get("http_elapsed_ms") or row.get("entry", {}).get("elapsed_ms", 0) or 0 for row in fresh)
+            fresh_inputs = sum(len(call["page_ids"]) for call in fresh if call.get("status") == "ok")
+            fresh_exact = 0
+            for call in fresh:
+                if call.get("status") != "ok":
+                    continue
+                selected = _evaluation_answers(call["response"], len(call["page_ids"]), manifest.get("experiment"))
+                for page_id, answer in zip(call["page_ids"], selected, strict=True):
+                    judged = score(observations[page_id], by_id[page_id], answer["choice"])
+                    fresh_exact += judged["answerable"] and judged["description_partition_exact"]
             known = [row for row in rows if row["expected"] != "unresolved"]
             ambiguous = [row for row in rows if row["expected"] == "unresolved"]
             exact = sum(bool(row["score"] and row["score"]["description_partition_exact"]) for row in known)
@@ -476,11 +523,17 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
                     "refused_inputs": sum(row["refused"] for row in rows),
                     "refusal_reasons": dict(Counter(row["reason"] for row in rows if row["refused"])),
                     "planned_requests": len(entries),
+                    "unique_transmissions": len(fresh),
+                    "fresh_scored_page_inputs": fresh_inputs,
+                    "fresh_correct_regions": fresh_exact,
+                    "alias_or_replayed_scored_inputs": scored - fresh_inputs,
                     "completed_requests": sum(row.get("status") in {"ok", "failed"} for row in entries),
                     "conservation_failures": sum(
                         bool(row["score"] and not row["score"]["output"]["conservation"]) for row in rows
                     ),
-                    "encoding_consistent_logical_cases": consistent,
+                    "encoding_consistent_logical_cases": consistent
+                    if manifest.get("encoding_comparison", True)
+                    else None,
                     "logical_cases": len(logical),
                     "effective_usd": total,
                     "estimated_cost": any(
@@ -490,9 +543,9 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
                     "known_cost_component_usd": partial,
                     "unknown_cost_requests": sum(value is None for value in costs),
                     "http_elapsed_ms": http,
-                    "pages_per_usd": scored / total if total else None,
-                    "correct_regions_per_usd": exact / total if total else None,
-                    "api_only_pages_per_minute": scored * 60000 / http if http else None,
+                    "pages_per_usd": fresh_inputs / total if total else None,
+                    "correct_regions_per_usd": fresh_exact / total if total else None,
+                    "api_only_pages_per_minute": fresh_inputs * 60000 / http if http else None,
                     "per_family": {
                         family: {
                             "inputs": len(subset),
@@ -525,7 +578,7 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
         "planned_requests": len(manifest["records"]),
         "completed_requests": sum(row.get("status") in {"ok", "failed"} for row in results["calls"]),
         "model_stop_details": results.get("model_stop_details", {}),
-        "probabilities": "uncalibrated",
+        "probabilities": "unreported" if manifest.get("experiment") == "L003" else "uncalibrated",
         "encoding_variants": "correlated; consistency requires all three attempted",
     }
 
@@ -544,7 +597,7 @@ def report(directory: Path) -> dict[str, Any]:
         (
             "Known exactness scores only the two target-text chunks. Missing/failed inputs remain in denominators. "
             "Ambiguous abstention is separate. Literal outputs and source ownership are retained in evaluation.json. "
-            "Header/value/cell reconstruction is unmeasured. Probabilities are uncalibrated; "
+            "Header/value/cell reconstruction is unmeasured. Probabilities are " + evaluation["probabilities"] + "; "
             "the three encodings share each logical template."
         ),
         "",
@@ -560,11 +613,16 @@ def report(directory: Path) -> dict[str, Any]:
             value = row[key]
             return "unknown" if value is None else f"{value:.6g}"
 
+        encoding = (
+            "unmeasured"
+            if row["encoding_consistent_logical_cases"] is None
+            else f"{row['encoding_consistent_logical_cases']}/{row['logical_cases']}"
+        )
         lines.append(
             f"| {row['model']} | {row['arm']} | {row['scored']}/{row['inputs']} "
             f"| {row['known_exact']}/{row['known_inputs']} "
             f"| {row['ambiguous_abstentions']}/{row['ambiguous_inputs']} "
-            f"| {row['encoding_consistent_logical_cases']}/{row['logical_cases']} "
+            f"| {encoding} "
             f"| {'~' if row['estimated_cost'] else ''}{metric('effective_usd')} | {metric('pages_per_usd')} "
             f"| {metric('correct_regions_per_usd')} | {metric('api_only_pages_per_minute')} |"
         )
@@ -574,6 +632,7 @@ def report(directory: Path) -> dict[str, Any]:
             (
                 "Costs preserve positive provider charges; ~ marks frozen-catalog estimates. "
                 "Unknown costs never become complete totals. Local replay is not another provider transmission; "
+                "rate numerators count successful fresh transmitted page inputs, excluding identical-input aliases. "
                 "API timing excludes preparation. Source conservation covers validated outputs only; "
                 "invalid/failed inputs are listed separately."
             ),
@@ -585,7 +644,12 @@ def report(directory: Path) -> dict[str, Any]:
         ]
     )
     lines.extend(
-        ["Native word/physical-line proxy:", "", "| Family | Known exact/all | Ambiguous abstain/all |", "|---|---:|---:|"]
+        [
+            "Native word/physical-line proxy:",
+            "",
+            "| Family | Known exact/all | Ambiguous abstain/all |",
+            "|---|---:|---:|",
+        ]
     )
     for family in sorted({row["family"] for row in evaluation["native_baseline"]}):
         rows = [row for row in evaluation["native_baseline"] if row["family"] == family]

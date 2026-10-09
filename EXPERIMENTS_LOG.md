@@ -518,3 +518,72 @@ does not classify business headers or history-only cases. This is a reason to
 test deterministic routing before paying for every region, not evidence of
 production safety or realized cascade savings. See
 [geometry results](bench/results/lowlevel-geometry.md).
+
+## 2026-10-09 — expanded lower-level research, USD 100 authorization
+
+The user raised the cumulative research cap to USD 100 (not USD 100 additional).
+Previous charges and unresolved reservations remain in the shared ledger. L001
+now has a USD 5 persistent admission ceiling, L004 USD 5, and L003 USD 15.
+All experiments remain DEV-only, CPU preprocessing with hosted inference; protected
+heldout files remain untouched. No local GPU or training was used.
+
+Initial evidence screening completed **768 successful requests**, with effective
+cost **USD 0.356243372**. Positive provider charges are preferred; Luna's reported
+zero remains preserved with separate catalog estimates. Complete model-grouped
+scores and rates: [initial matrix](bench/results/lowlevel-basic.md). PPLX crop512
+recovered 38/48 authored known partitions versus 30/48 with vectors and 26/48
+with words; it abstained on none of 24 ambiguous page inputs. These are only
+24 logical authored controls with three encodings, and supplied target regions.
+They do not establish full-table extraction quality or production generalization.
+
+Prompt-factor results: PPLX crop512 with resolved literal instructions recovered
+15/16 known partitions on the 24 selected representatives, versus 13/16 with the
+original prompt on those same pages; it abstained on 1/8 ambiguous cases. Singleton
+batching alone did not improve it. All requested arms, including losses and
+refusals, remain in [prompt factors](bench/results/lowlevel-prompt-factors.md).
+The independent audit found missing-evidence collisions in text-only wrap arms:
+identical admitted states have different author labels, so incorrect forced
+answers there cannot diagnose absent model understanding.
+
+History results: PPLX words/glyphs/operators each reached 17/18 authored known
+choices, with 0/18 ambiguity abstentions. Nine known pages are tentative conventions,
+and nine expose explicit new identifiers; do not combine them into a hard-grounded
+accuracy claim. Rolling summaries did not consistently help. See
+[history matrix](bench/results/lowlevel-history-v2.md). Jev encountered HTTP 400
+on a 115,568-byte rolling request. The original request, failure, unresolved USD 0.30
+reservation and persistent L001 stop are retained. Endpoint inspection suggests a
+32,000-token prompt boundary; the cause remains unconfirmed.
+
+A new L004 experiment freezes lossless compact tables of glyphs and interned
+operator operands under a 32,000-byte full-body guard. All basic and history source
+observations remain byte-identical to their original freezes. The new resolved
+prompt, typed transport and adaptive batching change jointly: this is a practical
+packet comparison, not an isolated compaction effect. A matched singleton raw/compact
+control is planned. History contains no vector rules; its geometry hint is a
+constant defer cue, while the separate basic controls test actual divider evidence.
+See [compact packet design](bench/results/lowlevel-compact-design.md).
+
+A native paint-order regression was fixed with forward-gap run boundaries and a
+bounded disjoint-interval fast path. All 24 four-glyph paint permutations preserve
+word order; overprints remain distinct. Original104 and initial72 text hashes
+remain unchanged, and all 36 history variants now agree on words and text. Frozen
+paid model inputs stay pre-fix. [Repair and CPU diagnostics](bench/results/lowlevel-word-order.md).
+
+The natural-source survey inspected six regions across five licensed DEV PDFs.
+The Edison patent's invisible OCR layer disagrees with visible text, beyond a
+source-conserving grouping oracle; a separate provenance-preserving visual-repair
+experiment is being built. [Natural-source findings](bench/results/lowlevel-natural-survey.md).
+
+The user explicitly requested every available image-capable decision model. The
+refreshed OpenRouter decisions catalog lists PPLX Decider V1.1, GPT-6 Luna Decisions,
+Clef Flash and Clef. All four enter the next matched image sweep. OpenRouter's
+serving notes describe approximately 2K text-state truncation for Clef; use a
+shared bounded target-local packet for the fair four-model comparison, with richer
+context as a separately labeled treatment. Preserve RGB, grayscale and reduced
+bit-depth as distinct image treatments at each selected resolution.
+
+Validation at this checkpoint: **2,190 passed, 14 skipped, two expected failures**
+(54.95 seconds) after rebuilding the final native repair. Whole-workspace Ruff and
+mypy on source/tests plus new runners passed. Full local log is retained under
+`lowlevel-v1/pytest-expanded.log`. Further experiment modules will receive their
+own focused checks before integration.

@@ -378,10 +378,18 @@ def prepare(directory: Path, *, cohort: list[dict[str, Any]] | None = None) -> d
     return manifest
 
 
-def verify(directory: Path) -> dict[str, Any]:  # noqa: C901 - all frozen inventories must agree.
+def verify(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - all frozen inventories must agree.
     """Verify every frozen input and reconstruct each body from source observations."""
     directory = guard_path(directory)
     manifest = json.loads((directory / "manifest.json").read_bytes())
+    if manifest.get("experiment") == "L004":
+        from bench.lowlevel_packets import verify as verify_packets  # noqa: PLC0415
+
+        return verify_packets(directory)
+    if manifest.get("experiment") == "L003":
+        from bench.lowlevel_frontier import verify as verify_frontier  # noqa: PLC0415
+
+        return verify_frontier(directory)
     if digest((directory / "catalog-prices.json").read_bytes()) != manifest["catalog_sha256"]:
         raise ValueError("Frozen catalog changed")
     observations = {}
@@ -395,7 +403,12 @@ def verify(directory: Path) -> dict[str, Any]:  # noqa: C901 - all frozen invent
         if Path(record["request"]).name != record["request"]:
             raise ValueError("Request path escapes freeze")
         raw = (directory / record["request"]).read_bytes()
-        expected = request([observations[ident] for ident in record["page_ids"]], record["model"], record["arm"])
+        selected = [observations[ident] for ident in record["page_ids"]]
+        expected = request(selected, record["model"], record.get("base_arm", record["arm"]))
+        if record.get("prompt_variant") not in (None, "original"):
+            from bench.lowlevel_prompts import transform  # noqa: PLC0415 - opt-in experimental factors.
+
+            expected = transform(expected, selected, record["prompt_variant"])
         if digest(raw) != record["sha256"] or raw != encode(expected):
             raise ValueError("Low-level request differs from frozen source projection")
         for ident in record["page_ids"]:

@@ -44,6 +44,11 @@ overview.
   estimates, preserving the original reported zero. Missing tokens/rates remain
   unknown; partial estimates must not become complete totals. Keep ledger
   reservations separate from reported charges and effective estimates.
+- On 2026-10-09 the user raised the cumulative remote compute/inference research
+  spending authorization from USD 15 to **USD 100**. This replaces the old cap;
+  it is not an additional USD 100. Keep a shared persistent ledger, per-wave
+  limits and pre-request reservations. Preserve prior charges and unresolved
+  reservations; only root coordinates paid inference across experiment agents.
 - Keep local checks CPU-only by default. On 2026-10-08 the user explicitly
   authorized bounded local-GPU benchmark comparisons where acceleration matters.
   Verify GPU health first; record matched CPU/GPU quality, wall/CPU time, peak

@@ -1,6 +1,6 @@
 # L001: decisions before PDF word assembly
 
-Status: CPU controls validated; hosted DEV screening in progress, 2026-10-09.
+Status: initial 768-call screen complete; prompt/history and compact/frontier follow-ups, 2026-10-09.
 
 The question is whether preserving evidence before glyph clustering improves
 structured extraction. This wave does not replace deterministic PDF decoding,
@@ -164,3 +164,33 @@ Reproduction (all preparation is offline):
 # Explicitly metered, shared ledger and remaining cumulative cap apply:
 .venv/bin/python -m bench.lowlevel_run --directory <frozen-directory> --run-hosted
 ```
+
+## Expanded authorization and next waves (2026-10-09)
+
+The user raised the cumulative research authorization to **USD 100**, replacing
+the earlier USD 15 ceiling. Earlier charges and unresolved reservations still count.
+The shared client now enforces USD 100 cumulative and USD 98 within its ledger;
+root alone sends inference. L001 and L004 each have a persistent USD 5 wave cap,
+and L003 has USD 15. These are admission ceilings, not expenditure targets.
+
+| Wave | Frozen comparison | Purpose and limitations |
+| --- | --- | --- |
+| L001 initial | 72 encoded pages, nine evidence arms, four decision models | 768 successful calls; 24 logical authored cases, not 72 independent cases |
+| L001 history | 36 pages, prior-row patterns versus original evidence | Tentative conventional joins must remain separate from explicit-ID splits |
+| L002 prompt factors | 24 pixel-distinct representatives, prompt/typed-state/singleton factors | 544 records but 512 distinct bodies; aliases do not increase throughput numerators |
+| L003 frontier | All nine initial arms and 72 pages, Claude Opus/Sonnet/Haiku 5.5 | Same evidence and literal decision instructions through strict chat choices; no invented confidence |
+| L004 compact | All 36 history and 72 basic pages, four lossless compact source packets | 32,000-byte full-body admission; jointly changes prompt/representation/batching, not a causal compression estimate |
+| L005 planned | Raw and compact canonical packets with identical singleton batching | Isolate representation effects using the same source facts and resolved instructions |
+| L006 planned | All four catalog image-capable decision models; multiple image sizes and independent color/bit-depth factors | Matched bounded text prevents known serving-path truncation; retain every admitted model |
+
+Jev's L001 history request returned HTTP 400. Its original request and USD 0.30
+unresolved reservation remain retained, and the L001 stop remains active. The
+provider endpoint advertises a 32,000-token prompt limit despite a 64,000-token
+general context listing. This suggests, but does not prove, the cause. L004 uses
+new lossless packets admitted under a conservative 32,000-byte full-body boundary;
+it does not resend the failed body. No tokenizer-equivalence claim is made.
+
+The history controls have no vector rules: their geometry hint is always unresolved.
+That arm tests a constant defer cue. Only the separate basic ruled controls can test
+useful divider evidence. All raw freezes remain unchanged after the native word-order
+fix, so newly corrected extraction cannot leak into historical comparisons.

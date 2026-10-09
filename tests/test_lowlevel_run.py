@@ -79,9 +79,11 @@ def test_conservation_is_not_grouping_correctness() -> None:
 
 
 def test_persistent_budget_counts_failed_reservations() -> None:
-    entries = [{"tag": TAG_PREFIX + str(i), "accounted_usd": 0.3} for i in range(4)]
+    from bench.lowlevel_run import WAVE_LIMIT  # noqa: PLC0415 - exercise the declared wave budget.
+
+    entries = [{"tag": TAG_PREFIX + "prior", "accounted_usd": WAVE_LIMIT - 0.3}]
     wave_admission(entries)
-    entries.append({"tag": TAG_PREFIX + "failed", "accounted_usd": 0.3})
+    entries.append({"tag": TAG_PREFIX + "failed", "accounted_usd": 0.01})
     with pytest.raises(RuntimeError, match="cap exhausted"):
         wave_admission(entries)
     wave_admission([{"tag": "another-campaign", "accounted_usd": 14.0}])
@@ -355,3 +357,38 @@ def test_successful_http_with_invalid_schema_is_a_durable_model_stop(frozen: Pat
     registry = json.loads((client.ledger.parent / "L001-model-stops.json").read_text())
     assert "m1" in registry["models"]
     assert registry["models"]["m1"]["reason"].startswith("model stopped")
+
+
+def test_alias_inputs_do_not_inflate_transmission_rates(frozen: Path, tmp_path: Path) -> None:
+    manifest_path = frozen / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["records"].append(dict(manifest["records"][0]))
+    manifest_path.write_text(json.dumps(manifest))
+    client = MockClient(tmp_path / "ledger")
+    run(frozen, client=client)
+    row = next(row for row in evaluate(frozen)["cohorts"] if row["model"] == "m1")
+    assert row["inputs"] == 9
+    assert row["scored"] == 9
+    assert row["unique_transmissions"] == 2
+    assert row["fresh_scored_page_inputs"] == 6
+    assert row["alias_or_replayed_scored_inputs"] == 3
+    assert row["pages_per_usd"] == pytest.approx(6 / row["effective_usd"])
+
+
+def test_new_wave_requires_matching_manifest_and_separate_budget(frozen: Path, tmp_path: Path) -> None:
+    client = MockClient(tmp_path / "ledger")
+    with pytest.raises(ValueError, match="policy differs"):
+        run(frozen, client=client, tag_prefix="L004/")
+    with pytest.raises(ValueError, match="unsupported"):
+        run(frozen, client=client, tag_prefix="unlimited/", wave_limit=100)
+    manifest_path = frozen / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["experiment"] = "L004"
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="policy differs"):
+        run(frozen, client=client)
+    run(frozen, client=client, tag_prefix="L004/")
+    entries = json.loads(client.ledger.read_text())["requests"]
+    assert all(row["tag"].startswith("L004/") for row in entries)
+    assert (client.ledger.parent / "L004-model-stops.json").exists()
+    assert not (client.ledger.parent / "L001-model-stops.json").exists()
