@@ -336,9 +336,18 @@ def wave_admission(entries: list[dict[str, Any]], start: int, *, limit: float = 
         raise RuntimeError(message)
 
 
-def run(directory: Path, manifest: dict[str, Any], *, client: Any = None) -> dict[str, Any]:  # noqa: ANN401, C901, PLR0912
+def run(  # noqa: C901, PLR0912
+    directory: Path,
+    manifest: dict[str, Any],
+    *,
+    client: Any = None,  # noqa: ANN401
+    wave_name: str = "image-resolution-wave.json",
+) -> dict[str, Any]:
     """Opt-in execution; retain failures and mark all stopped-model batches unattempted."""
     verify_manifest(directory, manifest)
+    if Path(wave_name).name != wave_name or not wave_name.endswith(".json"):
+        message = "Wave accounting name must be a local JSON filename"
+        raise ValueError(message)
     cases = (
         silver_image_cases(Path(manifest["silver_directory"])) if manifest.get("silver_directory") else context_cases()
     )
@@ -348,7 +357,7 @@ def run(directory: Path, manifest: dict[str, Any], *, client: Any = None) -> dic
     )
     client = DecisionClient() if client is None else client
     entries = json.loads(client.ledger.read_text())["requests"] if client.ledger.exists() else []
-    wave_path = client.ledger.parent / "image-resolution-wave.json"
+    wave_path = client.ledger.parent / wave_name
     if wave_path.exists():
         wave = json.loads(wave_path.read_text())
     else:

@@ -26,6 +26,8 @@ Generic instruction-only ablations; fixed source words, images and candidate men
 | original / E003_reading_order | openai/gpt-6-luna-decisions | 12/12 | 1/12 | 0/12 | 144/144 | 0.005888 | 4,076 | 185.1 |
 | original / E004_counterevidence | perplexity/pplx-decider-v1.1-27b | 12/12 | 10/12 | 0/12 | 144/144 | 0.001527 | 15,714 | 146.3 |
 | original / E004_counterevidence | openai/gpt-6-luna-decisions | 12/12 | 11/12 | 0/12 | 144/144 | 0.005907 | 4,063 | 190.9 |
+| original / E005_image_geometry_consistency | perplexity/pplx-decider-v1.1-27b | 12/12 | 12/12 | 0/12 | 144/144 | 0.001533 | 15,659 | 145.3 |
+| original / E005_image_geometry_consistency | openai/gpt-6-luna-decisions | 12/12 | 12/12 | 0/12 | 144/144 | 0.005931 | 4,047 | 186.9 |
 | original / minimal-compare | perplexity/pplx-decider-v1.1-27b | 12/12 | 12/12 | 0/12 | 144/144 | 0.001470 | 16,329 | 147.4 |
 | original / minimal-compare | openai/gpt-6-luna-decisions | 12/12 | 11/12 | 0/12 | 144/144 | 0.005617 | 4,273 | 130.7 |
 | original / minimal-false-positive-cost | perplexity/pplx-decider-v1.1-27b | 12/12 | 10/12 | 0/12 | 144/144 | 0.001472 | 16,303 | 142.2 |
@@ -46,5 +48,21 @@ Generic instruction-only ablations; fixed source words, images and candidate men
 | original / P004-conflicting-evidence | openai/gpt-6-luna-decisions | 12/12 | 10/12 | 0/12 | 144/144 | 0.005861 | 4,095 | 113.0 |
 | original / P005-lean-complete-candidate | perplexity/pplx-decider-v1.1-27b | 12/12 | 9/12 | 0/12 | 144/144 | 0.001472 | 16,303 | 146.4 |
 | original / P005-lean-complete-candidate | openai/gpt-6-luna-decisions | 12/12 | 10/12 | 0/12 | 144/144 | 0.005626 | 4,266 | 133.3 |
+| realistic / minimal-compare | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006133 | 4,566 | 58.7 |
+| realistic / minimal-compare | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 128/245 | 0.019674 | 1,423 | 191.4 |
+| realistic / minimal-symmetric-errors | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006131 | 4,567 | 57.6 |
+| realistic / minimal-symmetric-errors | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 94/245 | 0.019666 | 1,424 | 184.8 |
+| realistic / minimal-terse | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006126 | 4,571 | 58.0 |
+| realistic / minimal-terse | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 128/245 | 0.019640 | 1,426 | 180.9 |
+| realistic / P001-semantic-record-schema | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006185 | 4,527 | 58.9 |
+| realistic / P001-semantic-record-schema | openai/gpt-6-luna-decisions | 3/16 | 0/8 | 0/8 | 93/245 | 0.019935 | 1,405 | 165.1 |
+| realistic / P002-wrap-boundaries | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006190 | 4,524 | 59.6 |
+| realistic / P002-wrap-boundaries | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 128/245 | 0.019960 | 1,403 | 180.3 |
+| realistic / P003-header-data-corridors | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 68/245 | 0.006199 | 4,517 | 58.4 |
+| realistic / P003-header-data-corridors | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 68/245 | 0.020002 | 1,400 | 130.1 |
+| realistic / P004-conflicting-evidence | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006190 | 4,523 | 57.9 |
+| realistic / P004-conflicting-evidence | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 102/245 | 0.019960 | 1,403 | 163.4 |
+| realistic / P005-lean-complete-candidate | perplexity/pplx-decider-v1.1-27b | 4/16 | 0/8 | 0/8 | 128/245 | 0.006136 | 4,564 | 59.7 |
+| realistic / P005-lean-complete-candidate | openai/gpt-6-luna-decisions | 4/16 | 0/8 | 0/8 | 68/245 | 0.019685 | 1,422 | 184.7 |
 
 Rates use unique provider requests; local replay adds no provider throughput. Positive reported charges win; reported zero falls back to catalog pricing with observed tokens. API time excludes local preparation. Unresolved prose is not a correct rejection. All selections conserve source IDs, which is not a correctness score.

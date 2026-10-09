@@ -69,12 +69,14 @@ def freeze(source: Path, output: Path, family: str) -> dict[str, Any]:
         checkpoint(directory / "manifest.json", manifest)
         runner.verify(directory)
         runs.append(str(directory.resolve()))
+    rss, measurement = process_peak_rss()
     result = {
         "family": family,
         "runs": runs,
         "wall_seconds": time.perf_counter() - start,
         "cpu_seconds": time.process_time() - cpu,
-        "peak_rss_bytes": process_peak_rss(),
+        "peak_rss_bytes": rss,
+        "rss_measurement": measurement,
         "resource_scope": "source-only prompt preparation; perf_counter/process_time/current-process lifetime RSS",
     }
     checkpoint(output / "sweep.json", result)
@@ -168,10 +170,12 @@ def main() -> None:
                 break
             started, cpu = time.perf_counter(), time.process_time()
             result = runner.run(Path(directory), guard_path(args.targets), client)
+            rss, measurement = process_peak_rss()
             result["execution_resources"] = {
                 "wall_seconds": time.perf_counter() - started,
                 "cpu_seconds": time.process_time() - cpu,
-                "peak_rss_bytes": process_peak_rss(),
+                "peak_rss_bytes": rss,
+                "rss_measurement": measurement,
                 "scope": "current process; request orchestration plus scoring, no remote inference CPU/RAM",
                 "measurement": "perf_counter/process_time/current process lifetime VmHWM; no sampling",
             }

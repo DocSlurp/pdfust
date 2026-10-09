@@ -206,3 +206,51 @@ only. Further fresh/neutral prompt requests are stopped persistently.
 The 48-call OCR admission comparison cost USD 0.00808632 effective, with 22.08
 summed HTTP seconds. Those are model-stage measurements; OCR preprocessing and
 native routing are reported separately, not hidden in an end-to-end speed claim.
+
+## 05:40 UTC — broaden exploration at the user's direction
+
+Do not retire moderately plausible approaches based on one narrow screen.
+Keep prior results and vary mechanisms, source conditions, and combinations.
+The next resolution matrix uses 200/300/400/500/600/800 px with separate width,
+height and longest-edge limits, RGB8, gray8 and palette4, all four image-capable
+native decision models, and actual dimensions/bytes. Equivalent pixel evidence
+is identified as such, never called a provider-cache hit. Optional anisotropic
+squeezes are a separate experiment, not an implicit image transformation.
+
+An additional 16 OmniDocBench references are being acquired specifically for
+TRAINING-oriented synthetic layout derivatives with newly authored content.
+Parent/descendant groups and research-only provenance remain explicit; they must
+not later count as independent evaluation examples. Original DEV16 stays separate.
+
+The internal shared-ledger ceiling increases from USD 5 to USD 8 to allow these
+bounded experiments; the user's cumulative USD 15 cap is unchanged and includes
+prior usage. At 05:34 UTC, conservative accounted usage including prior charges
+and USD 1.20 unresolved reservations was USD 4.5718355968. New image-axis calls
+have a separately named persistent USD 2 wave budget, without resetting old wave
+accounting. Per-run prompt, gate and union caps remain in force.
+
+## 05:56 UTC — broad sweeps and renewed specialist evidence
+
+The user's wider exploration request extends the prompt window within their
+30–90 minute allowance, up to 06:26 UTC; overall wave deadline remains 06:27 UTC.
+All 15 original prompt variants completed. The reviewed v2 prompt sweep remains
+active around the serialized provider image runs; retained completed bodies are
+not charged again or called provider-cache hits. All missing arms stay explicit.
+
+| SLANet-plus DPI | Full page exact | Tight source crop exact | +4 pt exact | +12 pt exact |
+| --- | ---: | ---: | ---: | ---: |
+| 72 | 0/16 | 0/16 | 3/16 | 7/16 |
+| 120 | 0/16 | 0/16 | 1/16 | 5/16 |
+| 180 | 0/16 | 1/16 | 1/16 | 5/16 |
+
+All configurations falsely propose tables on 8/8 prose pages; four ambiguous
+pages remain unscored. All 336 outputs completed without model errors. The model's
+fixed 488-pixel tensor helps explain why increasing render DPI alone does not
+improve this sample; padding remains a useful independent variable. These are
+CPU observations with background-work caveats, not hardware ceiling claims.
+
+The first generic union reaches PPLX 12/16 exact reviewed tables (two accepted
+wrong, two unresolved), versus 4/16 with the older candidates; Luna reaches 8/16.
+A separately frozen local-gap extent ablation restores 16/16 candidate coverage
+without regressing original positive cases; model selection on that expanded
+menu is queued. Candidate coverage still does not establish automatic accuracy.

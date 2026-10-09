@@ -21,7 +21,7 @@ from bench.decision_evidence import project_case
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "bench/results/pdf-master-artifacts/decisions"
-CAMPAIGN_LIMIT = 5.0
+CAMPAIGN_LIMIT = 8.0
 TOTAL_LIMIT = 15.0
 PRIOR_RENTAL = 0.684
 RESERVATION = 0.30

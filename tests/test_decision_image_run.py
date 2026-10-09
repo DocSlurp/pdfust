@@ -194,3 +194,22 @@ def test_clef_lossless_transport_preserves_pixels(monkeypatch: pytest.MonkeyPatc
         assert image.tobytes() == decoded.convert("RGB").tobytes()
     request = runner.silver_batch_request([converted], "cloudflare/clef")
     assert request["state"][1]["image_url"]["url"].startswith("data:image/webp;base64,")
+
+
+def test_named_wave_preserves_prior_accounting(tmp_path: Path, cases: list[dict]) -> None:
+    manifest = frozen_batch(tmp_path, cases)
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text(json.dumps({"requests": [{"request_sha256": "unrelated", "accounted_usd": 2.0}]}))
+    previous = tmp_path / "image-resolution-wave.json"
+    previous.write_text(json.dumps({"wave_start": 0, "wave_limit_usd": 99}))
+    before = previous.read_bytes()
+    (tmp_path / "results.json").write_text(json.dumps({"schema": 1, "wave_start": 0, "batches": []}))
+    calls: list = []
+    client = SimpleNamespace(ledger=ledger, request=lambda *args, **_kwargs: calls.append(args))
+    result = runner.run(tmp_path, manifest, client=client, wave_name="image-axis-wave.json")
+    assert result["budget_exhausted"]
+    assert not calls
+    assert previous.read_bytes() == before
+    assert json.loads((tmp_path / "image-axis-wave.json").read_text())["wave_limit_usd"] == 2.0
+    with pytest.raises(ValueError, match="local JSON filename"):
+        runner.run(tmp_path, manifest, client=object(), wave_name="../escape.json")

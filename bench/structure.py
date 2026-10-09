@@ -91,7 +91,7 @@ def prepare_highres(bundles: list[dict[str, Any]]) -> None:
                     "height": pixmap.height,
                     "dpi": dpi,
                     "renderer": "pylopdf CPU; original PDF rerender, not screenshot upsampling",
-                    "renderer_version": metadata.version("pylopdf"),
+                    "renderer_version": pylopdf.__version__,
                     "preparation_code_sha256": hashlib.sha256((ROOT / "bench/structure.py").read_bytes()).hexdigest(),
                 },
             )
