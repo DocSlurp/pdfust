@@ -84,3 +84,42 @@ metadata in requests, fresh PNG provenance/nonblank pixels, exact scope/menu
 preservation, complete inventory and separate annotation admission. Verification
 uses retained image hashes; it does not claim to independently adjudicate
 business records or inspect hosted provider image consumption.
+
+## Bounded L011 model matrix and execution
+
+`bench.lowlevel_natural_run.prepare(source_freeze, matrix_directory, catalogs)`
+freezes all 24 × four image treatments × five serving routes before opening the
+separate references. `catalogs` maps `openrouter` and `vercel` to their respective
+frozen JSON price files. It requires complete published input/output rates,
+checks a conservative one-input-token-per-body-byte forecast against the shared
+client's reservation, and refuses incomplete body admission. Gateway D1 uses
+the exact literal source string and PNG data URL from the common packet, with
+images moved to the top-level TypeSafe `images` field.
+
+```sh
+.venv/bin/python -m bench.lowlevel_natural_run \
+  --source .scratch/natural-dev-source \
+  --directory .scratch/natural-dev-matrix \
+  --openrouter-catalog bench/results/pdf-master-artifacts/decisions/lowlevel-v1/basic-final/catalog-prices.json \
+  --gateway-catalog bench/results/pdf-master-artifacts/decisions/langfuse/gateway-catalog-prices.json
+```
+
+Preparation/reporting never construct a credential client. Execution requires
+explicit `--run-hosted` or injected root-owned clients sharing the same ledger.
+`--max-requests N` bounds one resumable slice. Shared `run.lock` serialization
+protects the persistent USD5 L011 admission cap, including failed reservations;
+the clients also retain the campaign-wide cumulative cap. Ledger JSON has a
+separate 64MiB admission, independent of the 200k per-body cap. Successful
+identical provider/body requests replay locally; failed identical requests are
+never automatically retried. A first failure stops that provider/model route
+persistently. Serving-route identity and body SHA are separate, and logical
+records retain their scoring denominators when bodies deduplicate.
+
+CPU-only reports write `report.md` and ignored `report.json` with completed and
+planned pair counts, full-source and scope-specific provisional reference
+agreement, choice/abstention counts, published route-specific rates, positive
+provider charges or labeled estimates, missing-cost counts and known subtotals.
+Reservations do not become charges; reported zeros remain separate. New and
+replayed ledger entries are identified separately. Serial wall/CPU counters and
+process VmHWM include HTTP waiting; provider CPU/RAM remain unmeasured. Scoring
+never modifies source glyphs, images, candidates or reviewed annotations.
