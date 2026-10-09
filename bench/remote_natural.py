@@ -21,7 +21,7 @@ from typing import Any
 from bench.lowlevel_natural import ARMS
 from bench.lowlevel_natural import verify as source_verify
 from bench.lowlevel_run import parse_response
-from bench.remote_report import _dev, _json, _jsonl, _path, _read, _verified
+from bench.remote_report import _choice, _dev, _json, _jsonl, _path, _read, _verified
 
 SOURCE_COUNT = 24
 BODY_COUNT = SOURCE_COUNT * len(ARMS)
@@ -207,18 +207,48 @@ def warm_rates(summary: dict[str, Any], hourly_rate: float | None) -> dict[str, 
     }
 
 
-def evaluate(
+def parse_decision(response: dict[str, Any], *, allow_exploratory_stock: bool = False) -> dict[str, Any]:
+    """Admit stock labels only explicitly, without fabricated native probabilities."""
+    if response.get("backend") != "stock-vllm-json":
+        return parse_response(response, 1)[0]
+    if not allow_exploratory_stock:
+        _fail("Stock generated labels require explicit exploratory opt-in")
+    parsed = _choice(response)
+    answer = response["answers"]["q0"]
+    if set(answer) - {"type", "choice", "decision"} or answer.get("decision", parsed["choice"]) != parsed["choice"]:
+        _fail("Stock label contains unsupported fields or conflicting aliases")
+    return {**parsed, "tie_abstention": False}
+
+
+def concurrent_rates(status: dict[str, Any], completed: int) -> dict[str, Any]:
+    """Use measured global lifecycle/span for concurrent throughput, never latency sums."""
+    values: dict[str, Any] = {"concurrent": bool(status.get("lanes", 1) > 1)}
+    for field in ("wall_seconds", "concurrent_request_span_seconds"):
+        value = status.get(field)
+        valid = isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value > 0
+        values[field] = float(value) if valid else None
+        values[field + "_inputs_per_minute"] = completed * 60 / value if valid else None
+    return values
+
+
+def evaluate(  # noqa: PLR0913 - explicit source/reference and opt-in contracts.
     source_dir: Path,
     packets: Path,
     runs: dict[str, Path],
     *,
     references_dir: Path,
     hourly_rates: dict[str, float] | None = None,
+    allow_exploratory_stock: bool = False,
 ) -> dict[str, Any]:
     """Verify complete source/stage/all-model outputs before local DEV references."""
     source, packet_manifest = _dev(source_dir), _dev(packets)
     manifest, inventory = verify_stage(source, packet_manifest)
     returned = {model: verify_events(_dev(path), inventory) for model, path in runs.items()}
+    for completed, _status in returned.values():
+        if not allow_exploratory_stock and any(
+            event.get("response", {}).get("backend") == "stock-vllm-json" for event in completed.values()
+        ):
+            _fail("Stock generated labels require explicit exploratory opt-in")
     # First reference access: source/stage and every returned model have been checked.
     reference_root = _dev(references_dir)
     reference_manifest = _json(reference_root / "manifest.json")
@@ -272,7 +302,7 @@ def evaluate(
                     counts["worker_error"] += 1
                     continue
                 try:
-                    parsed = parse_response(event["response"], 1)[0]
+                    parsed = parse_decision(event["response"], allow_exploratory_stock=allow_exploratory_stock)
                 except (ValueError, TypeError, KeyError):
                     counts["schema_error"] += 1
                     continue
@@ -297,11 +327,16 @@ def evaluate(
                     "cuda_reserved_bytes": max(reserved, default=None),
                 }
             )
+        worker = status["worker_status"]
+        concurrent = concurrent_rates(worker, sum(row["counts"].get("completed", 0) for row in summaries))
         for summary in summaries:
-            summary.update(warm_rates(summary, (hourly_rates or {}).get(model)))
-        models[model] = {"summaries": summaries, "status": status}
+            summary.update(warm_rates(summary, None if concurrent["concurrent"] else (hourly_rates or {}).get(model)))
+            if concurrent["concurrent"]:
+                summary["warm_region_inputs_per_minute"] = None
+        models[model] = {"summaries": summaries, "status": status, "execution_rates": concurrent}
     return {
         "experiment": "L011-native-dev",
+        "exploratory_stock_labels": allow_exploratory_stock,
         "source_regions": SOURCE_COUNT,
         "inputs_per_model": BODY_COUNT,
         "models": models,
@@ -314,7 +349,8 @@ def evaluate(
 def markdown(result: dict[str, Any]) -> str:
     """Report natural reference agreement without claiming independently reviewed gold."""
     lines = [
-        "# Native natural DEV comparison",
+        "# Natural DEV comparison: explicit exploratory stock labels"
+        if result.get("exploratory_stock_labels") else "# Native natural DEV comparison",
         "",
         result["scope"],
         "",
@@ -393,6 +429,7 @@ def main() -> None:
     parser.add_argument("--markdown", type=Path)
     parser.add_argument("--json", type=Path)
     parser.add_argument("--references-dir", type=Path)
+    parser.add_argument("--allow-exploratory-stock", action="store_true")
     parser.add_argument("--hourly-rate", action="append", default=[], help="model-label=USD-per-hour")
     args = parser.parse_args()
     if args.prepare is not None:
@@ -404,7 +441,10 @@ def main() -> None:
             parser.error("Reporting requires packets, runs, markdown and json")
         runs = {model: Path(path) for model, path in (item.split("=", 1) for item in args.run)}
         rates = {model: float(rate) for model, rate in (item.split("=", 1) for item in args.hourly_rate)}
-        result = evaluate(args.source, args.packets, runs, references_dir=args.references_dir, hourly_rates=rates)
+        result = evaluate(
+            args.source, args.packets, runs, references_dir=args.references_dir,
+            hourly_rates=rates, allow_exploratory_stock=args.allow_exploratory_stock,
+        )
         args.markdown.write_text(markdown(result))
         args.json.write_text(json.dumps(result, indent=2) + "\n")
 

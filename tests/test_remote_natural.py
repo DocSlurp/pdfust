@@ -135,3 +135,31 @@ def test_warm_estimates_preserve_unknowns():
     assert natural.warm_rates(summary, None)["warm_region_inputs_per_estimated_usd"] is None
     with pytest.raises(ValueError, match="finite"):
         natural.warm_rates(summary, float("nan"))
+
+
+def test_stock_labels_require_explicit_opt_in():
+    response = {"backend": "stock-vllm-json", "answers": {"q0": {"type": "choice", "choice": "unresolved"}}}
+    with pytest.raises(ValueError, match="opt-in"):
+        natural.parse_decision(response)
+    parsed = natural.parse_decision(response, allow_exploratory_stock=True)
+    assert parsed["choice"] == "unresolved"
+    assert parsed["probabilities"] is None
+    assert not parsed["tie_abstention"]
+
+
+@pytest.mark.parametrize(
+    "extra", [{"probabilities": {}}, {"confidence": 0.9}, {"decision": "join"}, {"choice": "invented"}]
+)
+def test_stock_invalid_probabilities_and_aliases_refused(extra):
+    response = {"backend": "stock-vllm-json", "answers": {"q0": {"type": "choice", "choice": "split", **extra}}}
+    with pytest.raises(ValueError, match=r"stock|Stock"):
+        natural.parse_decision(response, allow_exploratory_stock=True)
+
+
+def test_concurrent_throughput_uses_global_elapsed():
+    rates = natural.concurrent_rates({"lanes": 8, "wall_seconds": 6, "concurrent_request_span_seconds": 5}, 96)
+    assert rates["wall_seconds_inputs_per_minute"] == 960
+    assert rates["concurrent_request_span_seconds_inputs_per_minute"] == 1152
+    assert rates["concurrent"]
+    unknown = natural.concurrent_rates({"lanes": 8, "wall_seconds": float("nan")}, 96)
+    assert unknown["wall_seconds_inputs_per_minute"] is None
