@@ -350,3 +350,44 @@ semantic templates remain narrow DEV evidence. Heldout untouched.
 - Frozen strict source-ID, shape, span and text agreement between SLANet and T005 accepts seven correct tables, zero wrong scored tables and zero prose false positives, deferring nine positives. Two accepted ambiguous pages remain unscored. A retained PPLX gate conjunction is an offline routing simulation, with no new cost or latency claim. See [agreement results](bench/results/specialist-agreement.md).
 - Image matrix spans 200/300/400/500/600/800 px, separate width/height/longest-edge controls, RGB8/gray8/palette4 and four models. At the 06:04 snapshot, 839/936 unique regular batches completed with no failures; 624 independently frozen anisotropic batches are queued. Exact geometric aliases share quality only, never provider-cache or throughput credit. See [live snapshot](bench/results/image-axes-progress.md).
 - Fixed raw-string metadata scanning of legal compact `>>stream` delimiters. Existing prototype measurements remain historical; new derivative metadata will use the corrected scanner. Thirteen metadata tests pass.
+
+### 2026-10-09 06:08 UTC — expanded extent selection result
+
+T005 source-only local-gap extent proposals plus the unchanged semantic prompt and
+512 px source image completed 56 requests on reviewed DEV28. PPLX selected all
+16/16 positive tables exactly, with zero incorrectly accepted tables and 0/8 prose
+false tables. Luna selected 9/16 exactly, incorrectly accepted four positive
+matrices, and produced 0/8 prose false tables. Four ambiguous pages stay unscored.
+All source IDs are conserved. The two-model run cost USD 0.04573798. PPLX measured
+2,771 requested pages/USD and 36.3 pages per summed HTTP minute; Luna measured
+786 pages/USD and 154.1 pages per summed HTTP minute. Native preparation and
+provider latency remain separate from end-to-end throughput. See
+[complete results](bench/results/rolling-extent-admission.md).
+
+This improvement came from candidate coverage/extent repair, not added confidence
+thresholds. Preserve the earlier menus as ablations. Preparing an instruction-only
+transfer of two already-frozen generic prompts to the expanded menu tests whether
+Luna's residual selection errors respond to cross-cell or reading-order evidence.
+
+### 2026-10-09 06:16 UTC — reviewed training derivatives and conditional image scope
+
+- Selected 16 frozen v3.1 TRAINING derivatives after Astra reviewed every paired
+  source/render. Ten source genres, five language categories and five layout
+  categories are represented. All 5,117 extracted words remain within page bounds;
+  no word centers lie inside true masks; all 16 metadata scans succeed. Versioned
+  registries retain scalar/page PDF, image, string-byte and text/noise measurements.
+  Photos, handwriting, French content and exact table internals remain approximate.
+  The corpus remains research-only and parent-linked. See
+  [review and gallery](bench/results/omnidoc-training.md).
+- The complete regular size/axis matrix used 936 unique requests and USD
+  0.53657136 effective for 4,320 transmitted case inputs. The 30 cases deliberately
+  require reading document conventions printed on the page: this is conditional
+  synthetic cue-reading, not natural-table extraction. Artwork is achromatic,
+  limiting conclusions about grayscale. Scope now appears in regenerated reports.
+- [Per-case analysis](bench/results/image-axis-interpretation.md) preserves older
+  arms and complementary failures. A 30/30 oracle combination falls back to 27/30
+  under a naive routing rule because three repaired cases accompany three lost
+  justified abstentions. This is an arbitration hypothesis, not an achieved gain.
+- Full checks: 2,027 passed, 16 skipped, two expected failures with the explicit
+  installed Rust compiler. Subsequent training/metadata changes pass 23 focused
+  tests; image reporting passes five tests. Ruff and mypy are clean.

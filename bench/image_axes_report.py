@@ -161,6 +161,8 @@ def snapshot(directory: Path) -> dict[str, Any]:
     all_actual = [r for r in result["batches"] if _identity(r) in declared_batch_ids]
     return {
         "directory": str(directory),
+        "task": manifest.get("task"),
+        "dev_status": manifest.get("dev_status"),
         "manifest_sha256": hashlib.sha256(manifest_raw).hexdigest(),
         "results_sha256": hashlib.sha256(result_raw).hexdigest(),
         "snapshot_unix_seconds": time.time(),
@@ -232,6 +234,18 @@ def markdown(snapshots: list[dict[str, Any]]) -> str:
     ]
     for snapshot_data in snapshots:
         totals = snapshot_data["provider_observations"]
+        if snapshot_data.get("task") == "context-assembly":
+            lines.extend(
+                [
+                    (
+                        "**Scope:** Conditional synthetic convention-reading probes. Full-page images contain "
+                        "explicit document-convention notes; scores do not establish natural-table extraction "
+                        "or general image usefulness. Artwork is achromatic, so grayscale comparisons do not "
+                        "establish behavior on colored documents."
+                    ),
+                    "",
+                ]
+            )
         lines.extend(
             [
                 f"Artifact: `{snapshot_data['directory']}`.",
