@@ -3,7 +3,7 @@
 import json
 
 from bench.decision_context_cases import context_cases, evidence_modes
-from bench.decision_context_compact import local_state, make_request
+from bench.decision_context_compact import local_state, make_fact_request, make_request
 
 
 def test_raw_compact_omits_gold_and_derived_facts() -> None:
@@ -54,3 +54,20 @@ def test_reversal_changes_order_only() -> None:
     assert forward == reverse
     assert list(forward["questions"]["q0"]["criteria"]) == ["A", "B", "unresolved"]
     assert list(reverse["questions"]["q0"]["criteria"]) == ["B", "A", "unresolved"]
+
+
+def test_fact_verbalization_preserves_observable_distinctions() -> None:
+    cases = context_cases()
+    joined = make_fact_request(evidence_modes(cases[0], "native"), "dev")
+    split = make_fact_request(evidence_modes(cases[1], "native"), "dev")
+    assert "above both" in joined["state"]
+    assert "below both" in joined["state"]
+    assert "between the first and second" in split["state"]
+    for index in (0, 2):
+        assert make_fact_request(evidence_modes(cases[index], "current"), "dev") == make_fact_request(
+            evidence_modes(cases[index + 1], "current"), "dev"
+        )
+    assert (
+        max(len(json.dumps(make_fact_request(evidence_modes(case, "native"), "dev")).encode()) for case in cases) < 2000
+    )
+    assert "gold" not in json.dumps(joined)
