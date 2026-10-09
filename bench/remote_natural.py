@@ -145,6 +145,50 @@ def verify_stage(source: Path, packets: Path) -> tuple[dict[str, Any], dict[str,
     return manifest, expected
 
 
+def verify_identity_stage(
+    source: Path, packets: Path, original_packets: Path, provenance_file: Path
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Admit only the frozen generic identity wording with exact source state/images."""
+    from bench import remote_prompt_packets  # noqa: PLC0415 - opt-in prompt-only projection.
+
+    manifest, original = verify_stage(source, original_packets)
+    provenance = _json(provenance_file)
+    if provenance.get("variant") != "identity":
+        _fail("Natural projection must declare identity variant")
+    _verified(Path(remote_prompt_packets.__file__), provenance["transform_source_sha256"])
+    staged = _json(packets)
+    mapping = provenance["mapping"]
+    if set(staged) != {"records"} or len(mapping) != BODY_COUNT or len(staged["records"]) != BODY_COUNT:
+        _fail("Natural identity projection inventory differs")
+    projected: dict[str, Any] = {}
+    rows = {row["id"]: row for row in staged["records"]}
+    source_ids = set()
+    for fact in mapping:
+        source_id, ident = fact["source_id"], fact["id"]
+        if source_id not in original or source_id in source_ids or ident in projected or ident not in rows:
+            _fail("Natural identity source mapping differs")
+        source_ids.add(source_id)
+        parent = original[source_id]
+        original_bytes = parent["request_bytes"]
+        if _digest(original_bytes) != fact["source_sha256"]:
+            _fail("Natural identity original hash differs")
+        expected = remote_prompt_packets._encode(  # noqa: SLF001 - exact authorized frozen serializer.
+            remote_prompt_packets.transform(json.loads(original_bytes), "identity")
+        )
+        row = rows[ident]
+        if set(row) != {"id", "request_file", "image_files"} or len(row["image_files"]) != 1:
+            _fail("Natural identity worker schema differs")
+        raw = _verified(_path(packets.parent, row["request_file"]), fact["request_sha256"])
+        if raw != expected or ident != _digest(raw)[:24]:
+            _fail("Natural identity request differs from exact generic transform")
+        if _read(_path(packets.parent, row["image_files"][0])) != parent["image_bytes"]:
+            _fail("Natural identity image differs")
+        projected[ident] = {**parent, "id": ident, "record": {**parent["record"], "sha256": _digest(raw)}}
+    if source_ids != set(original) or set(projected) != set(rows):
+        _fail("Natural identity projection coverage differs")
+    return manifest, projected
+
+
 def verify_events(output: Path, inventory: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """Verify every returned identity and request hash before references."""
     status = _json(output / "status.json")
@@ -237,8 +281,9 @@ def concurrent_rates(status: dict[str, Any], completed: int) -> dict[str, Any]:
 def sampled_resources(output: Path) -> dict[str, Any]:
     """Retain simultaneous union RSS/observed CPU and device-wide GPU samples."""
     sample_path = output / "process-samples.jsonl"
-    samples, _ = _jsonl(sample_path) if sample_path.exists() else ([], False)
-    gpu, _ = _jsonl(output / "gpu-samples.jsonl") if (output / "gpu-samples.jsonl").exists() else ([], False)
+    samples, _ = _jsonl(sample_path, allow_incomplete_tail=False) if sample_path.exists() else ([], False)
+    gpu_path = output / "gpu-samples.jsonl"
+    gpu, _ = _jsonl(gpu_path, allow_incomplete_tail=False) if gpu_path.exists() else ([], False)
     values = []
     for sample in gpu:
         raw = sample.get("raw_csv")
@@ -273,10 +318,19 @@ def evaluate(  # noqa: PLR0913 - explicit source/reference and opt-in contracts.
     references_dir: Path,
     hourly_rates: dict[str, float] | None = None,
     allow_exploratory_stock: bool = False,
+    original_packets: Path | None = None,
+    projection_provenance: Path | None = None,
 ) -> dict[str, Any]:
     """Verify complete source/stage/all-model outputs before local DEV references."""
     source, packet_manifest = _dev(source_dir), _dev(packets)
-    manifest, inventory = verify_stage(source, packet_manifest)
+    if original_packets is None and projection_provenance is None:
+        manifest, inventory = verify_stage(source, packet_manifest)
+    elif original_packets is not None and projection_provenance is not None:
+        manifest, inventory = verify_identity_stage(
+            source, packet_manifest, _dev(original_packets), _dev(projection_provenance)
+        )
+    else:
+        _fail("Natural identity projection requires original packets and provenance")
     returned = {model: verify_events(_dev(path), inventory) for model, path in runs.items()}
     for completed, _status in returned.values():
         if not allow_exploratory_stock and any(
@@ -381,6 +435,7 @@ def evaluate(  # noqa: PLR0913 - explicit source/reference and opt-in contracts.
     return {
         "experiment": "L011-native-dev",
         "exploratory_stock_labels": allow_exploratory_stock,
+        "prompt_projection": "identity" if projection_provenance is not None else None,
         "source_regions": SOURCE_COUNT,
         "inputs_per_model": BODY_COUNT,
         "models": models,
@@ -399,7 +454,9 @@ def markdown(result: dict[str, Any]) -> str:
         result["scope"],
         "",
         (
-            "Original96 L011 request bodies and PNGs are unchanged. Source preparation read no references; "
+            "L011 source PNGs and literal state are unchanged; declared identity wording was verified exactly. "
+            if result.get("prompt_projection") else
+            "Original 96 L011 request bodies and PNGs are unchanged. Source preparation read no references; "
             "all staged/returned hashes were verified before references were opened locally. "
             "Full-source reference agreement and admitted-scope agreement are separate measurements."
         ),
@@ -473,6 +530,8 @@ def main() -> None:
     parser.add_argument("--markdown", type=Path)
     parser.add_argument("--json", type=Path)
     parser.add_argument("--references-dir", type=Path)
+    parser.add_argument("--original-packets", type=Path)
+    parser.add_argument("--projection-provenance", type=Path)
     parser.add_argument("--allow-exploratory-stock", action="store_true")
     parser.add_argument("--hourly-rate", action="append", default=[], help="model-label=USD-per-hour")
     args = parser.parse_args()
@@ -488,6 +547,7 @@ def main() -> None:
         result = evaluate(
             args.source, args.packets, runs, references_dir=args.references_dir,
             hourly_rates=rates, allow_exploratory_stock=args.allow_exploratory_stock,
+            original_packets=args.original_packets, projection_provenance=args.projection_provenance,
         )
         args.markdown.write_text(markdown(result))
         args.json.write_text(json.dumps(result, indent=2) + "\n")

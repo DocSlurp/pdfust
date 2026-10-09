@@ -2,9 +2,11 @@
 import base64
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
 from bench import remote_natural as natural
+from bench import remote_prompt_packets
 
 
 def source(tmp_path, monkeypatch):
@@ -163,3 +165,50 @@ def test_concurrent_throughput_uses_global_elapsed():
     assert rates["concurrent"]
     unknown = natural.concurrent_rates({"lanes": 8, "wall_seconds": float("nan")}, 96)
     assert unknown["wall_seconds_inputs_per_minute"] is None
+
+
+def test_sampled_resources_use_union_not_child_peak_sum(tmp_path):
+    (tmp_path / "process-samples.jsonl").write_text(json.dumps({
+        "rss_sum_bytes": 100, "observed_cpu_cumulative_seconds": 2.5
+    }) + "\n")
+    (tmp_path / "gpu-samples.jsonl").write_text(json.dumps({"raw_csv": "0, 75, 1234, 9999\n"}) + "\n")
+    values = natural.sampled_resources(tmp_path)
+    assert values["sampled_union_peak_rss_bytes"] == 100
+    assert values["sampled_observed_cpu_seconds"] == 2.5
+    assert values["gpu_mean_utilization_percent"] == 75
+    assert values["gpu_peak_device_mib"] == 1234
+
+
+@pytest.mark.parametrize("mutation", [None, "state", "image"])
+def test_identity_projection_preserves_source_evidence(tmp_path, monkeypatch, mutation):
+    original = json.dumps({
+        "model": "transport", "state": "literal source",
+        "questions": {"q0": {"type": "choice", "instructions": "original",
+                               "criteria": {"join": "one", "split": "two", "unresolved": "unknown"}}},
+    }).encode()
+    parent = {"request_bytes": original, "image_bytes": b"PNG", "record": {"sha256": "original"}}
+    monkeypatch.setattr(natural, "verify_stage", lambda *_: ({"source": True}, {"parent": parent}))
+    monkeypatch.setattr(natural, "BODY_COUNT", 1)
+    expected = remote_prompt_packets.transform(json.loads(original), "identity")
+    if mutation == "state":
+        expected["state"] = "altered"
+    raw = remote_prompt_packets._encode(expected)
+    ident = hashlib.sha256(raw).hexdigest()[:24]
+    (tmp_path / "body.json").write_bytes(raw)
+    (tmp_path / "image.png").write_bytes(b"altered" if mutation == "image" else b"PNG")
+    (tmp_path / "manifest.json").write_text(json.dumps({"records": [{
+        "id": ident, "request_file": "body.json", "image_files": ["image.png"]
+    }]}))
+    (tmp_path / "provenance.json").write_text(json.dumps({
+        "variant": "identity",
+        "transform_source_sha256": hashlib.sha256(Path(remote_prompt_packets.__file__).read_bytes()).hexdigest(),
+        "mapping": [{"id": ident, "source_id": "parent", "source_sha256": hashlib.sha256(original).hexdigest(),
+                     "request_sha256": hashlib.sha256(raw).hexdigest()}],
+    }))
+    args = (tmp_path, tmp_path / "manifest.json", tmp_path, tmp_path / "provenance.json")
+    if mutation is None:
+        _, inventory = natural.verify_identity_stage(*args)
+        assert inventory[ident]["record"]["sha256"] == hashlib.sha256(raw).hexdigest()
+    else:
+        with pytest.raises(ValueError, match="differs"):
+            natural.verify_identity_stage(*args)
