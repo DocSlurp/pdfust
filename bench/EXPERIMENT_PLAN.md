@@ -136,3 +136,120 @@ Compare a valid-operation oracle, native policy, and model-selected sequence;
 score final structure plus rejected/undo operations. This is pending experimental
 infrastructure, not a production editing API. R001/R002 supplement ongoing
 images/caching; they do not replace those experiments or relax sealed-set rules.
+
+## Next-wave hypotheses after the 2026-10-09 remote DEV comparisons
+
+**Planned work; none of the experiments in this appendix has been executed.**
+The earlier rankings and completed options above remain retained comparisons,
+not a deployment selection. This appendix prioritizes tests of insufficient
+source evidence before more throughput tuning. It uses authored and natural DEV
+only; no sealed collection is accessed or scored.
+
+The frozen geometry gate resolves 8/16 known authored cases with zero wrong
+choices and abstains on all eight ambiguous cases, but also abstains on every
+natural condition, including 52 answerable conditions. Supplemental numeric
+geometry can reduce Qwen's abstention, so adding accurate measurements does not
+by itself teach evidence sufficiency. Generic identity wording improves Flash's
+natural ambiguous-scope abstention from 5/44 to 19/44, while known-scope correct
+choices fall from 35/52 to 32/52 and known abstentions rise. Intern's known score
+is stable at image edges at least 256 px in the fresh authored matrix; that is
+not evidence of a universal preprocessing floor or sufficient natural context.
+Native Flash batch size two preserves all 216 singleton choices with an 8.1%
+warm throughput improvement. Larger Clef batches lose quality in the retained
+comparison. These findings motivate the paired controls below rather than one
+combined “best” configuration.
+
+### Freeze a broader DEV cohort before scoring
+
+Use at least six source families: wrapped product descriptions, sparse forms,
+dense ruled ledgers, borderless repeated records, multicolumn prose and OCR text
+layers. Include multiple independently produced or redistributable natural
+sources per family where feasible, with clean text and difficult raster cases
+reported separately. Keep the existing authored 24 and natural 24 regions as
+regression cohorts; 96 natural crop conditions remain treatments of one source
+page, not 96 independent documents. Report producer/document clustering and the
+available independent-document count before interpreting uncertainty.
+
+Choose all eligible regions with source-only, fixed geometric/admission rules
+and bounded per-document counts. Freeze source PDFs, retained target selectors,
+context windows, availability features, rendering parameters, prompts, model
+revisions, thresholds and planned treatment inventory before opening the new
+references. Reference review should distinguish full-source structure from what
+each admitted crop can establish, including genuine alternatives and reviewer
+uncertainty. Candidate recall and source conservation are separate gates:
+reject incomplete menus instead of attributing their errors to model selection.
+No private reference, intended family label or case-specific answer appears in
+an inference packet.
+
+| Priority | Hypothesis | Paired controls | Advance or reject rule |
+|---|---|---|---|
+| 1 | A source-availability legend improves abstention by distinguishing observed structure from absent context. | Original versus fixed identity wording, crossed with no legend versus a compact legend of measured availability; use identical state, crop and decision options. Retain raw numerics alone as a separate older control. | Advance a legend only if ambiguous abstention improves by at least 10 percentage points on the broader DEV cohort, wrong-known rate does not increase and known-correct loss is at most 2 points. Report family-level reversals and intervals; retain a tradeoff as experimental if these gates conflict. |
+| 2 | Adjacent record context and rolling-row evidence recover some abstentions without turning proximity into a same-cell claim. | Description-only crop, fixed immediate context and a bounded rolling window (one versus three neighboring rows), at fixed render scale; separately compare fixed long edge. Cross the strongest frozen wording with the same contextual controls. | Advance context only with a net gain in known exact partitions, no increase in wrong-known decisions and no reduction in ambiguous abstention. A fixed-edge gain without a fixed-scale gain remains a context/legibility confound. |
+| 3 | A conservative geometry gate plus model fallback improves coverage while preserving visible structural certainty. | Native extraction proxy; frozen geometry only; model only; geometry gate then model on unresolved cases; and geometry with fixed availability legend but no automatic semantic override. | Require zero new wrong choices among geometry-admitted cases and source conservation throughout. Compare overall correctness/abstention with model-only and geometry-only. Reject routing if it increases wrong-known rate; abstention is an acceptable final output when alternatives survive. |
+| 4 | Independent disagreement can catch insufficient evidence more reliably than one confident distribution. | Fixed Flash/PPLX consensus, Intern/Flash consensus and three-model unanimity, alongside each single model and the already declared majority rule. Freeze choices before any reference analysis. | Advance a consensus only when its reduction in wrong-known decisions and gain in ambiguous abstention justify measured correct-known losses and all additional calls. Confidence remains uncalibrated; an oracle union is an unattainable ceiling, never a runnable selector. |
+| 5 | Small images and true batching reduce cost after evidence admission without changing decisions. | Intern at 256 versus 500/512 px on identical scopes; Flash native batch sizes one/two/four; Clef singleton versus separately admitted small batches. Cross only frozen evidence policies, with matched batch composition and padded-length measurements. | Require exact categorical and source-partition parity on all retained regressions and the broader paired cohort, with zero new errors and a repeatable end-to-end throughput or cost improvement. Keep singleton Clef when batch quality fails. A changed answer is a quality intervention, not a pure speedup. |
+
+An availability legend contains observations such as whether neighboring rows,
+column anchors, complete separating rules, target glyphs and required context
+were admitted. It never says “answerable,” supplies a reference-derived choice
+or treats a gap as semantic proof. Geometric support should name its source and
+limits: a complete visible rule is different from a hybrid inferred cell;
+whitespace continuity and alignment permit alternatives. The model should
+retain unresolved when either relation remains compatible with the supplied
+source. Text projection and rendered pixels should agree on the admitted scope.
+
+For rolling-row tests, define window boundaries and clipped-neighbor flags from
+the PDF before scoring. Preserve the original target pair as the sole decision
+unit; surrounding rows are evidence, not extra answers to count. Include text
+plus geometry, crop-only and combined packets where supported. Keep missing
+source operators, glyph mappings and unsupported modalities explicit instead of
+silently imputing them. Representation refusals, including the initial numeric
+packet failures, retain their original statuses and costs in separate protocols.
+
+### Combine techniques without selecting answers from references
+
+First diagnose retained misses by fixed source-feature strata: available versus
+missing context, inline versus block relation, complete versus partial rules,
+text-layer reliability and admitted neighboring anchors. Publish counts for
+all planned regions, including correctly handled ones. This can identify a
+family of evidence failures; it cannot justify a per-case reference oracle or
+exclusion of difficult inputs. A later routing policy may inspect only those
+source features, with thresholds frozen on DEV before its next comparison.
+
+Add one mechanism at a time before testing the full combination. In particular,
+compare the same identity wording with and without availability legends before
+adding wider context or automatic geometry routing. Retain original wording,
+raw geometry, moderate image edges and the older model arms. Use the same model
+revision and native head/calibration for paired prompts. Keep stock generated
+labels separate from native probability outputs; no confidence threshold is
+accepted as calibrated correctness without its own frozen study.
+
+Report known exactness, wrong-known decisions, known abstentions, ambiguous
+abstentions and complete source partitions with their full planned denominators.
+Separate true evidence ambiguity, missed candidates, schema/refusal errors and
+missing results. Require conservation of source IDs and retain literal outputs;
+correct two-chunk grouping does not claim full record/table reconstruction.
+Report each document/family as well as pooled correlated render treatments.
+Any numerical promotion thresholds above are predeclared DEV screening rules,
+not significance claims or automatic production authorization.
+
+Measure the complete path: source interpretation, fresh rendering, qualifier
+extraction, packet creation, routing and every attempted inference call. A
+geometry bypass pays its preprocessing cost; a disagreement rule pays both
+model calls on every input because it cannot observe disagreement in advance.
+Use matched GPU/runtime/concurrency settings, randomized blocked order and at
+least three timing repeats once CPU-only preparation and compatibility pass.
+Separate cold initialization, warm prediction, serial latency, concurrent global
+wall/span and actual native batch work. A shared-server concurrent throughput
+uses elapsed span, never the sum of overlapping request latencies.
+
+Retain CPU time, sampled simultaneous process-tree RSS, native allocator peaks,
+device utilization, actual pixels/PNG bytes and reported model tokens when
+available. Record sampling interval and process scope; absent usage stays
+unknown. Price published-rate warm estimates separately from positive billed
+charges, failed/interrupted attempts, idle/loading time and unresolved ledger
+reservations. Compare correct known regions and successfully handled ambiguous
+regions per measured complete-path second and labeled estimated USD, alongside
+raw inputs/min; none of these is full-page extraction throughput. New inference
+requires a separately frozen wave and root's shared-budget coordination; this
+planning appendix creates no calls or spending.
