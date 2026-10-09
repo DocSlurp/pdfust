@@ -376,7 +376,7 @@ def build_v2(output: Path, registry_path: Path) -> dict[str, Any]:
 
 
 REALISM_DESIGN = {
-    "version": 3,
+    "version": "3.1",
     "split": "TRAINING",
     "authoring_inputs": "frozen envelopes, categories, language/genre, image-only line/grid/color measurements",
     "excluded_inputs": "recognition text, HTML, LaTeX, source prose, source photographs, model outputs",
@@ -641,6 +641,7 @@ def realistic_recipe(contract: dict[str, Any], style: dict[str, Any], index: int
             )
         else:
             vertical = cjk and height > width * 4 and style["genre"] == "historical_document"
+            vertical_latin = not cjk and width < 12 and height > width * 4
             line_count = min(100, max(1, profile.get("line_count", 1)))
             if vertical:
                 size = min(width * 0.85, 12)
@@ -662,6 +663,10 @@ def realistic_recipe(contract: dict[str, Any], style: dict[str, Any], index: int
                 font = "hebo" if font == "helv" else "tibo"
             chars = max(1, int(width / (size * (1.0 if cjk else 0.49))))
             text = _authored_text(index, number, style["language"], category, chars * line_count)
+            if vertical_latin:
+                text = "Aster field records"
+                size = min(width * 0.75, height / (len(text) * 0.58))
+                leading = size * 1.2
             if style["genre"] == "PPT2PDF" and category == "header":
                 text = "SEASONAL FIELD REVIEW\nHarbor Instruments and Sampling\nMaintenance and Reporting"
                 line_count = 3
@@ -671,7 +676,9 @@ def realistic_recipe(contract: dict[str, Any], style: dict[str, Any], index: int
                 longest = max(len(line) for line in text.splitlines())
                 size = min(size, width / max(1, longest * (1 if cjk else 0.58)))
                 chars = max(1, int(width / (size * (1.0 if cjk else 0.49))))
-            if vertical:
+            if vertical_latin:
+                lines = [text]
+            elif vertical:
                 lines = list(text[:line_count])
             elif cjk:
                 lines = [text[start : start + chars] for start in range(0, min(len(text), chars * line_count), chars)]
@@ -692,6 +699,7 @@ def realistic_recipe(contract: dict[str, Any], style: dict[str, Any], index: int
                 font=font,
                 cjk=cjk,
                 vertical=vertical,
+                vertical_latin=vertical_latin,
                 color=foreground,
                 background=profile.get("background", [255, 255, 255]),
             )
@@ -850,6 +858,13 @@ def _realism_pdf(recipe: dict[str, Any], font_bytes: bytes) -> bytes:
             background = block["background"]
             if max(background) - min(background) > 30 and min(background) > 200 and max(background) >= 245:
                 rectangle(block["bbox"], background)
+            if block.get("vertical_latin"):
+                size = block["font_size"]
+                ops.append(
+                    f"BT /{font_names[block['font']]} {size} Tf 0 1 -1 0 "
+                    f"{x1 - size * 0.2} {height - y1 + 0.2} Tm (Aster field records) Tj ET"
+                )
+                continue
             for n, line in enumerate(block["lines"]):
                 # Clip each authored block to prevent envelope collisions.
                 ops.append(f"q {x0} {height - y1} {width} {bh} re W n")
@@ -925,7 +940,7 @@ def build(output: Path, registry_path: Path) -> dict[str, Any]:
         raise ValueError("Frozen parent geometry checksum mismatch")
     if registry_path.exists():
         raise ValueError("Synthetic registry already exists; use a new version path")
-    destination = output / "synthetic-v3"
+    destination = output / f"synthetic-v{REALISM_DESIGN['version']}"
     destination.mkdir(exist_ok=False)
     contracts = json.loads(contract_raw)["pages"]
     font_bytes = CJK_FONT.read_bytes()
