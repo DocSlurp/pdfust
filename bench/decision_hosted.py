@@ -210,7 +210,7 @@ def request_body(model: str, cases: list[dict[str, Any]], variant: str) -> dict[
         "required": ["answers"],
         "additionalProperties": False,
     }
-    return {
+    body = {
         "model": model,
         "temperature": 0,
         "max_tokens": MAX_OUTPUT_TOKENS,
@@ -229,6 +229,11 @@ def request_body(model: str, cases: list[dict[str, Any]], variant: str) -> dict[
             "json_schema": {"name": "pdf_decisions", "strict": True, "schema": schema},
         },
     }
+    if model in ANTHROPIC_BASELINE_MODELS:
+        body.pop("temperature")
+        body["reasoning"] = {"effort": "medium"}
+        body["max_tokens"] = 4096
+    return body
 
 
 def parse_answers(model: str, result: dict[str, Any], count: int) -> list[dict[str, float]]:

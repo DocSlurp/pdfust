@@ -354,3 +354,12 @@ def test_larger_reservation_cannot_cross_campaign_cap(
         client.request(body(), tag="larger-over-cap", reservation_usd=1.25)
     transmit.assert_not_called()
     assert not client.ledger.exists()
+
+
+@pytest.mark.parametrize("model", hosted.ANTHROPIC_BASELINE_MODELS)
+def test_claude55_relationship_requests_use_supported_reasoning_settings(model: str) -> None:
+    request = hosted.request_body(model, [], "rich")
+    assert "temperature" not in request
+    assert request["reasoning"] == {"effort": "medium"}
+    assert request["max_tokens"] == 4096
+    assert request["response_format"]["type"] == "json_schema"
