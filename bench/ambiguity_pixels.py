@@ -18,7 +18,7 @@ from typing import Any
 
 from PIL import Image
 
-SCHEMA = "source-ambiguity-pixels-v1"
+SCHEMA = "source-ambiguity-pixels-v2"
 EDGE = 640
 MAX_IMAGE_PIXELS = 1_048_576
 MAX_PAGE_RENDER_PIXELS = 16_000_000
@@ -27,6 +27,8 @@ POLICY: dict[str, Any] = {
     "schema": SCHEMA,
     "render_longest_edge": EDGE,
     "candidate_corridor": "between selector centers; ink-edge gap remains a separate diagnostic",
+    "inline_baseline_tolerance_scale": 0.3,
+    "axis_policy": "transpose scan axes for targets sharing a baseline; preserve actual source footprint",
     "dark_channel_max": 120,
     "white_channel_min": 239,
     "rule_coverage_min": 0.85,
@@ -75,7 +77,7 @@ def _runs(flags: list[bool]) -> list[tuple[int, int]]:
     return result
 
 
-def analyze(
+def _analyze_horizontal(
     image: Image.Image,
     target_boxes: list[list[float]],
     *,
@@ -129,7 +131,8 @@ def analyze(
     boundary = (corridor_top + corridor_bottom) / 2
     center = min(image.height - 1, max(0, round((boundary - bbox[1]) * sy)))
     radius = max(1, round(font_px * 0.75))
-    y0, y1 = max(0, center - radius), min(image.height, center + radius + 1)
+    y0 = max(0, min(center - radius, math.floor((corridor_top - bbox[1]) * sy)))
+    y1 = min(image.height, max(center + radius + 1, math.ceil((corridor_bottom - bbox[1]) * sy)))
     rgba = image.convert("RGBA")
     rgb = Image.alpha_composite(Image.new("RGBA", image.size, "white"), rgba).convert("RGB")
     pixels: Any = rgb.load()
@@ -243,6 +246,74 @@ def analyze(
         },
         "policy_sha256": hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest(),
     }
+
+
+def analyze(
+    image: Image.Image,
+    target_boxes: list[list[float]],
+    *,
+    image_bbox: list[float],
+    font_scale: float | None = None,
+) -> dict[str, Any]:
+    """Use an inline or block corridor with unchanged actual source footprint."""
+    if len(target_boxes) != 2:
+        _fail("Pixel candidate requires exactly two selectors")
+    boxes = [_box(box) for box in target_boxes]
+    bbox = _box(image_bbox)
+    centers = [((box[0] + box[2]) / 2, (box[1] + box[3]) / 2) for box in boxes]
+    height = float(median(box[3] - box[1] for box in boxes))
+    inline = abs(centers[0][1] - centers[1][1]) <= POLICY["inline_baseline_tolerance_scale"] * height
+    if not inline:
+        result = _analyze_horizontal(image, boxes, image_bbox=bbox, font_scale=font_scale)
+        result["features"]["axis_inline"] = False
+        return result
+    if image.width * image.height > MAX_IMAGE_PIXELS:
+        _fail("Pixel candidate/image exceeds admission")
+
+    def swap(box: list[float]) -> list[float]:
+        return [box[1], box[0], box[3], box[2]]
+
+    result = _analyze_horizontal(
+        image.transpose(Image.Transpose.TRANSPOSE),
+        [swap(box) for box in boxes],
+        image_bbox=swap(bbox),
+        font_scale=font_scale if font_scale is not None else height,
+    )
+    features = result["features"]
+    if font_scale is None:
+        features["normalization_source"] = "selector_height"
+        result["qualifiers"]["insufficiency"].append("font_scale_unmeasured_selector_height_surrogate")
+    features["axis_inline"] = True
+    renames = {
+        "horizontal_whitespace_valley": "vertical_whitespace_valley",
+        "horizontal_rule_coverage": "vertical_rule_coverage",
+        "thin_horizontal_rule_count": "thin_vertical_rule_count",
+        "vertical_crossing_count": "horizontal_crossing_count",
+        "baseline_gap_em": "inline_center_gap_em",
+        "selector_ink_gap_em": "inline_gap_em",
+    }
+    for old, new in renames.items():
+        if old in features:
+            features[new] = features.pop(old)
+    if "dark_border_contact" in features:
+        old = features["dark_border_contact"]
+        features["dark_border_contact"] = {
+            "top": old["left"],
+            "bottom": old["right"],
+            "left": old["top"],
+            "right": old["bottom"],
+        }
+    result["scope"]["image_bbox"] = bbox
+    result["scope"]["target_boxes"] = boxes
+    result["scope"]["actual_pixels"] = list(image.size)
+    for key in ("boundary_corridor", "analyzed_pixel_window"):
+        if result["scope"].get(key) is not None:
+            result["scope"][key] = swap(result["scope"][key])
+    result["qualifiers"]["visible_boundary_support"] = [
+        "thin_vertical_dark_separator" if reason == "thin_horizontal_dark_separator" else reason
+        for reason in result["qualifiers"]["visible_boundary_support"]
+    ]
+    return result
 
 
 def extract(

@@ -93,13 +93,15 @@ def test_bounds_and_protected_source_refused(tmp_path):
         pixels.extract(tmp_path / "heldout-silver" / "source.pdf", BOXES)
 
 
-def test_inline_character_candidate_is_explicitly_unavailable():
+def test_inline_character_candidate_uses_vertical_scan():
     result = pixels.analyze(
         Image.new("RGB", (200, 100), "white"), [[10, 20, 60, 40], [70, 20, 190, 40]], image_bbox=BBOX
     )
-    assert not result["features"]["available"]
+    assert result["features"]["available"]
+    assert result["features"]["axis_inline"]
+    assert result["features"]["inline_gap_em"] > 0
     assert result["qualifiers"]["choice"] == "unresolved"
-    assert result["scope"]["boundary_corridor"] is None
+    assert result["scope"]["actual_pixels"] == [200, 100]
 
 
 def test_fresh_pdf_crop_keeps_exact_display_coverage(tmp_path):
@@ -117,3 +119,13 @@ def test_fresh_pdf_crop_keeps_exact_display_coverage(tmp_path):
     assert result["features"]["available"]
     assert result["qualifiers"]["choice"] == "unresolved"
     assert len(result["provenance"]["source_sha256"]) == 64
+
+
+def test_inline_vertical_rule_preserves_source_axes():
+    image = Image.new("RGB", (200, 100), "white")
+    ImageDraw.Draw(image).line((65, 20, 65, 39), fill="black", width=1)
+    result = pixels.analyze(image, [[10, 20, 60, 40], [70, 20, 190, 40]], image_bbox=BBOX)
+    assert result["features"]["thin_vertical_rule_count"] == 1
+    assert "thin_vertical_dark_separator" in result["qualifiers"]["visible_boundary_support"]
+    assert result["qualifiers"]["choice"] == "unresolved"
+    assert result["scope"]["image_bbox"] == BBOX
