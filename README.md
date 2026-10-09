@@ -291,6 +291,13 @@ inspect them.
 
 ## Experimental relationship decisions (opt-in)
 
+The [P001 complete-pipeline study](bench/results/pipeline-p001.md) now measures
+PDF input through source discovery, candidate assembly, model decisions, validated
+table JSON and Markdown. Its frozen DEV corpus has 181 pages: 168 with table
+structure references and 13 diagnostic pages. See the [experiment contract](bench/PIPELINE_EXPERIMENTS.md)
+for the 32-page balanced pilot, resource measurements, cost rules and limitations.
+These results are exploratory; general prose, math and form semantics are not gold-scored.
+
 The private DEV experiments below ask hosted models to group **two selected
 source-text chunks**. They evaluate word boundaries and description-row
 ownership on small authored controls; they do not measure complete PDF

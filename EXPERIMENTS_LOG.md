@@ -1103,3 +1103,35 @@ plan is documented but unexecuted in `bench/EXPERIMENT_PLAN.md`. Local validatio
 259 targeted CPU tests passed; Ruff and strict mypy passed for the new benchmark
 helpers/tests. A documentation-only cherry-pick conflict was resolved by keeping
 the explicit OMP_NUM_THREADS values, followed by a clean diff check.
+
+## P001 — complete PDF pipeline, active DEV screening (2026-10-09)
+
+The user authorized another USD 50, raising the cumulative cap to USD 150.
+The shared ledger retains all prior charges and unresolved reservations; P001 has
+its own USD 50 ceiling. Three gpt-6.1-sol/medium worktrees implemented and audited
+corpus/scoring, full-page assembly, and bounded row edits. Only root sends paid
+requests. Hosted APIs avoid idle GPU rentals in this wave; local work is CPU-only.
+
+The frozen corpus contains 181 physical pages, 168 scored (35 positive and 133
+negative), plus 13 diagnostic pages. The predefined pilot has 16 positive and 16
+negative pages. Dataset SHA-256:
+`3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9b2`.
+Source projection strips filenames, family labels and private references from
+model evidence. Final outputs preserve every extracted source ID once, with
+explicit table cells/spans and remaining source text. This invariant is separate
+from semantic correctness. Protected held-out files remain untouched.
+
+Initial complete-pipeline observations: PPLX/512 recovered 15/16 positive pages
+with four false-positive negative pages; Clef Flash/512 recovered 5/16 with none.
+PPLX/256 and Luna/256 or /512 also recovered 15/16 with four false-positive pages.
+All calls are fresh transmissions; provider cache usage remains in retained
+responses. PPLX/512 completed 54.6 output pages/minute and 10,206 output pages/USD
+at USD 0.00313544 reported charge. Output throughput does not mean all outputs
+were semantically correct. Positive reported charges take precedence; Luna's
+reported zeros use labeled current-catalog estimates from reported tokens.
+
+Next frozen derivatives test source `/Rotate` normalization, independent semantic
+admission before candidate choices, and adaptive evidence/repair routing. See
+[the P001 plan](bench/PIPELINE_EXPERIMENTS.md) and
+[the complete comparison](bench/results/pipeline-p001.md) for all successes,
+failures, candidate ceilings, family slices, CPU/RSS and cost scopes.
