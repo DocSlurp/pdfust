@@ -4,7 +4,7 @@ Implemented `bench/lowlevel_cache.py` and `tests/test_lowlevel_cache.py` in the 
 
 ## Existing harness assessment
 
-`bench/decision_cache_probe.py` already provides correct insertion-order `body_sha`, provider-error screening, cache usage, positive-charge-first pricing, separately retained token estimates and repeat trial records. Those functions are reused. Its existing selector is restricted to two bodies per model, 24 transmissions and a $0.50 wave; it also selects from successful prior responses. It cannot directly represent the requested source-selected 4 × 2 × 3 × 3 design or prefix-specific $5 accounting. No changes to that harness or shared DecisionClient were made.
+`bench/decision_cache_probe.py` already provides correct insertion-order `body_sha`, provider-error screening, cache usage, positive-charge-first pricing, separately retained token estimates and repeat trial records. Those functions are reused. Its existing selector is restricted to two bodies per model, 24 transmissions and a USD 0.50 wave; it also selects from successful prior responses. It cannot directly represent the requested source-selected 4 × 2 × 3 × 3 design or prefix-specific USD 5 accounting. No changes to that harness or shared DecisionClient were made.
 
 ## Freeze and source selection
 
@@ -14,7 +14,7 @@ Every one of the 24 selected singleton request bodies is copied byte for byte. V
 
 ## Actual-call and reservation contract
 
-Three submissions per body are labeled initial, repeat-1 and repeat-2, for a maximum of 72 transmissions. Each call uses the shared `DecisionClient` with `replay=False`, the existing default per-call reservation and the persistent global ledger. The `L007/` prefix separately enforces $5 and 72-call limits, including failed/unsettled reservations; the shared client's campaign and cumulative user caps continue to apply. The prefix is independent from L006's $10 wave. The client remains the only network and credential boundary.
+Three submissions per body are labeled initial, repeat-1 and repeat-2, for a maximum of 72 transmissions. Each call uses the shared `DecisionClient` with `replay=False`, the existing default per-call reservation and the persistent global ledger. The `L007/` prefix separately enforces USD 5 and 72-call limits, including failed/unsettled reservations; the shared client's campaign and cumulative user caps continue to apply. The prefix is independent from L006's USD 10 wave. The client remains the only network and credential boundary.
 
 Hosted execution requires a completed, successful parent result and a retained valid original provider response for each exact selected body. Missing/failed originals stay explicitly unattempted; their cost and pages/USD stay unavailable. The first probe transmission is additional to its original L006 submission and may already encounter provider caching. No cold-cache or cache-warmth promise is made. A failed probe response stops that model without automatic retry.
 

@@ -378,7 +378,10 @@ own cohorts explicit:
 | Offline geometry + Jev words; 72 paired inputs | 28/48 → 40/48; 0/24 → 0/24 | cascade unmeasured | cascade unmeasured | Zero paired losses; original batches cannot be skipped whole; [hybrid replay](bench/results/lowlevel-hybrid-basic.md) |
 | Offline geometry + PPLX typed/resolved minimal text; 24 paired inputs | 6/16 → 14/16; 4/8 → 4/8 | cascade unmeasured | cascade unmeasured | Adds source-rule evidence; [hybrid prompts](bench/results/lowlevel-hybrid-prompts.md) |
 | Clef Flash lowbit size sweep: 64/128/256/400/500/512; 24 scored per size | 9/9/12/8/10/8 out of 16; 0/8 at every size | 110.0–145.0 | 17,544–18,355 | Larger crops did not improve scores monotonically; [all 18 image arms per model](bench/results/lowlevel-images-focus.md) |
-| Fresh 768/1024 source renders | pending | pending | pending | Separate rendering experiment; retained-crop results above do not establish a native-resolution optimum |
+| Fresh RGB 512 → 768 → 1024; PPLX, 24 inputs per size | 12 → 12 → 13/16; 0 → 0 → 0/8 | 134.7 → 132.0 → 147.3 | 86,306 → 76,943 → 63,546 | [Fresh-source resolution matrix](bench/results/lowlevel-images-large.md); grayscale and two-bit scored separately |
+| Fresh RGB 512 → 768 → 1024; Luna, 24 inputs per size | 7 → 7 → 11/16; 2 → 1 → 1/8 | 166.0 → 187.4 → 163.4 | ~20,060 → 16,708 → 13,822 | [Fresh-source resolution matrix](bench/results/lowlevel-images-large.md); grayscale and two-bit scored separately |
+| Fresh RGB 512 → 768 → 1024; Clef Flash, 24 inputs per size | 9 → 11 → 10/16; 0 → 0 → 0/8 | 133.5 → 137.4 → 134.2 | 25,760 → 29,122 → 21,494 | [Fresh-source resolution matrix](bench/results/lowlevel-images-large.md); grayscale and two-bit scored separately |
+| Fresh RGB 512 → 768 → 1024; Clef, 24 inputs per size | 9 → 9 → 10/16; 0 → 0 → 0/8 | 113.1 → 93.5 → 88.7 | 6,589 → 5,928 → 4,961 | [Fresh-source resolution matrix](bench/results/lowlevel-images-large.md); grayscale and two-bit scored separately |
 
 Matched history holds source values, singleton batching and prompt criteria
 fixed; 24 encoding aliases per arm are excluded from rates. Equal aggregate
@@ -389,11 +392,22 @@ measured cascade cost/latency savings. The 64–512 sweep downsamples retained
 although PNG encoding itself is lossless. Its reported rates are observed ranges
 across the six sizes, not the throughput of one chosen configuration.
 
+Fresh-source larger images helped some models: Luna gray1024 reached 11/16 known
+and 2/8 ambiguous abstentions; Clef-Flash reached 11/16 known at 768 in all three
+formats. These are single DEV observations. Flash's reported serving rates changed
+within the wave, so its cost differences do not isolate image resolution or prove
+provider cache hits. The linked report retains every paired gain and loss.
+
 The [natural-document follow-up](bench/LOWLEVEL_NATURAL.md) uses 24 overlapping
 regions on **one** Senate expenditure page, with source-aware single-review
 references. Its region/minute and region/USD rates must not be presented as
 24 independent PDF pages. None of these studies establishes full-table,
 header/value, reading-order or production-document extraction quality.
+
+The [self-hosted decision-model shortlist](bench/HF_DECISION_MODELS.md) compares
+eight downloadable candidates by image support, effective context, GPU planning
+class and adoption, with pinned revisions and a matched-evidence experiment plan.
+Self-hosted scores and throughput remain unmeasured.
 
 ## Architecture
 

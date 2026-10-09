@@ -1,5 +1,7 @@
 # Vercel AI Gateway decision-model expansion
 
+> **Protocol correction:** Earlier TypeSafe calls with top-level `images` were accepted, but image consumption is unverified. Their costs/scores do not establish vision quality or resolution effects. The documented `/v1/decisions` image route is being validated separately.
+
 Catalog checked on 2026-10-09 against all 413 entries from the live
 [Vercel model catalog](https://ai-gateway.vercel.sh/v1/models), compared with the
 [OpenRouter decisions catalog](https://openrouter.ai/api/v1/models?output_modalities=decisions).

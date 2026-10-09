@@ -24,7 +24,17 @@ CHOICES = ("join", "split", "unresolved")
 SUM_TOLERANCE = 0.015000001
 WAVE_LIMIT = 5.0
 TAG_PREFIX = "L001/"
-WAVE_LIMITS = {"L001/": 5.0, "L004/": 5.0, "L005/": 5.0, "L006/": 10.0, "L009/": 5.0, "L010/": 5.0, "L012/": 5.0}
+WAVE_LIMITS = {
+    "L001/": 5.0,
+    "L004/": 5.0,
+    "L005/": 5.0,
+    "L006/": 10.0,
+    "L009/": 5.0,
+    "L010/": 5.0,
+    "L012/": 5.0,
+    "L015/": 5.0,
+    "L016/": 5.0,
+}
 MAX_BODY_BYTES = 200_000
 MAX_BATCH = 3
 ENCODING_COUNT = 3
@@ -278,8 +288,14 @@ def run(
     if client is None:
         if manifest.get("gateway") == "vercel":
             from bench.decision_gateway import GatewayDecisionClient  # noqa: PLC0415
+            from bench.decision_gateway_vision import GatewayVisionDecisionClient  # noqa: PLC0415
 
-            client = GatewayDecisionClient(catalog_path=directory / "catalog-prices.json")
+            client_type = (
+                GatewayVisionDecisionClient
+                if manifest.get("protocol") == "openai-decisions"
+                else GatewayDecisionClient
+            )
+            client = client_type(catalog_path=directory / "catalog-prices.json")
         else:
             client = DecisionClient()
     with exclusive_lock(client.ledger.parent / "run.lock"):
@@ -601,6 +617,9 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
             logical: dict[str, list[dict[str, Any]]] = defaultdict(list)
             for row in rows:
                 logical[row["logical_id"]].append(row)
+            encoding_comparison = manifest.get("encoding_comparison", True) and all(
+                len({row["encoding"] for row in values}) == ENCODING_COUNT for values in logical.values()
+            )
             consistent = sum(
                 len(values) == ENCODING_COUNT
                 and all(row["choice"] is not None for row in values)
@@ -634,7 +653,7 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
                         bool(row["score"] and not row["score"]["output"]["conservation"]) for row in rows
                     ),
                     "encoding_consistent_logical_cases": consistent
-                    if manifest.get("encoding_comparison", True)
+                    if encoding_comparison
                     else None,
                     "logical_cases": len(logical),
                     "effective_usd": total,
@@ -675,7 +694,13 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
         "experiment": manifest.get("experiment", "L001"),
         "accounting_audit_notes": results.get("accounting_audit_notes", []),
         **request_accounting(manifest["records"], calls),
-        "scope": "authored DEV description partition only; not independent documents or full tables",
+        "scope": (
+            "VISUAL INPUT UNVERIFIED: TypeSafe top-level images forwarding is undocumented; "
+            "these scores/costs do not establish vision quality or resolution effects. "
+            if manifest.get("gateway") == "vercel" and manifest.get("kind") == "vision"
+            else ""
+        )
+        + "authored DEV description partition only; not independent documents or full tables",
         "cohorts": cohorts,
         "outcomes": outcomes,
         "native_baseline": native,
@@ -686,7 +711,10 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
         "completed_requests": sum(row.get("status") in {"ok", "failed"} for row in results["calls"]),
         "model_stop_details": results.get("model_stop_details", {}),
         "probabilities": "unreported" if manifest.get("experiment") == "L003" else "uncalibrated",
-        "encoding_variants": "correlated; consistency requires all three attempted",
+        "encoding_variants": (
+            "correlated; consistency requires all three planned encodings and completed decisions; "
+            "unmeasured when the cohort has only representative encodings"
+        ),
     }
 
 
@@ -710,7 +738,8 @@ def report(directory: Path) -> dict[str, Any]:
             "Known exactness scores only the two target-text chunks. Missing/failed inputs remain in denominators. "
             "Ambiguous abstention is separate. Literal outputs and source ownership are retained in evaluation.json. "
             "Header/value/cell reconstruction is unmeasured. Probabilities are " + evaluation["probabilities"] + "; "
-            "the three encodings share each logical template."
+            "encoding variants share logical templates; "
+            "representative-only cohorts do not measure encoding consistency."
         ),
         "",
         (

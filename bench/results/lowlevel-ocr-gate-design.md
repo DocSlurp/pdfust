@@ -40,7 +40,7 @@ Each model/arm report retains actual alias dimensions, predictions, reference ti
 
 ## Hosted boundary and resource admission
 
-Only root-owned `--run-hosted` execution constructs a shared `DecisionClient`. It uses replay-enabled retained-body reuse and a persistent `L008/` $5 wave, with at most 108 admitted physical calls (84 unique in this freeze), alongside the client's global campaign/cumulative caps. Unique body hashes, persistent `l008-wave.json` identity and normal ledger replay prevent duplicate paid sends across slices or interrupted checkpoints. A previous failed identical request is not retried.
+Only root-owned `--run-hosted` execution constructs a shared `DecisionClient`. It uses replay-enabled retained-body reuse and a persistent `L008/` USD 5 wave, with at most 108 admitted physical calls (84 unique in this freeze), alongside the client's global campaign/cumulative caps. Unique body hashes, persistent `l008-wave.json` identity and normal ledger replay prevent duplicate paid sends across slices or interrupted checkpoints. A previous failed identical request is not retried.
 
 Request bodies cap at 200,000 bytes; source/variant PNGs at 2 MiB, image dimensions at 2 million pixels and native text at 8,192 UTF-8 bytes. JSON source/catalog artifacts have explicit 8MB admissions. Shared ledger reads have a separate **64MiB** allowance because the existing global ledger exceeds the ordinary artifact limit. Per-call byte/token price forecasts screen against the normal reservation before transmission.
 

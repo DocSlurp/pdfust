@@ -237,6 +237,25 @@ def test_run_is_target_blind_and_reports_complete_denominators(
     assert len(client.calls) == 4
 
 
+def test_representative_encodings_do_not_report_false_zero_consistency(frozen: Path, tmp_path: Path) -> None:
+    targets_path = frozen / "private-targets.json"
+    targets = json.loads(targets_path.read_bytes())
+    for target in targets:
+        target["logical_id"] = target["id"]
+    raw = json.dumps(targets).encode()
+    targets_path.write_bytes(raw)
+    manifest_path = frozen / "manifest.json"
+    manifest = json.loads(manifest_path.read_bytes())
+    manifest["targets_sha256"] = hashlib.sha256(raw).hexdigest()
+    manifest_path.write_text(json.dumps(manifest))
+    run(frozen, client=MockClient(tmp_path / "client"))
+    result = report(frozen)
+    for cohort in result["cohorts"]:
+        assert cohort["known_exact"] == 3
+        assert cohort["encoding_consistent_logical_cases"] is None
+    assert "unmeasured" in (frozen / "report.md").read_text()
+
+
 def test_failure_stops_only_that_model_and_unknown_charge_stays_unknown(frozen: Path, tmp_path: Path) -> None:
     client = MockClient(tmp_path / "ledger", fail_model="m1")
     result = run(frozen, client=client)

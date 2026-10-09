@@ -12,7 +12,7 @@ import random
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from PIL import Image
 from PIL import __version__ as pillow_version
@@ -102,7 +102,9 @@ def body(
     state = json.loads(result["state"][0])
     state.update(image_bbox=image["bbox"], image_pixels=image["pixels"], image_mode=mode, png_bit_depth=png[24])
     text = json.dumps(state, separators=(",", ":"))
-    image_part = {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(png).decode()}}
+    image_part: dict[str, Any] = {
+        "type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(png).decode()}
+    }
     result["state"] = [text, image_part]
     if non_image_bytes(result) > TEXT_CAP:
         msg = "Fresh image source text exceeds 1800 bytes"
@@ -200,7 +202,9 @@ def prepare(
         raise ValueError(msg)
     directory = begin(parent, directory, original["pages"])
     _file(directory, "catalog-prices.json").write_bytes(catalog_raw)
-    records, images, exact = [], [], {}
+    records: list[dict[str, Any]] = []
+    images: list[dict[str, Any]] = []
+    exact: dict[str, str] = {}
     projection_edits = []
     for page in original["pages"]:
         obs = json.loads(_file(directory, page["observation_file"]).read_bytes())
@@ -225,9 +229,9 @@ def prepare(
             for mode in MODES:
                 if retained_images:
                     metadata = deepcopy(retained_images[(page["id"], f"fresh-{mode}-{edge}")])
-                    png = _file(image_freeze, metadata["file"]).read_bytes()
+                    png = _file(cast("Path", image_freeze), metadata["file"]).read_bytes()
                 else:
-                    png = variant(rgb, mode)
+                    png = variant(cast("Image.Image", rgb), mode)
                 name = f"image-{page['id']}-{mode}-{edge}.png"
                 _file(directory, name).write_bytes(png)
                 info = {
@@ -365,11 +369,11 @@ def verify(directory: Path) -> dict[str, Any]:  # noqa: PLR0912 - verify every f
     seen = set()
     for record in manifest["records"]:
         ident = record["page_ids"][0]
-        key = (ident, record["model"], record["arm"])
-        if key in seen or record["model"] not in models:
+        record_key = (ident, record["model"], record["arm"])
+        if record_key in seen or record["model"] not in models:
             msg = "Duplicate or unadmitted request"
             raise ValueError(msg)
-        seen.add(key)
+        seen.add(record_key)
         info = images[(ident, record["arm"])]
         png = _file(directory, info["file"]).read_bytes()
         raw = _file(directory, record["request"]).read_bytes()

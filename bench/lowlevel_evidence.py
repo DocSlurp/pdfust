@@ -378,10 +378,14 @@ def prepare(directory: Path, *, cohort: list[dict[str, Any]] | None = None) -> d
     return manifest
 
 
-def verify(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - all frozen inventories must agree.
+def verify(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0911, PLR0912 - frozen inventories must agree.
     """Verify every frozen input and reconstruct each body from source observations."""
     directory = guard_path(directory)
     manifest = json.loads((directory / "manifest.json").read_bytes())
+    if manifest.get("experiment") in {"L015", "L016"}:
+        from bench.lowlevel_large_images import verify as verify_large_images  # noqa: PLC0415
+
+        return verify_large_images(directory)
     if manifest.get("experiment") in {"L009", "L010", "L012"}:
         from bench.lowlevel_gateway import verify as verify_gateway  # noqa: PLC0415
 

@@ -209,7 +209,7 @@ def test_probe_respects_persistent_wave_cap_without_transmission(parent: Path, t
 
 @pytest.mark.usefixtures("parent")
 def test_round_trip_preserves_numeric_unicode_values_and_glyph_order() -> None:
-    source = {
+    source: dict[str, Any] = {
         "task": "character_boundary",
         "glyphs": [
             {"id": "g1", "text": "Ω", "origin": [1.25, -2], "font": "f0"},

@@ -53,7 +53,7 @@ def frozen(tmp_path: Path) -> Path:
 
 def test_prepare_matches_original_driver_bytes_and_refuses_overwrite(frozen: Path) -> None:
     manifest = verify(frozen)
-    expected = []
+    expected: list[tuple[str, str]] = []
     for control in controls():
         for protocol, field in (("typesafe", "canonical_body"), ("native", "native_body")):
             raw = json.dumps(control[field], separators=(",", ":"), allow_nan=False).encode()

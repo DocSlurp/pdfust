@@ -753,3 +753,118 @@ Clef Flash result with independent quantization levels and repeated transmission
 plus a geometry-first branch. Retain unmodified RGB/gray controls and provider
 cache counters; repetitions alone do not demonstrate cache hits. This follow-up
 is proposed, not executed.
+
+### Conditional geometry gate resource measurement
+
+Five serial fresh-document passes over the exact 72 authored source PDFs retained
+all source-only routing choices. Drawing interpretation/projection/grouping plus
+open/close median was 22.937 ms wall and 52.942 ms CPU for 72 pages, about 0.319 ms
+wall/page. Full glyph/operator/crop snapshot preparation was 4.614 s wall and
+4.625 s CPU, about 64.08 ms/page. The 201× stage wall ratio is not an end-to-end
+extraction or hosted-cascade speedup: supplied target selectors and all boundary
+discovery costs are excluded. One serial caller still uses the library default
+eight native workers; CPU greater than wall is expected. Mixed-process peak
+RSS 146.9 MiB is not an independent gate/full memory comparison.
+
+[Full phase measurements and reproducibility](bench/results/lowlevel-geometry-performance.md).
+
+L014 freezes four source-equivalent Laya compatibility bodies on a new eligible
+source: expanded glyph dictionaries serialized as JSON versus compact JSON.
+Expansion preserves all values/order and questions; prior failed sources are
+excluded by transport status alone. No scorer labels are read. This diagnostic
+uses a separate USD 1.50 admission cap and retains failures/reservations.
+
+### Gateway image transport correction and complete frontier slice
+
+All 432 L009 Gateway image calls were accepted, but identical reported token usage
+across sizes triggered a protocol audit. The earlier TypeSafe top-level images
+field has no documented forwarding contract. Liquid direct-API image support
+does not establish that Gateway forwards the same field. These results are now
+**visual input unverified**, including the ten Gateway rows in the L011 pilot;
+they cannot establish d1 vision quality or image-size effects. Original bodies,
+responses, charges and scores remain retained. An endpoint-specific native
+`/v1/decisions` adapter and image-only controls precede any new d1 vision claim.
+
+Matched L003 crop512 is complete for Opus and Sonnet: Opus 46/48 known and 14/24
+ambiguous abstentions, 19.15 API pages/min and 64.79 pages/USD; Sonnet 37/48 and 10/24,
+70.56 API pages/min and 150.81 pages/USD. Matched PPLX 38/48 and 0/24, 204.78 API pages/min
+and 6,688.96 pages/USD. PPLX exceeds Sonnet by one known decision only; it does not
+beat Sonnet on ambiguity handling or Opus on quality. Haiku remains incomplete
+after HTTP 429. These rates are supplied-region decisions per tested source page,
+not whole-page extraction throughput. All full denominator tables are retained.
+
+L012 minimal/words completed all 64 unique Laya-alias bodies, 96 configurations.
+Both aliases score 10/16 known for minimal, 8/16 for words, with 0/8 unknown
+abstentions; promotional catalog cost is zero, so pages/USD is undefined rather
+than infinite. L014 ordinary expanded glyph dictionaries still return HTTP 422
+for both aliases; compact encoding alone is not the cause. Safe diagnostics
+contained no recognized machine-readable type/location, leaving cause unresolved.
+
+### L017 image-consumption sanity and L016 admission hold
+
+Hypothesis: the documented Gateway native Decisions transport may expose the
+image evidence that the earlier TypeSafe packet failed to demonstrate. The four
+TypeSafe controls returned unresolved for circle, square, blank and no image.
+The native circle request returned HTTP 400; remaining native controls were
+stopped. This is a transport failure, not an image-quality score. Original wire
+bodies, responses, unresolved reservation and endpoint identities remain retained.
+
+Verdict: Gateway vision remains unverified. L016 has 216 verified native-wire
+bodies with PNGs identical to L015, but no paid PDF calls are admitted until
+positive visual controls pass. The [protocol audit](bench/results/lowlevel-gateway-native-audit.md)
+records the catalog/documentation conflict and a fresh no-image diagnostic plan.
+
+### Self-hosted decision-model research and README comparisons
+
+Three coordinated agents inspected public model cards, actual inference paths,
+Hub metadata, licenses and runtime limits. The [eight-model shortlist](bench/HF_DECISION_MODELS.md)
+prioritizes Intern-Decision-4B, Clef-Flash, Perplexity v1.1 and AutoTrust JEV-27B-VL,
+with NeoHorse, GEV, Clef and the Apache-2.0 Nimble release providing further
+comparisons. Revision pins and dated adoption observations are retained. GPU
+classes are planning estimates; no weights were downloaded, no remote host was
+created and no self-hosted throughput or quality was measured.
+
+Hypothesis: direct access to trained decision heads, processor image budgets and
+question sharing can reduce repeated work while retaining our source evidence.
+Verdict: feasible candidates found; test native runtime parity before optimizing
+precision, batching or prefix reuse. Reference labels remain outside model inputs.
+
+README now contains model and experiment comparisons, matched frontier scores,
+page-input rates, incomplete-run denominators and links to all retained reports.
+Whole-page extraction performance is not inferred from supplied-region decisions.
+
+### L015 complete: larger fresh crops can recover misses
+
+Hypothesis: larger fresh source crops can restore visual evidence lost in the
+older downsampled crops. All 864 unique requests completed across four models,
+24 DEV representatives, three sizes and three independent color formats.
+
+| RGB size | Luna known /16 | Flash known /16 | PPLX known /16 | Clef known /16 |
+|---|---:|---:|---:|---:|
+| 512 | 7 | 9 | 12 | 9 |
+| 768 | 7 | 11 | 12 | 9 |
+| 1024 | 11 | 10 | 13 | 10 |
+
+Luna RGB1024 gained four wrap decisions without known-case losses relative to
+512; ambiguous abstention declined from 2/8 to 1/8. Luna gray1024 gained five
+known decisions and retained 2/8 abstention. Flash preferred 768 across formats;
+RGB/gray1024 each had one known-case regression versus 512. Larger is therefore
+useful for some models, with no universal monotonic improvement.
+
+Effective inference cost was USD 0.062818012, including USD 0.0131148 estimated
+for Luna. Flash reported two serving rates within this wave; its cheaper RGB768
+aggregate does not prove a resolution cost saving or a provider cache hit.
+All quality scores, paired losses and pages/minute/pages/USD are retained in
+[the complete report](bench/results/lowlevel-images-large.md).
+
+Next priorities: Luna gray1024 plus geometry and rolling-row evidence; Flash768
+versus earlier lowbit256; PPLX resolved criteria crossed with fresh crops. These
+configurations are DEV candidates, not protected-set-selected winners.
+
+A reporting correction now marks encoding consistency unmeasured when only one
+representative encoding per logical case was planned, instead of displaying a
+false zero. Frozen request bytes and references were unchanged. A regression test
+covers that distinction. Full suite: 2,337 passed, 14 skipped, two expected
+failures; subsequent changes: 43 focused tests, whole-workspace Ruff and mypy
+across 157 files pass. Conservative cumulative accounting is USD 18.81584162
+of the authorized USD 100, including USD 6.05 unresolved reservations.

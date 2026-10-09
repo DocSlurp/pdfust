@@ -536,7 +536,9 @@ def report(directory: Path) -> dict[str, Any]:
         "execution_history": retained.get("execution_history", []),
         "preparation": manifest["preparation"],
         "limitations": "Single source-aware provisional DEV review; 24 overlapping pairs on one page/producer. "
-        "Scope changes also change glyph pixel size at fixed image edge. Unknown costs remain unknown.",
+        "Scope changes also change glyph pixel size at fixed image edge. Unknown costs remain unknown. "
+        "Gateway d1 visual input is UNVERIFIED: TypeSafe top-level images forwarding is undocumented. "
+        "Its accepted responses cannot establish vision quality or resolution effects.",
     }
     write(directory / "report.json", result)
     lines = [
