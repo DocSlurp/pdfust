@@ -336,7 +336,9 @@ def verify(directory: Path) -> dict[str, Any]:
         if rendered_key != (source_id, edge):
             rgb, metadata = raster(_inside(source, page["source_file"]), item["bbox"], edge)
             rendered_key = (source_id, edge)
-        assert rgb is not None
+        if rgb is None:
+            message = "Fresh raster cache is unexpectedly empty"
+            raise ValueError(message)
         if any(mapping[key] != value for key, value in metadata.items()) or png != variant(rgb, mode):
             _fail("Projected PNG differs from fresh source rendering")
         if raw != _encode(project(item["template"], png, mapping["pixels"], mode)):
