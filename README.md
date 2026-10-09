@@ -416,9 +416,13 @@ conditions, native-versus-hosted differences, CPU/RAM/VRAM and failure records.
 | Clef-Flash 9B | 10 / 11 / 11 | 0 | 748.85 | 35,240 |
 | Perplexity Decider 27B | 9 / 12 / 12 | 0 | 292.15 | 12,748 |
 | Clef 27B | 9 / 11 / 12 | 0 | 266.74 | 12,552 |
+| Qwen3.5-0.8B, vLLM diagnostic | 8 / 8 / 8 | 0 | 512.78 | 23,515 |
 | Qwen3.5-2B, vLLM | 6 / 7 / 7 | 0 | 343.78 | 15,766 |
 | Qwen3.5-4B, vLLM | 10 / 10 / 10 | 0 | 272.36 | 12,490 |
 | Qwen3.5-9B, vLLM | 11 / 12 / 11 | 0 | 252.16 | 11,564 |
+| SmolVLM2 2.2B, vLLM diagnostic | 5 / 5 / 5 | 1 / 0 / 1 | 510.84 | 23,427 |
+| LFM2-VL 1.6B, vLLM diagnostic | 9 / 9 / 9 | 0 | 693.65 | 31,810 |
+| MiniCPM-V-4, vLLM diagnostic | 11 / 11 / 12 | 0 | 493.64 | 22,639 |
 | JPT-4B, noncommercial | 10 / 10 / 9 | 0 | 590.05 | 25,748 |
 | JPT-9B, noncommercial | 8 / 8 / 8 | 0 | 563.11 | 24,572 |
 
@@ -442,6 +446,24 @@ The [fixed combination comparison](bench/results/remote-gpu-combinations.md)
 records the cost of agreement: at 768/1024 px, unanimity reduces known errors
 but also loses correct decisions, and majority voting does not recover ambiguity.
 These remain exploratory, correlated DEV results.
+
+The [fresh-size sweep](bench/results/remote-gpu-image-sizes.md) adds 128, 256,
+384, 400, 448, 500 and 640 px in three independent color treatments. Intern
+preserves 12/16 known correctness at every size ≥256 in every color mode;
+128 px loses accuracy. All 672 ambiguous inputs across the four models remain
+decisive. Image size alone does not solve evidence insufficiency.
+
+The [natural-region comparison](bench/results/remote-gpu-natural.md) retains
+agreement with provisional full-source references separately from agreement with
+the supplied crop's evidence. The [concurrency comparison](bench/results/remote-gpu-concurrency.md)
+measures Qwen9 at 240.15 supplied-region inputs/min with one client and 954.96
+with eight, over actual elapsed time. Known correctness changes from 99/144 to
+97/144 across repeated DEV arms. Those eight clients share one model allocation;
+throughput is not computed from summed overlapping request latency.
+
+Diagnostic small-model cohorts have valid transports but failed semantic shape
+controls; those failures and all runtime repairs remain visible in the reports.
+No experimental hosted or remote-GPU path is enabled by default in extraction.
 
 ## Architecture
 

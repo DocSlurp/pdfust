@@ -954,3 +954,47 @@ visual-control answers. An opt-in diagnostic admission distinguishes semantic
 control failures from transport/schema failures and does not bypass the latter.
 At the second billing checkpoint the provider has posted USD 4.700; charges are
 still accruing within the original USD 18 fleet reservation and USD 100 cap.
+
+R001 third checkpoint: all 13 vision releases completed their 216-input image
+cohorts; Nimble-v3 remains a separate text ablation. SmolVLM, LFM, Qwen0.8 and
+MiniCPM received explicitly labeled semantic-control diagnostic admission after
+valid transport/schema responses. The vLLM host temporarily went offline and
+rebooted; completed LFM artifacts were recovered. Qwen0.8/MiniCPM were resumed
+under a new output directory. No timing crosses the interruption. A prepared
+failover environment installation was cancelled before inference when the original
+host recovered; its incidental bootstrap cost remains in rental accounting.
+
+All 2,016 fresh-size inputs completed. Intern scores 12/16 known cases for every
+size ≥256 across RGB/gray/two-bit; 128 loses accuracy. All 672 ambiguous decisions
+remain decisive. Native reported token counts are retained rather than guessed;
+PPLX's unreported tokens remain unknown. Native natural-region runs also completed
+384 inputs on the existing overlapping Senate regions. Full-source and
+admitted-scope reference agreement are reported separately.
+
+Following the user's utilization request, the planned prompt × size matrix runs
+two native models per GPU within measured VRAM admission: Flash+Clef use six CPU
+threads each; PPLX+Intern use eight each. The first launcher incorrectly resolved
+a virtualenv executable symlink to system Python and failed before inference;
+the corrected launcher preserves the virtualenv path and writes separate v2
+outputs. No failed records are removed. Per-model timings include shared-GPU
+contention; whole-pair CPU/RAM sampling is retained separately.
+
+The shared-server Qwen9 concurrency screen completed 216 inputs at each of
+1/2/4/8 clients: global elapsed 53.97/34.96/19.51/13.57 seconds, a 3.98× throughput
+increase from one to eight. Known correctness is 99/98/98/97 out of 144 repeated
+known inputs; all four remain 0/72 on ambiguity. Device utilization averages
+78.41/77.03/85.05/84.71 percent over sampled full windows. Native replica screens
+and a true native batching implementation are separate follow-ups; increasing
+replicas is not assumed to improve throughput.
+
+The user requested concrete ambiguity mechanisms while completing planned work.
+Parallel source-only implementations now measure font-scaled gaps and alignment,
+neighboring anchors/rolling leading, interpreted separators/enclosures, whitespace
+valleys, rule crossings and color boundaries. Threshold policies are frozen before
+reference scoring. These cues are advisory evidence, not calibrated probabilities;
+a gap alone cannot establish cell identity. The next matrix crosses geometry,
+pixels and combined evidence with fixed source images and prompt wording.
+
+The provider has posted USD 7.601 at this checkpoint. The original USD 18 wave
+reservation is still in force within the cumulative USD 100 authorization; posted
+charges are not double-counted. The independent cleanup deadline remains active.
