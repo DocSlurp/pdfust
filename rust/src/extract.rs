@@ -942,6 +942,8 @@ fn cluster_explicit_vertical(
 struct PaintLayer {
     glyphs: Vec<usize>,
     intervals: Vec<(f64, f64, f64)>,
+    /// Cached envelope avoids scanning every run for monotone disjoint text.
+    extent: (f64, f64),
 }
 
 fn sort_line_inline(arena: &[GlyphRecord], line: &mut [usize]) {
@@ -993,7 +995,7 @@ fn paint_intervals_overlap(
 ///
 /// A PDF may paint complete strings more than once at the same baseline. The
 /// old x/y sort grouped equal-position glyphs (`A1, B1, A2, B2`) and destroyed
-/// both strings. Detect backward source-order resets, then greedily place
+/// both strings. Detect source-order resets and forward word gaps, then place
 /// non-overlapping runs on one geometry-sorted line while retaining overlapping
 /// runs as separate lines. This preserves distinct overprints instead of
 /// deleting them.
@@ -1026,12 +1028,22 @@ fn split_overlapping_paint_layers(
         let moved_backward = previous.is_some_and(|previous| {
             progress < glyph_progress(previous) - scale * PAINT_RUN_RESET_TOLERANCE
         });
+        // A forward word gap also separates source runs. Otherwise a late
+        // glyph from a distant field can join the preceding glyph into one
+        // broad interval, falsely overlapping text in the unpainted gap.
+        let moved_forward =
+            previous.is_some_and(|previous| progress > glyph_end(previous) + scale * WORD_GAP);
         let repeated_at_same_origin = previous.is_some_and(|previous| {
             (glyph.x - previous.x).abs() <= scale * PAINT_RUN_SAME_ORIGIN_TOLERANCE
                 && (glyph.y - previous.y).abs() <= scale * PAINT_RUN_SAME_ORIGIN_TOLERANCE
                 && glyph.text == previous.text
         });
-        if runs.is_empty() || moved_backward || repeated_at_same_origin || direction_changed {
+        if runs.is_empty()
+            || moved_backward
+            || moved_forward
+            || repeated_at_same_origin
+            || direction_changed
+        {
             try_push_text(&mut runs, Vec::new(), "text paint runs")?;
         }
         try_push_text(
@@ -1055,16 +1067,20 @@ fn split_overlapping_paint_layers(
         // Merge only into the latest layer. Searching older compatible layers
         // would move this run before an intervening overprint.
         let compatible = layers.last_mut().filter(|layer| {
-            layer
-                .intervals
-                .iter()
-                .all(|existing| !paint_intervals_overlap(*existing, interval))
+            interval.0 >= layer.extent.1
+                || interval.1 <= layer.extent.0
+                || layer
+                    .intervals
+                    .iter()
+                    .all(|existing| !paint_intervals_overlap(*existing, interval))
         });
         if let Some(layer) = compatible {
             for index in run {
                 try_push_text(&mut layer.glyphs, index, "text paint-layer glyphs")?;
             }
             try_push_text(&mut layer.intervals, interval, "text paint-layer intervals")?;
+            layer.extent.0 = layer.extent.0.min(interval.0);
+            layer.extent.1 = layer.extent.1.max(interval.1);
         } else {
             let mut intervals = Vec::new();
             try_push_text(&mut intervals, interval, "text paint-layer intervals")?;
@@ -1073,6 +1089,7 @@ fn split_overlapping_paint_layers(
                 PaintLayer {
                     glyphs: run,
                     intervals,
+                    extent: (interval.0, interval.1),
                 },
                 "text paint layers",
             )?;
