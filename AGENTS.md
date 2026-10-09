@@ -42,8 +42,11 @@ overview.
   estimates, preserving the original reported zero. Missing tokens/rates remain
   unknown; partial estimates must not become complete totals. Keep ledger
   reservations separate from reported charges and effective estimates.
-- Do not run benchmark inference or training on the local GPU. Use a remote GPU
-  within the user's authorized spending cap; local checks must remain CPU-only.
+- Keep local checks CPU-only by default. On 2026-10-08 the user explicitly
+  authorized bounded local-GPU benchmark comparisons where acceleration matters.
+  Verify GPU health first; record matched CPU/GPU quality, wall/CPU time, peak
+  VRAM and sampled utilization. This exception does not authorize local training.
+  Other GPU workloads use remote capacity within the authorized spending cap.
 - Prefer tracking CPU and RAM usage during benchmarks, performance tests, and
   optimization experiments alongside elapsed time, throughput, quality, and cost.
   Record CPU time/utilization and peak resident memory (RSS) where practical,

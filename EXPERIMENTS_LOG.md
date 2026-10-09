@@ -270,3 +270,12 @@ and [bounded Clef matrix](bench/results/image-resolution-clef.md). Their complet
 machine-readable summaries are unchanged, including scores, usage and costs.
 Validation: eight image-runner tests passed; formatter and Ruff checks passed.
 This repair made no hosted requests.
+
+## Two-hour larger-corpus wave
+
+The user authorized adding 10–20 sampled OmniDocBench rows, pushing to private
+`origin/main`, and continuing iterative tuning for up to two hours. The
+[shared tuning record](bench/TUNING_WAVE.md) tracks hypotheses, gates, resource
+limits, council proposals and reprioritization. Three parallel agents use
+separate worktrees; the coordinator owns hosted requests and shared accounting.
+The protected 20-file holdout remains untouched.
