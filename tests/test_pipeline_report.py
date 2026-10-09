@@ -145,3 +145,44 @@ def test_summary_cannot_overwrite_completed_artifacts(tmp_path: Path) -> None:
     pipeline, _report = _fixture(tmp_path)
     with pytest.raises(ValueError, match="overwrite completed"):
         run(tmp_path, pipeline / "positive.md")
+
+
+def test_native_display_hides_unused_model_settings_preserving_raw_config(tmp_path: Path) -> None:
+    pipeline, report = _fixture(tmp_path)
+    report["config"].update(policy="native", normalize_rotation=True, gate_premise=False)
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["config"] = report["config"]
+    write_json(pipeline / "frozen.json", frozen)
+    write_json(pipeline / "report.json", report)
+    result = run(tmp_path, tmp_path / "summary.md")
+    text = (tmp_path / "summary.md").read_text()
+    assert "| native | CPU only | — | — | — | True | False |" in text
+    assert result["runs"][0]["config"]["model"] == "test-model"
+    assert result["runs"][0]["config"]["image_edge"] == 512
+    assert "<summary>Complete per-family structure scores</summary>" in text
+
+
+def test_incomplete_frozen_runs_are_visible_without_scoring_partial_outputs(tmp_path: Path) -> None:
+    pipeline, _report = _fixture(tmp_path)
+    incomplete = tmp_path / "unfinished"
+    incomplete.mkdir()
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["config"]["run_id"] = "unfinished"
+    frozen["config"]["policy"] = "adaptive"
+    write_json(incomplete / "frozen.json", frozen)
+    # Partial result content must not be parsed or promoted to completed scoring.
+    (incomplete / "positive-result.json").write_text("not complete JSON")
+    result = run(tmp_path, tmp_path / "summary.md")
+    assert len(result["runs"]) == 1
+    assert result["incomplete_runs"] == [
+        {
+            "name": "unfinished",
+            "config": frozen["config"],
+            "planned_pages": 3,
+            "result_files": 1,
+            "source_contract_matches": True,
+        }
+    ]
+    text = (tmp_path / "summary.md").read_text()
+    assert "| unfinished | adaptive | test-model | 3 | 1 | True |" in text
+    assert "wall/CPU and RSS remain unknown" in text

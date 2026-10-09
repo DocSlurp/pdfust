@@ -189,7 +189,29 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
     paths = sorted(directory.glob("*/report.json"), key=lambda path: (path.stat().st_mtime_ns, path.parent.name))
     if output.name in {"report.json", "frozen.json", "manifest.json", "private-targets.json"} or output.suffix != ".md":
         raise ValueError("Summary must be a separate Markdown artifact")
-    if any(output.is_relative_to(path.parent) for path in paths):
+    frozen_paths = sorted(directory.glob("*/frozen.json"))
+    incomplete = []
+    for frozen_path in frozen_paths:
+        if (frozen_path.parent / "report.json").is_file():
+            continue
+        frozen = _read(frozen_path)
+        config = frozen.get("config", {})
+        selected = [record for record in manifest["pages"] if not config.get("pilot", False) or record["pilot"]]
+        expected = {record["id"]: {key: record[key] for key in SOURCE_FIELDS} for record in selected}
+        frozen_records = frozen.get("records", [])
+        actual = {record["id"]: record for record in frozen_records}
+        incomplete.append(
+            {
+                "name": frozen_path.parent.name,
+                "config": config,
+                "planned_pages": len(frozen_records),
+                "result_files": len(list(frozen_path.parent.glob("*-result.json"))),
+                "source_contract_matches": frozen.get("manifest_sha256") == manifest_hash
+                and len(actual) == len(frozen_records)
+                and actual == expected,
+            }
+        )
+    if any(output.is_relative_to(path.parent) for path in frozen_paths):
         raise ValueError("Summary must not overwrite completed run artifacts")
     runs = [_score_run(path.parent, manifest, targets, manifest_hash) for path in paths]
     lines = [
@@ -203,14 +225,20 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         "The fixed pilot is selected by frozen manifest membership; absent results remain failures. "
         "Full and pilot cohorts have distinct denominators.",
         "",
-        "| Run | Cohort | Policy | Model | Image edge | Context rows | Legend | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
-        "|---|---|---|---|---:|---:|---|---:|---:|---:|---:|",
+        "| Run | Cohort | Policy | Model | Image edge | Context rows | Legend | Normalize rotation | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
+        "|---|---|---|---|---:|---:|---|---|---|---:|---:|---:|---:|",
     ]
     for item in runs:
         config, pos, neg = item["config"], item["positive"], item["negative"]
+        native = config["policy"] in {"native", "native_text"}
+        model = "CPU only" if native else config.get("model", "unknown")
+        image_edge = "—" if native else config.get("image_edge", "unknown")
+        context_rows = "—" if native else config.get("context_rows", "unknown")
+        legend = "—" if native else config.get("legend", "unknown")
         lines.append(
             f"| {_label(item['name'])} | {'pilot' if config['pilot'] else 'full'} | {_label(config['policy'])} | "
-            f"{_label(config['model'])} | {config['image_edge']} | {config['context_rows']} | {config['legend']} | "
+            f"{_label(model)} | {image_edge} | {context_rows} | {legend} | "
+            f"{config.get('normalize_rotation', False)} | {config.get('gate_premise', False)} | "
             f"{item['operational_pages']}/{item['scores']['pages']} | {pos['exact_page']}/{pos['scored_pages']} | "
             f"{neg['false_positive_page']}/{neg['scored_pages']} | {item['all_errors']}/{item['scores']['error']} |"
         )
@@ -270,7 +298,8 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         "which are separate from effective charges. Unknown effective totals yield unknown p/USD. "
         "Zero-cost native throughput has no finite p/USD.",
         "",
-        "Per-family structure:",
+        "<details>",
+        "<summary>Complete per-family structure scores</summary>",
         "",
         "| Run | Family | Scored / diagnostic pages | Exact positive / positives | Negative FP / negatives | Exact scored pages | Errors |",
         "|---|---|---:|---:|---:|---:|---:|",
@@ -293,6 +322,28 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
                 f"{exact_positive}/{score['positive_page']} | {score['false_positive_page']}/{score['negative_page']} | "
                 f"{score['exact_page']}/{score['scored_pages']} | {score['error']} |"
             )
+    lines += [
+        "",
+        "</details>",
+        "",
+        "Incomplete frozen runs (not scored):",
+        "",
+        "No completed report exists for these frozen runs; they may be running or aborted. "
+        "Result-file counts are progress evidence only. Accuracy, charges, wall/CPU and RSS remain unknown. "
+        "Jobs not yet frozen by the runner are outside this observed inventory.",
+        "",
+        "| Run | Policy | Model | Planned pages | Result files | Source contract matches |",
+        "|---|---|---|---:|---:|---|",
+    ]
+    for item in incomplete:
+        config = item["config"]
+        model = "CPU only" if config.get("policy") in {"native", "native_text"} else config.get("model", "unknown")
+        lines.append(
+            f"| {_label(item['name'])} | {_label(config.get('policy', 'unknown'))} | "
+            f"{_label(model)} | {item['planned_pages']} | {item['result_files']} | {item['source_contract_matches']} |"
+        )
+    if not incomplete:
+        lines.append("| None observed | — | — | — | — | — |")
     lines += ["", "Measurement and frozen provenance:", ""]
     for item in runs:
         lines.append(
@@ -303,7 +354,12 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(lines) + "\n")
-    return {"dataset_sha256": manifest["dataset_sha256"], "runs": runs, "output": str(output)}
+    return {
+        "dataset_sha256": manifest["dataset_sha256"],
+        "runs": runs,
+        "incomplete_runs": incomplete,
+        "output": str(output),
+    }
 
 
 def main() -> None:
@@ -313,7 +369,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     result = run(args.directory, args.output)
-    print(json.dumps({"runs": len(result["runs"]), "output": result["output"]}))
+    print(
+        json.dumps(
+            {"runs": len(result["runs"]), "incomplete_runs": len(result["incomplete_runs"]), "output": result["output"]}
+        )
+    )
 
 
 if __name__ == "__main__":
