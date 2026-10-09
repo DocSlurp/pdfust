@@ -474,6 +474,12 @@ with eight, over actual elapsed time. Known correctness changes from 99/144 to
 97/144 across repeated DEV arms. Those eight clients share one model allocation;
 throughput is not computed from summed overlapping request latency.
 
+The [single-copy batching comparison](bench/results/remote-gpu-batching.md)
+completed 2,160 decisions. Flash batch size 2 preserved all 216 choices and reached
+844.58 warm region inputs/minute (estimated 39,745 inputs/USD), an 8.1% warm gain
+but only a 0.9% gain including worker startup. Larger batches were slower; larger
+Clef batches also changed decisions and reduced accuracy.
+
 The [natural prompt transfer](bench/results/remote-gpu-natural-transfer.md)
 shows a useful but incomplete Flash tradeoff: identity wording improves
 insufficient-evidence abstention from 5/44 to 19/44, while known correctness falls

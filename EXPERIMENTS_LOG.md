@@ -1054,3 +1054,19 @@ known abstentions 4 to 12, and insufficient-scope abstention 5/44 to 19/44. Clef
 did not improve ambiguity. Qwen9's separate original-prompt natural cohort
 completed 96 inputs, with 32/52 scope-known correct and 0/44 ambiguity abstention.
 References remain provisional overlapping regions from one page.
+
+R001 recovery checkpoint: all four native models completed the 288-input v2
+evidence presentation. PPLX additionally completed a fresh 216-input runtime
+control; PPLX and Intern each completed all 48 original and 48 identity controls
+at the exact 256/500 px images on the recovery host. The pure-adapter admission
+repair resolved the three native v1 transport failures. V1 Intern/Qwen and v2
+remain separately labeled presentations; no failed attempt is discarded.
+
+Single-copy batching completed ten 216-input configurations. Flash preserved
+every decision at every batch size. B2 improved warm throughput by 8.1% over
+new-path B1, but worker-inclusive throughput by only 0.9%; larger batches slowed.
+Clef B2 retained its aggregate score but changed two decisions; B4/B8/B16 lost
+known-case accuracy. Initial Clef timings overlap environment bootstrap. Two
+bounded B1/B2 repeats after all other work finished check that timing concern,
+retaining both passes. No new model/evidence experiments are admitted after those
+repeats; final artifact sync and exact-host retirement follow.
