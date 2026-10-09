@@ -467,3 +467,54 @@ HTTP time summed to 352.51 s. Remote CPU/RAM are unmeasured. Final validation:
 2,049 passed, 16 skipped, two expected failures; Ruff and mypy pass.
 [Baseline details](bench/results/anthropic-baseline.md) and
 [matched configuration comparison](bench/results/anthropic-matched-comparison.md).
+
+## 2026-10-09 — L001, decisions before word assembly
+
+The user requested `$council-of-dans`, broad implementation/measurement loops and
+complete hypothesis/output/verdict records. Three parallel medium-reasoning
+gpt-6.1-sol agents supplied distinct architecture, invention and evaluation plans,
+then implemented in isolated worktrees. All proposals completed. See
+[L001 plan and hypothesis matrix](bench/LOWLEVEL_DECISIONS.md) and its linked
+individual council proposals.
+
+Implemented a private bounded Rust pre-clustering glyph snapshot, decoded text
+operator sidecar, 24 logical / 72 render-equivalent authored controls, nine
+source-only evidence arms, strict source-partition materialization and shared
+ledger runner. No default extraction path calls a model. Models are Jev 1.13,
+d1, PPLX decider and Luna decisions; only the latter two receive crop arms,
+matching current gateway modalities. Langfuse price registration verified all
+models with no conflicts. Starting conservative accounting was USD 9.3899227568;
+L001 has its own USD 1.50 persistent cap within the unchanged USD 15 authorization.
+
+Preflight verdicts: reject the unpaid first crop freeze because discarded alpha
+produced black images; white compositing plus regression checks corrected it.
+Supersede the next unpaid freeze because native words leaked paint-order
+nuisances into the canonical glyph arm. Retain both artifacts. Paid initial
+requests use `lowlevel-v1/basic-final/`; all 24 pilot transmissions passed schema
+checks and cost USD 0.009940746. The full frozen 768-request matrix is in progress.
+
+The independent source audit proves text-only inputs cannot distinguish the
+initial ruled join/split/unknown variants. Do not mistake those missing dividers
+for a model reasoning deficit. Native word atoms omit two of four authored
+field-split possibilities; glyph atoms retain all four, but every hosted arm
+already gets those same glyph-derived chunks, so this is capability coverage,
+not a measured W-versus-G model improvement. The 12 logical / 36-page history
+follow-up freezes ordinary numbered items separately. Tentative continuation
+labels remain distinct from observable new-item evidence and unknown cases.
+
+CPU verdict: preserve the experimental hook but do not claim speedup. Snapshot
+plus normal extraction took 2.09× original104 time and 1.68× the small controls,
+with approximately 0.84 MiB additional median process peak RSS; all text hashes
+and mapped-character conservation checks passed. Five process blocks, matched
+release builds and full ranges are in the
+[performance report](bench/results/lowlevel-native-performance.md). An invalid
+RSS-launcher pilot is retained, explicitly excluded and completely rerun.
+
+The audit also reproduced a native paint-order word-clustering defect on
+identical rendered pages; an isolated deterministic repair is under regression
+test. A separately frozen, source-only vector-divider policy correctly handles
+all 12 logical row controls: eight decisive choices and four abstentions. It
+does not classify business headers or history-only cases. This is a reason to
+test deterministic routing before paying for every region, not evidence of
+production safety or realized cascade savings. See
+[geometry results](bench/results/lowlevel-geometry.md).

@@ -306,9 +306,17 @@ def prepare(directory: Path, *, cohort: list[dict[str, Any]] | None = None) -> d
     records: list[dict[str, Any]] = []
     for arm in ARMS:
         for model in IMAGE_MODELS if arm.startswith("crop") else MODELS:
-            for offset in range(0, len(pages), BATCH_SIZE):
+            offset = 0
+            while offset < len(pages):
                 ids = [p["id"] for p in pages[offset : offset + BATCH_SIZE]]
-                body = request([observations[ident] for ident in ids], model, arm)
+                while True:
+                    try:
+                        body = request([observations[ident] for ident in ids], model, arm)
+                        break
+                    except ValueError as error:
+                        if "exceeds byte admission" not in str(error) or len(ids) == 1:
+                            raise
+                        ids.pop()
                 filename = f"request-{len(records):04d}.json"
                 records.append(
                     {
@@ -319,6 +327,7 @@ def prepare(directory: Path, *, cohort: list[dict[str, Any]] | None = None) -> d
                         "page_ids": ids,
                     }
                 )
+                offset += len(ids)
     random.Random(17441).shuffle(records)  # noqa: S311 - reproducible experiment scheduling, not security.
     catalog = ARTIFACTS / "langfuse/catalog-prices.json"
     (directory / "catalog-prices.json").write_bytes(catalog.read_bytes())
