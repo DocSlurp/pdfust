@@ -14,7 +14,7 @@ requested upper bound of eight agents. Each builder uses a separate worktree.
   when existing positive coverage cannot test a hypothesis.
 - **Protected data:** the separate 20-file holdout stays unopened and untuned.
   Public benchmark familiarity/pretraining contamination is unknown.
-- **Budget:** cumulative $15 authorization remains. All hosted calls use the
+- **Budget:** cumulative USD 15 authorization remains. All hosted calls use the
   shared reservation ledger. Positive reported charges take precedence; missing
   or zero charges use published prices and reported tokens, marked estimates.
 - **Resources:** CPU by default; the user subsequently authorized bounded local
@@ -150,7 +150,7 @@ The explicit prompt-tuning window is 05:05–06:05 UTC, within the overall
 independent agent tracks are frozen across both DEV cohorts and two models
 (Luna and PPLX): 1,440 logical page requests. Each request preserves its
 source words, 512 px image and complete candidate menu. The sweep has a
-persistent $1 incremental admission cap under the cumulative $15 limit;
+persistent USD 1 incremental admission cap under the cumulative USD 15 limit;
 provider reservations and actual/effective charges remain separate.
 
 | Test | Exact positive tables | Prose false tables | Interpretation |

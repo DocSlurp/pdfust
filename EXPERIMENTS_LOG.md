@@ -17,8 +17,8 @@ credentials. Generated artifacts can be reproduced from committed code and the
 recorded source manifests. Existing user `mise.toml` is unrelated and remains untouched.
 
 At the start of the council/image phase, cumulative provider/rental-reported spend
-is $2.046954530, with $0.60 reserved for two unresolved HTTP 404 charges. Conservative
-accounting is $2.646954530 of the user's $15 authorization. Existing per-request
+is USD 2.046954530, with USD 0.60 reserved for two unresolved HTTP 404 charges. Conservative
+accounting is USD 2.646954530 of the user's USD 15 authorization. Existing per-request
 reservations and native byte/question admissions remain enforced. Authored and
 public/redistributable PDF evidence is authorized for the configured OpenRouter
 models; proprietary business documents are outside these runs.
@@ -64,7 +64,7 @@ A hypothesis can be rejected or remain unresolved; those outcomes are retained.
 | D001 | Native decision probabilities versus small chat/frontier text models | [Initial pilot](bench/results/decision-findings.md), commit `225a17d`, ledger entries 0–627 | DEV results only; explicit source spans help |
 | D002 | Singleton, resolved spans, geometry ablation, three-way choice | Same initial report; Jev 14 → 24/36 after resolution; batch/raw 33/96 answer differences; removing singleton geometry preserved hard answers | Keep representations distinct and preserve losses |
 | D003 | Eight more exact OpenRouter decision IDs | [Catalog](bench/DECISION_CATALOG.md), [comparison](bench/results/decision-alternatives.md), ledger entries 628–1349: seven work; Span returned HTTP 404; Luna 31/36 relationships and 8/8 regions; Perplexity 30/36 and 6/8 | Shortlist Luna and Perplexity on measured quality |
-| D004 | Provider-pinned Clef avoids Workers AI state truncation | PrimeIntellect control probe returned HTTP 404, one failed/seven unattempted; $0.30 held in reserve, separate from Span's $0.30 | No control-quality score; preserve availability failure |
+| D004 | Provider-pinned Clef avoids Workers AI state truncation | PrimeIntellect control probe returned HTTP 404, one failed/seven unattempted; USD 0.30 held in reserve, separate from Span's USD 0.30 | No control-quality score; preserve availability failure |
 | D005 | Route by task using calibration accuracy, no confidence gate | [Task router](bench/decision_routing.py): 36/36 calibration → 29/36 historical test, below Luna at 31/36; eight scorer tests | Reject added routing complexity on current evidence |
 | C001 | Council of Dans re-evaluation | Reviewed and promoted individually: [Inventor](bench/council/2026-10-08/inventor.md), [Performance](bench/council/2026-10-08/performance.md), [Evaluation](bench/council/2026-10-08/eval-architect.md) | Presented all three; proceed with native/assembly ceiling, evidence augmentation and tiny-image tests |
 | M001 | Native candidate assembly and candidate-oracle ceiling | Planned after council review; requires meaningful record/source-ID labels | Do not spend on model selection if correct assembly is absent |
@@ -104,11 +104,11 @@ A hypothesis can be rejected or remain unresolved; those outcomes are retained.
   with normalized native text against near-wording, reverse-order and cross-cell
   distractors. Embedding similarity is retrieval evidence, not proof of a phrase
   or recovered cell ownership. OpenRouter catalog lists Gemini Embedding 2,
-  Voyage multimodal 3.5 and Nemotron VL. Same persistent ledger/$15 cap applies.
+  Voyage multimodal 3.5 and Nemotron VL. Same persistent ledger/USD 15 cap applies.
 
 First hosted evidence wave freezes two models (Luna, Perplexity), four context
 projections, 64, 128, 256 and 512-pixel crop ladder with 128 px blur and blank controls,
-maximum 600 new requests and $1 incremental accounted spend, including retained
+maximum 600 new requests and USD 1 incremental accounted spend, including retained
 failed-call reservations. Start with current/native and 128 px on the same 30,
 then target remaining ablations at observed DEV failures. No clean confirmation
 exists: these are controlled development regressions. The eval-expert optimization
@@ -130,7 +130,7 @@ This tested evidence representation rather than confidence adjustment.
 
 The wave request-count guard expanded from **600 to 1,000** to include paired
 compact ablations and the separate embedding experiment. Incremental accounted
-spending remained capped at **$1**, within the cumulative **$15** authorization.
+spending remained capped at **USD 1**, within the cumulative **USD 15** authorization.
 All trials and failures were retained.
 
 The user explicitly authorized [Langfuse integration](bench/LANGFUSE.md).
@@ -154,10 +154,10 @@ hashes, shapes and compact outcomes, without credentials or embedded images.
 
 **Historical wave accounting:**
 
-- **794 new requests:** $0.0219335368 provider-reported charges; no new unresolved failed-call charges.
-- **Cumulative provider/rental-reported charges:** $2.0688880668.
-- **Prior unresolved reservations:** $0.60.
-- **Conservative accounted total:** $2.6688880668 of the $15 cap.
+- **794 new requests:** USD 0.0219335368 provider-reported charges; no new unresolved failed-call charges.
+- **Cumulative provider/rental-reported charges:** USD 2.0688880668.
+- **Prior unresolved reservations:** USD 0.60.
+- **Conservative accounted total:** USD 2.6688880668 of the USD 15 cap.
 - **Ledger entries:** 1350–2143.
 
 These are historical reported charges. Original zeroes remain in the retained
@@ -307,8 +307,8 @@ Historical artifact directories remain unchanged. No package was published.
 
 - Frozen 15 generic q0-only prompt variants from three independent worktree
   agents; both 24-page hosted cohorts and Luna/PPLX use identical source evidence
-  and candidate menus. Dedicated 05:05–06:05 UTC tuning window, $1 incremental
-  admission cap under the shared $15 cumulative cap.
+  and candidate menus. Dedicated 05:05–06:05 UTC tuning window, USD 1 incremental
+  admission cap under the shared USD 15 cumulative cap.
 - The unchanged Luna 512 selector falls to 3/16 exact tables and 2/8 prose false
   positives on fresh topology DEV. Candidate coverage is only 4/16. This directly
   motivates complementary candidate topology work, not confidence tuning alone.

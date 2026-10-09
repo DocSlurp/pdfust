@@ -25,4 +25,4 @@ Identical actual provider requests; no automatic retries. Local retained-respons
 
 Catalog token estimates are comparisons, not newly observed charges. Missing cache counters assume zero for absent components with an explicitly unverified uncached assumption; observed cache counters without matching published cache prices produce an unknown total. Raw usage, ledger entries, fallback assumptions and component prices remain in the adjacent results JSON.
 
-Extra-wave ceiling: $0.50; at most 24 actual calls, 4 models, 2 conditions/model, three submissions/condition. The shared client's cumulative $15 ceiling and reservation ledger also apply.
+Extra-wave ceiling: USD 0.50; at most 24 actual calls, 4 models, 2 conditions/model, three submissions/condition. The shared client's cumulative USD 15 ceiling and reservation ledger also apply.
