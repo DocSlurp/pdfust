@@ -24,11 +24,25 @@ CHOICES = ("join", "split", "unresolved")
 SUM_TOLERANCE = 0.015000001
 WAVE_LIMIT = 5.0
 TAG_PREFIX = "L001/"
-WAVE_LIMITS = {"L001/": 5.0, "L004/": 5.0, "L005/": 5.0, "L006/": 10.0}
+WAVE_LIMITS = {"L001/": 5.0, "L004/": 5.0, "L005/": 5.0, "L006/": 10.0, "L009/": 5.0, "L010/": 5.0}
 MAX_BODY_BYTES = 200_000
 MAX_BATCH = 3
 ENCODING_COUNT = 3
 TARGET_CHUNKS = 2
+IMAGE_MODEL_INTERVALS = {"perplexity/pplx-decider-v1.1-27b": 10.0}
+
+
+def image_model_delay(entries: list[dict[str, Any]], model: str, now: float) -> float:
+    """Space new image calls after observed throttling; never retry a failed body."""
+    interval = IMAGE_MODEL_INTERVALS.get(model, 0.0)
+    latest = 0.0
+    for entry in entries:
+        if entry.get("requested_model") != model:
+            continue
+        started, elapsed = number(entry.get("started_at")), number(entry.get("elapsed_ms"))
+        if started is not None:
+            latest = max(latest, started + (elapsed or 0) / 1000)
+    return min(interval, max(0.0, latest + interval - now)) if latest else 0.0
 
 
 def _fail(reason: str) -> NoReturn:
@@ -261,7 +275,13 @@ def run(
         _fail("wave policy differs from frozen experiment")
     if max_requests is not None and (type(max_requests) is not int or max_requests < 1):
         _fail("max_requests must be a positive integer")
-    client = DecisionClient() if client is None else client
+    if client is None:
+        if manifest.get("gateway") == "vercel":
+            from bench.decision_gateway import GatewayDecisionClient  # noqa: PLC0415
+
+            client = GatewayDecisionClient(catalog_path=directory / "catalog-prices.json")
+        else:
+            client = DecisionClient()
     with exclusive_lock(client.ledger.parent / "run.lock"):
         # Reverify inside serialization boundary before any body reaches transport.
         manifest = verify_directory(directory)
@@ -336,12 +356,25 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
         try:
             row["reservation_forecast_usd"] = reservation_preflight(len(body_bytes), _price(directory, record["model"]))
             entries = _entries(client)
-            known = next((entry for entry in entries if entry.get("request_sha256") == digest), None)
+            known = next(
+                (
+                    entry
+                    for entry in entries
+                    if entry.get("request_sha256") == digest
+                    and entry.get("gateway", "openrouter") == getattr(client, "gateway", "openrouter")
+                ),
+                None,
+            )
             if known is not None and not known.get("response_file"):
                 message = "Previous identical request failed; no retry"
                 raise RuntimeError(message)  # noqa: TRY301
             if known is None:
                 wave_admission(entries, tag_prefix=tag_prefix, wave_limit=wave_limit)
+                if tag_prefix == "L006/":
+                    delay = image_model_delay(entries, record["model"], time.time())
+                    row["client_throttle_seconds"] = delay
+                    if delay:
+                        time.sleep(delay)
             attempted += 1
             response = client.request(
                 body, tag=f"{tag_prefix}{record['model']}/{record['arm']}/{digest}", max_body_bytes=MAX_BODY_BYTES
@@ -357,7 +390,15 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
             row["status"] = "ok"
         except (RuntimeError, ValueError, OSError, KeyError, TypeError) as error:
             row.update(status="failed", error=type(error).__name__, reason="model stopped on first failure; no retry")
-            retained = next((entry for entry in _entries(client) if entry.get("request_sha256") == digest), None)
+            retained = next(
+                (
+                    entry
+                    for entry in _entries(client)
+                    if entry.get("request_sha256") == digest
+                    and entry.get("gateway", "openrouter") == getattr(client, "gateway", "openrouter")
+                ),
+                None,
+            )
             if retained is not None:
                 row.setdefault("entry", retained)
                 row.setdefault("cost", request_cost(retained, row.get("usage", {}), _price(directory, record["model"])))
@@ -399,6 +440,7 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
         budget_exhausted=budget_exhausted,
         wave_limit_usd=wave_limit,
         wave_tag_prefix=tag_prefix,
+        client_model_intervals_seconds=IMAGE_MODEL_INTERVALS if tag_prefix == "L006/" else {},
         execution_resources={
             "wall_seconds": sum(row["wall_seconds"] for row in history),
             "cpu_seconds": sum(row["cpu_seconds"] for row in history),
@@ -681,6 +723,8 @@ def report(directory: Path) -> dict[str, Any]:
 
         def metric(key: str, row: dict[str, Any] = row) -> str:
             value = row[key]
+            if key in {"pages_per_usd", "correct_regions_per_usd"} and row["effective_usd"] == 0:
+                return "n/a (zero cost)"
             return "unknown" if value is None else f"{value:.6g}"
 
         encoding = (

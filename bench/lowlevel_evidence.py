@@ -382,6 +382,18 @@ def verify(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - all froz
     """Verify every frozen input and reconstruct each body from source observations."""
     directory = guard_path(directory)
     manifest = json.loads((directory / "manifest.json").read_bytes())
+    if manifest.get("experiment") in {"L009", "L010"}:
+        from bench.lowlevel_gateway import verify as verify_gateway  # noqa: PLC0415
+
+        return verify_gateway(directory)
+    if manifest.get("experiment") == "L006":
+        from bench.lowlevel_images import verify as verify_images  # noqa: PLC0415
+
+        return verify_images(directory)
+    if manifest.get("experiment") == "L005":
+        from bench.lowlevel_matched import verify as verify_matched  # noqa: PLC0415
+
+        return verify_matched(directory)
     if manifest.get("experiment") == "L004":
         from bench.lowlevel_packets import verify as verify_packets  # noqa: PLC0415
 

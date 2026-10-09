@@ -363,3 +363,19 @@ def test_claude55_relationship_requests_use_supported_reasoning_settings(model: 
     assert request["reasoning"] == {"effort": "medium"}
     assert request["max_tokens"] == 4096
     assert request["response_format"]["type"] == "json_schema"
+
+
+def test_openrouter_does_not_replay_gateway_body(
+    client: hosted.DecisionClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transmit = MagicMock(return_value=response(json.dumps(result()).encode()))
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", transmit)
+    first = client.request(body(), tag="first")
+    ledger = json.loads(client.ledger.read_text())
+    ledger["requests"][0]["gateway"] = "vercel"
+    client.ledger.write_text(json.dumps(ledger))
+    second = client.request(body(), tag="openrouter")
+    assert not second["replayed"]
+    assert second["entry"]["index"] != first["entry"]["index"]
+    assert transmit.call_count == 2

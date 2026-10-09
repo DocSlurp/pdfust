@@ -483,3 +483,14 @@ def test_l006_policy_and_running_status_are_explicit(frozen: Path, tmp_path: Pat
         run(frozen, client=client, tag_prefix="L005/")
     run(frozen, client=client, tag_prefix="L006/", wave_limit=10, max_requests=1)
     run(frozen, client=client, tag_prefix="L006/", wave_limit=10)
+
+
+def test_image_throttle_uses_measured_provider_completion_and_is_bounded() -> None:
+    from bench.lowlevel_run import image_model_delay  # noqa: PLC0415
+
+    model = "perplexity/pplx-decider-v1.1-27b"
+    entries = [{"requested_model": model, "started_at": 100.0, "elapsed_ms": 2000.0}]
+    assert image_model_delay(entries, model, 105.0) == 7.0
+    assert image_model_delay(entries, model, 120.0) == 0.0
+    assert image_model_delay(entries, model, 90.0) == 10.0
+    assert image_model_delay(entries, "cloudflare/clef", 105.0) == 0.0

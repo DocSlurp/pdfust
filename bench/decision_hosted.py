@@ -325,7 +325,7 @@ class DecisionClient:
                         catalog_rates=pricing,
                     )
 
-    def request(
+    def request(  # noqa: C901 - explicit transport, replay and accounting gates.
         self,
         body: dict[str, Any],
         *,
@@ -366,6 +366,8 @@ class DecisionClient:
             charged = sum(accounted_cost(row["accounted_usd"]) for row in ledger["requests"])
             prior = PRIOR_RENTAL + self._prior_api_cost()
             for entry in ledger["requests"]:
+                if entry.get("gateway", "openrouter") != "openrouter":
+                    continue
                 if entry["request_sha256"] == key and entry.get("response_file"):
                     if not replay:
                         continue

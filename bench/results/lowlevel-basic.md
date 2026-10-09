@@ -2,7 +2,7 @@
 
 authored DEV description partition only; not independent documents or full tables.
 
-Completed requests: 768/768 planned.
+Completed request bodies: 768/768 planned; completed manifest records: 768/768. Refused: 0 bodies / 0 records.
 
 Known exactness scores only the two target-text chunks. Missing/failed inputs remain in denominators. Ambiguous abstention is separate. Literal outputs and source ownership are retained in evaluation.json. Header/value/cell reconstruction is unmeasured. Probabilities are uncalibrated; the three encodings share each logical template.
 
@@ -41,7 +41,7 @@ Known exactness scores only the two target-text chunks. Missing/failed inputs re
 | openai/gpt-6-luna-decisions | crop256 | 72/72 | 25/48 | 0/24 | 22/24 | ~0.0158244 | 4549.94 | 1579.84 | 490.554 |
 | openai/gpt-6-luna-decisions | crop512 | 72/72 | 25/48 | 0/24 | 23/24 | ~0.0162276 | 4436.89 | 1540.59 | 517.689 |
 
-Costs preserve positive provider charges; ~ marks frozen-catalog estimates. Unknown costs never become complete totals. Local replay is not another provider transmission; API timing excludes preparation. Source conservation covers validated outputs only; invalid/failed inputs are listed separately.
+Costs preserve positive provider charges; ~ marks frozen-catalog estimates. Unknown costs never become complete totals. Local replay is not another provider transmission; rate numerators count successful fresh transmitted page inputs, excluding identical-input aliases. API timing excludes preparation. Source conservation covers validated outputs only; invalid/failed inputs are listed separately.
 
 Preparation: `{"cpu_seconds": 4.590087625000001, "machine": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "measurement": "/proc/self/status VmHWM (current executable); sequential CPU process; lifetime RSS, no sampling; includes rendering all crops for every arm", "peak_rss_bytes": 100085760, "python": "3.14.7", "wall_seconds": 4.578611534991069}`.
 
@@ -91,38 +91,37 @@ Per-family model results:
 
 Request/refusal accounting:
 
-- typesafe/jev-1.13 / minimal: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- typesafe/jev-1.13 / words: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- typesafe/jev-1.13 / glyphs: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- typesafe/jev-1.13 / canonical: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- typesafe/jev-1.13 / operators: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- typesafe/jev-1.13 / rolling: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- typesafe/jev-1.13 / vectors: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / minimal: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / words: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / glyphs: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / canonical: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / operators: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / rolling: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- liquid/d1 / vectors: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / minimal: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / words: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / glyphs: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / canonical: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / operators: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / rolling: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / vectors: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / crop256: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- perplexity/pplx-decider-v1.1-27b / crop512: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / minimal: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / words: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / glyphs: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / canonical: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / operators: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / rolling: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / vectors: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / crop256: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
-- openai/gpt-6-luna-decisions / crop512: 24/24 requests completed; 0 page inputs refused; reasons `{}`.
+- typesafe/jev-1.13 / minimal: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- typesafe/jev-1.13 / words: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- typesafe/jev-1.13 / glyphs: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- typesafe/jev-1.13 / canonical: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- typesafe/jev-1.13 / operators: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- typesafe/jev-1.13 / rolling: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- typesafe/jev-1.13 / vectors: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / minimal: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / words: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / glyphs: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / canonical: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / operators: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / rolling: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- liquid/d1 / vectors: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / minimal: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / words: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / glyphs: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / canonical: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / operators: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / rolling: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / vectors: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / crop256: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- perplexity/pplx-decider-v1.1-27b / crop512: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / minimal: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / words: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / glyphs: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / canonical: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / operators: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / rolling: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / vectors: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / crop256: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
+- openai/gpt-6-luna-decisions / crop512: 24/24 request bodies and 24/24 records completed; 0 page inputs refused; 0 HTTP durations unknown; reasons `{}`.
 
 Persistent model stops: `{}`.
-

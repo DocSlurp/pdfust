@@ -148,6 +148,8 @@ def _validate(body: dict[str, Any], max_body_bytes: int) -> bytes:  # noqa: C901
 class GatewayDecisionClient(hosted.DecisionClient):
     """Use one shared budget lock, Gateway-specific pricing and route-specific replay."""
 
+    gateway = GATEWAY
+
     def __init__(
         self,
         root: Path = hosted.ROOT,

@@ -273,9 +273,13 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
     if not isinstance(request_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", request_sha):
         message = "invalid request SHA-256"
         raise ValueError(message)
-    trace_seed = request_sha
+    identity = entry.get("request_identity_sha256", request_sha)
+    if not isinstance(identity, str) or not re.fullmatch(r"[0-9a-f]{64}", identity):
+        message = "invalid transport identity SHA-256"
+        raise ValueError(message)
+    trace_seed = identity
     if entry.get("force_transmission"):
-        trace_seed = hashlib.sha256(f"{request_sha}:transmission:{entry['index']}".encode()).hexdigest()
+        trace_seed = hashlib.sha256(f"{identity}:transmission:{entry['index']}".encode()).hexdigest()
     trace_id = trace_seed[:32]
     span_id = hashlib.sha256((trace_seed + ":generation").encode()).hexdigest()[:16]
     usage = result.get("usage", {})
@@ -290,6 +294,9 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
             normalized_usage[target] = value
     provided_cost = _number(usage.get("cost"))
     model = body.get("model", entry.get("requested_model", "unknown"))
+    if entry.get("gateway") == "vercel":
+        model = "vercel/" + str(model)
+        prices = {model: entry.get("catalog_rates", {})}
     attributes = {
         "langfuse.trace.name": "pdf-master DEV decisions",
         "langfuse.trace.metadata.request_sha256": request_sha,
@@ -308,7 +315,7 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         "langfuse.observation.metadata.provider_cost_reported": provided_cost is not None,
         "langfuse.environment": "development",
     }
-    for key in ("provider", "served_model"):
+    for key in ("provider", "served_model", "gateway"):
         value = entry.get(key, result.get("provider" if key == "provider" else "model"))
         if isinstance(value, str) and len(value) < _MAX_IDENTIFIER:
             attributes["langfuse.observation.metadata." + key] = value
@@ -413,7 +420,7 @@ def emit_request(root: Path, body: dict[str, Any], result: dict[str, Any], entry
         prices_file = directory / "catalog-prices.json"
         prices = json.loads(prices_file.read_text()).get("prices", {}) if prices_file.exists() else None
         trace_id, payload = _payload(body, result, entry, prices)
-        marker_name = str(entry.get("request_sha256") or _sha(body))
+        marker_name = str(entry.get("request_identity_sha256") or entry.get("request_sha256") or _sha(body))
         if entry.get("force_transmission"):
             marker_name += f"-transmission-{entry['index']}"
         marker = directory / (marker_name + ".json")

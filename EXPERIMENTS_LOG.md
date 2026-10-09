@@ -587,3 +587,71 @@ Validation at this checkpoint: **2,190 passed, 14 skipped, two expected failures
 mypy on source/tests plus new runners passed. Full local log is retained under
 `lowlevel-v1/pytest-expanded.log`. Further experiment modules will receive their
 own focused checks before integration.
+
+### Gateway expansion requested by the user
+
+A full live Vercel catalog comparison found one additional named decision-model
+family: Laya (`convaiinnovations/laya` and `convaiinnovations/laya-free`). Gateway
+also advertises d1 image input, absent from OpenRouter's d1 modalities. Add both to
+L009; do not count aliases as separate architectures. Catalog capability conflicts
+and the missing local Gateway credential are documented in
+[Gateway candidates and protocol plan](bench/VERCEL_DECISIONS.md). OpenRouter runs
+continue while the adapter and local credential are prepared.
+
+### L005–L009 preparation and initial execution
+
+L005 freezes identical singleton raw and compact canonical evidence, isolating
+representation from batching and prompt. Its 288 records contain only 96 distinct
+request bodies because encoding aliases remain identical. Report aliases separately.
+The all-model L006 focus sweep freezes 1,728 requests on 24 logical layouts: four
+image-capable OpenRouter decision models, six longest-edge sizes (64, 128, 256, 400,
+500, 512) and three independent image formats (RGB8, gray8, two-bit palette). A
+separate richer-context comparison has 864 requests for PPLX and Luna. All crops
+derive from the retained 512-pixel PNG, so no native-render optimum is claimed.
+
+All 24 L006 smoke calls passed across PPLX, Luna, Clef Flash and Clef. PPLX earlier
+returned HTTP 429 in L004 and L005; their original failed requests and USD 0.30
+reservations remain. Subsequent L006 fresh PPLX transmissions have a ten-second
+minimum interval after the previous completion. This delay is local scheduling,
+not API latency; execution wall time includes it, API-only rates exclude it. No
+failed body was automatically retried.
+
+L007 freezes 24 source-selected RGB bodies (128/512 pixels, four models, three
+source-geometry strata) for three actual provider transmissions each, at most 72
+calls. It disables local response replay and reports provider cache counters,
+missing counters and routing changes explicitly. Execution waits for corresponding
+L006 originals to succeed. Repeated requests do not establish a provider cache hit.
+
+The user added the Gateway credential locally. L009 freezes 216 text requests for
+Laya, Laya Free and d1, plus 432 matched d1 image requests. d1 text and image pilots
+succeeded. Both Laya aliases returned HTTP 422 on a compact-canonical request;
+supported text calls succeeded. New transport tests verify reservation-before-HTTP,
+route-isolated replay, retained raw responses and reported-cost priority. Gateway
+failed-row reconciliation was corrected using the exact route/body ledger entries;
+the original result bytes are retained. No failure was silently removed.
+
+An accounting audit corrected 12 within-freeze singleton alias rows in L002 that
+had overwritten the fresh-call flag when replaying a later identical input. Original
+results are retained byte-for-byte; shared ledger and quality responses are unchanged.
+Updated tables count distinct transmitted inputs in cost/latency numerators and
+separate planned/completed request bodies from manifest records. Missing HTTP time
+now makes the complete API throughput unknown rather than using a partial denominator.
+
+### L005 matched result and Gateway compatibility follow-up
+
+On identical singleton history evidence, Jev, d1 and Luna preserved aggregate
+known/ambiguous scores while lossless compact representation reduced estimated
+charges by 68.5%, 66.1% and 69.1%. Ambiguity handling remains poor. PPLX has an
+incomplete raw arm after HTTP 429; retain its missing denominator and unknown cost.
+
+L010 freezes exact JSON serialization of the L009 state with unchanged questions.
+Its first 12 calls produced ten successes and two Laya-alias HTTP 422 failures.
+Serialization alone did not fix compatibility. L006 PPLX also hit HTTP 429 after
+eight successful image calls despite ten-second spacing; its stop remains while
+other models continue. See the regularly updated [progress table](bench/results/lowlevel-progress.md).
+
+L011 prepares a natural Senate expenditure page: 24 adjacent description pairs,
+full-record versus description-only context, fresh 512/1200 crops. Requests were
+frozen before separate source-aware screenshot references. These provisional
+references are not blind gold; narrower context has its own uncertainty labels.
+The fixed-edge comparison jointly changes context and glyph resolution.
