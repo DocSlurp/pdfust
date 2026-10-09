@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from bench.lowlevel_run import score
 from bench.remote_image_sizes import verify as verify_fresh
 from bench.remote_prompt_packets import (
     VARIANTS,
@@ -21,10 +22,11 @@ from bench.remote_prompt_packets import (
     transform,
 )
 from bench.remote_prompt_report import aggregate, events, paired, scored_case, verify_sources
-from bench.remote_report import _read
+from bench.remote_report import _choice, _read
 
 EDGES = (128, 256, 400, 500, 640)
 MODELS = ("flash", "clef", "pplx", "intern")
+EXPLORATORY_MODELS = ("qwen9",)
 SOURCE_COUNT = 24
 
 
@@ -156,10 +158,50 @@ def verify(directory: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     return source, admitted
 
 
-def evaluate(directory: Path, runs: dict[str, Path], baselines: dict[str, Path] | None = None) -> dict[str, Any]:
+def _case(event: dict[str, Any] | None, observation: dict[str, Any], target: dict[str, Any]) -> dict[str, Any]:
+    if event is None or event.get("status") != "ok" or event.get("response", {}).get("backend") != "stock-vllm-json":
+        return scored_case(event, observation, target)
+    try:
+        parsed = _choice(event["response"])
+        parsed["tie_abstention"] = False
+        return {
+            "status": "ok",
+            "expected": target["expected"],
+            "parsed": parsed,
+            "score": score(observation, target, parsed["choice"]),
+            "event": event,
+        }
+    except (ValueError, TypeError, KeyError) as error:
+        return {"status": "schema_error", "expected": target["expected"], "error": str(error), "event": event}
+
+
+def _metrics(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    result = aggregate(cases)
+    if any(case.get("event", {}).get("response", {}).get("backend") == "stock-vllm-json" for case in cases):
+        # Concurrent HTTP attempt CPU windows overlap; server allocation is outside client scope.
+        result.update(
+            tie_abstentions=None,
+            cuda_peak_allocated_bytes=None,
+            cuda_peak_reserved_bytes=None,
+            inference_cpu_seconds=None,
+            inference_cpu_seconds_known_component=None,
+            per_attempt_wall_scope="HTTP request latency; overlapping requests cannot be summed as batch elapsed",
+            model_resources="unmeasured by HTTP client; separate server process-tree/device monitoring",
+        )
+    return result
+
+
+def evaluate(
+    directory: Path,
+    runs: dict[str, Path],
+    baselines: dict[str, Path] | None = None,
+    *,
+    allow_exploratory_stock: bool = False,
+) -> dict[str, Any]:
     """Verify every source/result before opening local authored DEV targets."""
     source, admitted = verify(directory)
-    if set(runs) - set(MODELS) or (baselines is not None and set(baselines) != set(runs)):
+    allowed = {*MODELS, *(EXPLORATORY_MODELS if allow_exploratory_stock else ())}
+    if set(runs) - allowed or (baselines is not None and set(baselines) != set(runs)):
         _fail("Model comparison differs from predeclared native models")
     originals, observations = verify_sources(
         Path(source["source_directory"]), Path(source["source_index"]), Path(source["source_packets"]) / "manifest.json"
@@ -183,17 +225,15 @@ def evaluate(directory: Path, runs: dict[str, Path], baselines: dict[str, Path] 
                 cases, before = [], []
                 for row in rows:
                     page = originals[row["source_id"]]["row"]["page_ids"][0]
-                    cases.append(scored_case(attempts.get(row["id"]), observations[page], targets[page]))
+                    cases.append(_case(attempts.get(row["id"]), observations[page], targets[page]))
                     if model in baseline_events:
                         before.append(
-                            scored_case(
-                                baseline_events[model][0].get(row["fresh_id"]), observations[page], targets[page]
-                            )
+                            _case(baseline_events[model][0].get(row["fresh_id"]), observations[page], targets[page])
                         )
-                groups[f"rgb-{edge}/{variant}"] = {"metrics": aggregate(cases)}
+                groups[f"rgb-{edge}/{variant}"] = {"metrics": _metrics(cases)}
                 if before:
-                    groups[f"rgb-{edge}/{variant}"].update(baseline=aggregate(before), paired=paired(before, cases))
-        models[model] = {"groups": groups, "status": status}
+                    groups[f"rgb-{edge}/{variant}"].update(baseline=_metrics(before), paired=paired(before, cases))
+        models[model] = {"groups": groups, "status": status, "exploratory": model in EXPLORATORY_MODELS}
     return {
         "experiment": "native-prompt-resolution-screen",
         "models": models,
@@ -255,6 +295,12 @@ def markdown(report: dict[str, Any]) -> str:
     lines += [
         "",
         (
+            "Qwen9, when explicitly admitted, is an exploratory extension beyond the four predeclared native models. "
+            "Stock labels have no native probabilities or tie calibration. HTTP latency overlaps at concurrency8. "
+            "Its sum is not batch elapsed. Client CPU/RSS and CUDA metrics cannot price the separate model server."
+        ),
+        "",
+        (
             "Missing, failed and malformed responses retain planned denominators. Resource measurements cover "
             "the serial native inference process; GPU device-wide utilization is separate. Absent matched "
             "fresh-original runs provide no isolated prompt-effect estimate. Full grouping metrics, failures, "
@@ -278,6 +324,7 @@ def main() -> None:
     report.add_argument("--packets", type=Path, required=True)
     report.add_argument("--run", action="append", required=True, help="model=directory")
     report.add_argument("--baseline", action="append", default=[], help="model=fresh-original-directory")
+    report.add_argument("--allow-exploratory-stock", action="store_true")
     report.add_argument("--json-output", type=Path, required=True)
     report.add_argument("--markdown-output", type=Path, required=True)
     args = parser.parse_args()
@@ -290,7 +337,7 @@ def main() -> None:
     else:
         runs = {key: Path(value) for key, value in (item.split("=", 1) for item in args.run)}
         baselines = {key: Path(value) for key, value in (item.split("=", 1) for item in args.baseline)}
-        result = evaluate(args.packets, runs, baselines or None)
+        result = evaluate(args.packets, runs, baselines or None, allow_exploratory_stock=args.allow_exploratory_stock)
         _safe(args.json_output).write_bytes(_encode(result))
         _safe(args.markdown_output).write_text(markdown(result))
 

@@ -1,6 +1,6 @@
 """CPU-only frozen source and exact prompt matrix regression tests."""
 
-# ruff: noqa: ANN001, ANN201, ANN202 - pytest fixtures and fixed matrix sizes.
+# ruff: noqa: ANN001, ANN201, ANN202, SLF001 - pytest fixtures and fixed matrix sizes.
 import base64
 import json
 
@@ -189,3 +189,32 @@ def test_missing_matrix_preserves_all_denominators(tmp_path, monkeypatch):
         assert entry["metrics"]["failures"]["missing"] == 24
         assert entry["metrics"]["inference_wall_seconds"] is None
     assert "0/24" in sizes.markdown(result)
+
+
+def test_exploratory_stock_requires_explicit_admission(tmp_path, monkeypatch):
+    monkeypatch.setattr(sizes, "verify", lambda _: ({}, {}))
+    with pytest.raises(ValueError, match="predeclared"):
+        sizes.evaluate(tmp_path, {"qwen9": tmp_path})
+
+
+def test_stock_labels_have_unavailable_calibration_and_server_resources():
+    observation = {
+        "target_atoms": [[{"id": "a", "text": "a"}], [{"id": "b", "text": "b"}]],
+        "all_target_ids": ["a", "b"],
+        "candidates": {"join": [["a", "b"]], "split": [["a"], ["b"]], "unresolved": []},
+    }
+    event = {
+        "status": "ok",
+        "response": {"backend": "stock-vllm-json", "answers": {"q0": {"type": "choice", "choice": "unresolved"}}},
+        "inference_cpu_seconds": 1,
+        "cuda": {"peak_allocated_bytes": 0, "peak_reserved_bytes": 0},
+    }
+    case = sizes._case(event, observation, {"expected": "unresolved"})
+    assert case["status"] == "ok"
+    assert case["parsed"]["probabilities"] is None
+    metrics = sizes._metrics([case])
+    assert metrics["inference_cpu_seconds"] is None
+    assert metrics["cuda_peak_allocated_bytes"] is None
+    assert metrics["tie_abstentions"] is None
+    event["response"]["answers"]["q0"]["probabilities"] = {"unresolved": 1.0}
+    assert sizes._case(event, observation, {"expected": "unresolved"})["status"] == "schema_error"
