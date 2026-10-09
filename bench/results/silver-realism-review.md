@@ -77,6 +77,29 @@ target isolation, overwrite refusal, and exclusion of ambiguous pages from
 the scorer. Actual rendered pages are reviewed separately from those checks;
 test success does not certify document realism or table extraction correctness.
 
+The generator was committed as `cbef3bd` before the retained v2 freeze. Its
+dataset SHA256 is
+`124953db381d4aa6e08e138410c20a9cfbdfc74428358530b9e7d45da3f6fda4`,
+under `bench/results/pdf-master-artifacts/silver-realism-v2/124953db381d4aa6/`.
+The source-evidence SHA256 is
+`c1002c0fbbb3332a2ce7a47567f01666f45a7a1dcb91abde54a1e983988f4b8d`.
+No model admission or semantic extraction score was run by this review agent.
+
+All 294 authored table body/header words map to source placement references
+without an ambiguous ownership match. All prose reference words survive source
+extraction, and no extracted word is outside its page. Visual review covered
+the small two-by-two case (`dev-003`), an ambiguity control (`dev-004`), two
+14 pt wrapped five-column tables including a blank and total (`dev-017`,
+`dev-018`), and two-/three-column prose (`dev-019`, `dev-020`). The final frozen
+prose renders confirm different continuous stories in adjacent columns; no
+clipping or inter-column overlap was observed in these reviewed examples.
+
+The CPU-only freeze took 1.233 wall seconds and 1.240 process CPU seconds with
+104.12 MiB lifetime peak RSS. Measurement used `perf_counter`, `process_time`,
+and `/proc/self/status` VmHWM in one sequential process, without periodic
+sampling; imports are outside the timed freeze but inside lifetime RSS.
+The generation/realism/rolling/borderless suite passed 29 tests, and Ruff passed.
+
 ## Remaining limits
 
 This is a repaired synthetic DEV cohort, not an independent test set or a
