@@ -43,9 +43,12 @@ def test_multiple_text_parts_and_structured_state_are_lossless() -> None:
 
 def test_mock_load_uses_pinned_native_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
-    monkeypatch.setattr(
-        intern, "_runtime", lambda _: SimpleNamespace(DecisionEngine=lambda **kwargs: calls.append(kwargs) or "mock")
-    )
+
+    def mock_engine(**kwargs: object) -> str:
+        calls.append(kwargs)
+        return "mock"
+
+    monkeypatch.setattr(intern, "_runtime", lambda _: SimpleNamespace(DecisionEngine=mock_engine))
     assert intern.load(tmp_path, device="cpu") == "mock"
     assert calls == [
         {

@@ -8,10 +8,11 @@ Install psutil separately on the remote host. Run alongside the HTTP worker:
 python -m bench.remote_monitor --pid PID --output server.jsonl --deadline-seconds 600
 """
 
-# ruff: noqa: ANN401, PLR0913, PLC0415 - optional runtime and injected monitor clock APIs.
+# ruff: noqa: ANN401, PLR0913 - optional runtime and injected monitor clock APIs.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import math
 import time
@@ -115,7 +116,7 @@ def monitor(
         message = "PID, deadline and sample interval must be positive and finite"
         raise ValueError(message)
     if psutil_module is None:
-        import psutil as psutil_module  # Optional remote-only dependency.
+        psutil_module = importlib.import_module("psutil")  # Optional remote-only dependency.
     started = clock()
     sampler = TreeSampler(pid, psutil_module)
     output.parent.mkdir(parents=True, exist_ok=True)

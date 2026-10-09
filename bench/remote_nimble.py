@@ -22,7 +22,10 @@ import sys
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 MODEL_ID = "bespokelabs/Bespoke-Nimble-9B-v3"
 MODEL_REVISION = "8e927b9b4afdbb14479fac10a7364d1a695be208"
@@ -54,7 +57,9 @@ def _reference(directory: Path) -> Any:
             raise ValueError(message)
     name = "nimble.evaluation.decision_index_engine"
     existing = sys.modules.get(name)
-    if existing is not None and Path(existing.__file__).resolve() != package / "decision_index_engine.py":
+    if existing is not None and (
+        existing.__file__ is None or Path(existing.__file__).resolve() != package / "decision_index_engine.py"
+    ):
         message = "Another Nimble runtime is already imported"
         raise ValueError(message)
     sys.path.insert(0, str(directory))
@@ -62,7 +67,7 @@ def _reference(directory: Path) -> Any:
         runtime = importlib.import_module(name)
     finally:
         sys.path.remove(str(directory))
-    if Path(runtime.__file__).resolve() != package / "decision_index_engine.py":
+    if runtime.__file__ is None or Path(runtime.__file__).resolve() != package / "decision_index_engine.py":
         message = "Nimble reference resolved outside staged source"
         raise ValueError(message)
     return runtime
@@ -131,7 +136,7 @@ def _has_images(value: Any) -> bool:
     return False
 
 
-def native_request(body: dict[str, Any], image_paths: list[str | Path]) -> dict[str, Any]:
+def native_request(body: dict[str, Any], image_paths: Sequence[str | Path]) -> dict[str, Any]:
     """Admit explicit text-only Choice bodies and preserve source/questions exactly."""
     if image_paths or body.get("images") or _has_images(body.get("state")):
         message = "Nimble v3 text-only scorer refuses image evidence; freeze a labeled text-only ablation"
@@ -165,7 +170,7 @@ def native_request(body: dict[str, Any], image_paths: list[str | Path]) -> dict[
     return request
 
 
-def predict(engine: Any, body: dict[str, Any], image_paths: list[str | Path]) -> dict[str, Any]:
+def predict(engine: Any, body: dict[str, Any], image_paths: Sequence[str | Path]) -> dict[str, Any]:
     """Keep native candidate probabilities/usage; add measured synchronized wall time."""
     request = native_request(body, image_paths)
     engine.synchronize()

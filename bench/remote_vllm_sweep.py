@@ -271,7 +271,7 @@ def sweep(models: list[str], workspace: Path, deadline_seconds: float = 2700) ->
             raise RuntimeError(message)
     output = workspace / "vllm-sweep"
     output.mkdir(exist_ok=False)
-    versions = {}
+    versions: dict[str, str | None] = {}
     for name in ("torch", "transformers", "vllm", "huggingface-hub", "psutil", "kernels"):
         try:
             versions[name] = importlib.metadata.version(name)

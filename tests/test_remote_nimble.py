@@ -27,7 +27,7 @@ def canonical() -> dict[str, Any]:
 def test_exact_literal_state_questions_and_missing_usage_preserved() -> None:
     body = canonical()
     before = deepcopy(body)
-    calls = []
+    calls: list[str | tuple[str, dict[str, Any]]] = []
     answer = {"answers": {"q0": {"choice": "split", "probabilities": {"join": 0.1, "split": 0.8, "unresolved": 0.1}}}}
 
     class Mock:
@@ -78,9 +78,12 @@ def test_mock_load_uses_complete_native_contract(tmp_path: Path, monkeypatch: py
     }
     (tmp_path / "schema_config.json").write_text(json.dumps(contract))
     calls = []
-    monkeypatch.setattr(
-        nimble, "_reference", lambda _: SimpleNamespace(NimbleEngine=lambda **kwargs: calls.append(kwargs) or "mock")
-    )
+
+    def mock_engine(**kwargs: object) -> str:
+        calls.append(kwargs)
+        return "mock"
+
+    monkeypatch.setattr(nimble, "_reference", lambda _: SimpleNamespace(NimbleEngine=mock_engine))
     assert nimble.load(tmp_path) == "mock"
     assert calls[0] == {
         "adapter": str(tmp_path),

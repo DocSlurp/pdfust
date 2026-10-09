@@ -15,7 +15,10 @@ import sys
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 MODEL_ID = "internlm/Intern-Decision-4B"
 MODEL_REVISION = "0e5e6aa7d6d750e2b1504ba11a8136cb58aeb3cd"
@@ -64,7 +67,7 @@ def load(model_dir: str | Path, device: str = "cuda") -> Any:
 
 
 def native_request(  # noqa: C901, PLR0912 - explicit canonical transport and admission checks.
-    body: dict[str, Any], image_paths: list[str | Path]
+    body: dict[str, Any], image_paths: Sequence[str | Path]
 ) -> dict[str, Any]:
     """Project canonical evidence without changing questions or literal text parts.
 
@@ -115,7 +118,7 @@ def native_request(  # noqa: C901, PLR0912 - explicit canonical transport and ad
     return result
 
 
-def predict(engine: Any, body: dict[str, Any], image_paths: list[str | Path]) -> dict[str, Any]:
+def predict(engine: Any, body: dict[str, Any], image_paths: Sequence[str | Path]) -> dict[str, Any]:
     """Return native answers/usage plus measured adapter wall time, without estimates."""
     request = native_request(body, image_paths)
     started = time.perf_counter()
