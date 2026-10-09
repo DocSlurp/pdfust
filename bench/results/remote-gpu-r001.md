@@ -20,7 +20,7 @@ Each cell below shows known-correct/16. Every image arm has 24/24 valid decision
 | lowbit-768 | 11/16 | 11/16 | 12/16 | 9/16 | 10/16 |
 | lowbit-1024 | 11/16 | 12/16 | 12/16 | 9/16 | 9/16 |
 
-Nimble-v3 text-geometry: **24/24 valid, 6/16 known-correct, 0/8 ambiguous-abstain**, with no schema or worker failures. Its declared projection removes only image parts from the first 24 RGB512 requests and overrides the transport model; literal source state and questions are preserved exactly. Original image and projected request hashes were verified through separate provenance. Complete visual references can be unrecoverable after image removal, so this is an evidence ablation rather than a matched vision ranking. Nimble-v3 is CC-BY-NC-4.0 and differs from the older Apache-2.0 Nimble release.
+Nimble-v3 text-geometry: warm serving estimate **2258 region inputs/USD**; **24/24 valid, 6/16 known-correct, 0/8 ambiguous-abstain**, with no schema or worker failures. Its declared projection removes only image parts from the first 24 RGB512 requests and overrides the transport model; literal source state and questions are preserved exactly. Original image and projected request hashes were verified through separate provenance. Complete visual references can be unrecoverable after image removal, so this is an evidence ablation rather than a matched vision ranking. Nimble-v3 is CC-BY-NC-4.0 and differs from the older Apache-2.0 Nimble release.
 
 Compared with the [completed same-source hosted L015 run](lowlevel-images-large.md), these local decision heads do not exactly reproduce hosted choices. Backend arithmetic, prompt assembly and image preprocessing remain separate variables. The local PPLX processor uses its reference 65,536–4,194,304-pixel bounds; the hosted image path is not assumed identical.
 
@@ -32,19 +32,21 @@ Compared with the [completed same-source hosted L015 run](lowlevel-images-large.
 
 Both hosted and local versions have 0/72 ambiguous abstentions across the nine repeated arms. For example, PPLX RGB512 changes from hosted 12/16 to native 9/16; 768 matches 12/16 and 1024 changes 13/16 to 12/16. No cause has been established.
 
+Warm serving estimates use `region inputs/min × 60 ÷ allocation USD/hour`, including the quoted GPU and disk allocation: Flash/Clef $1.275/h; original Intern and stock Qwens $1.3083333333/h; PPLX/JPT/Nimble/new-runtime Intern $1.375/h. They exclude initialization, downloads, idle time and cleanup, and are **not billed costs or end-to-end pages/USD**. One tested region comes from each authored page, so these are conditional page-region input equivalents, not full PDF pages. In rate cells, the first value is measured inputs/min and the second is estimated warm inputs/USD.
+
 Rates below are fresh region inputs/minute over cumulative measured adapter `predict` wall time, including native preprocessing. Qwen includes serial loopback HTTP transport and stock generation. All calls yielded valid decisions; aliases/replays are excluded. Full-page pages/minute and pages/USD are unavailable.
 
-| Arm | Flash 9B inputs/min | PPLX 27B inputs/min | Intern 4B inputs/min | Qwen 4B stock inputs/min | Clef 27B inputs/min |
+| Arm | Flash rate; est. inputs/USD | PPLX rate; est. inputs/USD | Intern rate; est. inputs/USD | Qwen4 rate; est. inputs/USD | Clef rate; est. inputs/USD |
 |---|---:|---:|---:|---:|---:|
-| rgb-512 | 672.63 | 250.41 | 25.21 | 277.90 | 285.59 |
-| rgb-768 | 763.43 | 309.39 | 15.29 | 274.31 | 267.90 |
-| rgb-1024 | 662.25 | 258.01 | 8.68 | 267.65 | 233.11 |
-| gray-512 | 912.70 | 349.73 | 25.58 | 270.66 | 310.58 |
-| gray-768 | 786.13 | 316.10 | 15.58 | 276.56 | 273.47 |
-| gray-1024 | 680.62 | 266.06 | 8.80 | 262.77 | 245.81 |
-| lowbit-512 | 901.31 | 343.57 | 25.21 | 268.47 | 300.93 |
-| lowbit-768 | 779.13 | 311.81 | 15.31 | 274.98 | 268.72 |
-| lowbit-1024 | 674.84 | 262.75 | 8.73 | 278.76 | 236.53 |
+| rgb-512 | 672.63; 31653 | 250.41; 10927 | 25.21; 1156 | 277.90; 12745 | 285.59; 13440 |
+| rgb-768 | 763.43; 35926 | 309.39; 13501 | 15.29; 701 | 274.31; 12580 | 267.90; 12607 |
+| rgb-1024 | 662.25; 31165 | 258.01; 11259 | 8.68; 398 | 267.65; 12274 | 233.11; 10970 |
+| gray-512 | 912.70; 42950 | 349.73; 15261 | 25.58; 1173 | 270.66; 12412 | 310.58; 14615 |
+| gray-768 | 786.13; 36994 | 316.10; 13794 | 15.58; 715 | 276.56; 12683 | 273.47; 12869 |
+| gray-1024 | 680.62; 32029 | 266.06; 11610 | 8.80; 403 | 262.77; 12051 | 245.81; 11568 |
+| lowbit-512 | 901.31; 42414 | 343.57; 14992 | 25.21; 1156 | 268.47; 12312 | 300.93; 14162 |
+| lowbit-768 | 779.13; 36665 | 311.81; 13606 | 15.31; 702 | 274.98; 12611 | 268.72; 12646 |
+| lowbit-1024 | 674.84; 31757 | 262.75; 11466 | 8.73; 401 | 278.76; 12784 | 236.53; 11131 |
 
 | Worker scope | Load wall / CPU s | Predict wall / CPU s | Worker wall / CPU s | Warm inputs/min | Worker inputs/min | Process peak RSS GiB | CUDA run peak allocated / reserved GiB |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -75,7 +77,7 @@ Flash and Clef 27B ran sequentially on the same RTX PRO 6000 Blackwell Max-Q hos
 
 Intern used RTX PRO 6000 Blackwell Workstation, 97,887 MiB GPU memory, 24 effective CPU cores, 128,792 MiB host RAM, driver 595.91.07, Torch 2.9.1+cu128 and Transformers 5.14.1 without FLA. Qwen used another RTX PRO 6000 Blackwell Workstation, 97,887 MiB GPU memory, 24 effective CPU cores, driver 580.178.04, vLLM 0.31.0, Torch 2.13+cu130 and Transformers 5.17. Its BF16 server runs eager mode, prefix caching disabled, image processor cache zero, maximum sequence length 8,192, maximum sequences eight, and GPU memory utilization 0.65. Requests remain serial. Different hosts, kernels and serving paths prevent attributing speed differences to parameter count alone. Dependency freezes and bootstrap provenance are retained with returned artifacts.
 
-Actual whole-wave rental charges and region inputs/USD remain pending. Provider inventory hourly quotes include the disk allocation; they are not observed invoice charges. No zero-cost assumption or warm-only rental estimate is reported.
+Actual whole-wave rental charges and billed region inputs/USD remain pending. Provider inventory hourly quotes include the disk allocation; they are not observed invoice charges. The explicitly labeled warm serving estimates below use quoted allocation prices; no zero-cost assumption is made.
 
 Pinned releases: Flash `fde727a287004204b7518dcc983fe64379776712`; PPLX `6195aa55a72ae21e503c8a60198f7b390d42adb5`; Intern `0e5e6aa7d6d750e2b1504ba11a8136cb58aeb3cd`; Clef 27B `ed3eed331870db2eff4b0db01237128ede8a00ce`; Qwen `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a`; Nimble-v3 `8e927b9b4afdbb14479fac10a7364d1a695be208`. See the [self-hosted model notes](../HF_DECISION_MODELS.md). Requests, responses, local scorer results, samples and source-index remain ignored under `.scratch/remote-gpu-20261009/r001/` and `.scratch/council/lowlevel-inventor/`.
 
@@ -85,17 +87,17 @@ Frozen L015 manifest SHA256: `0ddd6c3c02e86a3cd52280446d19112e20ede72dba709c26a1
 
 JPT-4B completed 216/216 inputs with no schema or worker failures. Source request and image bytes match the original L015 evidence; the separately declared transport projection changes only `body.model` to `kirp/jpt-4b`. Its native distribution is scored with the same parser and references. All arms retain 16 known cases and eight ambiguous controls.
 
-| Arm | Known-correct / 16 | Ambiguous-abstain / 8 | Fresh region inputs/min |
-|---|---:|---:|---:|
-| rgb-512 | 10/16 | 0/8 | 391.27 |
-| rgb-768 | 10/16 | 0/8 | 635.18 |
-| rgb-1024 | 9/16 | 0/8 | 608.56 |
-| gray-512 | 10/16 | 1/8 | 654.05 |
-| gray-768 | 9/16 | 0/8 | 624.31 |
-| gray-1024 | 9/16 | 0/8 | 628.55 |
-| lowbit-512 | 10/16 | 0/8 | 646.14 |
-| lowbit-768 | 9/16 | 0/8 | 634.87 |
-| lowbit-1024 | 9/16 | 0/8 | 611.62 |
+| Arm | Known-correct / 16 | Ambiguous-abstain / 8 | Fresh region inputs/min | Est. warm inputs/USD |
+|---|---:|---:|---:|---:|
+| rgb-512 | 10/16 | 0/8 | 391.27 | 17073 |
+| rgb-768 | 10/16 | 0/8 | 635.18 | 27717 |
+| rgb-1024 | 9/16 | 0/8 | 608.56 | 26555 |
+| gray-512 | 10/16 | 1/8 | 654.05 | 28540 |
+| gray-768 | 9/16 | 0/8 | 624.31 | 27243 |
+| gray-1024 | 9/16 | 0/8 | 628.55 | 27428 |
+| lowbit-512 | 10/16 | 0/8 | 646.14 | 28195 |
+| lowbit-768 | 9/16 | 0/8 | 634.87 | 27703 |
+| lowbit-1024 | 9/16 | 0/8 | 611.62 | 26689 |
 
 Across repeated arms, JPT4 scores 85/144 known cases and 1/72 ambiguous abstentions. Its load is 12.56 wall / 13.76 CPU s; prediction totals 21.96 wall / 43.79 CPU s. Worker totals are 35.10 wall / 57.93 CPU s: 590.05 warm region inputs/min and 369.19 worker-inclusive inputs/min. Process peak RSS is 9.32 GiB; initialization-plus-attempt CUDA run peaks are 8.99 GiB allocated / 10.35 GiB reserved. The device-wide one-second sampler has 35/35 available samples, mean utilization 21.11%, and peak device VRAM 11,285 MiB.
 
@@ -105,17 +107,17 @@ JPT4 is a separate noncommercial research candidate; its release license is CC-B
 
 JPT9, stock Qwen3.5-2B and stock Qwen3.5-9B each completed 216/216 inputs without schema or worker failures. Each arm has 24 valid results, 16 known cases and eight ambiguous controls; all three have **0/8 ambiguous abstentions in every arm**. Original source, image and request hashes were verified before local scoring. JPT9 changes only the declared transport model scalar to `kirp/jpt-9b`; the stock models reuse the exact original transport body while the server pins the deployed engine identity. Stock models return schema-constrained generated labels, without fabricated native decision probabilities.
 
-| Arm | JPT9 known / 16 | JPT9 inputs/min | Qwen2 known / 16 | Qwen2 inputs/min | Qwen9 known / 16 | Qwen9 inputs/min |
+| Arm | JPT9 known / 16 | JPT9 rate; est. inputs/USD | Qwen2 known / 16 | Qwen2 rate; est. inputs/USD | Qwen9 known / 16 | Qwen9 rate; est. inputs/USD |
 |---|---:|---:|---:|---:|---:|---:|
-| rgb-512 | 8/16 | 379.40 | 6/16 | 339.22 | 11/16 | 256.98 |
-| rgb-768 | 8/16 | 608.97 | 7/16 | 342.78 | 12/16 | 252.21 |
-| rgb-1024 | 8/16 | 594.49 | 7/16 | 347.06 | 11/16 | 242.74 |
-| gray-512 | 8/16 | 610.70 | 7/16 | 344.66 | 11/16 | 256.75 |
-| gray-768 | 8/16 | 603.27 | 7/16 | 345.48 | 11/16 | 246.61 |
-| gray-1024 | 8/16 | 589.67 | 6/16 | 338.51 | 11/16 | 246.37 |
-| lowbit-512 | 8/16 | 609.96 | 6/16 | 347.33 | 10/16 | 256.94 |
-| lowbit-768 | 9/16 | 632.52 | 7/16 | 335.86 | 11/16 | 266.91 |
-| lowbit-1024 | 8/16 | 552.10 | 7/16 | 353.80 | 11/16 | 245.79 |
+| rgb-512 | 8/16 | 379.40; 16556 | 6/16 | 339.22; 15557 | 11/16 | 256.98; 11785 |
+| rgb-768 | 8/16 | 608.97; 26573 | 7/16 | 342.78; 15720 | 12/16 | 252.21; 11566 |
+| rgb-1024 | 8/16 | 594.49; 25942 | 7/16 | 347.06; 15916 | 11/16 | 242.74; 11132 |
+| gray-512 | 8/16 | 610.70; 26649 | 7/16 | 344.66; 15806 | 11/16 | 256.75; 11774 |
+| gray-768 | 8/16 | 603.27; 26325 | 7/16 | 345.48; 15844 | 11/16 | 246.61; 11309 |
+| gray-1024 | 8/16 | 589.67; 25731 | 6/16 | 338.51; 15524 | 11/16 | 246.37; 11298 |
+| lowbit-512 | 8/16 | 609.96; 26616 | 6/16 | 347.33; 15928 | 10/16 | 256.94; 11783 |
+| lowbit-768 | 9/16 | 632.52; 27601 | 7/16 | 335.86; 15402 | 11/16 | 266.91; 12240 |
+| lowbit-1024 | 8/16 | 552.10; 24092 | 7/16 | 353.80; 16225 | 11/16 | 245.79; 11272 |
 
 Across the nine repeated arms, known scores are JPT9 **73/144**, Qwen2 **60/144**, and Qwen9 **99/144**. These totals count repeated source pages and do not represent independent samples.
 
@@ -134,12 +136,41 @@ Qwen2/9 run sequentially on the Qwen4 host using the same BF16/eager vLLM config
 | Qwen/Qwen3.5-2B | 27.03 | 9.84 | 39.34 | 38.03 | 51.09 | 5.56 |
 | Qwen/Qwen3.5-9B | 34.04 | 27.79 | 52.91 | 52.05 | 68.25 | 5.63 |
 
-Boundary CPU intervals and pre-observation activity remain unmeasured; server PyTorch allocation/reservation peaks are unavailable. Download timing reflects this particular host/cache/network and is not an inference rate. All separate controls passed; they are excluded from cohort scores and rates. Qwen2 revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`; Qwen9 revision: `c202236235762e1c871ad0ccb60c8ee5ba337b9a`. Whole-wave billing and region inputs/USD remain pending.
+Boundary CPU intervals and pre-observation activity remain unmeasured; server PyTorch allocation/reservation peaks are unavailable. Download timing reflects this particular host/cache/network and is not an inference rate. All separate controls passed; they are excluded from cohort scores and rates. Qwen2 revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`; Qwen9 revision: `c202236235762e1c871ad0ccb60c8ee5ba337b9a`. Whole-wave billing and billed region inputs/USD remain pending.
 
-An Intern runtime comparison is being prepared separately. The completed original Intern run above remains unchanged; cross-host or runtime changes must not be presented as an isolated model-speed effect.
+The original Intern run above remains unchanged; the returned FLA-added and newer-stack comparisons appear below.
 
 | Device-wide 1 s sampler | Available samples | Mean utilization | Peak device VRAM MiB |
 |---|---:|---:|---:|
 | JPT9 | 38/38 | 31.18% | 20,597 |
 | Qwen2 | 40/40 | 37.88% | 62,606 |
 | Qwen9 | 53/53 | 84.66% | 63,060 |
+
+## Intern runtime comparison
+
+The original Intern stack, the FLA-added run on its original host, and the newer stack on the PPLX host each completed 216/216 source-verified inputs with no schema or worker failures. All have 0/72 ambiguous abstentions. FLA-added agrees with the original choice on 215/216 inputs and scores 107/144 known cases; the newer stack agrees on 216/216 and preserves 108/144. Adding FLA alone did not improve measured runtime here. The newer stack changes host, Torch and Transformers together, so its speedup does not isolate the cause. Same-host follow-up remains pending.
+
+| Arm | FLA-added known / 16 | FLA-added inputs/min | FLA-added est. warm inputs/USD | New-stack known / 16 | New-stack inputs/min | New-stack est. warm inputs/USD |
+|---|---:|---:|---:|---:|---:|---:|
+| rgb-512 | 12/16 | 17.50 | 802 | 12/16 | 407.70 | 17790 |
+| rgb-768 | 12/16 | 15.76 | 723 | 12/16 | 713.94 | 31154 |
+| rgb-1024 | 12/16 | 8.87 | 407 | 12/16 | 683.03 | 29805 |
+| gray-512 | 12/16 | 26.93 | 1235 | 12/16 | 741.68 | 32364 |
+| gray-768 | 12/16 | 15.84 | 726 | 12/16 | 712.97 | 31112 |
+| gray-1024 | 12/16 | 8.81 | 404 | 12/16 | 697.86 | 30452 |
+| lowbit-512 | 12/16 | 26.52 | 1216 | 12/16 | 736.11 | 32121 |
+| lowbit-768 | 11/16 | 15.80 | 725 | 12/16 | 724.35 | 31608 |
+| lowbit-1024 | 12/16 | 8.87 | 407 | 12/16 | 699.73 | 30534 |
+
+| Stack | Load wall / CPU s | Predict wall / CPU s | Worker wall / CPU s | Warm inputs/min | Est. warm inputs/USD | Process RSS GiB | CUDA run peak allocated / reserved GiB |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Original | 6.50 / 7.26 | 945.58 / 967.72 | 954.75 / 975.30 | 13.71 | 629 | 8.84 | 8.78 / 8.96 |
+| FLA added, original host | 8.68 / 9.24 | 951.61 / 968.86 | 963.15 / 978.42 | 13.62 | 625 | 8.91 | 8.90 / 9.15 |
+| New stack, PPLX host | 11.15 / 12.04 | 19.68 / 41.59 | 31.47 / 54.01 | 658.40 | 28730 | 8.87 | 8.73 / 8.86 |
+
+New stack: Torch 2.14, Transformers 5.17 and FLA 0.5.2, without causal-conv1d, on host 55084918. Original stack: Torch 2.9.1 and Transformers 5.14.1 on host 55084071; the FLA-added comparison retains that host and base stack. The newer run preserves the pinned Intern model and source requests. Its three controls pass separately and do not enter the 216-input rate or score denominators.
+
+| Intern device-wide 1 s sampler | Available samples | Mean utilization | Peak device VRAM MiB |
+|---|---:|---:|---:|
+| FLA added | 963/963 | 24.09% | 10,070 |
+| New stack | 31/31 | 27.65% | 9,759 |
