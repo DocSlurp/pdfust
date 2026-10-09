@@ -226,9 +226,43 @@ def concurrent_rates(status: dict[str, Any], completed: int) -> dict[str, Any]:
     for field in ("wall_seconds", "concurrent_request_span_seconds"):
         value = status.get(field)
         valid = isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and value > 0
-        values[field] = float(value) if valid else None
-        values[field + "_inputs_per_minute"] = completed * 60 / value if valid else None
+        if valid and isinstance(value, (int, float)):
+            values[field] = float(value)
+            values[field + "_inputs_per_minute"] = completed * 60 / value
+        else:
+            values[field] = values[field + "_inputs_per_minute"] = None
     return values
+
+
+def sampled_resources(output: Path) -> dict[str, Any]:
+    """Retain simultaneous union RSS/observed CPU and device-wide GPU samples."""
+    sample_path = output / "process-samples.jsonl"
+    samples, _ = _jsonl(sample_path) if sample_path.exists() else ([], False)
+    gpu, _ = _jsonl(output / "gpu-samples.jsonl") if (output / "gpu-samples.jsonl").exists() else ([], False)
+    values = []
+    for sample in gpu:
+        raw = sample.get("raw_csv")
+        if isinstance(raw, str):
+            for line in raw.splitlines():
+                try:
+                    row = [float(value.strip()) for value in line.split(",")]
+                except ValueError:
+                    continue
+                if len(row) == 4 and all(math.isfinite(value) for value in row):
+                    values.append(row)
+    return {
+        "process_sample_count": len(samples),
+        "sampled_union_peak_rss_bytes": max((row["rss_sum_bytes"] for row in samples), default=None),
+        "sampled_observed_cpu_seconds": max(
+            (row["observed_cpu_cumulative_seconds"] for row in samples), default=None
+        ),
+        "gpu_sample_count": len(gpu),
+        "gpu_available_rows": len(values),
+        "gpu_mean_utilization_percent": sum(row[1] for row in values) / len(values) if values else None,
+        "gpu_peak_device_mib": max((row[2] for row in values), default=None),
+        "scope": "nominal 1 s union supervisor/children/optional server; shared RSS may double count; device-wide GPU",
+        "cpu_limitations": "pre-observation and unsampled exit CPU unavailable",
+    }
 
 
 def evaluate(  # noqa: PLR0913 - explicit source/reference and opt-in contracts.
@@ -268,7 +302,7 @@ def evaluate(  # noqa: PLR0913 - explicit source/reference and opt-in contracts.
         _fail("Natural reference inventory differs")
     models = {}
     for model, (completed, status) in returned.items():
-        summaries = []
+        summaries: list[dict[str, Any]] = []
         for arm in ARMS:
             records = [row for row in inventory.values() if row["record"]["arm"] == arm]
             counts: Counter[str] = Counter()
@@ -333,7 +367,17 @@ def evaluate(  # noqa: PLR0913 - explicit source/reference and opt-in contracts.
             summary.update(warm_rates(summary, None if concurrent["concurrent"] else (hourly_rates or {}).get(model)))
             if concurrent["concurrent"]:
                 summary["warm_region_inputs_per_minute"] = None
-        models[model] = {"summaries": summaries, "status": status, "execution_rates": concurrent}
+        hourly = (hourly_rates or {}).get(model)
+        warm_rates({"inference_seconds": None, "counts": {}}, hourly)  # Validate supplied rate independently.
+        span = concurrent["concurrent_request_span_seconds"]
+        concurrent["hourly_rate_usd"] = hourly
+        concurrent["warm_span_estimated_usd"] = span * hourly / 3600 if span and hourly else None
+        rate = concurrent["concurrent_request_span_seconds_inputs_per_minute"]
+        concurrent["warm_span_inputs_per_estimated_usd"] = rate * 60 / hourly if rate and hourly else None
+        models[model] = {
+            "summaries": summaries, "status": status, "execution_rates": concurrent,
+            "sampled_resources": sampled_resources(_dev(runs[model])),
+        }
     return {
         "experiment": "L011-native-dev",
         "exploratory_stock_labels": allow_exploratory_stock,
