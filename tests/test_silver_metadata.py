@@ -180,3 +180,13 @@ def test_failed_image_measurement_keeps_coverage_and_placement_bins_null(monkeyp
     assert result["image_coverage_bins"] is None
     assert result["percent_pages_with_images"] is None
     assert result["errors"][0]["scope"] == "page:0:images"
+
+
+@pytest.mark.parametrize("separator", [b"", b" ", b"\n", b"\x0c"])
+def test_stream_dictionary_delimiter_excludes_binary_strings(separator: bytes) -> None:
+    payload = b"opaque binary (not a PDF string <or hex"
+    stream = b"<< /Length " + str(len(payload)).encode() + b" >>" + separator + b"stream\n"
+    stream += payload + b"\nendstream"
+    result = analyze_pdf(_simple_pdf(b"", extra_page="/Label (visible)", extras=(stream,)))
+    assert result["errors"] == []
+    assert result["raw_string_token_bytes"] == len(b"(visible)")

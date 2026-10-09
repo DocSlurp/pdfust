@@ -237,7 +237,7 @@ def raw_string_token_bytes(data: bytes, reader: PdfReader) -> int:
                 raise ValueError(msg)
             total += end + 1 - pos
             pos = end + 1
-        elif data[pos : pos + 6] == b"stream" and (pos == 0 or data[pos - 1] in b"\r\n \t"):
+        elif data[pos : pos + 6] == b"stream" and (pos == 0 or data[pos - 1] in b"\r\n \t\x00\x0c>"):
             if last_dictionary_length is None:
                 msg = "cannot locate declared stream length"
                 raise ValueError(msg)
