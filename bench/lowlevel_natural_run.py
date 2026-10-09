@@ -354,6 +354,66 @@ def _run_locked(
     return results
 
 
+def _cost_totals(costs: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "effective_usd_complete": sum(row["effective_usd"] for row in costs)
+        if all(row["effective_usd"] is not None for row in costs)
+        else None,
+        "known_effective_usd_subtotal": sum(row["effective_usd"] for row in costs if row["effective_usd"] is not None),
+        "unknown_cost_count": sum(row["effective_usd"] is None for row in costs),
+    }
+
+
+def rate_summary(priced_calls: list[dict[str, Any]]) -> dict[str, Any]:
+    """Count distinct fresh admitted region inputs, never aliases or local replays.
+
+    HTTP elapsed milliseconds are the client's API interval, including its small
+    response-retention/accounting overhead. Failed admitted calls count as inputs;
+    usable-output/quality denominators remain separate. Unknowns invalidate totals.
+    """
+    fresh = {
+        (call["provider"], call["entry"]["index"]): call
+        for call in priced_calls
+        if not call.get("replayed", False) and call["entry"].get("tag", "").startswith(TAG_PREFIX)
+    }
+    calls = list(fresh.values())
+    totals = _cost_totals([call["cost"] for call in calls])
+    count = sum(len(call["page_ids"]) for call in calls)
+    times = [number(call["entry"].get("elapsed_ms")) for call in calls]
+    elapsed = sum(value for value in times if value is not None) if all(value is not None for value in times) else None
+    cost = totals["effective_usd_complete"]
+    return {
+        **totals,
+        "fresh_api_requests": len(calls),
+        "fresh_region_inputs": count,
+        "fresh_completed_region_inputs": sum(len(call["page_ids"]) for call in calls if call["status"] == "ok"),
+        "api_elapsed_ms_complete": elapsed,
+        "unknown_api_duration_count": sum(value is None for value in times),
+        "fresh_regions_per_usd": count / cost if count and cost is not None and cost > 0 else None,
+        "regions_per_usd_status": "no fresh requests"
+        if not count
+        else "unknown cost"
+        if cost is None
+        else "n/a zero cost"
+        if cost == 0
+        else "positive reported or estimated cost",
+        "api_only_regions_per_minute": count * 60000 / elapsed
+        if count and elapsed is not None and elapsed > 0
+        else None,
+        "api_rate_status": "no fresh requests"
+        if not count
+        else "unknown API duration"
+        if elapsed is None
+        else "n/a zero interval"
+        if elapsed == 0
+        else "reported client HTTP intervals",
+    }
+
+
+def _rate_display(value: float | None, unavailable: str) -> str:
+    return f"{value:.6g}" if value is not None else unavailable
+
+
 def report(directory: Path) -> dict[str, Any]:
     """Score provisional full-source and scope references with complete denominators."""
     directory = guard_path(directory).resolve()
@@ -366,6 +426,30 @@ def report(directory: Path) -> dict[str, Any]:
         message = "L011 report results belong to another freeze"
         raise ValueError(message)
     calls = {row["identity_sha256"]: row for row in retained.get("calls", [])}
+    prices = {
+        provider: json.loads((directory / f"catalog-{provider}.json").read_bytes())["prices"]
+        for provider in ("openrouter", "vercel")
+    }
+    unique_entries = {(call["provider"], call["entry"]["index"]): call for call in calls.values() if call.get("entry")}
+    priced_calls = [
+        {
+            **call,
+            "cost": request_cost(
+                call["entry"],
+                call.get("response", {}).get("usage", {}),
+                call["entry"].get("catalog_rates", prices[call["provider"]][call["model"]]),
+            ),
+        }
+        for call in unique_entries.values()
+    ]
+    fresh_totals = rate_summary(priced_calls)
+    historical = [
+        call
+        for call in priced_calls
+        if call.get("replayed", False) or not call["entry"].get("tag", "").startswith(TAG_PREFIX)
+    ]
+    historical_totals = _cost_totals([call["cost"] for call in historical])
+    priced_totals = _cost_totals([call["cost"] for call in priced_calls])
     summaries: list[dict[str, Any]] = []
     for provider, model in ROUTES:
         for arm in ARMS:
@@ -403,23 +487,29 @@ def report(directory: Path) -> dict[str, Any]:
                     "scope_reference_matches": scoped_matches,
                     "full_reference_agreement_completed": full_matches / completed if completed else None,
                     "scope_reference_agreement_completed": scoped_matches / completed if completed else None,
+                    **rate_summary(
+                        [
+                            call
+                            for call in priced_calls
+                            if (call["provider"], call["model"], call["arm"]) == (provider, model, arm)
+                        ]
+                    ),
+                    "replayed_region_records": sum(
+                        calls.get(record["identity_sha256"], {}).get("replayed", False) for record in records
+                    ),
+                    "alias_region_records": sum(
+                        bool(calls.get(record["identity_sha256"]))
+                        and (
+                            calls[record["identity_sha256"]]["arm"] != record["arm"]
+                            or calls[record["identity_sha256"]]["page_ids"] != record["page_ids"]
+                        )
+                        for record in records
+                    ),
                 }
             )
-    unique_entries = {call["entry"]["index"]: call for call in calls.values() if call.get("entry")}
-    costs = [
-        request_cost(
-            call["entry"],
-            call.get("response", {}).get("usage", {}),
-            json.loads((directory / f"catalog-{call['provider']}.json").read_bytes())["prices"][call["model"]],
-        )
-        for call in unique_entries.values()
-    ]
-    complete_cost = (
-        sum(cost["effective_usd"] for cost in costs)
-        if all(cost["effective_usd"] is not None for cost in costs)
-        else None
-    )
-    effective_known = sum(cost["effective_usd"] for cost in costs if cost["effective_usd"] is not None)
+    costs = [call["cost"] for call in priced_calls]
+    complete_cost = fresh_totals["effective_usd_complete"]
+    effective_known = fresh_totals["known_effective_usd_subtotal"]
     result = {
         "schema": 1,
         "experiment": "L011",
@@ -431,9 +521,18 @@ def report(directory: Path) -> dict[str, Any]:
         "costs": costs,
         "effective_usd_complete": complete_cost,
         "known_effective_usd_subtotal": effective_known,
-        "unknown_cost_count": sum(cost["effective_usd"] is None for cost in costs),
-        "new_entry_indices": [index for index, call in unique_entries.items() if not call.get("replayed", False)],
-        "replayed_entry_indices": [index for index, call in unique_entries.items() if call.get("replayed", False)],
+        "unknown_cost_count": fresh_totals["unknown_cost_count"],
+        "fresh_invocation": fresh_totals,
+        "historical_replay_input_pricing": historical_totals,
+        "all_priced_input_entries": priced_totals,
+        "source_page_count": len({(page["source_file"], page["page_index"]) for page in manifest["pages"]}),
+        "rate_unit": "admitted region inputs on one source page; not independent pages",
+        "new_entry_indices": [
+            call["entry"]["index"]
+            for call in priced_calls
+            if not call.get("replayed", False) and call["entry"].get("tag", "").startswith(TAG_PREFIX)
+        ],
+        "replayed_entry_indices": [call["entry"]["index"] for call in historical],
         "execution_history": retained.get("execution_history", []),
         "preparation": manifest["preparation"],
         "limitations": "Single source-aware provisional DEV review; 24 overlapping pairs on one page/producer. "
@@ -461,10 +560,29 @@ def report(directory: Path) -> dict[str, Any]:
     lines += [
         "",
         (
-            f"Complete effective cost: {complete_cost if complete_cost is not None else 'unknown'} USD; "
+            f"Complete fresh effective cost: {complete_cost if complete_cost is not None else 'unknown'} USD; "
             f"known subtotal: {effective_known:.6f} USD; unknown entries: {result['unknown_cost_count']}."
         ),
+        "Fresh invocation charges/estimates exclude local replays; replay input pricing remains separate.",
         "Reservations remain ledger admission, separate from charges/estimates. Reported zeros remain in JSON.",
+        (
+            "Historical replay input pricing (excluded from fresh charges): "
+            f"{historical_totals['effective_usd_complete']} USD; known subtotal "
+            f"{historical_totals['known_effective_usd_subtotal']:.6f} USD."
+        ),
+        "Rates count distinct fresh admitted region inputs, including failures, on one page; not independent pages.",
+        "Missing cost/time invalidates its complete rate; zero cost has no finite regions/USD rate.",
+        "",
+        "| Provider/model | Image | Fresh regions | Effective USD | Regions/USD | API regions/min | Replay records |",
+        "|---|---|---:|---:|---:|---:|---:|",
+        *[
+            f"| {row['provider']}/{row['model']} | {row['arm']} | {row['fresh_region_inputs']} | "
+            f"{row['effective_usd_complete'] if row['effective_usd_complete'] is not None else 'unknown'} | "
+            f"{_rate_display(row['fresh_regions_per_usd'], row['regions_per_usd_status'])} | "
+            f"{_rate_display(row['api_only_regions_per_minute'], row['api_rate_status'])} | "
+            f"{row['replayed_region_records']} |"
+            for row in summaries
+        ],
         "",
         "Published frozen rates (USD/token):",
         "",

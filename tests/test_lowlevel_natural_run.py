@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +12,7 @@ import pytest
 from bench.lowlevel_evidence import digest, encode
 from bench.lowlevel_natural import annotate
 from bench.lowlevel_natural import prepare as source_prepare
-from bench.lowlevel_natural_run import ARMS, ROUTES, identity, prepare, report, request, run, verify
+from bench.lowlevel_natural_run import ARMS, ROUTES, identity, prepare, rate_summary, report, request, run, verify
 
 SOURCE = Path(__file__).parent / "assets/real_world/senate-expenditures.pdf"
 
@@ -99,6 +100,7 @@ class Client:
             "requested_model": body["model"],
             "accounted_usd": options["reservation_usd"] if self.fail else 0.00001,
             "cost_status": "reserved" if self.fail else "catalog estimate",
+            "elapsed_ms": 2500.0,
         }
         entry.update({"error": "HTTP 500"} if self.fail else {"response_file": "mock-response.json"})
         data["requests"].append(entry)
@@ -212,3 +214,62 @@ def test_missing_inventory_refused_before_transport(prepared: Path, tmp_path: Pa
     with pytest.raises(ValueError, match="incomplete"):
         run(directory, clients=transport)
     assert sum(client.invocations for client in transport.values()) == 0
+
+
+def test_rates_exclude_replays_and_unknowns_preserve_quality_denominators(prepared: Path, tmp_path: Path) -> None:
+    directory = copy_matrix(prepared, tmp_path)
+    run(directory, clients=clients(tmp_path), max_requests=2)
+    initial = report(directory)
+    assert initial["fresh_invocation"]["fresh_region_inputs"] == 2
+    assert initial["fresh_invocation"]["fresh_regions_per_usd"] == pytest.approx(100000)
+    assert initial["fresh_invocation"]["api_only_regions_per_minute"] == pytest.approx(24)
+    assert sum(row["fresh_region_inputs"] for row in initial["summaries"]) == 2
+    assert initial["source_page_count"] == 1
+
+    # An exact local replay carries historical usage/charges but adds no new API
+    # region or duration. Scores still use its returned independent region data.
+    path = directory / "results.json"
+    saved = json.loads(path.read_bytes())
+    saved["calls"][0]["replayed"] = True
+    saved["calls"][0]["entry"]["tag"] = "L006/historical"
+    path.write_text(json.dumps(saved))
+    replayed = report(directory)
+    assert replayed["effective_usd_complete"] == pytest.approx(0.00001)
+    assert replayed["historical_replay_input_pricing"]["effective_usd_complete"] == pytest.approx(0.00001)
+    assert replayed["all_priced_input_entries"]["effective_usd_complete"] == pytest.approx(0.00002)
+    assert replayed["fresh_invocation"]["fresh_region_inputs"] == 1
+    assert replayed["fresh_invocation"]["api_only_regions_per_minute"] == pytest.approx(24)
+    assert sum(row["completed_pairs"] for row in replayed["summaries"]) == 2
+    assert sum(row["replayed_region_records"] for row in replayed["summaries"]) == 1
+
+    # No tokens/time means unknown rates, even though both answers still score.
+    saved["calls"][1]["response"]["usage"] = {}
+    saved["calls"][1]["entry"].update(cost_status="reserved", accounted_usd=0.3, elapsed_ms=None)
+    path.write_text(json.dumps(saved))
+    unknown = report(directory)
+    assert unknown["effective_usd_complete"] is None
+    assert unknown["fresh_invocation"]["fresh_regions_per_usd"] is None
+    assert unknown["fresh_invocation"]["api_only_regions_per_minute"] is None
+    assert unknown["fresh_invocation"]["unknown_api_duration_count"] == 1
+    assert unknown["unknown_cost_count"] == 1
+    assert sum(row["completed_pairs"] for row in unknown["summaries"]) == 2
+    assert sum(row["planned_pairs"] for row in unknown["summaries"]) == 240
+
+
+def test_rate_zero_cost_is_na_and_duplicate_entries_are_not_inputs() -> None:
+    call = {
+        "provider": "vercel",
+        "entry": {"index": 7, "tag": "L011/test", "elapsed_ms": 1000},
+        "page_ids": ["one-region"],
+        "status": "ok",
+        "replayed": False,
+        "cost": {"effective_usd": 0.0},
+    }
+    result = rate_summary([call, deepcopy(call)])
+    assert result["fresh_api_requests"] == result["fresh_region_inputs"] == 1
+    assert result["fresh_regions_per_usd"] is None
+    assert result["regions_per_usd_status"] == "n/a zero cost"
+    assert result["api_only_regions_per_minute"] == pytest.approx(60)
+    replay = deepcopy(call)
+    replay["replayed"] = True
+    assert rate_summary([replay])["fresh_region_inputs"] == 0

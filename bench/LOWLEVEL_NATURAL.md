@@ -123,3 +123,21 @@ Reservations do not become charges; reported zeros remain separate. New and
 replayed ledger entries are identified separately. Serial wall/CPU counters and
 process VmHWM include HTTP waiting; provider CPU/RAM remain unmeasured. Scoring
 never modifies source glyphs, images, candidates or reviewed annotations.
+
+Rate reports attribute costs and HTTP intervals only to distinct fresh admitted
+provider/body calls. They retain replays and deduplicated logical aliases for
+quality scores while excluding them from fresh region-input throughput. Each
+provider/model/image-treatment row includes fresh effective USD, fresh region
+inputs per USD, and API-only region inputs per minute. Failed admitted calls
+remain inputs; completed usable region answers are counted separately. Missing
+costs invalidate complete USD rates; missing durations invalidate complete API
+time rates. Zero effective cost is `n/a zero cost`, never infinite throughput.
+Client HTTP intervals include response retention/accounting overhead and exclude
+preparation, local replay and caller waiting between requests.
+
+Aggregate `fresh_invocation` and compatibility fields `effective_usd_complete`,
+`known_effective_usd_subtotal`, and `unknown_cost_count` describe fresh calls.
+`historical_replay_input_pricing` describes previously paid/estimated entries
+reused locally; `all_priced_input_entries` retains both for provenance. These
+historical input costs are not new invocation charges. Regions are overlapping
+observations on one source page, not independent PDF pages.
