@@ -126,3 +126,85 @@ def cases() -> list[dict[str, Any]]:
                         }
                     )
     return output
+
+
+def history_cases() -> list[dict[str, Any]]:
+    """Return separate DEV history controls; inferred joins are tentative gold.
+
+    The entire page remains available to extraction. A history summary therefore
+    compresses existing evidence rather than acquiring additional information.
+    """
+    output = []
+    contents = (
+        ("Valve assembly", "pressure-rated fittings"),
+        ("Site inspection", "weekend service hours"),
+        ("Cable replacement", "weather-resistant conduit"),
+    )
+    for first, second in contents:
+        for variant in ("multiline", "absent", "new_identifier", "singleline"):
+            runs: list[tuple[str, float, float]] = [
+                ("Item", 40, 745),
+                ("Description", 100, 745),
+                ("Amount", 450, 745),
+            ]
+            if variant != "absent":
+                for row, (description, tail) in enumerate(
+                    (
+                        ("Filter unit", "fine mesh screen"),
+                        ("Pump assembly", "stainless steel housing"),
+                        ("Control panel", "wall mounting kit"),
+                    )
+                ):
+                    baseline = 715 - row * 40
+                    runs.extend(
+                        [
+                            (str(101 + row), 40, baseline),
+                            (description, 100, baseline),
+                            (str(65 + row * 15), 450, baseline),
+                        ]
+                    )
+                    if variant != "singleline":
+                        runs.append((tail, 100, baseline - 18))
+            runs.extend([("104", 40, 575), (first, 100, 575), ("120", 450, 575), (second, 100, 557)])
+            if variant == "new_identifier":
+                runs.append(("105", 40, 557))
+            expected = "join" if variant == "multiline" else "split" if variant == "new_identifier" else "unresolved"
+            recoverability = (
+                "conventional"
+                if variant == "multiline"
+                else "visible_identifier"
+                if variant == "new_identifier"
+                else "unresolved"
+            )
+            grouping = (
+                [[first, second, "120"]]
+                if expected == "join"
+                else [[first, "120"], [second]]
+                if expected == "split"
+                else []
+            )
+            evidence = {
+                "task": "line_ownership",
+                "question": "Choose whether the description lines occupy one table row or separate rows.",
+                "bbox": [35, 205, 530, 245],
+                "target": {"boxes": [[99, 205, 310, 224], [99, 223, 310, 242]], "boundary_index": None},
+                "choices": list(CHOICES),
+            }
+            logical = hashlib.sha256(repr(runs).encode()).hexdigest()[:16]
+            for encoding in ENCODINGS:
+                data = page_pdf(_operators(runs, encoding))
+                output.append(
+                    {
+                        "id": hashlib.sha256(data).hexdigest()[:16],
+                        "logical_id": logical,
+                        "family": "history",
+                        "encoding": encoding,
+                        "expected": expected,
+                        "expected_groups": grouping,
+                        "recoverability": recoverability,
+                        "history_variant": variant,
+                        "pdf_bytes": data,
+                        "evidence": evidence,
+                    }
+                )
+    return output
