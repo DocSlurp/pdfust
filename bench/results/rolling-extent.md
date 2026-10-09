@@ -35,3 +35,24 @@ Remote inference was not performed. Full candidates, scores and failure lists
 remain ignored artifacts. This is a post-failure DEV hypothesis test, not an
 independent generalization or production/default-admission claim. Dense irregular
 row leading, distant true rows and detached subtotal rows still need validation.
+
+The optional reviewed V2 generic menu retains physical/rolling/T001–T003 plus
+all three T005 variants. Identical hypotheses are deduplicated and aliases remain
+`c0...`; rule names remain outside model-visible bodies. It uses the unchanged
+semantic-record-schema prompt and source image512, with 56 frozen Luna/PPLX
+requests and the existing bounded runner. Manifest SHA256:
+`a705a3cae9a298bcda489f926c0e699d2ae9ca76a13c27c4776043e424871935`.
+Combined candidate SHA256:
+`6b5a0d29f4754e03ba05c5b1e52ca82d28560038c312a19b6bf1bb09089f0f01`.
+
+```sh
+python -m bench.rolling_topology_run --run-hosted \
+  --directory /home/dan/code/oss/pdf-master-designs/bench/results/pdf-master-artifacts/rolling-topology-v1/realism-v2/union-semantic-image512-extent-v1 \
+  --cohorts 0 \
+  --targets /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/silver-realism-v2/124953db381d4aa6/private-targets.json
+```
+
+The persistent T004 prefix bound is shared with the preceding union pilot, not
+reset by selecting a new directory. Root owns all hosted execution. The expanded
+menu is a post-failure DEV exploration; its model results require a new retained
+run and cannot inherit earlier selection scores.
