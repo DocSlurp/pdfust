@@ -433,7 +433,7 @@ hourly GPU and disk rate. It excludes model loading, downloads, idle time and
 cleanup; whole-wave provider billing is reported separately. These are conditional
 page-region decisions, **not full-page extraction pages/minute or pages/USD**.
 The Intern newer-stack table initially changes hosts; a same-host follow-up also
-finished the 216 inputs in 26.65 seconds. Quality and runtime isolation are
+finished the 216 inputs in 26.65 seconds. [Quality and runtime isolation](bench/results/remote-gpu-intern-runtime.md) are
 reported separately. The complete report retains every color/size result and resource scope.
 Nimble-v3's separate noncommercial text-only ablation scored 6/16 known cases
 and abstained on 0/8 ambiguous cases. No reference answers are sent to workers,

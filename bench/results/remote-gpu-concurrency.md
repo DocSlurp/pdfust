@@ -15,7 +15,7 @@ Every source PDF, observation, request and PNG hash was verified before root-loc
 
 N1 agrees on all 216 choices with the earlier serial Qwen9 cohort in the [native comparison report](remote-gpu-r001.md). N2 and N4 each change one previously correct join to split in RGB768; N8 additionally changes one previously correct join in gray768. The cause has not been isolated. All other choices match N1.
 
-Global wall includes client worker startup, request handling and concurrent-helper sampling/cleanup; the model server is already initialized. It is a cold-client measurement, not cold model provisioning. The concurrent request span runs from the first source-attempt start to the last completion and includes lane imbalance. Summed per-request latency is retained as work data and is never used as parallel throughput. The quoted $1.3083333333/h GPU-plus-disk allocation gives the warm estimate `span inputs/min × 60 ÷ hourly USD`. That estimate excludes server startup, weight downloads, provisioning idle time and cleanup, and is not billed lifecycle cost or full PDF pages/USD.
+Global wall includes client worker startup, request handling and concurrent-helper sampling/cleanup; the model server is already initialized. It is a cold-client measurement, not cold model provisioning. The concurrent request span runs from the first source-attempt start to the last completion and includes lane imbalance. Summed per-request latency is retained as work data and is never used as parallel throughput. The quoted USD 1.3083333333/hour GPU-plus-disk allocation gives the warm estimate `span inputs/min × 60 ÷ hourly USD`. That estimate excludes server startup, weight downloads, provisioning idle time and cleanup, and is not billed lifecycle cost or full PDF pages/USD.
 
 | Arm | N1 known / 16; inputs/min | N2 known / 16; inputs/min | N4 known / 16; inputs/min | N8 known / 16; inputs/min |
 |---|---:|---:|---:|---:|
@@ -42,6 +42,50 @@ One-second process sampling takes a de-duplicated union of supervisor descendant
 
 One RTX PRO 6000 Blackwell Workstation GPU (97,887 MiB) serves all clients on host 55085144, 24 effective CPU cores, driver 580.178.04. vLLM 0.31.0 uses Torch 2.13+cu130 and Transformers 5.17, BF16 eager inference, maximum model length 8,192, maximum concurrent sequences eight, GPU memory utilization 0.65, prefix caching disabled and image processor cache zero. The model is `Qwen/Qwen3.5-9B`, revision `c202236235762e1c871ad0ccb60c8ee5ba337b9a`. Client concurrency shares one model allocation; it does not load eight model copies.
 
-Actual whole-wave billing remains pending. These small authored cases establish a measured serving tradeoff in this configuration; they do not establish natural-document quality, calibration, or end-to-end PDF throughput. Native Flash/Intern lane comparisons and mixed-model GPU pairs are separate planned comparisons.
+Actual whole-wave billing remains pending. These small authored cases establish a measured serving tradeoff in this configuration; they do not establish natural-document quality, calibration, or end-to-end PDF throughput. Native Flash/Intern replica comparisons follow below; mixed-model GPU pairs are separate experiments.
 
 Frozen L015 manifest SHA256: `0ddd6c3c02e86a3cd52280446d19112e20ede72dba709c26a1ae07c11d0b3104`. Source-index SHA256: `52e9c5241455cb7877cf0976b4fb4969735b5a0d7841972bfcbc6bee1ad0c0a1`. Source-only worker packet manifest SHA256: `e041da275ec775450373acc28380b1f04095a96affd0c9fa07fca1dc5828a7de`. Raw attempts, child statuses, source-scored evaluations and process/device samples stay ignored under `.scratch/remote-gpu-20261009/r001/` and `.scratch/council/lowlevel-inventor/`.
+
+## Native model replicas
+
+Independent native model replicas improve Intern throughput modestly and do not improve Flash throughput meaningfully on this small cohort. More device utilization alone is not a win: Flash uses four times the model memory for slightly lower global throughput at four replicas. These trials motivate the separate one-copy native batching test.
+
+| Model | Replicas | Known / 144 | Ambiguous abstain / 72 | Same choice as N1 / 216 | Worker elapsed s | Inputs/min, elapsed | Inputs/min, request span | Estimated warm inputs/USD |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| flash | 1 | 96/144 | 0/72 | 216/216 | 24.99 | 518.66 | 686.25 | 32294 |
+| flash | 2 | 96/144 | 0/72 | 216/216 | 24.71 | 524.55 | 709.38 | 33382 |
+| flash | 4 | 96/144 | 0/72 | 216/216 | 25.76 | 503.09 | 701.92 | 33032 |
+| intern | 1 | 108/144 | 0/72 | 216/216 | 34.39 | 376.88 | 605.76 | 26433 |
+| intern | 2 | 108/144 | 0/72 | 216/216 | 26.36 | 491.67 | 948.49 | 41389 |
+| intern | 4 | 108/144 | 0/72 | 216/216 | 25.74 | 503.53 | 1040.41 | 45400 |
+| intern | 8 | 108/144 | 0/72 | 216/216 | 27.78 | 466.55 | 1031.64 | 45017 |
+
+All cohorts completed 216/216 valid inputs. Each replica independently loads the model, with OMP_NUM_THREADS=2. Flash uses its Torch 2.11 / Transformers 5.10.2 Max-Q host; Intern uses the Torch 2.14 / Transformers 5.17 stack on the PPLX Workstation host. The bounds reserve at most 84 GiB in aggregate using prior per-replica peaks of 20 GiB for Flash and 10 GiB for Intern. Fixed order is 1 → 2 → 4 replicas, then 8 for Intern, without randomized repeats.
+
+Elapsed rates include model initialization in each fresh process. Request-span rates begin with the first attempt, after at least one replica has loaded, and include startup imbalance. Neither rate is an end-to-end PDF extraction claim. Warm inputs/USD uses the measured span and quoted allocation rates of USD 1.275/hour for Flash and USD 1.375/hour for Intern; provisioning, downloads, idle time and cleanup are excluded.
+
+| Model | Replicas | Observed union CPU s | Simultaneous sampled peak RSS GiB | Mean device utilization | Peak device VRAM MiB |
+|---|---:|---:|---:|---:|---:|
+| flash | 1 | 23.92 | 13.59 | 55.36% | 19,184 |
+| flash | 2 | 47.52 | 30.39 | 73.28% | 38,271 |
+| flash | 4 | 95.29 | 35.59 | 78.08% | 76,614 |
+| intern | 1 | 38.42 | 5.62 | 23.11% | 9,759 |
+| intern | 2 | 53.40 | 9.50 | 40.85% | 19,568 |
+| intern | 4 | 99.36 | 31.65 | 43.46% | 39,037 |
+| intern | 8 | 206.75 | 50.80 | 48.54% | 77,986 |
+
+CPU/RSS and device observations use the same one-second sampling and scope limitations as the shared-server table above. Replicated processes can count shared RSS pages more than once. This is measured concurrent process usage, not a sum of lifetime peaks.
+
+| Arm | Flash N1 / N2 / N4, known each /16 | Intern N1 / N2 / N4 / N8, known each /16 |
+|---|---:|---:|
+| rgb-512 | 10 / 10 / 10 | 12 / 12 / 12 / 12 |
+| gray-1024 | 11 / 11 / 11 | 12 / 12 / 12 / 12 |
+| gray-512 | 10 / 10 / 10 | 12 / 12 / 12 / 12 |
+| gray-768 | 11 / 11 / 11 | 12 / 12 / 12 / 12 |
+| lowbit-1024 | 11 / 11 / 11 | 12 / 12 / 12 / 12 |
+| lowbit-512 | 10 / 10 / 10 | 12 / 12 / 12 / 12 |
+| lowbit-768 | 11 / 11 / 11 | 12 / 12 / 12 / 12 |
+| rgb-1024 | 11 / 11 / 11 | 12 / 12 / 12 / 12 |
+| rgb-768 | 11 / 11 / 11 | 12 / 12 / 12 / 12 |
+
+Every arm remains 0/8 on ambiguous abstentions. Frozen source/packet verification precedes reference scoring. The complete evaluated records and per-arm concurrent timings are retained in `.scratch/remote-gpu-20261009/r001/native-concurrency-evaluation.json`; the retained scoring script is `score_native_concurrency.py` in that directory.
