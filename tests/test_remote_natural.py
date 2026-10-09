@@ -123,3 +123,15 @@ def test_completed_request_hash_is_verified(tmp_path):
     (tmp_path / "attempts.jsonl").write_text("\n".join(json.dumps(row) for row in records))
     with pytest.raises(ValueError, match="request hash"):
         natural.verify_events(tmp_path, {"opaque": {"record": {"sha256": "original"}}})
+
+
+def test_warm_estimates_preserve_unknowns():
+    summary = {"inference_seconds": 12.0, "counts": {"completed": 24}}
+    result = natural.warm_rates(summary, 1.275)
+    assert result["warm_inference_estimated_usd"] == pytest.approx(1.275 * 12 / 3600)
+    assert result["warm_region_inputs_per_minute"] == 120
+    summary["inference_seconds"] = None
+    assert natural.warm_rates(summary, 1.275)["warm_inference_estimated_usd"] is None
+    assert natural.warm_rates(summary, None)["warm_region_inputs_per_estimated_usd"] is None
+    with pytest.raises(ValueError, match="finite"):
+        natural.warm_rates(summary, float("nan"))

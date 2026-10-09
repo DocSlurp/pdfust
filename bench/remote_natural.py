@@ -187,7 +187,32 @@ def agreement(choice: str, reference: dict[str, Any], arm: str) -> dict[str, boo
     }
 
 
-def evaluate(source_dir: Path, packets: Path, runs: dict[str, Path], *, references_dir: Path) -> dict[str, Any]:
+def warm_rates(summary: dict[str, Any], hourly_rate: float | None) -> dict[str, Any]:
+    """Price measured serial warm prediction time; never invent complete missing costs."""
+    if hourly_rate is not None and (
+        isinstance(hourly_rate, bool) or not math.isfinite(hourly_rate) or hourly_rate <= 0
+    ):
+        _fail("Hourly rental rate must be finite and positive or unknown")
+    seconds = summary["inference_seconds"]
+    completed = summary["counts"].get("completed", 0)
+    cost = hourly_rate * seconds / 3600 if hourly_rate is not None and seconds is not None else None
+    return {
+        "hourly_rate_usd": hourly_rate,
+        "warm_inference_estimated_usd": cost,
+        "warm_region_inputs_per_minute": 60 * completed / seconds if seconds is not None and seconds > 0 else None,
+        "warm_region_inputs_per_estimated_usd": completed / cost if cost is not None and cost > 0 else None,
+        "cost_scope": "idealized dedicated-GPU warm prediction time; excludes download/load/startup/idle/teardown; not invoice",
+    }
+
+
+def evaluate(
+    source_dir: Path,
+    packets: Path,
+    runs: dict[str, Path],
+    *,
+    references_dir: Path,
+    hourly_rates: dict[str, float] | None = None,
+) -> dict[str, Any]:
     """Verify complete source/stage/all-model outputs before local DEV references."""
     source, packet_manifest = _dev(source_dir), _dev(packets)
     manifest, inventory = verify_stage(source, packet_manifest)
@@ -270,6 +295,8 @@ def evaluate(source_dir: Path, packets: Path, runs: dict[str, Path], *, referenc
                     "cuda_reserved_bytes": max(reserved, default=None),
                 }
             )
+        for summary in summaries:
+            summary.update(warm_rates(summary, (hourly_rates or {}).get(model)))
         models[model] = {"summaries": summaries, "status": status}
     return {
         "experiment": "L011-native-dev",
@@ -318,13 +345,34 @@ def markdown(result: dict[str, Any]) -> str:
             )
     lines += [
         "",
+        "| Model | Arm | Rental USD/h | Warm estimated USD | Region inputs/min | Region inputs/estimated USD |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for model, output in result["models"].items():
+        for row in output["summaries"]:
+            values = [
+                row[key]
+                for key in (
+                    "hourly_rate_usd",
+                    "warm_inference_estimated_usd",
+                    "warm_region_inputs_per_minute",
+                    "warm_region_inputs_per_estimated_usd",
+                )
+            ]
+            cells = ["unknown" if value is None else f"{value:.6g}" for value in values]
+            lines.append(f"| {model} | {row['arm']} | " + " | ".join(cells) + " |")
+    lines += [
+        "",
         (
             "Denominators include failed, missing and malformed outputs. Native tied maxima become unresolved. "
             "No accuracy over independent documents or natural structural gold is claimed. "
             "Scope and fixed-edge resolution "
             "jointly change legibility. Inference wall/CPU covers serial adapter prediction; RSS is process-lifetime "
             "high water, including loading. CUDA allocator peaks and detailed failures remain in JSON; GPU device-wide "
-            "utilization is separate. No costs are inferred from latency."
+            "utilization is separate. Rental estimates multiply measured serial warm prediction time by the supplied "
+            "hourly host rate; they exclude download, loading, startup, idle and teardown. They are idealized "
+            "dedicated-GPU estimates, not actual invoices. Inputs/min and inputs/USD count overlapping region inputs, "
+            "not independent pages or end-to-end extraction."
         ),
         "",
         f"Source manifest SHA256: `{result['source_manifest_sha256']}`.",
@@ -343,6 +391,7 @@ def main() -> None:
     parser.add_argument("--markdown", type=Path)
     parser.add_argument("--json", type=Path)
     parser.add_argument("--references-dir", type=Path)
+    parser.add_argument("--hourly-rate", action="append", default=[], help="model-label=USD-per-hour")
     args = parser.parse_args()
     if args.prepare is not None:
         if args.run or args.packets or args.references_dir:
@@ -352,7 +401,8 @@ def main() -> None:
         if not all((args.packets, args.run, args.markdown, args.json, args.references_dir)):
             parser.error("Reporting requires packets, runs, markdown and json")
         runs = {model: Path(path) for model, path in (item.split("=", 1) for item in args.run)}
-        result = evaluate(args.source, args.packets, runs, references_dir=args.references_dir)
+        rates = {model: float(rate) for model, rate in (item.split("=", 1) for item in args.hourly_rate)}
+        result = evaluate(args.source, args.packets, runs, references_dir=args.references_dir, hourly_rates=rates)
         args.markdown.write_text(markdown(result))
         args.json.write_text(json.dumps(result, indent=2) + "\n")
 
