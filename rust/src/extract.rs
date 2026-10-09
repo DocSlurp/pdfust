@@ -1009,6 +1009,35 @@ fn split_overlapping_paint_layers(
         try_push_text(&mut lines, line, "text paint layers")?;
         return Ok(lines);
     }
+    // Geometry already determines the order when all inline advances are
+    // disjoint. Avoid building one run per sparse glyph, and avoid treating
+    // a source run's unpainted interior as an overlap. Equal origins must
+    // still take the layer path, including unusually narrow overprints.
+    let direction = arena[line[0]].direction;
+    let mut ascending = true;
+    let mut descending = true;
+    for pair in line.windows(2) {
+        let previous = &arena[pair[0]];
+        let glyph = &arena[pair[1]];
+        if previous.direction != direction || glyph.direction != direction {
+            ascending = false;
+            descending = false;
+            break;
+        }
+        let previous_start = glyph_progress(previous);
+        let start = glyph_progress(glyph);
+        ascending &= start > previous_start && start >= glyph_end(previous);
+        descending &= previous_start > start && previous_start >= glyph_end(glyph);
+        if !ascending && !descending {
+            break;
+        }
+    }
+    if ascending || descending {
+        sort_line_inline(arena, &mut line);
+        let mut lines = Vec::new();
+        try_push_text(&mut lines, line, "disjoint text paint layers")?;
+        return Ok(lines);
+    }
     // Arena indexes equal collection source order.
     line.sort_unstable();
 

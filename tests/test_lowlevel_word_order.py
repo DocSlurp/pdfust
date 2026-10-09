@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+from itertools import permutations
+
 import pytest
 from conftest import build_raw_pdf
 
 import pylopdf
 
 
-def _glyph_pdf(texts: list[tuple[str, float]], *, reverse: bool, rotation: int = 0, width: int = 500) -> bytes:
+def _glyph_pdf(
+    texts: list[tuple[str, float]],
+    *,
+    reverse: bool,
+    rotation: int = 0,
+    width: int = 500,
+    paint_order: tuple[int, ...] | None = None,
+) -> bytes:
     glyphs = [(char, start + 6 * index) for text, start in reversed(texts) for index, char in enumerate(text)]
-    if reverse:
+    if paint_order is not None:
+        glyphs = [glyphs[index] for index in paint_order]
+    elif reverse:
         glyphs.reverse()
     stream = "\n".join(f"BT /F1 10 Tf 1 0 0 1 {x} 100 Tm ({char}) Tj ET" for char, x in glyphs)
     return build_raw_pdf(
@@ -70,3 +81,10 @@ def test_sparse_monotone_glyphs_preserve_every_word(*, reverse: bool) -> None:
     with pylopdf.open(stream=_glyph_pdf(texts, reverse=reverse, width=6000)) as doc:
         assert [word[4] for word in doc[0].get_text("words")] == ["A"] * 256
         assert doc[0].get_text().split() == ["A"] * 256
+
+
+@pytest.mark.parametrize("paint_order", list(permutations(range(4))))
+def test_disjoint_fields_ignore_arbitrary_glyph_paint_order(paint_order: tuple[int, ...]) -> None:
+    with pylopdf.open(stream=_glyph_pdf([("12", 40), ("AB", 100)], reverse=False, paint_order=paint_order)) as doc:
+        assert doc[0].get_text() == "12 AB\n"
+        assert [word[4] for word in doc[0].get_text("words")] == ["12", "AB"]
