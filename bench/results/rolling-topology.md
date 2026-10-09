@@ -116,3 +116,19 @@ V2 topology candidate freeze SHA256:
 V2 union manifest SHA256:
 `42c8281f2f33b072ed2c5f57613bfda730c2ef13b3f046758a990ae65c8fe295`.
 Both preceded private-reference evaluation. No rules were revised for V2.
+
+Reviewed V2, scored after the recorded freeze: T001 covers 4/16 table matrices;
+T002 and T003 cover 12/16 matrices and spans, with 294/294 intended extractor
+word IDs in their correct authored cells. The frozen generic union ceiling is
+also 12/16. All four failures are two-row tables absorbing a distant footer as
+an extra row. Exact intended-cell ownership therefore does not establish correct
+region extent. Neither baseline candidate provides a complementary exact matrix.
+All eight coherent prose pages and four ambiguous pages have proposals; these
+are generator proposals, never automatic admissions. Ambiguous pages are excluded
+from exact/false-positive denominators. No T001–T003 configuration changed.
+
+V2 preparation took 0.2535 seconds wall / 0.2526 seconds process CPU, with
+33,013,760-byte lifetime VmHWM measured via `/proc/self/status`, sequential CPU,
+no sampling. Private failures and full source data remain ignored artifacts.
+The next independently named extent ablation can test local gap statistics,
+without turning footer words into semantic rules or retuning the original freeze.

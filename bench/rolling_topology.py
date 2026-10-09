@@ -274,7 +274,8 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
             target = targets[page["id"]]
             for alternative in page["alternatives"]:
                 tables = alternative["candidates"]
-                scored = [score(target, [table]) for table in tables]
+                eligible = target.get("binary_admission_eligible", True) and target["kind"] != "ambiguous"
+                scored = [score(target, [table]) for table in tables] if eligible else []
                 best_index = max(
                     range(len(scored)),
                     key=lambda i: (
@@ -285,12 +286,12 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
                     ),
                     default=None,
                 )
-                best = scored[best_index] if best_index is not None else score(target, [])
+                best = (scored[best_index] if best_index is not None else score(target, [])) if eligible else None
                 ownership = (
                     exact_source_ownership(
                         target, sources[page["id"]], tables[best_index] if best_index is not None else None
                     )
-                    if target.get("authored_slots")
+                    if eligible and target.get("authored_slots")
                     else None
                 )
                 candidate_conservation = all(
@@ -306,6 +307,7 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
                         "id": page["id"],
                         "config": alternative["config"],
                         "kind": target["kind"],
+                        "eligible": eligible,
                         "candidate_count": len(tables),
                         "best_index": best_index,
                         "scores": best,
@@ -326,8 +328,10 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
                 "slices": {
                     kind: {
                         "pages": sum(r["kind"] == kind for r in selected),
+                        "scored_pages": sum(r["kind"] == kind and r["eligible"] for r in selected),
+                        "proposed_pages": sum(r["kind"] == kind and r["candidate_count"] > 0 for r in selected),
                         **{
-                            key: sum(r["scores"][key] for r in selected if r["kind"] == kind)
+                            key: sum(r["scores"][key] for r in selected if r["kind"] == kind and r["eligible"])
                             for key in (
                                 "exact_page",
                                 "exact_cells",
@@ -341,7 +345,7 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
                         "wrong_only_candidate_pages": sum(
                             r["candidate_count"] > 0 and not r["scores"]["exact_page"]
                             for r in selected
-                            if r["kind"] == kind
+                            if r["kind"] == kind and r["eligible"]
                         ),
                         "correct_slot_word_ids": sum(
                             r["ownership"]["correct_slot_word_ids"]
@@ -354,7 +358,7 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
                             if r["kind"] == kind and r["ownership"]
                         ),
                     }
-                    for kind in ("borderless", "prose", "ruled-control")
+                    for kind in ("borderless", "prose", "ruled-control", "ambiguous")
                 },
             }
     summary = {
@@ -364,7 +368,8 @@ def score_frozen(directory: Path, target_paths: list[Path]) -> dict[str, Any]:
             k: payload[k] for k in ("wall_seconds", "cpu_seconds", "peak_rss_bytes", "measurement")
         },
         "limits": "Oracle over unaccepted source-only candidates. False proposals are not actual admissions. "
-        "Original fresh model results are cue-contaminated; neutral source geometry scoring only.",
+        "Ambiguous pages are unscored. Original fresh model results are cue-contaminated; "
+        "neutral source geometry scoring only. Reviewed realism V2 is a separate authored DEV cohort.",
     }
     (directory / "private-scores.json").write_text(json.dumps({"rows": rows}, indent=2))
     (directory / "summary.json").write_text(json.dumps(summary, indent=2))
