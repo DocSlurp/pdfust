@@ -165,3 +165,12 @@ Private visibility was verified before publication. Public upstream/fork remotes
 remain disconnected, GitHubActions remain disabled, and unrelated `mise.toml`
 is excluded. The local pre-push guard is narrowed to the requested private
 repository/main branch, rather than bypassed.
+
+## Rate normalization requested by user
+
+[Model-grouped rates and all aggregate scores](bench/results/model-experiment-rates.md)
+cover 77 hosted experiment/probe rows. Rates use unique original requests,
+provider-reported USD and summed HTTP time, with batched observations counted
+once each. Partial-page decision inputs are explicitly distinguished from page
+images; zero reported charges, failures, cache replays and query-indexing cost
+separation are explicit. This is an offline reanalysis; no new inference or spend.
