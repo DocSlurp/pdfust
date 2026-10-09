@@ -23,3 +23,18 @@ Artifacts:
 See `bench/IMAGE_AXIS_EXPERIMENT.md` for reproduction, optional anisotropic
 arms, provider transport details, refusals and alias limitations. The context30
 cases have correlated templates; no real-world or heldout quality claim follows.
+
+The separate optional anisotropic freeze is also complete at
+`/home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/image-axis-context30-anisotropic-v1`. It retains all main arms and adds 24 explicitly distorted representation/axis/size arms: 624 additional unique batches covering 2,880 case/model observations. The full manifest has 1,560 unique batches, 468 geometric aliases and zero refusals, with 2,340 image records. Preparation took 90.261s wall / 89.877s CPU and 373,354,496 bytes (356.1 MiB) peak RSS, with the same measurement scope as the main grid. No calls were sent.
+
+Main manifest SHA256:
+`7deeea36101bba1837659fb53310b1966edc8da1938370f860f0294ba188f1c7`.
+Anisotropic manifest SHA256:
+`081d9716390605d1ed7d08de7861c99fe905f137cc56664a9d747321d71964c4`.
+
+The optional manifest includes identical main request bodies from the first
+freeze. Those are retained for breadth and reproducibility, not additional
+independent trials. Root may schedule only configurations where
+`fixed_partner` is non-null for the distinct anisotropic phase. Cross-directory
+request replay must be labeled from the client's replay flag; it provides no
+fresh latency or throughput evidence.
