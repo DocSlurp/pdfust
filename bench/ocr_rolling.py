@@ -518,7 +518,7 @@ def overlap_ablation(output: Path) -> None:
     paths = [
         output / str(edge) / f"case-{index:03d}" / "observed.json" for edge in SCALES for index in range(PAGE_COUNT)
     ]
-    config = {
+    config: dict[str, Any] = {
         "experiment": "A004",
         "overlap_heights": [0.0, 0.25, 0.5],
         "scope": "otherwise eligible sparse nonnumeric rolling continuations only",

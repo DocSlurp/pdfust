@@ -154,9 +154,9 @@ def prepare(output: Path) -> None:
 def worker(output: Path, device: str, *, half: bool, repeats: int) -> None:
     """Run one isolated model worker with fixed inference settings."""
     os.environ["YOLO_OFFLINE"] = "true"
-    import torch  # noqa: PLC0415 - isolated model environment
-    import ultralytics  # noqa: PLC0415
-    from ultralytics import YOLO  # noqa: PLC0415
+    import torch  # type: ignore[import-not-found]  # noqa: PLC0415 - isolated model environment
+    import ultralytics  # type: ignore[import-not-found]  # noqa: PLC0415
+    from ultralytics import YOLO  # type: ignore[import-not-found]  # noqa: PLC0415
 
     torch.set_num_threads(4)
     torch.set_num_interop_threads(1)
@@ -344,7 +344,7 @@ def summarize(output: Path) -> None:
     labels = json.loads((output / "labels.json").read_text())
     names = [name for name in ("cpu-fp32", "gpu-fp32", "gpu-fp16") if (output / (name + ".json")).exists()]
     runs = {name: json.loads((output / (name + ".json")).read_text()) for name in names}
-    scores = {}
+    scores: dict[str, dict[str, dict[str, int]]] = {}
     lines = [
         "# YOLO26m matched CPU/GPU DEV comparison",
         "",

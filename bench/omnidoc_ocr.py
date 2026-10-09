@@ -119,7 +119,7 @@ def worker(sample: int, edge: int, output: Path) -> None:
         temporary_phase.replace(output / "phase.json")
         observed = page.get_text_ocr(dpi=dpi, engine=engine)
         after = resource.getrusage(resource.RUSAGE_SELF)
-        words = [
+        words: list[dict[str, Any]] = [
             {
                 "source_id": f"ocr-s{sample}-e{edge}-w{index}",
                 "source_bbox": [x / 0.36 for x in word["bbox"]],
@@ -329,15 +329,18 @@ def summarize(output: Path) -> None:
     lines.extend(
         [
             "",
-            ("The 1200-pixel arm supplies usable positioned printed-text evidence on the three populated pages "
-            "within 6.81s and 289 MiB each, but 640 pixels misses both Chinese-report prose blocks. "
-            "The smaller scale is therefore not admitted as an interchangeable input for row assembly. "
-            "At 1200 pixels, normalized character-bag recall reaches 0.978/1.000/1.000 for the scored "
-            "English-exam/Chinese-academic/Chinese-report blocks. These are limited content-retention observations, "
-            "not structural correctness or calibrated model confidence. The metadata-selected note page is "
-            "essentially blank ruled paper with a small header; it has no text_block annotation and provides no "
-            "handwriting or unsupported-language accuracy estimate. English and simplified-Chinese printed text "
-            "both yield observations here; no other script capability is inferred."),
+            (
+                "The 1200-pixel arm supplies usable positioned printed-text evidence on the three populated pages "
+                "within 6.81s and 289 MiB each, but 640 pixels misses both Chinese-report prose blocks. "
+                "The smaller scale is therefore not admitted as an interchangeable input for row assembly. "
+                "At 1200 pixels, normalized character-bag recall reaches 0.978/1.000/1.000 for the scored "
+                "English-exam/Chinese-academic/Chinese-report blocks. "
+                "These are limited content-retention observations, "
+                "not structural correctness or calibrated model confidence. The metadata-selected note page is "
+                "essentially blank ruled paper with a small header; it has no text_block annotation and provides no "
+                "handwriting or unsupported-language accuracy estimate. English and simplified-Chinese printed text "
+                "both yield observations here; no other script capability is inferred."
+            ),
             "",
         ]
     )

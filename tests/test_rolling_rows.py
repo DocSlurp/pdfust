@@ -94,9 +94,11 @@ def test_literal_numeric_detector(text: str, *, expected: bool) -> None:
 
 def test_overlap_allowance_is_bounded_and_opt_in() -> None:
     source = {"page_size": [500, 500], "words": []}
-    for value in [True, -0.1, 0.51, math.inf, math.nan, "0.25"]:
+    for value in [True, -0.1, 0.51, math.inf, math.nan]:
         with pytest.raises(ValueError, match="overlap_heights"):
             assemble(source, "rolling", overlap_heights=value)
+    with pytest.raises(ValueError, match="overlap_heights"):
+        assemble(source, "rolling", overlap_heights="0.25")  # type: ignore[arg-type]  # intentionally invalid input
     assert assemble(source, "rolling") == assemble(source, "rolling", overlap_heights=0.0)
 
 
