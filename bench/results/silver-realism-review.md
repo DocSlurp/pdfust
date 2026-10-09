@@ -99,6 +99,10 @@ The CPU-only freeze took 1.233 wall seconds and 1.240 process CPU seconds with
 and `/proc/self/status` VmHWM in one sequential process, without periodic
 sampling; imports are outside the timed freeze but inside lifetime RSS.
 The generation/realism/rolling/borderless suite passed 29 tests, and Ruff passed.
+Focused mypy also passes after a type-only annotation of the heterogeneous word
+export. The retained freeze keeps its original generator snapshot from
+`cbef3bd`; that annotation does not change PDF or source construction. Rebuilding
+with a different generator hash creates a separate identity.
 
 ## Remaining limits
 

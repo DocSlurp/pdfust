@@ -322,7 +322,7 @@ def freeze(directory: Path) -> Path:
     for case in cases:
         with pylopdf.open(stream=case["pdf"]) as document:
             page = document[0]
-            words = [
+            words: list[dict[str, Any]] = [
                 {"id": f"w{index}", "text": word[4], "bbox": list(word[:4])}
                 for index, word in enumerate(page.get_text("words"))
             ]
