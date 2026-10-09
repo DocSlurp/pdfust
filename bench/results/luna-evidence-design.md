@@ -123,3 +123,26 @@ replace selection with answer copying; shipping only derived baseline output
 would conceal evidence transport. We retain raw and derived arms separately,
 unchanged gold, original materialization and the strong native baseline. Round2
 paid requests and measured accuracy remain root-owned and pending.
+
+## Round2 measured loss and final bounded hypothesis
+
+Root supplied actual Luna round2 DEV outcomes. Compact current observations
+reach 3/30 full-document exact and **30/30 evidence-supported abstentions**;
+compact native reaches 10/30 full-document exact, enriched-derived native 7/30,
+and compact image128 reaches 3/30 full-document exact and 9/30
+evidence-supported. Compact criteria correct the original inability to abstain
+on missing evidence, but excessive abstention on admitted native facts makes
+complete-document extraction worse than the original 12/30. Adding derived
+JSON booleans also loses. These losses remain visible and no gold/scorer change
+was made. The native CPU baseline remains 30/30.
+
+A final bounded hypothesis verbalizes geometry without offering an answer:
+`make_fact_request(evidence, model)` describes observed full-width separators
+as above/between/below actual description-line centers and lists which centers
+an observed shaded rectangle contains. Actual prior/surrounding prose remains
+literal, and instructions clarify that source document conventions can supply
+semantic structure even though source text cannot issue model instructions.
+The state recommends no candidate. All 30 native requests fit below 2,000
+serialized bytes. Paired current inputs remain identical. Five compact module
+checks and static checks pass. Root owns final retained per-model calls; stop
+this context loop if final verbalization does not help.
