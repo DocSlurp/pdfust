@@ -998,3 +998,28 @@ pixels and combined evidence with fixed source images and prompt wording.
 The provider has posted USD 7.601 at this checkpoint. The original USD 18 wave
 reservation is still in force within the cumulative USD 100 authorization; posted
 charges are not double-counted. The independent cleanup deadline remains active.
+
+R001 fourth checkpoint: completed the 1,920 native prompt × resolution decisions
+and an exploratory 480-decision Qwen9 extension. The frozen geometry policy
+resolved 8/16 authored known cases with no wrong decisions and abstained on all
+eight ambiguous cases; all natural conditions were abstained. No policy thresholds
+changed after scoring. Its compact evidence omits choices, references and IDs.
+
+All five models completed the new 288-input evidence matrix: geometry, pixel and
+combined numeric cues at RGB 256/500 px with original/identity wording. A 640 px
+source-only pixel probe is separately declared preprocessing. All payloads and
+features were reverified before local scoring. One host's initial tar extraction
+started before its transfer finished and failed before inference; extraction was
+repeated only after transfer completion. Model requests were not retried.
+
+The same-host Intern fast-stack cohort completed 216 inputs in 26.65 worker seconds.
+A lightweight single-source cProfile diagnostic measured 2.029 seconds on the old
+stack versus 0.092 seconds on the new one; old torch.conv3d accounted for 1.931
+seconds. Disabling cuDNN on the old stack still took 1.967 seconds. These are
+instrumented diagnostics, not full-corpus throughput or a single-dependency causal
+claim. An earlier CPU+CUDA profiler grew beyond its useful diagnostic window and
+was stopped, with the failed attempt retained.
+
+Provider-posted R001 charges reached USD 8.802. Completed-host artifacts are being
+synced before exact-host retirement; the Clef host remains warm for native batching.
+The USD 18 reservation remains separate until final provider reconciliation.

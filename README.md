@@ -432,8 +432,9 @@ Estimated warm inputs/USD divides measured throughput by the actual allocation's
 hourly GPU and disk rate. It excludes model loading, downloads, idle time and
 cleanup; whole-wave provider billing is reported separately. These are conditional
 page-region decisions, **not full-page extraction pages/minute or pages/USD**.
-The Intern newer-stack comparison also changes hosts; same-host isolation is
-underway. The complete report retains every color/size result and resource scope.
+The Intern newer-stack table initially changes hosts; a same-host follow-up also
+finished the 216 inputs in 26.65 seconds. Quality and runtime isolation are
+reported separately. The complete report retains every color/size result and resource scope.
 Nimble-v3's separate noncommercial text-only ablation scored 6/16 known cases
 and abstained on 0/8 ambiguous cases. No reference answers are sent to workers,
 and the protected set remains untouched.
@@ -446,6 +447,18 @@ The [fixed combination comparison](bench/results/remote-gpu-combinations.md)
 records the cost of agreement: at 768/1024 px, unanimity reduces known errors
 but also loses correct decisions, and majority voting does not recover ambiguity.
 These remain exploratory, correlated DEV results.
+
+The [prompt × resolution screen](bench/results/remote-gpu-prompt-sizes.md)
+completed 480 decisions per native model. PPLX at RGB 640 px with identity wording
+scored 12/16 known cases and abstained on 4/8 ambiguous cases; the same image with
+original wording scored 10/16 and 0/8. These are paired exploratory observations,
+not an independent validation of the best configuration.
+
+The [frozen geometry gate](bench/results/ambiguity-geometry.md) correctly resolves
+8/16 answerable authored cases with no wrong decisions, while abstaining on the
+remaining eight and all eight ambiguous cases. Its natural-document trial
+abstains everywhere, including 52 answerable conditions. Structural cues help
+when present, but this conservative gate alone does not reconstruct natural rows.
 
 The [fresh-size sweep](bench/results/remote-gpu-image-sizes.md) adds 128, 256,
 384, 400, 448, 500 and 640 px in three independent color treatments. Intern
