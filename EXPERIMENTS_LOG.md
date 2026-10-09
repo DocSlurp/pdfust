@@ -1070,3 +1070,14 @@ known-case accuracy. Initial Clef timings overlap environment bootstrap. Two
 bounded B1/B2 repeats after all other work finished check that timing concern,
 retaining both passes. No new model/evidence experiments are admitted after those
 repeats; final artifact sync and exact-host retirement follow.
+
+R001 cleanup and accounting: all five created instances are deleted and provider
+absence was verified at 2026-10-09 21:43:17 UTC, before the independent deadline.
+All outputs were synced before retirement; 53 compressed archives have a retained
+SHA256 index. The scoped task SSH private key was removed. The all-charge-type
+provider receipt reports USD 9.713, including GPU, disk and bandwidth. R001's
+USD 18 reservation was replaced, not supplemented, by that charge; USD 8.287
+was released. Prior rows remain byte-equivalent as parsed records. Conservative
+cumulative accounting is USD 28.5288416248 of USD 100, including the unchanged
+USD 6.05 older unresolved reservations. Posted charges are not invoice-finality
+claims. See `bench/results/remote-gpu-costs.md`.

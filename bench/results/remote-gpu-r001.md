@@ -1,6 +1,6 @@
 # R001: native GPU decision models on L015 DEV regions
 
-Five image models completed all 216 inputs each without schema or worker failures: Clef-Flash 9B, Perplexity Decider v1.1 27B, Intern-Decision-4B, Qwen3.5-4B through stock vLLM, and Clef 27B. A separate Nimble-v3 text-only ablation completed 24 inputs. None abstained on the ambiguous controls. Rental billing remains pending.
+The initial five image models completed all 216 inputs each without schema or worker failures: Clef-Flash 9B, Perplexity Decider v1.1 27B, Intern-Decision-4B, Qwen3.5-4B through stock vLLM, and Clef 27B. A separate Nimble-v3 text-only ablation completed 24 inputs. None abstained on the ambiguous controls. The completed wave totals 13 vision releases plus the separate text ablation; later cohorts follow below. [Final provider charges and cleanup](remote-gpu-costs.md) cover the full wave.
 
 Each image arm contains the same 24 authored source pages with one supplied two-chunk region per page: 16 known references and eight ambiguous controls. Nine image arms repeat those pages; 216 inputs are not 216 independent pages or complete-page extractions. This is conditional grouping of supplied regions and candidate boundaries. The three transport/vision controls passed separately and are excluded from all cohort denominators.
 
@@ -136,7 +136,7 @@ Qwen2/9 run sequentially on the Qwen4 host using the same BF16/eager vLLM config
 | Qwen/Qwen3.5-2B | 27.03 | 9.84 | 39.34 | 38.03 | 51.09 | 5.56 |
 | Qwen/Qwen3.5-9B | 34.04 | 27.79 | 52.91 | 52.05 | 68.25 | 5.63 |
 
-Boundary CPU intervals and pre-observation activity remain unmeasured; server PyTorch allocation/reservation peaks are unavailable. Download timing reflects this particular host/cache/network and is not an inference rate. All separate controls passed; they are excluded from cohort scores and rates. Qwen2 revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`; Qwen9 revision: `c202236235762e1c871ad0ccb60c8ee5ba337b9a`. Whole-wave billing and billed region inputs/USD remain pending.
+Boundary CPU intervals and pre-observation activity remain unmeasured; server PyTorch allocation/reservation peaks are unavailable. Download timing reflects this particular host/cache/network and is not an inference rate. All separate controls passed; they are excluded from cohort scores and rates. Qwen2 revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`; Qwen9 revision: `c202236235762e1c871ad0ccb60c8ee5ba337b9a`. Whole-wave billing is in the [provider cost report](remote-gpu-costs.md); no per-model billed allocation is invented.
 
 The original Intern run above remains unchanged; the returned FLA-added and newer-stack comparisons appear below.
 
@@ -265,4 +265,4 @@ Prediction: 26.25 wall / 2.33 client CPU s; worker 30.36 wall / 2.46 client CPU 
 
 One-second server sampling: 30.34 s request window, 30.02 s fully contained intervals observing 23.54 server-plus-child CPU s; sampled summed RSS peak 3.87 GiB. Boundary CPU is unmeasured and shared RSS pages may be counted twice. Device sampling 31/31, mean utilization 52.65%, peak 61,710 MiB including KV allocation; server PyTorch CUDA peaks are unmeasured.
 
-All use the recovered stock-vLLM GPU host and quoted $1.3083333333/h GPU-plus-disk allocation, serial BF16/eager requests with no prefix/image-processor cache. MiniCPM enables its pinned remote model code. Estimates exclude failed attempts, initialization, downloads, idle and cleanup; billed costs remain pending. No full-page extraction throughput is established.
+All use the recovered stock-vLLM GPU host and quoted $1.3083333333/h GPU-plus-disk allocation, serial BF16/eager requests with no prefix/image-processor cache. MiniCPM enables its pinned remote model code. Estimates exclude failed attempts, initialization, downloads, idle and cleanup; whole-wave billed costs are in the [provider cost report](remote-gpu-costs.md). No full-page extraction throughput is established.

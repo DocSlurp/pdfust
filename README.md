@@ -490,6 +490,11 @@ Diagnostic small-model cohorts have valid transports but failed semantic shape
 controls; those failures and all runtime repairs remain visible in the reports.
 No experimental hosted or remote-GPU path is enabled by default in extraction.
 
+[Whole-wave billing and cleanup](bench/results/remote-gpu-costs.md): USD 9.713
+provider-posted GPU, disk and transfer charges; all rented instances retired.
+Conservative campaign accounting is USD 28.53 of the USD 100 cap, including
+USD 6.05 in older unresolved reservations.
+
 ## Architecture
 
 ```
