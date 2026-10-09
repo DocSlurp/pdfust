@@ -655,3 +655,25 @@ full-record versus description-only context, fresh 512/1200 crops. Requests were
 frozen before separate source-aware screenshot references. These provisional
 references are not blind gold; narrower context has its own uncertainty labels.
 The fixed-edge comparison jointly changes context and glyph resolution.
+
+### L013 offline geometry/model composition
+
+The previously frozen divider-v1 policy runs on source drawings and target
+selectors before loading references. It handles decisive geometry and defers the
+remaining cases to retained model outputs. The all-input and paired denominators
+remain separate; every gain/loss is retained. This is an offline composition
+experiment, not a fresh cascade cost or latency measurement.
+
+On all 72 initial encoded observations (24 logical authored cases), Jev words
+improves from 28/48 to 40/48 known choices with zero paired regressions. Unknown
+abstention remains 0/24. PPLX crop512 stays 38/48 with 0/24 unknown abstention.
+Luna minimal improves 4/48 to 26/48 while preserving 24/24 unknown abstentions.
+The original three-observation batches mix decisive and deferred pages, so none
+can be skipped whole: do not claim one-third fewer requests or dollars from this
+replay. Fresh singleton routing is a separate follow-up.
+
+[Complete hybrid table](bench/results/lowlevel-hybrid-basic.md) records all 32
+model/arm combinations. Geometry clipping/decoration and loose-selector caveats
+still apply. Latest integrated suite: 2,274 passed, 14 skipped, two expected
+failures; the subsequent hybrid scorer has a focused regression covering losses,
+missing outcomes and mixed batches.

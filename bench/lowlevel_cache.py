@@ -39,6 +39,7 @@ REPRESENTATIVES = 3
 MAX_CALLS = len(MODELS) * len(ARMS) * REPRESENTATIVES * TRIALS
 PREFIX = "L007/"
 WAVE_LIMIT = 5.0
+MAX_LEDGER_BYTES = 64 * 1024 * 1024
 
 
 def _file(directory: Path, name: str) -> Path:
@@ -255,7 +256,7 @@ def admission(entries: list[dict[str, Any]]) -> None:
 
 
 def _entries(client: Any) -> list[dict[str, Any]]:
-    return _read(client.ledger)["requests"] if client.ledger.exists() else []
+    return _read(client.ledger, MAX_LEDGER_BYTES)["requests"] if client.ledger.exists() else []
 
 
 def _response(client: Any, entry: dict[str, Any]) -> dict[str, Any]:

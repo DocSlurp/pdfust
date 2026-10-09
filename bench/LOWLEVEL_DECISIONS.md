@@ -180,8 +180,8 @@ and L003 has USD 15. These are admission ceilings, not expenditure targets.
 | L002 prompt factors | 24 pixel-distinct representatives, prompt/typed-state/singleton factors | 544 records but 512 distinct bodies; aliases do not increase throughput numerators |
 | L003 frontier | All nine initial arms and 72 pages, Claude Opus/Sonnet/Haiku 5.5 | Same evidence and literal decision instructions through strict chat choices; no invented confidence |
 | L004 compact | All 36 history and 72 basic pages, four lossless compact source packets | 32,000-byte full-body admission; jointly changes prompt/representation/batching, not a causal compression estimate |
-| L005 planned | Raw and compact canonical packets with identical singleton batching | Isolate representation effects using the same source facts and resolved instructions |
-| L006 planned | All four catalog image-capable decision models; multiple image sizes and independent color/bit-depth factors | Matched bounded text prevents known serving-path truncation; retain every admitted model |
+| L005 | Raw and compact canonical packets with identical singleton batching | Isolate representation effects using the same source facts and resolved instructions |
+| L006 | All four catalog image-capable decision models; multiple image sizes and independent color/bit-depth factors | Matched bounded text prevents known serving-path truncation; retain every admitted model |
 
 Jev's L001 history request returned HTTP 400. Its original request and USD 0.30
 unresolved reservation remain retained, and the L001 stop remains active. The
@@ -194,3 +194,21 @@ The history controls have no vector rules: their geometry hint is always unresol
 That arm tests a constant defer cue. Only the separate basic ruled controls can test
 useful divider evidence. All raw freezes remain unchanged after the native word-order
 fix, so newly corrected extraction cannot leak into historical comparisons.
+
+## Follow-up layers
+
+| Wave | Frozen comparison | Current purpose |
+| --- | --- | --- |
+| L007 | Three provider transmissions of 24 exact source-selected image bodies | Measure reported provider caching, never infer hits from local replay |
+| L008 | Natural OCR/source agreement; 128, 512 and native downsample-only crops | Detect when glyph conservation cannot recover visible text |
+| L009 | Gateway Laya aliases/d1 text and matched d1 images | Test catalog-exclusive family and route capability |
+| L010 | Lossless string serialization of L009 text state | Compatibility and packaging sensitivity; did not fix Laya compact HTTP 422 |
+| L011 | Natural Senate row pairs, description/record context and fresh 512/1200 renders | Source-aware reference agreement with scope uncertainty; one page |
+| L013 | Frozen divider policy plus retained model outputs | Offline paired composition; no measured cascade savings |
+
+The L013 result motivates testing deterministic geometry before cheap semantic
+decisions: Jev words reaches 40/48 authored known choices from 28/48, while
+unknown abstention remains 0/24. This does not justify applying the loose-selector
+policy to production. Natural decorative/fragmented/clipped-rule cases and a
+fresh metered singleton cascade remain necessary. Preserve older evidence arms
+and all losses; do not prune them solely because another arm leads on one cohort.
