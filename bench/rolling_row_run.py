@@ -104,7 +104,7 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
                 }
             )
     for model in manifest["models"]:
-        for arm in ("text", "image512"):
+        for arm in manifest.get("arms", ["text", "image512"]):
             rows = []
             for page_id, page in sources.items():
                 if page_id in native:
@@ -141,6 +141,23 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
                 "slices": {
                     kind: {
                         "pages": sum(r["kind"] == kind for r in rows),
+                        "expected_values": sum(
+                            bool(value)
+                            for t in targets.values()
+                            if t["kind"] == kind
+                            for table in t["tables"]
+                            for row in table["values"]
+                            for value in row
+                        ),
+                        "expected_words": sum(
+                            len(value.split())
+                            for t in targets.values()
+                            if t["kind"] == kind
+                            for table in t["tables"]
+                            for row in table["values"]
+                            for value in row
+                            if value
+                        ),
                         **{
                             key: sum(r["scores"][key] for r in rows if r["kind"] == kind)
                             for key in (
@@ -182,36 +199,40 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
 
 def render_report(summary: dict[str, Any]) -> str:
     """Render all fixed cohort denominators beside costs and metric limitations."""
+    first = next(iter(summary["cohorts"].values()))
     lines = [
-        "# A002 rolling candidate admission",
+        "# Frozen rolling candidate admission",
         "",
         (
-            "All 28 DEV pages remain in each cohort: four native vector routes use zero model calls; "
-            "24 pages require admission."
+            f"All {first['pages']} DEV pages remain in each cohort: "
+            f"{first['native_zero_call_pages']} native vector routes use zero model calls; "
+            f"{first['pages'] - first['native_zero_call_pages']} pages require admission."
         ),
         "",
-        (
-            "| Model / arm | Borderless exact / 12 | Prose false table / 12 | Controls exact / 4 | "
-            "Unresolved borderless / 12 | Unresolved prose / 12 |"
-        ),
+        "| Model / arm | Borderless exact | Prose false table | Controls exact | Unresolved borderless | Unresolved prose |",
         "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for key, cohort in summary["cohorts"].items():
         slices = cohort["slices"]
         lines.append(
-            f"| {key} | {slices['borderless']['exact_page']}/12 | {slices['prose']['false_positive_page']}/12 | "
-            f"{slices['ruled-control']['exact_page']}/4 | {slices['borderless']['unresolved_or_unmeasured']}/12 | "
-            f"{slices['prose']['unresolved_or_unmeasured']}/12 |"
+            f"| {key} | {slices['borderless']['exact_page']}/{slices['borderless']['pages']} | "
+            f"{slices['prose']['false_positive_page']}/{slices['prose']['pages']} | "
+            f"{slices['ruled-control']['exact_page']}/{slices['ruled-control']['pages']} | "
+            f"{slices['borderless']['unresolved_or_unmeasured']}/{slices['borderless']['pages']} | "
+            f"{slices['prose']['unresolved_or_unmeasured']}/{slices['prose']['pages']} |"
         )
     lines += [
         "",
-        "| Model / arm | Intended borderless values /144 | Intended borderless words /180 | Source IDs conserved |",
+        "| Model / arm | Intended borderless values | Intended borderless words | Source IDs conserved |",
         "| --- | ---: | ---: | --- |",
     ]
     for key, cohort in summary["cohorts"].items():
         positive = cohort["slices"]["borderless"]
         conserved = all(row["conservation"] for row in cohort["rows"])
-        lines.append(f"| {key} | {positive['owned_values']}/144 | {positive['owned_words']}/180 | {conserved} |")
+        lines.append(
+            f"| {key} | {positive['owned_values']}/{positive['expected_values']} | "
+            f"{positive['owned_words']}/{positive['expected_words']} | {conserved} |"
+        )
     lines += [
         "",
         (
@@ -366,13 +387,19 @@ def main() -> None:
     parser.add_argument("--candidates", type=Path)
     parser.add_argument("--targets", type=Path)
     parser.add_argument("--models", nargs="+", default=list(MODELS))
+    parser.add_argument("--arms", nargs="+", choices=["text", "image512"], default=["text", "image512"])
     parser.add_argument("--run-hosted", action="store_true")
     parser.add_argument("--report", type=Path, default=ROOT / "bench/results/rolling-admission.md")
     args = parser.parse_args()
     if not (args.directory / "manifest.json").exists():
         if args.source is None or args.candidates is None:
             parser.error("Preparation requires --source and --candidates")
-        print(json.dumps(freeze_admission(args.source, args.candidates, args.directory, args.models), indent=2))
+        print(
+            json.dumps(
+                freeze_admission(args.source, args.candidates, args.directory, args.models, arms=tuple(args.arms)),
+                indent=2,
+            )
+        )
     verify(args.directory)
     if args.run_hosted:
         if args.targets is None:

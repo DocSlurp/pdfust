@@ -334,8 +334,17 @@ def _native_inventory(page: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def freeze_admission(source_path: Path, candidates_path: Path, output: Path, models: list[str]) -> dict[str, Any]:
+def freeze_admission(
+    source_path: Path,
+    candidates_path: Path,
+    output: Path,
+    models: list[str],
+    *,
+    arms: tuple[str, ...] = ("text", "image512"),
+) -> dict[str, Any]:
     """Freeze source native routing and paired admission bodies without scoring or hosted calls."""
+    if not arms or len(set(arms)) != len(arms) or not set(arms) <= {"text", "image512"}:
+        raise ValueError("Admission arms must be distinct existing text/image512 arms")
     source_path, candidates_path, output = (guard_path(p) for p in (source_path, candidates_path, output))
     raw, frozen = source_path.read_bytes(), candidates_path.read_bytes()
     source, candidates = json.loads(raw), json.loads(frozen)
@@ -358,7 +367,7 @@ def freeze_admission(source_path: Path, candidates_path: Path, output: Path, mod
             )
             continue
         for model_index, model in enumerate(models):
-            for arm in ("text", "image512"):
+            for arm in arms:
                 request = admission_request(page, candidate_map[page["id"]], model, with_image=arm == "image512")
                 data = json.dumps(request, sort_keys=True, separators=(",", ":")).encode()
                 filename = f"{page['id']}-model{model_index}-{arm}.json"
@@ -381,6 +390,7 @@ def freeze_admission(source_path: Path, candidates_path: Path, output: Path, mod
         "source_sha256": hashlib.sha256(raw).hexdigest(),
         "frozen_candidates_sha256": hashlib.sha256(frozen).hexdigest(),
         "models": models,
+        "arms": list(arms),
         "pages": len(source["pages"]),
         "records": records,
         "wall_seconds": time.perf_counter() - start,
