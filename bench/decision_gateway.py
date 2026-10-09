@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shlex
 import time
 import urllib.error
@@ -27,6 +28,212 @@ ENDPOINT = "https://ai-gateway.vercel.sh/typesafe/v1/systemone"
 GATEWAY = "vercel"
 MODELS = ("convaiinnovations/laya", "convaiinnovations/laya-free", "liquid/d1")
 LAYA_MODELS = MODELS[:2]
+
+
+MAX_ERROR_BYTES = 8192
+MAX_ERROR_ITEMS = 32
+MAX_LOCATION_PARTS = 16
+MAX_RETRY_SECONDS = 86400
+MAX_RETRY_HEADER_CHARS = 32
+MAX_LOCATION_CHARS = 256
+MAX_LOCATION_INDEX = 4096
+HTTP_STATUS_MIN = 100
+HTTP_STATUS_MAX = 599
+ERROR_TYPES = frozenset(
+    {
+        "invalid_request",
+        "invalid_request_error",
+        "request_validation_error",
+        "validation_error",
+        "invalid_type",
+        "invalid_value",
+        "missing",
+        "extra_forbidden",
+        "string_type",
+        "string_too_short",
+        "string_too_long",
+        "dict_type",
+        "list_type",
+        "tuple_type",
+        "int_type",
+        "int_parsing",
+        "float_type",
+        "float_parsing",
+        "bool_type",
+        "literal_error",
+        "enum",
+        "too_short",
+        "too_long",
+        "value_error",
+        "json_invalid",
+        "union_tag_invalid",
+        "context_length_exceeded",
+        "rate_limit_exceeded",
+        "rate_limit_error",
+        "unsupported_model",
+        "authentication_error",
+        "permission_error",
+        "invalid_api_key",
+        "server_error",
+    }
+)
+LOCATION_FIELDS = frozenset(
+    {
+        "body",
+        "query",
+        "headers",
+        "model",
+        "state",
+        "questions",
+        "type",
+        "instructions",
+        "criteria",
+        "join",
+        "split",
+        "unresolved",
+        "providerOptions",
+        "gateway",
+        "only",
+        "images",
+        "observations",
+        "glyphs",
+        "fonts",
+        "format",
+        "fields",
+        "columns",
+        "constants",
+        "references",
+        "rows",
+        "font_fields",
+        "font_index_column",
+        "target_boxes",
+        "words",
+        "bbox",
+        "text",
+        "page_size",
+        "chunks",
+        "origin",
+        "direction",
+        "size",
+        "advance",
+        "font",
+        "font_name",
+        "font_flags",
+        "mode",
+        "id",
+        "source_order",
+        "text_operators",
+        "operator",
+        "operands",
+        "vector_marks",
+        "items",
+        "color",
+        "fill",
+        "width",
+        "close_path",
+    }
+)
+
+
+def retry_after_seconds(value: object) -> float | None:
+    """Admit bounded numeric seconds only; dates and arbitrary headers stay private."""
+    if not isinstance(value, str) or len(value) > MAX_RETRY_HEADER_CHARS:
+        return None
+    text = value.strip()
+    if re.fullmatch(r"[0-9]{1,6}(?:\.[0-9]{1,3})?", text) is None:
+        return None
+    seconds = float(text)
+    return seconds if seconds <= MAX_RETRY_SECONDS else None
+
+
+def _error_location(value: object) -> list[str | int]:
+    if isinstance(value, str):
+        if len(value) > MAX_LOCATION_CHARS:
+            return []
+        parts: list[object] = list(value.strip("/").replace("/", ".").split("."))
+    elif isinstance(value, (list, tuple)):
+        parts = list(value)
+    else:
+        return []
+    if not 1 <= len(parts) <= MAX_LOCATION_PARTS:
+        return []
+    output: list[str | int] = []
+    known = False
+    for part in parts:
+        if isinstance(part, str) and (part in LOCATION_FIELDS or re.fullmatch(r"q(?:[0-9]|1[0-5])", part)):
+            output.append(part)
+            known = True
+        elif type(part) is int and 0 <= part <= MAX_LOCATION_INDEX:
+            output.append(part)
+        elif isinstance(part, str) and re.fullmatch(r"[0-9]{1,4}", part) and int(part) <= MAX_LOCATION_INDEX:
+            output.append(int(part))
+        else:
+            output.append("<redacted>")
+    return output if known else []
+
+
+def safe_http_error(error: urllib.error.HTTPError) -> dict[str, Any]:  # noqa: C901, PLR0912 - bounded allowlist diagnostics.
+    """Extract fixed error types/field paths without retaining messages or input values.
+
+    Read at most 8193 bytes. Oversize/non-JSON bodies produce only an admission
+    status. The original failure, reservation and no-retry policy remain intact.
+    """
+    headers = error.headers
+    diagnostic: dict[str, Any] = {
+        "http_status": error.code
+        if type(error.code) is int and HTTP_STATUS_MIN <= error.code <= HTTP_STATUS_MAX
+        else None,
+        "retry_after_seconds": retry_after_seconds(headers.get("Retry-After") if headers is not None else None),
+        "error_types": [],
+        "locations": [],
+        "body_admission": "unavailable",
+        "items_limited": False,
+    }
+    try:
+        raw = error.read(MAX_ERROR_BYTES + 1)
+    except Exception:
+        return diagnostic
+    if not isinstance(raw, bytes):
+        return diagnostic
+    if len(raw) > MAX_ERROR_BYTES:
+        diagnostic["body_admission"] = "too_large"
+        return diagnostic
+    try:
+        payload = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        diagnostic["body_admission"] = "non_json"
+        return diagnostic
+    if not isinstance(payload, dict):
+        diagnostic["body_admission"] = "non_object"
+        return diagnostic
+    diagnostic["body_admission"] = "json"
+    candidates = [payload]
+    if isinstance(payload.get("error"), dict):
+        candidates.append(payload["error"])
+    for owner in list(candidates):
+        for field in ("detail", "details", "errors"):
+            records = owner.get(field)
+            if isinstance(records, list):
+                diagnostic["items_limited"] |= len(records) > MAX_ERROR_ITEMS
+                candidates.extend(record for record in records[:MAX_ERROR_ITEMS] if isinstance(record, dict))
+    diagnostic["items_limited"] |= len(candidates) > MAX_ERROR_ITEMS
+    for record in candidates[:MAX_ERROR_ITEMS]:
+        for field in ("error_type", "type", "code"):
+            value = record.get(field)
+            if isinstance(value, str) and value in ERROR_TYPES and value not in diagnostic["error_types"]:
+                diagnostic["error_types"].append(value)
+        for field in ("loc", "location", "path", "param"):
+            location = _error_location(record.get(field))
+            if location and location not in diagnostic["locations"]:
+                diagnostic["locations"].append(location)
+        # TypeSafe documents a known field path before the first message colon.
+        # Admit only a wholly known path; never store the rest of the message.
+        message = record.get("message")
+        if isinstance(message, str) and ":" in message:
+            location = _error_location(message.split(":", 1)[0])
+            if location and "<redacted>" not in location and location not in diagnostic["locations"]:
+                diagnostic["locations"].append(location)
+    return diagnostic
 
 
 def read_gateway_key(root: Path) -> str:
@@ -189,7 +396,7 @@ class GatewayDecisionClient(hosted.DecisionClient):
             if estimate["effective_usd"] is not None:
                 entry.update(accounted_usd=estimate["effective_usd"], cost_status=estimate["basis"])
 
-    def request(
+    def request(  # noqa: C901 - one atomic reserve/retain/settle transmission.
         self,
         body: dict[str, Any],
         *,
@@ -296,6 +503,8 @@ class GatewayDecisionClient(hosted.DecisionClient):
                     message = "Gateway returned a different model; model fallback is disabled"
                     raise ValueError(message)  # noqa: TRY301 - preserve the actual paid response/accounting.
             except Exception as error:
+                if isinstance(error, urllib.error.HTTPError):
+                    entry["http_error_diagnostic"] = safe_http_error(error)
                 entry["error"] = (
                     f"HTTP {error.code}" if isinstance(error, urllib.error.HTTPError) else type(error).__name__
                 )

@@ -277,3 +277,102 @@ def test_oversize_response_fails_with_conservative_reservation(
     entry = json.loads(client.ledger.read_text())["requests"][0]
     assert "response_file" not in entry
     assert entry["accounted_usd"] == hosted.RESERVATION
+
+
+def test_http_diagnostics_keep_only_known_types_locations_and_numeric_retry() -> None:
+    from io import BytesIO  # noqa: PLC0415 - synthetic provider body only.
+
+    from bench.decision_gateway import safe_http_error  # noqa: PLC0415 - isolated diagnostic contract.
+
+    raw = {
+        "error_type": "invalid_request",
+        "message": "questions.q0.type: secret-source-value",
+        "detail": [
+            {
+                "type": "string_type",
+                "loc": ["body", "state", "glyphs", "rows", 0, "text"],
+                "input": "secret-source-value",
+                "msg": "secret-credential-value",
+            },
+            {
+                "type": "secret-source-value",
+                "loc": ["body", "state", "secret-source-value"],
+                "ctx": {"secret": "secret-credential-value"},
+            },
+        ],
+    }
+    headers = Message()
+    headers["Retry-After"] = "12.5"
+    headers["Authorization"] = "secret-credential-value"
+    error = urllib.error.HTTPError(ENDPOINT, 422, "secret-credential-value", headers, BytesIO(json.dumps(raw).encode()))
+    result = safe_http_error(error)
+    assert result["http_status"] == 422
+    assert result["retry_after_seconds"] == 12.5
+    assert result["error_types"] == ["invalid_request", "string_type"]
+    assert ["body", "state", "glyphs", "rows", 0, "text"] in result["locations"]
+    assert ["questions", "q0", "type"] in result["locations"]
+    assert ["body", "state", "<redacted>"] in result["locations"]
+    assert "secret-" not in json.dumps(result)
+
+
+@pytest.mark.parametrize("value", [None, "Wed, 21 Oct 2026 07:28:00 GMT", "nan", "inf", "-1", "1e3", "999999", True])
+def test_retry_after_rejects_dates_arbitrary_or_unbounded_values(value: object) -> None:
+    from bench.decision_gateway import retry_after_seconds  # noqa: PLC0415 - pure bounded header parser.
+
+    assert retry_after_seconds(value) is None
+    assert retry_after_seconds("0") == 0
+    assert retry_after_seconds(" 15 ") == 15
+
+
+def test_error_diagnostic_payload_and_list_work_are_bounded() -> None:
+    from io import BytesIO  # noqa: PLC0415 - synthetic provider body only.
+
+    from bench.decision_gateway import MAX_ERROR_BYTES, MAX_ERROR_ITEMS, safe_http_error  # noqa: PLC0415
+
+    oversized = BytesIO(b"x" * (MAX_ERROR_BYTES + 5000))
+    error = urllib.error.HTTPError(ENDPOINT, 429, "secret", Message(), oversized)
+    result = safe_http_error(error)
+    assert result["body_admission"] == "too_large"
+    assert oversized.tell() == MAX_ERROR_BYTES + 1
+    records = [{"type": "string_type", "loc": ["state", "rows", index]} for index in range(100)]
+    error = urllib.error.HTTPError(
+        ENDPOINT, 422, "secret", Message(), BytesIO(json.dumps({"detail": records}).encode())
+    )
+    result = safe_http_error(error)
+    assert result["body_admission"] == "json"
+    assert result["items_limited"]
+    assert len(result["locations"]) <= MAX_ERROR_ITEMS
+    non_json = urllib.error.HTTPError(ENDPOINT, 500, "secret", Message(), BytesIO(b"secret-source-value"))
+    result = safe_http_error(non_json)
+    assert result["body_admission"] == "non_json"
+    assert "secret" not in json.dumps(result)
+
+
+def test_gateway_failure_persists_safe_diagnostics_without_retry(
+    client: GatewayDecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from io import BytesIO  # noqa: PLC0415 - synthetic provider body only.
+
+    headers = Message()
+    headers["Retry-After"] = "7"
+
+    def fail(request: Any, *, timeout: int) -> None:  # noqa: ANN401
+        assert timeout == 90
+        assert request.full_url == ENDPOINT
+        raise urllib.error.HTTPError(
+            ENDPOINT,
+            422,
+            "not logged",
+            headers,
+            BytesIO(b'{"error_type":"invalid_request","message":"state: secret-source-value"}'),
+        )
+
+    monkeypatch.setattr("bench.decision_gateway.urllib.request.urlopen", fail)
+    with pytest.raises(RuntimeError, match="HTTP 422"):
+        client.request(body(), tag="L012/diagnostics")
+    entry = json.loads(client.ledger.read_text())["requests"][0]
+    assert client.gateway == GATEWAY
+    assert entry["http_error_diagnostic"]["retry_after_seconds"] == 7
+    assert entry["http_error_diagnostic"]["locations"] == [["state"]]
+    assert entry["accounted_usd"] == hosted.RESERVATION
+    assert "secret-source-value" not in client.ledger.read_text()
