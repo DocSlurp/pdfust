@@ -27,6 +27,7 @@ TAG_PREFIX = "L001/"
 MAX_BODY_BYTES = 200_000
 MAX_BATCH = 3
 ENCODING_COUNT = 3
+TARGET_CHUNKS = 2
 
 
 def _fail(reason: str) -> NoReturn:
@@ -91,14 +92,36 @@ def parse_response(result: dict[str, Any], count: int) -> list[dict[str, Any]]:
     return parsed
 
 
+def partition_contract(observation: dict[str, Any]) -> dict[str, list[list[str]]]:
+    """Derive the two-chunk relation independently of supplied candidate aliases."""
+    chunks = observation.get("target_atoms")
+    if (
+        not isinstance(chunks, list)
+        or len(chunks) != TARGET_CHUNKS
+        or any(not isinstance(chunk, list) or not chunk for chunk in chunks)
+    ):
+        _fail("target partition requires two nonempty source chunks")
+    atoms = [atom for chunk in chunks for atom in chunk]
+    if any(
+        not isinstance(atom, dict) or not isinstance(atom.get("id"), str) or not isinstance(atom.get("text"), str)
+        for atom in atoms
+    ):
+        _fail("target atoms require literal text and string source IDs")
+    ids = [atom["id"] for atom in atoms]
+    if len(ids) != len(set(ids)) or ids != observation.get("all_target_ids"):
+        _fail("observation contains duplicate or omitted target atoms")
+    return {"join": [ids], "split": [[atom["id"] for atom in chunk] for chunk in chunks], "unresolved": []}
+
+
 def materialize(observation: dict[str, Any], choice: str) -> dict[str, Any]:
-    """Select a fixed source partition, retaining all unassigned atoms exactly."""
+    """Validate every candidate against the independent source partition contract."""
     if choice not in CHOICES:
         _fail("unknown grouping choice")
+    contract = partition_contract(observation)
+    if observation.get("candidates") != contract:
+        _fail("candidate source partitions differ from ordered join/split contract")
     atoms = [atom for chunk in observation["target_atoms"] for atom in chunk]
     ids = [atom["id"] for atom in atoms]
-    if len(ids) != len(set(ids)) or Counter(ids) != Counter(observation["all_target_ids"]):
-        _fail("observation contains duplicate or omitted target atoms")
     groups = observation["candidates"][choice]
     selected = [source for group in groups for source in group]
     if any(not group for group in groups) or len(selected) != len(set(selected)) or not set(selected) <= set(ids):
@@ -124,8 +147,11 @@ def materialize(observation: dict[str, Any], choice: str) -> dict[str, Any]:
 def score(observation: dict[str, Any], target: dict[str, Any], choice: str) -> dict[str, Any]:
     """Score frozen authored choice and exact description partition separately."""
     output = materialize(observation, choice)
-    expected = materialize(observation, target["expected"])
-    exact = output["groups"] == expected["groups"] and output["unresolved_ids"] == expected["unresolved_ids"]
+    if target["expected"] not in CHOICES:
+        _fail("unknown authored expected relation")
+    expected_groups = partition_contract(observation)[target["expected"]]
+    expected_unassigned = observation["all_target_ids"] if target["expected"] == "unresolved" else []
+    exact = output["groups"] == expected_groups and output["unresolved_ids"] == expected_unassigned
     return {
         "expected": target["expected"],
         "choice_correct": choice == target["expected"],
@@ -147,6 +173,35 @@ def wave_admission(entries: list[dict[str, Any]]) -> None:
 
 def _entries(client: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - shared or injected transport.
     return json.loads(client.ledger.read_text())["requests"] if client.ledger.exists() else []
+
+
+def persistent_stops(client: Any, models: list[str], calls: list[dict[str, Any]]) -> dict[str, Any]:  # noqa: ANN401
+    """Retain model failures across L001 freezes without altering provider charges."""
+    path = client.ledger.parent / "L001-model-stops.json"
+    registry: dict[str, Any] = json.loads(path.read_text()) if path.exists() else {"schema": 1, "models": {}}
+    if registry.get("schema") != 1 or not isinstance(registry.get("models"), dict):
+        _fail("persistent model-stop registry is malformed")
+    stops = registry["models"]
+    for entry in _entries(client):
+        tag = entry.get("tag", "")
+        if not tag.startswith(TAG_PREFIX) or (not entry.get("error") and entry.get("response_file")):
+            continue
+        model = entry.get("requested_model") or next(
+            (model for model in models if tag.startswith(f"{TAG_PREFIX}{model}/")), None
+        )
+        if model is not None:
+            stops.setdefault(
+                model,
+                {"reason": "failed or unsettled L001 ledger request", "request_sha256": entry.get("request_sha256")},
+            )
+    for row in calls:
+        if row["status"] == "failed":
+            stops.setdefault(
+                row["model"],
+                {"reason": row.get("reason", "failed L001 request"), "request_sha256": row["request_sha256"]},
+            )
+    checkpoint(path, registry)
+    return stops
 
 
 def _price(directory: Path, model: str) -> dict[str, Any]:
@@ -202,7 +257,8 @@ def _run_locked(  # noqa: C901, PLR0912
     )
     if results.get("manifest_sha256") != manifest_hash:
         _fail("retained results belong to another frozen manifest")
-    stopped = {row["model"] for row in results["calls"] if row["status"] == "failed"}
+    stop_details = persistent_stops(client, manifest["models"], results["calls"])
+    stopped = set(stop_details).intersection(manifest["models"])
     completed = {row["request_sha256"] for row in results["calls"] if row["status"] in {"ok", "failed"}}
     budget_exhausted = False
     attempted = 0
@@ -227,7 +283,11 @@ def _run_locked(  # noqa: C901, PLR0912
             }
             results["calls"].append(row)
         if record["model"] in stopped or budget_exhausted:
-            row.update(status="unattempted", reason="model stopped" if record["model"] in stopped else "wave cap")
+            row.update(
+                status="unattempted",
+                refused=True,
+                reason="persistent model stop" if record["model"] in stopped else "wave cap",
+            )
             checkpoint(result_path, results)
             continue
         body_bytes = _path(directory, record["request"]).read_bytes()
@@ -265,25 +325,48 @@ def _run_locked(  # noqa: C901, PLR0912
                 row.setdefault("cost", request_cost(retained, row.get("usage", {}), _price(directory, record["model"])))
             if "persistent wave cap exhausted" in str(error):
                 budget_exhausted = True
-                row.update(status="unattempted", reason="wave cap exhausted before transmission")
+                row.update(status="unattempted", refused=True, reason="wave cap exhausted before transmission")
             else:
                 stopped.add(record["model"])
+                row["refused"] = retained is None
+                stop_details = persistent_stops(client, manifest["models"], results["calls"])
         checkpoint(result_path, results)
+    resources = {
+        "wall_seconds": time.perf_counter() - start,
+        "cpu_seconds": time.process_time() - cpu,
+        "peak_rss_bytes": rss_bytes(),
+        "attempted_requests": attempted,
+        "measurement": (
+            "serial current process perf_counter/process_time; current-exec VmHWM; no sampling; "
+            "includes HTTP waiting, excludes preparation; provider CPU/RAM unmeasured"
+        ),
+    }
+    if "execution_history" not in results:
+        results["execution_history"] = []
+        if results.get("execution_resources"):
+            results["execution_history"].append({**results["execution_resources"], "legacy_import": True})
+    results["execution_history"].append(resources)
+    history = results["execution_history"]
+    peaks = [row["peak_rss_bytes"] for row in history if row.get("peak_rss_bytes") is not None]
     results.update(
         status="slice_complete" if slice_limited else "complete",
         planned_requests=len(manifest["records"]),
         completed_requests=sum(row["status"] in {"ok", "failed"} for row in results["calls"]),
         invocation_request_limit=max_requests,
         stopped_models=sorted(stopped),
+        model_stop_details={model: stop_details[model] for model in sorted(stopped)},
         budget_exhausted=budget_exhausted,
         wave_limit_usd=WAVE_LIMIT,
         execution_resources={
-            "wall_seconds": time.perf_counter() - start,
-            "cpu_seconds": time.process_time() - cpu,
-            "peak_rss_bytes": rss_bytes(),
+            "wall_seconds": sum(row["wall_seconds"] for row in history),
+            "cpu_seconds": sum(row["cpu_seconds"] for row in history),
+            "peak_rss_bytes": max(peaks) if peaks else None,
+            "invocations": len(history),
+            "legacy_prior_invocations_unmeasured": any(row.get("legacy_import") for row in history),
             "measurement": (
-                "serial current process perf_counter/process_time; current-exec VmHWM; no sampling; "
-                "includes HTTP waiting, excludes preparation; provider CPU/RAM unmeasured"
+                "sum of retained serial invocation wall/CPU counters; "
+                "maximum process lifetime VmHWM across invocations; "
+                "no sampling; includes HTTP waiting, excludes preparation; provider CPU/RAM unmeasured"
             ),
         },
     )
@@ -334,6 +417,8 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
                 "expected": target["expected"],
                 "choice": choice,
                 "status": call.get("status", "unattempted"),
+                "refused": call.get("refused", False),
+                "reason": call.get("reason"),
                 "score": score(observations[page_id], target, choice) if choice is not None else None,
             }
             outcomes.append(outcome)
@@ -388,6 +473,10 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
                     "ambiguous_abstentions": sum(row["choice"] == "unresolved" for row in ambiguous),
                     "failures": sum(row["status"] == "failed" for row in rows),
                     "unattempted": sum(row["status"] == "unattempted" for row in rows),
+                    "refused_inputs": sum(row["refused"] for row in rows),
+                    "refusal_reasons": dict(Counter(row["reason"] for row in rows if row["refused"])),
+                    "planned_requests": len(entries),
+                    "completed_requests": sum(row.get("status") in {"ok", "failed"} for row in entries),
                     "conservation_failures": sum(
                         bool(row["score"] and not row["score"]["output"]["conservation"]) for row in rows
                     ),
@@ -432,6 +521,10 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901 - explicit cohort
         "native_baseline": native,
         "preparation": manifest.get("preparation"),
         "execution_resources": results.get("execution_resources"),
+        "execution_history": results.get("execution_history", []),
+        "planned_requests": len(manifest["records"]),
+        "completed_requests": sum(row.get("status") in {"ok", "failed"} for row in results["calls"]),
+        "model_stop_details": results.get("model_stop_details", {}),
         "probabilities": "uncalibrated",
         "encoding_variants": "correlated; consistency requires all three attempted",
     }
@@ -445,6 +538,8 @@ def report(directory: Path) -> dict[str, Any]:
         "# L001 lower-level DEV decisions",
         "",
         evaluation["scope"] + ".",
+        "",
+        f"Completed requests: {evaluation['completed_requests']}/{evaluation['planned_requests']} planned.",
         "",
         (
             "Known exactness scores only the two target-text chunks. Missing/failed inputs remain in denominators. "
@@ -504,6 +599,14 @@ def report(directory: Path) -> dict[str, Any]:
         f"- {row['model']} / {row['arm']}: `{json.dumps(row['per_family'], sort_keys=True)}`."
         for row in evaluation["cohorts"]
     )
+    lines.extend(["", "Request/refusal accounting:", ""])
+    lines.extend(
+        f"- {row['model']} / {row['arm']}: {row['completed_requests']}/{row['planned_requests']} "
+        f"requests completed; {row['refused_inputs']} page inputs refused; "
+        f"reasons `{json.dumps(row['refusal_reasons'], sort_keys=True)}`."
+        for row in evaluation["cohorts"]
+    )
+    lines.extend(["", f"Persistent model stops: `{json.dumps(evaluation['model_stop_details'], sort_keys=True)}`.", ""])
     _path(directory, "report.md").write_text("\n".join(lines))
     return evaluation
 

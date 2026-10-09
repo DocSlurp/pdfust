@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -292,3 +293,65 @@ def test_catalog_reservation_preflight_is_not_observed_cost() -> None:
         reservation_preflight(200000, {"input": 0.001})
     with pytest.raises(ValueError, match="missing"):
         reservation_preflight(100, {})
+
+
+def test_swapped_and_reordered_candidate_aliases_are_refused() -> None:
+    observed = observation()
+    for candidates in (
+        {"join": observed["candidates"]["split"], "split": observed["candidates"]["join"], "unresolved": []},
+        {"join": [["g1", "g0"]], "split": [["g0"], ["g1"]], "unresolved": []},
+        {"join": [["g0", "g1"]], "split": [["g1"], ["g0"]], "unresolved": []},
+    ):
+        changed = {**observed, "candidates": candidates}
+        for choice in CHOICES:
+            with pytest.raises(ValueError, match="partition"):
+                score(changed, {"expected": choice}, choice)
+
+
+def test_resource_history_preserves_all_resume_invocations(frozen: Path, tmp_path: Path) -> None:
+    client = MockClient(tmp_path / "ledger")
+    first = run(frozen, client=client, max_requests=1)
+    first_resources = dict(first["execution_resources"])
+    complete = run(frozen, client=client)
+    history = complete["execution_history"]
+    assert len(history) == 2
+    assert history[0]["wall_seconds"] == first_resources["wall_seconds"]
+    assert complete["execution_resources"]["wall_seconds"] == sum(row["wall_seconds"] for row in history)
+    assert complete["execution_resources"]["cpu_seconds"] == sum(row["cpu_seconds"] for row in history)
+    assert complete["execution_resources"]["peak_rss_bytes"] == max(row["peak_rss_bytes"] for row in history)
+
+
+def test_model_failure_persists_across_frozen_directories(frozen: Path, tmp_path: Path) -> None:
+    client = MockClient(tmp_path / "ledger", fail_model="m1")
+    run(frozen, client=client)
+    other = tmp_path / "another-freeze"
+    shutil.copytree(frozen, other)
+    (other / "results.json").unlink()
+    client.fail_model = None
+    before = len(client.calls)
+    result = run(other, client=client)
+    assert result["stopped_models"] == ["m1"]
+    assert all(body["model"] == "m2" for body in client.calls[before:])
+    assert result["model_stop_details"]["m1"]["request_sha256"]
+    cohort = next(row for row in evaluate(other)["cohorts"] if row["model"] == "m1")
+    assert cohort["refused_inputs"] == 6
+    assert cohort["refusal_reasons"] == {"persistent model stop": 6}
+
+
+def test_successful_http_with_invalid_schema_is_a_durable_model_stop(frozen: Path, tmp_path: Path) -> None:
+    class InvalidClient(MockClient):
+        def request(self, body: dict[str, Any], *, tag: str, max_body_bytes: int) -> dict[str, Any]:
+            """Corrupt only one model's schema after retaining successful accounting."""
+            result = super().request(body, tag=tag, max_body_bytes=max_body_bytes)
+            if body["model"] == "m1":
+                result["result"]["answers"] = {}
+            return result
+
+    client = InvalidClient(tmp_path / "ledger")
+    run(frozen, client=client)
+    entries = json.loads(client.ledger.read_text())["requests"]
+    assert entries[0]["response_file"]
+    assert "error" not in entries[0]
+    registry = json.loads((client.ledger.parent / "L001-model-stops.json").read_text())
+    assert "m1" in registry["models"]
+    assert registry["models"]["m1"]["reason"].startswith("model stopped")
