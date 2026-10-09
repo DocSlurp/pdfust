@@ -26,16 +26,29 @@ TOTAL_LIMIT = 15.0
 PRIOR_RENTAL = 0.684
 RESERVATION = 0.30
 MAX_BODY_BYTES = 32_000
+MAX_QUESTIONS = 16
 MAX_RESPONSE_BYTES = 2_000_000
 MAX_OUTPUT_TOKENS = 2048
 JEV = "typesafe/jev-1.13"
-MODELS = (
+REQUESTED_DECISION_MODELS = (
+    "perplexity/pplx-decider-v1.1-27b",
+    "upstage/solar-decide-flash",
+    "openai/gpt-6-luna-decisions",
+    "liquid/d1",
+    "cloudflare/clef-flash",
+    "togethercomputer/tev1-4b-experimental",
+    "inception/mercury-decide",
+    "respan/span-01",
+)
+DECISION_MODELS = (JEV, *REQUESTED_DECISION_MODELS)
+DEFAULT_MODELS = (
     JEV,
     "google/gemini-3.1-flash-lite",
     "google/gemini-2.5-flash-lite",
     "qwen/qwen3.5-9b",
     "anthropic/claude-opus-4.6",
 )
+MODELS = (*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS)
 
 
 def read_key(root: Path) -> str:
@@ -139,7 +152,7 @@ INSTRUCTIONS = (
 def request_body(model: str, cases: list[dict[str, Any]], variant: str) -> dict[str, Any]:
     """Request two bounded probabilities per existing candidate, never generated fields."""
     observations = {f"q{index}": public_case(case, variant) for index, case in enumerate(cases)}
-    if model == JEV:
+    if model in DECISION_MODELS:
         questions = {}
         for alias in observations:
             for suffix, description in (
@@ -203,7 +216,7 @@ def request_body(model: str, cases: list[dict[str, Any]], variant: str) -> dict[
 
 def parse_answers(model: str, result: dict[str, Any], count: int) -> list[dict[str, float]]:
     """Require complete exactly scoped answers; reject truncation or extra decisions."""
-    if model == JEV:
+    if model in DECISION_MODELS:
         answers = result["answers"]
         expected = {f"q{i}_{kind}" for i in range(count) for kind in ("yes", "answerable")}
         if set(answers) != expected:
@@ -252,7 +265,11 @@ class DecisionClient:
     def request(self, body: dict[str, Any], *, tag: str) -> dict[str, Any]:
         """No retries. Unknown charges keep reservations; identical successful requests replay."""
         encoded = json.dumps(body, separators=(",", ":")).encode()
-        if len(encoded) > MAX_BODY_BYTES or body["model"] not in MODELS:
+        if (
+            len(encoded) > MAX_BODY_BYTES
+            or body["model"] not in MODELS
+            or (body["model"] in DECISION_MODELS and len(body["questions"]) > MAX_QUESTIONS)
+        ):
             message = "request exceeds the frozen model/input admission"
             raise ValueError(message)
         key = hashlib.sha256(encoded).hexdigest()
@@ -290,7 +307,7 @@ class DecisionClient:
                 "request_sha256": key,
                 "request_bytes": len(encoded),
                 "case_count": len({name.rsplit("_", 1)[0] for name in body["questions"]})
-                if body["model"] == JEV
+                if body["model"] in DECISION_MODELS
                 else len(body["response_format"]["json_schema"]["schema"]["properties"]["answers"]["properties"]),
                 "accounted_usd": RESERVATION,
                 "cost_status": "reserved",
@@ -301,7 +318,7 @@ class DecisionClient:
             checkpoint(self.ledger, ledger)
             request_file = self.directory / f"request-{index:03d}.json"
             request_file.write_bytes(encoded)
-            endpoint = "alpha/decisions" if body["model"] == JEV else "v1/chat/completions"
+            endpoint = "alpha/decisions" if body["model"] in DECISION_MODELS else "v1/chat/completions"
             request = urllib.request.Request(
                 "https://openrouter.ai/api/" + endpoint,
                 data=encoded,

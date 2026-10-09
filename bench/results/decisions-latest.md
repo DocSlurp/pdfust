@@ -18,14 +18,26 @@ Cases: calibration 48; test 48.
 | anthropic/claude-opus-4.6@rich / selected | 48 | 36 | 0 | 0.750 | 36 | 0.182 | 0.539 | 0.258 | 0 | 0 | 0 | n/a |
 | baseline / fixed | 48 | 36 | 0 | 0.417 | 36 | 0.369 | 0.972 | 0.361 | 0 | 0 | 0 | n/a |
 | baseline / selected | 48 | 36 | 0 | 0.417 | 36 | 0.369 | 0.972 | 0.361 | 0 | 0 | 0 | n/a |
+| cloudflare/clef-flash@resolved-b1 / fixed | 48 | 36 | 0 | 0.667 | 36 | 0.238 | 0.685 | 0.280 | 0 | 0 | 0 | n/a |
+| cloudflare/clef-flash@resolved-b1 / selected | 48 | 36 | 0 | 0.667 | 36 | 0.238 | 0.685 | 0.280 | 0 | 0 | 0 | n/a |
 | google/gemini-2.5-flash-lite@resolved / fixed | 48 | 36 | 0 | 0.611 | 36 | 0.378 | 11.641 | 0.383 | 48 | 14 | 12 | 0.674 |
 | google/gemini-2.5-flash-lite@resolved / selected | 48 | 36 | 0 | 0.611 | 36 | 0.378 | 11.641 | 0.383 | 0 | 0 | 0 | n/a |
 | google/gemini-2.5-flash-lite@rich / fixed | 48 | 36 | 0 | 0.694 | 36 | 0.301 | 9.661 | 0.300 | 48 | 11 | 12 | 0.617 |
 | google/gemini-2.5-flash-lite@rich / selected | 48 | 36 | 0 | 0.694 | 36 | 0.301 | 9.661 | 0.300 | 0 | 0 | 0 | n/a |
+| inception/mercury-decide@resolved-b1 / fixed | 48 | 36 | 0 | 0.583 | 36 | 0.344 | 1.134 | 0.353 | 13 | 6 | 3 | 0.873 |
+| inception/mercury-decide@resolved-b1 / selected | 48 | 36 | 0 | 0.583 | 36 | 0.344 | 1.134 | 0.353 | 0 | 0 | 0 | n/a |
+| liquid/d1@resolved-b1 / fixed | 48 | 36 | 0 | 0.556 | 36 | 0.334 | 1.018 | 0.392 | 26 | 6 | 8 | 0.712 |
+| liquid/d1@resolved-b1 / selected | 48 | 36 | 0 | 0.556 | 36 | 0.334 | 1.018 | 0.392 | 0 | 0 | 0 | n/a |
+| openai/gpt-6-luna-decisions@resolved-b1 / fixed | 48 | 36 | 0 | 0.861 | 36 | 0.140 | 0.439 | 0.194 | 14 | 1 | 4 | 0.612 |
+| openai/gpt-6-luna-decisions@resolved-b1 / selected | 48 | 36 | 0 | 0.861 | 36 | 0.140 | 0.439 | 0.194 | 0 | 0 | 0 | n/a |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / fixed | 48 | 36 | 0 | 0.833 | 36 | 0.146 | 0.473 | 0.193 | 17 | 2 | 4 | 0.587 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / selected | 48 | 36 | 0 | 0.833 | 36 | 0.146 | 0.473 | 0.193 | 0 | 0 | 0 | n/a |
 | qwen/qwen3.5-9b@resolved-b1 / fixed | 48 | 36 | 0 | 0.472 | 36 | 0.480 | 2.472 | 0.489 | 48 | 19 | 12 | 0.766 |
 | qwen/qwen3.5-9b@resolved-b1 / selected | 48 | 36 | 0 | 0.472 | 36 | 0.480 | 2.472 | 0.489 | 0 | 0 | 0 | n/a |
 | qwen/qwen3.5-9b@rich / fixed | 48 | 36 | 0 | 0.417 | 36 | 0.526 | 4.317 | 0.538 | 48 | 21 | 12 | 0.801 |
 | qwen/qwen3.5-9b@rich / selected | 48 | 36 | 0 | 0.417 | 36 | 0.526 | 4.317 | 0.538 | 0 | 0 | 0 | n/a |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / fixed | 48 | 36 | 0 | 0.472 | 36 | 0.241 | 0.651 | 0.233 | 1 | 0 | 0 | 0.793 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / selected | 48 | 36 | 0 | 0.472 | 36 | 0.241 | 0.651 | 0.233 | 0 | 0 | 0 | n/a |
 | typesafe/jev-1.13@choice-b1 / fixed | 48 | 36 | 0 | 0.556 | 36 | 0.269 | 0.722 | 0.356 | 18 | 0 | 6 | 0.563 |
 | typesafe/jev-1.13@choice-b1 / selected | 48 | 36 | 0 | 0.556 | 36 | 0.269 | 0.722 | 0.356 | 0 | 0 | 0 | n/a |
 | typesafe/jev-1.13@resolved / fixed | 48 | 36 | 0 | 0.694 | 36 | 0.169 | 0.508 | 0.278 | 0 | 0 | 0 | n/a |
@@ -38,6 +50,8 @@ Cases: calibration 48; test 48.
 | typesafe/jev-1.13@rich / selected | 48 | 36 | 0 | 0.472 | 36 | 0.268 | 0.733 | 0.289 | 0 | 0 | 0 | n/a |
 | typesafe/jev-1.13@rich-b1 / fixed | 48 | 36 | 0 | 0.389 | 36 | 0.306 | 0.812 | 0.313 | 0 | 0 | 0 | n/a |
 | typesafe/jev-1.13@rich-b1 / selected | 48 | 36 | 0 | 0.389 | 36 | 0.306 | 0.812 | 0.313 | 0 | 0 | 0 | n/a |
+| upstage/solar-decide-flash@resolved-b1 / fixed | 48 | 36 | 0 | 0.694 | 36 | 0.208 | 0.606 | 0.225 | 0 | 0 | 0 | n/a |
+| upstage/solar-decide-flash@resolved-b1 / selected | 48 | 36 | 0 | 0.694 | 36 | 0.208 | 0.606 | 0.225 | 0 | 0 | 0 | n/a |
 
 **anthropic/claude-opus-4.6@resolved selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
 
@@ -105,6 +119,28 @@ Raw score provenance: heuristic_score.
 | family:scientific / selected | 16 | 12 | 0 | 0.417 | 0 | 0 | 0 | n/a |
 
 
+**cloudflare/clef-flash@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:assignment / selected | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.444 | 0 | 0 | 0 | n/a |
+| task:header / selected | 12 | 9 | 0 | 0.444 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| task:table / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:wrap / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.583 | 0 | 0 | 0 | n/a |
+| family:financial / selected | 16 | 12 | 0 | 0.583 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.750 | 0 | 0 | 0 | n/a |
+| family:invoice / selected | 16 | 12 | 0 | 0.750 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+| family:scientific / selected | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+
+
 **google/gemini-2.5-flash-lite@resolved selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
 
 Raw score provenance: self_reported.
@@ -149,6 +185,94 @@ Raw score provenance: self_reported.
 | family:scientific / selected | 16 | 12 | 0 | 0.583 | 0 | 0 | 0 | n/a |
 
 
+**inception/mercury-decide@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 0.778 | 0 | 0 | 0 | n/a |
+| task:assignment / selected | 12 | 9 | 0 | 0.778 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.222 | 4 | 0 | 3 | 0.954 |
+| task:header / selected | 12 | 9 | 0 | 0.222 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 1.000 | 3 | 0 | 0 | 0.561 |
+| task:table / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 0.333 | 6 | 6 | 0 | 1.000 |
+| task:wrap / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.500 | 4 | 2 | 1 | 0.954 |
+| family:financial / selected | 16 | 12 | 0 | 0.500 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.583 | 4 | 2 | 1 | 0.954 |
+| family:invoice / selected | 16 | 12 | 0 | 0.583 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.667 | 5 | 2 | 1 | 0.882 |
+| family:scientific / selected | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+
+
+**liquid/d1@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 1.000 | 5 | 0 | 0 | 0.434 |
+| task:assignment / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.556 | 6 | 0 | 3 | 0.812 |
+| task:header / selected | 12 | 9 | 0 | 0.556 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 0.333 | 5 | 0 | 2 | 0.769 |
+| task:table / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 0.333 | 10 | 6 | 3 | 0.982 |
+| task:wrap / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.583 | 9 | 2 | 3 | 0.811 |
+| family:financial / selected | 16 | 12 | 0 | 0.583 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.500 | 8 | 2 | 2 | 0.785 |
+| family:invoice / selected | 16 | 12 | 0 | 0.500 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.583 | 9 | 2 | 3 | 0.811 |
+| family:scientific / selected | 16 | 12 | 0 | 0.583 | 0 | 0 | 0 | n/a |
+
+
+**openai/gpt-6-luna-decisions@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 0.667 | 8 | 1 | 1 | 0.591 |
+| task:assignment / selected | 12 | 9 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.889 | 3 | 0 | 2 | 0.939 |
+| task:header / selected | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:table / selected | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 1.000 | 3 | 0 | 1 | 0.792 |
+| task:wrap / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.833 | 5 | 0 | 1 | 0.624 |
+| family:financial / selected | 16 | 12 | 0 | 0.833 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.917 | 6 | 0 | 3 | 0.812 |
+| family:invoice / selected | 16 | 12 | 0 | 0.917 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.833 | 3 | 1 | 0 | 0.792 |
+| family:scientific / selected | 16 | 12 | 0 | 0.833 | 0 | 0 | 0 | n/a |
+
+
+**perplexity/pplx-decider-v1.1-27b@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 1.000 | 2 | 0 | 0 | 0.658 |
+| task:assignment / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.333 | 8 | 2 | 3 | 0.863 |
+| task:header / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 1.000 | 4 | 0 | 1 | 0.699 |
+| task:table / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 1.000 | 3 | 0 | 0 | 0.561 |
+| task:wrap / selected | 12 | 9 | 0 | 1.000 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.833 | 5 | 0 | 2 | 0.769 |
+| family:financial / selected | 16 | 12 | 0 | 0.833 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.833 | 7 | 1 | 1 | 0.641 |
+| family:invoice / selected | 16 | 12 | 0 | 0.833 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.833 | 5 | 1 | 1 | 0.769 |
+| family:scientific / selected | 16 | 12 | 0 | 0.833 | 0 | 0 | 0 | n/a |
+
+
 **qwen/qwen3.5-9b@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
 
 Raw score provenance: self_reported.
@@ -191,6 +315,28 @@ Raw score provenance: self_reported.
 | family:invoice / selected | 16 | 12 | 0 | 0.500 | 0 | 0 | 0 | n/a |
 | family:scientific / fixed | 16 | 12 | 0 | 0.333 | 16 | 8 | 4 | 0.898 |
 | family:scientific / selected | 16 | 12 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+
+
+**togethercomputer/tev1-4b-experimental@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 0.889 | 1 | 0 | 0 | 0.793 |
+| task:assignment / selected | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:header / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:table / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| task:wrap / selected | 12 | 9 | 0 | 0.333 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.500 | 0 | 0 | 0 | n/a |
+| family:financial / selected | 16 | 12 | 0 | 0.500 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.417 | 0 | 0 | 0 | n/a |
+| family:invoice / selected | 16 | 12 | 0 | 0.417 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.500 | 1 | 0 | 0 | 0.793 |
+| family:scientific / selected | 16 | 12 | 0 | 0.500 | 0 | 0 | 0 | n/a |
 
 
 **typesafe/jev-1.13@choice-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
@@ -324,6 +470,28 @@ Raw score provenance: native_decision_score.
 | family:scientific / fixed | 16 | 12 | 0 | 0.250 | 0 | 0 | 0 | n/a |
 | family:scientific / selected | 16 | 12 | 0 | 0.250 | 0 | 0 | 0 | n/a |
 
+
+**upstage/solar-decide-flash@resolved-b1 selected policy:** abstain all. No calibration threshold meets minimum support and the Wilson unsafe-rate bound.
+
+Raw score provenance: native_decision_score.
+
+| Slice / policy | Test N | Labeled N | Failures | Forced accuracy | Accepted | Wrong | Unknown accepted | Unsafe Wilson upper |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| task:assignment / fixed | 12 | 9 | 0 | 0.556 | 0 | 0 | 0 | n/a |
+| task:assignment / selected | 12 | 9 | 0 | 0.556 | 0 | 0 | 0 | n/a |
+| task:header / fixed | 12 | 9 | 0 | 0.556 | 0 | 0 | 0 | n/a |
+| task:header / selected | 12 | 9 | 0 | 0.556 | 0 | 0 | 0 | n/a |
+| task:table / fixed | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:table / selected | 12 | 9 | 0 | 0.889 | 0 | 0 | 0 | n/a |
+| task:wrap / fixed | 12 | 9 | 0 | 0.778 | 0 | 0 | 0 | n/a |
+| task:wrap / selected | 12 | 9 | 0 | 0.778 | 0 | 0 | 0 | n/a |
+| family:financial / fixed | 16 | 12 | 0 | 0.750 | 0 | 0 | 0 | n/a |
+| family:financial / selected | 16 | 12 | 0 | 0.750 | 0 | 0 | 0 | n/a |
+| family:invoice / fixed | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+| family:invoice / selected | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+| family:scientific / fixed | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+| family:scientific / selected | 16 | 12 | 0 | 0.667 | 0 | 0 | 0 | n/a |
+
 Fixed policy: confidence ≥ 0.9 and answerability ≥ 0.9. A probability of exactly 0.5 predicts yes.
 
 Selection requires ≥ 8 accepted calibration cases and unsafe-rate Wilson upper ≤ 0.1.
@@ -350,14 +518,26 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | anthropic/claude-opus-4.6@rich / test | complete | 48/48 | 27/36 | 0.750 |
 | baseline / calibration | complete | 48/48 | 21/36 | 0.583 |
 | baseline / test | complete | 48/48 | 15/36 | 0.417 |
+| cloudflare/clef-flash@resolved-b1 / calibration | complete | 48/48 | 29/36 | 0.806 |
+| cloudflare/clef-flash@resolved-b1 / test | complete | 48/48 | 24/36 | 0.667 |
 | google/gemini-2.5-flash-lite@resolved / calibration | complete | 48/48 | 20/36 | 0.556 |
 | google/gemini-2.5-flash-lite@resolved / test | complete | 48/48 | 22/36 | 0.611 |
 | google/gemini-2.5-flash-lite@rich / calibration | complete | 48/48 | 17/36 | 0.472 |
 | google/gemini-2.5-flash-lite@rich / test | complete | 48/48 | 25/36 | 0.694 |
+| inception/mercury-decide@resolved-b1 / calibration | complete | 48/48 | 29/36 | 0.806 |
+| inception/mercury-decide@resolved-b1 / test | complete | 48/48 | 21/36 | 0.583 |
+| liquid/d1@resolved-b1 / calibration | complete | 48/48 | 24/36 | 0.667 |
+| liquid/d1@resolved-b1 / test | complete | 48/48 | 20/36 | 0.556 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration | complete | 48/48 | 31/36 | 0.861 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test | complete | 48/48 | 31/36 | 0.861 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration | complete | 48/48 | 33/36 | 0.917 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test | complete | 48/48 | 30/36 | 0.833 |
 | qwen/qwen3.5-9b@resolved-b1 / calibration | complete | 48/48 | 20/36 | 0.556 |
 | qwen/qwen3.5-9b@resolved-b1 / test | complete | 48/48 | 17/36 | 0.472 |
 | qwen/qwen3.5-9b@rich / calibration | complete | 48/48 | 25/36 | 0.694 |
 | qwen/qwen3.5-9b@rich / test | complete | 48/48 | 15/36 | 0.417 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration | complete | 48/48 | 28/36 | 0.778 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test | complete | 48/48 | 17/36 | 0.472 |
 | typesafe/jev-1.13@choice-b1 / calibration | complete | 48/48 | 26/36 | 0.722 |
 | typesafe/jev-1.13@choice-b1 / test | complete | 48/48 | 20/36 | 0.556 |
 | typesafe/jev-1.13@resolved / calibration | complete | 48/48 | 28/36 | 0.778 |
@@ -370,6 +550,8 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | typesafe/jev-1.13@rich / test | complete | 48/48 | 17/36 | 0.472 |
 | typesafe/jev-1.13@rich-b1 / calibration | complete | 48/48 | 19/36 | 0.528 |
 | typesafe/jev-1.13@rich-b1 / test | complete | 48/48 | 14/36 | 0.389 |
+| upstage/solar-decide-flash@resolved-b1 / calibration | complete | 48/48 | 22/36 | 0.611 |
+| upstage/solar-decide-flash@resolved-b1 / test | complete | 48/48 | 25/36 | 0.694 |
 
 ### Retained-source application
 
@@ -387,6 +569,10 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | baseline / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | baseline / test / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
 | baseline / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| cloudflare/clef-flash@resolved-b1 / calibration / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| cloudflare/clef-flash@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| cloudflare/clef-flash@resolved-b1 / test / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| cloudflare/clef-flash@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
 | google/gemini-2.5-flash-lite@resolved / calibration / fixed | 25 | 25 | 13 | 5 | 7 | 0 | 540/540 | 48/48 |
 | google/gemini-2.5-flash-lite@resolved / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | google/gemini-2.5-flash-lite@resolved / test / fixed | 20 | 20 | 5 | 7 | 8 | 0 | 675/675 | 48/48 |
@@ -395,6 +581,22 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | google/gemini-2.5-flash-lite@rich / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | google/gemini-2.5-flash-lite@rich / test / fixed | 6 | 6 | 3 | 2 | 1 | 0 | 675/675 | 48/48 |
 | google/gemini-2.5-flash-lite@rich / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| inception/mercury-decide@resolved-b1 / calibration / fixed | 13 | 13 | 10 | 0 | 3 | 0 | 540/540 | 48/48 |
+| inception/mercury-decide@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| inception/mercury-decide@resolved-b1 / test / fixed | 13 | 13 | 4 | 6 | 3 | 0 | 675/675 | 48/48 |
+| inception/mercury-decide@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| liquid/d1@resolved-b1 / calibration / fixed | 21 | 21 | 12 | 2 | 7 | 0 | 540/540 | 48/48 |
+| liquid/d1@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| liquid/d1@resolved-b1 / test / fixed | 22 | 22 | 8 | 6 | 8 | 0 | 675/675 | 48/48 |
+| liquid/d1@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration / fixed | 5 | 5 | 5 | 0 | 0 | 0 | 540/540 | 48/48 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test / fixed | 6 | 6 | 3 | 0 | 3 | 0 | 675/675 | 48/48 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration / fixed | 21 | 21 | 18 | 0 | 3 | 0 | 540/540 | 48/48 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test / fixed | 15 | 15 | 9 | 2 | 4 | 0 | 675/675 | 48/48 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
 | qwen/qwen3.5-9b@resolved-b1 / calibration / fixed | 33 | 33 | 16 | 8 | 9 | 0 | 540/540 | 48/48 |
 | qwen/qwen3.5-9b@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | qwen/qwen3.5-9b@resolved-b1 / test / fixed | 39 | 39 | 11 | 18 | 10 | 0 | 675/675 | 48/48 |
@@ -403,6 +605,10 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | qwen/qwen3.5-9b@rich / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | qwen/qwen3.5-9b@rich / test / fixed | 42 | 42 | 12 | 21 | 9 | 0 | 675/675 | 48/48 |
 | qwen/qwen3.5-9b@rich / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test / fixed | 1 | 1 | 1 | 0 | 0 | 0 | 675/675 | 48/48 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
 | typesafe/jev-1.13@choice-b1 / calibration / fixed | 18 | 18 | 12 | 0 | 6 | 0 | 540/540 | 48/48 |
 | typesafe/jev-1.13@choice-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | typesafe/jev-1.13@choice-b1 / test / fixed | 12 | 12 | 6 | 0 | 6 | 0 | 675/675 | 48/48 |
@@ -427,6 +633,10 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | typesafe/jev-1.13@rich-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
 | typesafe/jev-1.13@rich-b1 / test / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
 | typesafe/jev-1.13@rich-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| upstage/solar-decide-flash@resolved-b1 / calibration / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| upstage/solar-decide-flash@resolved-b1 / calibration / selected | 0 | 0 | 0 | 0 | 0 | 0 | 540/540 | 48/48 |
+| upstage/solar-decide-flash@resolved-b1 / test / fixed | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
+| upstage/solar-decide-flash@resolved-b1 / test / selected | 0 | 0 | 0 | 0 | 0 | 0 | 675/675 | 48/48 |
 
 ### Known-label task slices
 
@@ -456,6 +666,14 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | baseline / test / header | complete | 0/9 | 0.000 |
 | baseline / test / table | complete | 9/9 | 1.000 |
 | baseline / test / wrap | complete | 0/9 | 0.000 |
+| cloudflare/clef-flash@resolved-b1 / calibration / assignment | complete | 9/9 | 1.000 |
+| cloudflare/clef-flash@resolved-b1 / calibration / header | complete | 7/9 | 0.778 |
+| cloudflare/clef-flash@resolved-b1 / calibration / table | complete | 9/9 | 1.000 |
+| cloudflare/clef-flash@resolved-b1 / calibration / wrap | complete | 4/9 | 0.444 |
+| cloudflare/clef-flash@resolved-b1 / test / assignment | complete | 8/9 | 0.889 |
+| cloudflare/clef-flash@resolved-b1 / test / header | complete | 4/9 | 0.444 |
+| cloudflare/clef-flash@resolved-b1 / test / table | complete | 9/9 | 1.000 |
+| cloudflare/clef-flash@resolved-b1 / test / wrap | complete | 3/9 | 0.333 |
 | google/gemini-2.5-flash-lite@resolved / calibration / assignment | complete | 7/9 | 0.778 |
 | google/gemini-2.5-flash-lite@resolved / calibration / header | complete | 3/9 | 0.333 |
 | google/gemini-2.5-flash-lite@resolved / calibration / table | complete | 7/9 | 0.778 |
@@ -472,6 +690,38 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | google/gemini-2.5-flash-lite@rich / test / header | complete | 6/9 | 0.667 |
 | google/gemini-2.5-flash-lite@rich / test / table | complete | 8/9 | 0.889 |
 | google/gemini-2.5-flash-lite@rich / test / wrap | complete | 5/9 | 0.556 |
+| inception/mercury-decide@resolved-b1 / calibration / assignment | complete | 7/9 | 0.778 |
+| inception/mercury-decide@resolved-b1 / calibration / header | complete | 7/9 | 0.778 |
+| inception/mercury-decide@resolved-b1 / calibration / table | complete | 8/9 | 0.889 |
+| inception/mercury-decide@resolved-b1 / calibration / wrap | complete | 7/9 | 0.778 |
+| inception/mercury-decide@resolved-b1 / test / assignment | complete | 7/9 | 0.778 |
+| inception/mercury-decide@resolved-b1 / test / header | complete | 2/9 | 0.222 |
+| inception/mercury-decide@resolved-b1 / test / table | complete | 9/9 | 1.000 |
+| inception/mercury-decide@resolved-b1 / test / wrap | complete | 3/9 | 0.333 |
+| liquid/d1@resolved-b1 / calibration / assignment | complete | 6/9 | 0.667 |
+| liquid/d1@resolved-b1 / calibration / header | complete | 6/9 | 0.667 |
+| liquid/d1@resolved-b1 / calibration / table | complete | 6/9 | 0.667 |
+| liquid/d1@resolved-b1 / calibration / wrap | complete | 6/9 | 0.667 |
+| liquid/d1@resolved-b1 / test / assignment | complete | 9/9 | 1.000 |
+| liquid/d1@resolved-b1 / test / header | complete | 5/9 | 0.556 |
+| liquid/d1@resolved-b1 / test / table | complete | 3/9 | 0.333 |
+| liquid/d1@resolved-b1 / test / wrap | complete | 3/9 | 0.333 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration / assignment | complete | 6/9 | 0.667 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration / header | complete | 7/9 | 0.778 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration / table | complete | 9/9 | 1.000 |
+| openai/gpt-6-luna-decisions@resolved-b1 / calibration / wrap | complete | 9/9 | 1.000 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test / assignment | complete | 6/9 | 0.667 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test / header | complete | 8/9 | 0.889 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test / table | complete | 8/9 | 0.889 |
+| openai/gpt-6-luna-decisions@resolved-b1 / test / wrap | complete | 9/9 | 1.000 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration / assignment | complete | 9/9 | 1.000 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration / header | complete | 6/9 | 0.667 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration / table | complete | 9/9 | 1.000 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / calibration / wrap | complete | 9/9 | 1.000 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test / assignment | complete | 9/9 | 1.000 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test / header | complete | 3/9 | 0.333 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test / table | complete | 9/9 | 1.000 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1 / test / wrap | complete | 9/9 | 1.000 |
 | qwen/qwen3.5-9b@resolved-b1 / calibration / assignment | complete | 5/9 | 0.556 |
 | qwen/qwen3.5-9b@resolved-b1 / calibration / header | complete | 6/9 | 0.667 |
 | qwen/qwen3.5-9b@resolved-b1 / calibration / table | complete | 6/9 | 0.667 |
@@ -488,6 +738,14 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | qwen/qwen3.5-9b@rich / test / header | complete | 3/9 | 0.333 |
 | qwen/qwen3.5-9b@rich / test / table | complete | 5/9 | 0.556 |
 | qwen/qwen3.5-9b@rich / test / wrap | complete | 4/9 | 0.444 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration / assignment | complete | 7/9 | 0.778 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration / header | complete | 9/9 | 1.000 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration / table | complete | 6/9 | 0.667 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / calibration / wrap | complete | 6/9 | 0.667 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test / assignment | complete | 8/9 | 0.889 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test / header | complete | 3/9 | 0.333 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test / table | complete | 3/9 | 0.333 |
+| togethercomputer/tev1-4b-experimental@resolved-b1 / test / wrap | complete | 3/9 | 0.333 |
 | typesafe/jev-1.13@choice-b1 / calibration / assignment | complete | 8/9 | 0.889 |
 | typesafe/jev-1.13@choice-b1 / calibration / header | complete | 6/9 | 0.667 |
 | typesafe/jev-1.13@choice-b1 / calibration / table | complete | 6/9 | 0.667 |
@@ -536,6 +794,14 @@ Zero observed wrong decisions does not imply zero risk. Full threshold curves an
 | typesafe/jev-1.13@rich-b1 / test / header | complete | 3/9 | 0.333 |
 | typesafe/jev-1.13@rich-b1 / test / table | complete | 3/9 | 0.333 |
 | typesafe/jev-1.13@rich-b1 / test / wrap | complete | 5/9 | 0.556 |
+| upstage/solar-decide-flash@resolved-b1 / calibration / assignment | complete | 3/9 | 0.333 |
+| upstage/solar-decide-flash@resolved-b1 / calibration / header | complete | 8/9 | 0.889 |
+| upstage/solar-decide-flash@resolved-b1 / calibration / table | complete | 8/9 | 0.889 |
+| upstage/solar-decide-flash@resolved-b1 / calibration / wrap | complete | 3/9 | 0.333 |
+| upstage/solar-decide-flash@resolved-b1 / test / assignment | complete | 5/9 | 0.556 |
+| upstage/solar-decide-flash@resolved-b1 / test / header | complete | 5/9 | 0.556 |
+| upstage/solar-decide-flash@resolved-b1 / test / table | complete | 8/9 | 0.889 |
+| upstage/solar-decide-flash@resolved-b1 / test / wrap | complete | 7/9 | 0.778 |
 
 ### Identical-observation singleton versus batch
 
@@ -557,6 +823,8 @@ Unknown charges retain a $0.30 reservation. No automatic retries. Cached replays
 | anthropic/claude-opus-4.6@resolved/batch | 16 | 96 | 3308.1 | 53.545 | 0.431755 | 0 |
 | anthropic/claude-opus-4.6@rich/batch | 16 | 96 | 3240.1 | 52.785 | 0.371770 | 0 |
 | anthropic/claude-opus-4.6@rich/smoke | 1 | 1 | 3039.1 | 3.039 | 0.006190 | 0 |
+| cloudflare/clef-flash@resolved-b1/batch | 95 | 95 | 369.0 | 37.320 | 0.010371 | 0 |
+| cloudflare/clef-flash@resolved/smoke | 1 | 1 | 431.4 | 0.431 | 0.000126 | 0 |
 | controls/anthropic/claude-opus-4.6@rich-b1/batch | 8 | 8 | 1668.9 | 13.494 | 0.089315 | 0 |
 | controls/google/gemini-2.5-flash-lite@rich-b1/batch | 8 | 8 | 896.7 | 7.390 | 0.001976 | 0 |
 | controls/qwen/qwen3.5-9b@rich-b1/batch | 8 | 8 | 1128.7 | 8.813 | 0.001904 | 0 |
@@ -566,9 +834,20 @@ Unknown charges retain a $0.30 reservation. No automatic retries. Cached replays
 | google/gemini-2.5-flash-lite@rich/batch | 16 | 96 | 1500.2 | 22.535 | 0.007372 | 0 |
 | google/gemini-2.5-flash-lite@rich/smoke | 1 | 1 | 588.2 | 0.588 | 0.000107 | 0 |
 | google/gemini-3.1-flash-lite@rich/smoke | 1 | 1 | 1107.6 | 1.108 | 0.000000 | 0 |
+| inception/mercury-decide@resolved-b1/batch | 95 | 95 | 466.2 | 47.776 | 0.002049 | 0 |
+| inception/mercury-decide@resolved/smoke | 1 | 1 | 562.4 | 0.562 | 0.000026 | 0 |
+| liquid/d1@resolved-b1/batch | 95 | 95 | 340.9 | 35.347 | 0.009384 | 0 |
+| liquid/d1@resolved/smoke | 1 | 1 | 363.5 | 0.363 | 0.000121 | 0 |
+| openai/gpt-6-luna-decisions@resolved-b1/batch | 95 | 95 | 284.9 | 27.786 | 0.000000 | 0 |
+| openai/gpt-6-luna-decisions@resolved/smoke | 1 | 1 | 991.4 | 0.991 | 0.000000 | 0 |
+| perplexity/pplx-decider-v1.1-27b@resolved-b1/batch | 95 | 95 | 293.7 | 29.768 | 0.004270 | 0 |
+| perplexity/pplx-decider-v1.1-27b@resolved/smoke | 1 | 1 | 1036.1 | 1.036 | 0.000054 | 0 |
 | qwen/qwen3.5-9b@resolved-b1/batch | 96 | 96 | 969.6 | 97.566 | 0.008902 | 0 |
 | qwen/qwen3.5-9b@rich/batch | 16 | 96 | 2602.0 | 42.891 | 0.006205 | 0 |
 | qwen/qwen3.5-9b@rich/smoke | 1 | 1 | 957.4 | 0.957 | 0.000097 | 0 |
+| respan/span-01@resolved/smoke | 1 | 1 | 143.5 | 0.144 | 0.300000 | 1 |
+| togethercomputer/tev1-4b-experimental@resolved-b1/batch | 95 | 95 | 283.1 | 28.066 | 0.007513 | 0 |
+| togethercomputer/tev1-4b-experimental@resolved/smoke | 1 | 1 | 309.6 | 0.310 | 0.000094 | 0 |
 | typesafe/jev-1.13@choice-b1/batch | 96 | 96 | 239.9 | 23.910 | 0.005537 | 0 |
 | typesafe/jev-1.13@resolved-b1/batch | 96 | 96 | 247.1 | 24.125 | 0.006550 | 0 |
 | typesafe/jev-1.13@resolved-text-b1/batch | 88 | 88 | 240.6 | 22.215 | 0.003894 | 0 |
@@ -576,3 +855,5 @@ Unknown charges retain a $0.30 reservation. No automatic retries. Cached replays
 | typesafe/jev-1.13@rich-b1/batch | 95 | 95 | 249.1 | 24.220 | 0.005753 | 0 |
 | typesafe/jev-1.13@rich/batch | 16 | 96 | 280.4 | 4.679 | 0.004930 | 0 |
 | typesafe/jev-1.13@rich/smoke | 1 | 1 | 242.2 | 0.242 | 0.000071 | 0 |
+| upstage/solar-decide-flash@resolved-b1/batch | 95 | 95 | 927.4 | 99.612 | 0.011860 | 0 |
+| upstage/solar-decide-flash@resolved/smoke | 1 | 1 | 1027.2 | 1.027 | 0.000143 | 0 |

@@ -1,4 +1,7 @@
-# PDF decision-model findings — 2026-10-08
+# Initial PDF decision-model pilot — 2026-10-08
+
+This records the initial pilot through ledger request 627 (commit `225a17d`).
+The later eight-model check is recorded in [decision-alternatives.md](decision-alternatives.md).
 
 Small decisions over native PDF evidence are useful, but the input representation
 and task matter more than a generic confidence number. Resolving candidate IDs

@@ -14,14 +14,17 @@ from __future__ import annotations
 from typing import Any
 
 from bench.decision_evidence import project_case
-from bench.decision_hosted import JEV, probability
+from bench.decision_hosted import DECISION_MODELS, JEV, probability
 
 OPTIONS = ("supported", "contradicted", "insufficient")
 _SUM_TOLERANCE = 0.015 + 1e-9
 
 
-def choice_request(cases: list[dict[str, Any]]) -> dict[str, Any]:
+def choice_request(cases: list[dict[str, Any]], model: str = JEV) -> dict[str, Any]:
     """Ask one explicitly targeted choice per observation with shared evidence."""
+    if model not in DECISION_MODELS:
+        message = "Choice requests require an admitted decision model"
+        raise ValueError(message)
     observations = {f"q{index}": project_case(case) for index, case in enumerate(cases)}
     questions = {
         alias: {
@@ -40,7 +43,7 @@ def choice_request(cases: list[dict[str, Any]]) -> dict[str, Any]:
         }
         for alias, case in zip(observations, cases, strict=True)
     }
-    return {"model": JEV, "state": {"observations": observations}, "questions": questions}
+    return {"model": model, "state": {"observations": observations}, "questions": questions}
 
 
 def parse_choice(result: dict[str, Any], count: int) -> list[dict[str, Any]]:

@@ -16,7 +16,8 @@ from bench.decision_controls import build_controls, write_controls
 from bench.decision_eval import evaluate, render_report
 from bench.decision_hosted import (
     ARTIFACTS,
-    JEV,
+    DECISION_MODELS,
+    DEFAULT_MODELS,
     MODELS,
     ROOT,
     DecisionClient,
@@ -128,13 +129,19 @@ def run(args: argparse.Namespace) -> None:  # noqa: C901, PLR0912 - explicit ben
         ]
     size = 1 if args.single or args.smoke else args.batch_size
     cohort = "smoke" if args.smoke else "single" if args.single else "batch"
+    provider = getattr(args, "provider", None)
     for model in args.models:
-        label = f"{model}@{args.variant}" + (
+        route_label = f"-via-{provider}" if provider else ""
+        label = f"{model}@{args.variant}{route_label}" + (
             f"-b{size}" if size != BATCH_SIZE and not args.smoke and not args.single else ""
         )
         for start in range(0, len(ordered), size):
             batch = ordered[start : start + size]
-            body = choice_request(batch) if args.variant == "choice" else request_body(model, batch, args.variant)
+            body = (
+                choice_request(batch, model) if args.variant == "choice" else request_body(model, batch, args.variant)
+            )
+            if provider:
+                body.setdefault("provider", {}).update(only=[provider], allow_fallbacks=False)
             tag = f"{'controls/' if args.controls else ''}{label}/{cohort}/{start // size:03d}"
             print(
                 f"Start {tag}: {len(batch)} items, {len(json.dumps(body, separators=(',', ':')).encode())} bytes",
@@ -171,7 +178,7 @@ def run(args: argparse.Namespace) -> None:  # noqa: C901, PLR0912 - explicit ben
                             "conditional_choice_mass"
                             if args.variant == "choice"
                             else "native_decision_score"
-                            if model == JEV
+                            if model in DECISION_MODELS
                             else "self_reported"
                         ),
                     }
@@ -195,9 +202,10 @@ def main() -> None:
     parser.add_argument("--run-hosted", action="store_true")
     parser.add_argument("--report-only", action="store_true")
     parser.add_argument("--controls", action="store_true")
+    parser.add_argument("--provider", help="Pin one exact OpenRouter provider tag without fallbacks.")
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--single", action="store_true")
-    parser.add_argument("--models", nargs="+", choices=MODELS, default=list(MODELS))
+    parser.add_argument("--models", nargs="+", choices=MODELS, default=list(DEFAULT_MODELS))
     parser.add_argument("--variant", choices=("rich", "text", "resolved", "resolved-text", "choice"), default="rich")
     parser.add_argument("--batch-size", type=int, choices=(1, 6), default=BATCH_SIZE)
     args = parser.parse_args()
@@ -205,8 +213,8 @@ def main() -> None:
         parser.error("Use --run-hosted for paid inference, or --report-only for local evaluation.")
     if args.controls and (args.single or args.smoke):
         parser.error("Grounded controls are test-only; no calibration smoke selection is available.")
-    if args.variant == "choice" and args.models != [JEV]:
-        parser.error("Choice experiments require --models typesafe/jev-1.13")
+    if args.variant == "choice" and any(model not in DECISION_MODELS for model in args.models):
+        parser.error("Choice experiments require models from the decision catalog")
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     with exclusive_lock(ARTIFACTS / "run.lock"):
         run(args)

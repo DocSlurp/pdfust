@@ -235,3 +235,11 @@ include campaign-wide accounting, even in the separate controls report. Jev Choi
 returns two-decimal probabilities that can total .99 or 1.01: the parser admits
 only the three-value rounding bound (.015), normalizes it, and retains raw values
 and the normalization delta. This arithmetic does not calibrate probabilities.
+
+
+The subsequent [eight-model catalog check](DECISION_CATALOG.md) discovers native
+decision models with `GET /api/v1/models?output_modalities=decisions`; the default
+model listing omits them. The runner now accepts those exact IDs on the alpha
+Decisions endpoint, retaining the original default model list. See the separate
+[measured comparison](results/decision-alternatives.md) for successful probes,
+availability failures, prices actually reported, and quality limitations.
