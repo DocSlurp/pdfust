@@ -152,3 +152,25 @@ def test_admission_gold_metadata_perturbation_invariance() -> None:
         modified[key] = "SECRET_ANSWER"
     assert admission_request(modified, alternatives, MODELS[0]) == before
     assert "SECRET_ANSWER" not in json.dumps(before)
+
+
+def test_ambiguous_target_is_never_scored_as_a_true_negative() -> None:
+    from bench.rolling_row_run import target_score  # noqa: PLC0415
+
+    target = {"kind": "ambiguous", "tables": [], "truth_status": "ambiguous-unscored"}
+    assert all(value is None for value in target_score(target, []).values())
+    assert all(value is None for value in target_score(target, [{"arbitrary": "proposal"}]).values())
+
+
+def test_ambiguous_cohort_records_cost_without_binary_scores(frozen: tuple[Path, Path], tmp_path: Path) -> None:
+    directory, targets = frozen
+    targets.write_text(json.dumps([{"id": "page0", "kind": "ambiguous", "tables": []}]))
+    result = run(directory, targets, Client(tmp_path))
+    assert result["unique_requests"] == 4
+    for cohort in result["cohorts"].values():
+        assert cohort["ambiguous_unscored_pages"] == 1
+        assert cohort["slices"]["prose"]["pages"] == 0
+        assert cohort["slices"]["borderless"]["pages"] == 0
+        assert cohort["rows"][0]["scores"]["exact_page"] is None
+        assert cohort["rows"][0]["conservation"]
+    assert all(row["text_group_exact"] is None for row in result["candidate_ceiling_rows"])

@@ -319,3 +319,26 @@ Historical artifact directories remain unchanged. No package was published.
   retained. Editable migration passes 1,919 tests, 16 skips and two expected
   failures; no release publication. Provider-page rate regression now excludes
   local replays from throughput and preserves real HTTP time before later replays.
+
+### 2026-10-09 05:22 UTC — quarantine fresh DEV answer cues
+
+Source-only audit found class-specific explanatory sentences in fresh24 PDFs.
+These directly cue the model's table/prose answer. Prior fresh admission scores
+are **excluded from primary conclusions**, preserved with charges for audit.
+Stopped new cued requests at the next batch boundary. A new source-neutralized
+cohort will remove the explanatory band with body geometry unchanged, then freeze
+all requests before scoring. Original28 has no class-specific title/footer; its
+semantic templates remain narrow DEV evidence. Heldout untouched.
+
+### 2026-10-09 05:30 UTC — realism fixes and combined OCR route
+
+- User requested Astra re-review: separate worktree agent audits original104 and
+  applies v2 meaningful-table/continuous-prose/explicit-ambiguity fixes. Original
+  probe artifacts stay immutable. Scorer now leaves ambiguous truth unscored.
+- Neutral deletion arm's authored negatives may be table-like; stopped further
+  fresh/neutral prompt expansion. They remain diagnostics, not admission accuracy.
+- OCR1200 + bounded overlap + baseline Luna512 recovers 12/12 borderless tables,
+  rejects 12/12 prose controls and preserves 4/4 native merged grids. PPLX recovers
+  12/12 but falsely accepts 6/12 prose pages. 48 calls cost USD 0.00808632 effective.
+- Aggregate-selected semantic prompt now being transferred to OCR inventories;
+  source-only presence gating prepared as separate decomposition experiment.

@@ -168,3 +168,41 @@ and blank columns while prompt changes test admission on unchanged candidates.
 Local editable migration to `jev-pdf` succeeded. Full Python suite: 1,919 passed,
 16 skipped, two expected failures. Benchmark typing fixes are being integrated
 before the next private push. Raw artifacts and credentials remain ignored.
+
+## 05:22 UTC — source-cue quarantine
+
+The source-only audit found that fresh24 includes class-specific explanatory
+sentences directing the reader to treat rows as records or columns as independent
+narrative. These visibly disclose the table/prose decision. **All fresh24 model
+admission results above are quarantined and excluded from primary conclusions.**
+Retain requests, responses, costs and reports as an audit trail. Geometric candidate
+coverage remains a diagnostic observation; it does not validate model admission.
+
+Stop additional cued requests after the in-flight bounded batch. A separate
+source-only ablation deletes the common explanatory band while preserving body
+operators/coordinates. Freeze its new sources, candidates and requests before
+reading references or scoring. Keep original28 prompt testing independent;
+the audit found no class-specific title/footer there, though its narrow synthetic
+content limits generalization. Do not access the protected heldout set.
+
+## 05:30 UTC — Astra realism review and decomposition priorities
+
+At the user's request, an Astra subagent is reviewing silver realism and applying
+fixes in a separate worktree. Original104 remains immutable and is classified as
+implementation probes, not natural-document generalization evidence. The new
+reviewed cohort will contain 16 meaningful tables, eight coherent prose pages,
+and four explicitly ambiguous pages. Ambiguous references receive no binary or
+exactness scores; decisions, source conservation and costs remain observable.
+The neutral deletion arm also has ambiguous authored negatives and is diagnostic
+only. Further fresh/neutral prompt requests are stopped persistently.
+
+| Combined mechanism | Latest result | Next action |
+| --- | --- | --- |
+| OCR 1200 + 0.5-height overlap + Luna image512 admission | 12/12 exact tables, 0/12 prose false tables, 4/4 native controls | Test the aggregate-selected semantic prompt, then transfer unchanged to reviewed DEV |
+| Same OCR route + PPLX baseline admission | 12/12 exact tables, 6/12 prose false tables | Semantic prompt and source-only first gate target admission errors |
+| Source seed corridors + continuation candidates | 16/16 neutral positive candidates exact, versus old 4/16 ceiling | Freeze generic candidate menus; rerun unchanged on realism-reviewed source |
+| Candidate-free table gate before matrix selection | Preparing | Test whether removing candidate matrices avoids table-acceptance bias; charge actual gate requests separately |
+
+The 48-call OCR admission comparison cost USD 0.00808632 effective, with 22.08
+summed HTTP seconds. Those are model-stage measurements; OCR preprocessing and
+native routing are reported separately, not hidden in an end-to-end speed claim.

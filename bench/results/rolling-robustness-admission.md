@@ -1,4 +1,6 @@
-# Frozen rolling candidate admission
+# Frozen rolling candidate admission — quarantined
+
+**Invalid for primary model conclusions:** this fresh DEV source contains class-specific explanatory sentences that directly cue table versus prose. Results are retained for audit; use the separately frozen neutralized cohort for admission comparisons.
 
 All 24 DEV pages remain in each cohort: 0 native vector routes use zero model calls; 24 pages require admission.
 

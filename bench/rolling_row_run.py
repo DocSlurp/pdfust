@@ -23,6 +23,15 @@ TAG_PREFIX = "A002-rolling-admission/"
 WAVE_LIMIT = 0.50
 
 
+def target_score(target: dict[str, Any], tables: list[dict[str, Any]]) -> dict[str, Any]:
+    """Leave ambiguous authored intent unscored rather than treating empty gold as a negative."""
+    if target["kind"] == "ambiguous":
+        return dict.fromkeys(
+            ("exact_page", "exact_cells", "exact_spans", "owned_values", "owned_words", "false_positive_page")
+        )
+    return score(target, tables)
+
+
 def verify(directory: Path) -> dict[str, Any]:
     """Check complete frozen body/source/candidate hashes before client construction or scoring."""
     directory = guard_path(directory)
@@ -95,12 +104,18 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
                     "source_conservation": conserved,
                     "owned_source_ids": len(owned),
                     "unresolved_source_ids": len(alt["unresolved_ids"]),
-                    "text_group_exact": bool(expected_groups) and expected_groups == actual_groups,
-                    "matched_text_groups": sum((expected_groups & actual_groups).values()),
-                    "expected_text_groups": sum(expected_groups.values()),
+                    "text_group_exact": None
+                    if targets[page_id]["kind"] == "ambiguous"
+                    else bool(expected_groups) and expected_groups == actual_groups,
+                    "matched_text_groups": None
+                    if targets[page_id]["kind"] == "ambiguous"
+                    else sum((expected_groups & actual_groups).values()),
+                    "expected_text_groups": None
+                    if targets[page_id]["kind"] == "ambiguous"
+                    else sum(expected_groups.values()),
                     "variant": variant,
                     "kind": targets[page_id]["kind"],
-                    "scores": score(targets[page_id], tables),
+                    "scores": target_score(targets[page_id], tables),
                 }
             )
     for model in manifest["models"]:
@@ -122,11 +137,14 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
                 conserved = Counter(owners + selected["unresolved_ids"]) == Counter(w["id"] for w in page["words"])
                 if not conserved:
                     raise ValueError("Selected source inventory is not conserved")
-                scored = score(targets[page_id], selected["tables"])
+                scored = target_score(targets[page_id], selected["tables"])
                 rows.append(
                     {
                         "id": page_id,
                         "kind": targets[page_id]["kind"],
+                        "truth_status": "ambiguous-unscored"
+                        if targets[page_id]["kind"] == "ambiguous"
+                        else "authored-silver",
                         "selection": selection_status,
                         "scores": scored,
                         "conservation": conserved,
@@ -137,6 +155,7 @@ def evaluate(directory: Path, targets_path: Path, calls: list[dict[str, Any]]) -
             cohorts[f"{model}/{arm}"] = {
                 "pages": len(rows),
                 "native_zero_call_pages": len(native),
+                "ambiguous_unscored_pages": sum(r["kind"] == "ambiguous" for r in rows),
                 "rows": rows,
                 "slices": {
                     kind: {
@@ -224,6 +243,20 @@ def render_report(summary: dict[str, Any]) -> str:
             f"{slices['borderless']['unresolved_or_unmeasured']}/{slices['borderless']['pages']} | "
             f"{slices['prose']['unresolved_or_unmeasured']}/{slices['prose']['pages']} |"
         )
+    if any(cohort.get("ambiguous_unscored_pages", 0) for cohort in summary["cohorts"].values()):
+        lines += [
+            "",
+            (
+                "Ambiguous pages are excluded from all correctness and binary presence denominators. "
+                "Their decisions and source conservation remain observable:"
+            ),
+            "",
+            "| Model / arm | Ambiguous pages | Decisions (unscored) |",
+            "| --- | ---: | --- |",
+        ]
+        for key, cohort in summary["cohorts"].items():
+            ambiguous = [row for row in cohort["rows"] if row["kind"] == "ambiguous"]
+            lines.append(f"| {key} | {len(ambiguous)} | {dict(Counter(r['selection'] for r in ambiguous))} |")
     lines += [
         "",
         "| Model / arm | Intended borderless values | Intended borderless words | Source IDs conserved |",
