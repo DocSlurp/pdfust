@@ -365,8 +365,19 @@ def test_alias_inputs_do_not_inflate_transmission_rates(frozen: Path, tmp_path: 
     manifest["records"].append(dict(manifest["records"][0]))
     manifest_path.write_text(json.dumps(manifest))
     client = MockClient(tmp_path / "ledger")
-    run(frozen, client=client)
-    row = next(row for row in evaluate(frozen)["cohorts"] if row["model"] == "m1")
+    result = run(frozen, client=client)
+    evaluated = evaluate(frozen)
+    assert len(client.calls) == 4
+    assert evaluated["planned_records"] == 5
+    assert evaluated["planned_request_bodies"] == 4
+    assert evaluated["completed_records"] == 5
+    assert evaluated["completed_request_bodies"] == 4
+    assert all(not row.get("replayed") for row in result["calls"])
+    row = next(row for row in evaluated["cohorts"] if row["model"] == "m1")
+    assert row["planned_records"] == 3
+    assert row["planned_request_bodies"] == 2
+    assert row["completed_records"] == 3
+    assert row["completed_request_bodies"] == 2
     assert row["inputs"] == 9
     assert row["scored"] == 9
     assert row["unique_transmissions"] == 2
@@ -392,3 +403,83 @@ def test_new_wave_requires_matching_manifest_and_separate_budget(frozen: Path, t
     assert all(row["tag"].startswith("L004/") for row in entries)
     assert (client.ledger.parent / "L004-model-stops.json").exists()
     assert not (client.ledger.parent / "L001-model-stops.json").exists()
+
+
+@pytest.mark.parametrize("duration", [None, -1, float("nan"), float("inf"), True])
+def test_partial_or_invalid_http_time_does_not_become_complete_rate(
+    frozen: Path, tmp_path: Path, duration: object
+) -> None:
+    client = MockClient(tmp_path / "ledger")
+    run(frozen, client=client)
+    path = frozen / "results.json"
+    results = json.loads(path.read_text())
+    first = next(row for row in results["calls"] if row["model"] == "m1")
+    first["http_elapsed_ms"] = duration
+    first["entry"]["elapsed_ms"] = duration
+    path.write_text(json.dumps(results))
+    row = next(row for row in evaluate(frozen)["cohorts"] if row["model"] == "m1")
+    assert row["unknown_http_requests"] == 1
+    assert row["known_http_component_ms"] == 10
+    assert row["http_elapsed_ms"] is None
+    assert row["api_only_pages_per_minute"] is None
+
+
+def test_zero_http_time_is_measured_and_does_not_fall_back(frozen: Path, tmp_path: Path) -> None:
+    client = MockClient(tmp_path / "ledger")
+    run(frozen, client=client)
+    path = frozen / "results.json"
+    results = json.loads(path.read_text())
+    for call in results["calls"]:
+        if call["model"] == "m1":
+            call["http_elapsed_ms"] = 0
+            call["entry"]["elapsed_ms"] = 999
+    path.write_text(json.dumps(results))
+    row = next(row for row in evaluate(frozen)["cohorts"] if row["model"] == "m1")
+    assert row["unknown_http_requests"] == 0
+    assert row["http_elapsed_ms"] == 0
+    assert row["api_only_pages_per_minute"] is None
+
+
+def test_history_strata_and_experiment_label_remain_separate(frozen: Path, tmp_path: Path) -> None:
+    targets_path = frozen / "private-targets.json"
+    targets = json.loads(targets_path.read_text())
+    for index, target in enumerate(targets):
+        target["recoverability"] = "conventional" if index == 0 else "visible_identifier" if index < 3 else "unresolved"
+        target["history_variant"] = "multiline" if index == 0 else "new_identifier" if index < 3 else "absent"
+    raw = json.dumps(targets).encode()
+    targets_path.write_bytes(raw)
+    manifest_path = frozen / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest.update(experiment="L005", targets_sha256=hashlib.sha256(raw).hexdigest())
+    manifest_path.write_text(json.dumps(manifest))
+    client = MockClient(tmp_path / "ledger")
+    run(frozen, client=client, tag_prefix="L005/")
+    evaluated = report(frozen)
+    text = (frozen / "report.md").read_text()
+    assert text.startswith("# L005 lower-level DEV decisions")
+    assert "conventional joins are authored hypotheses" in text
+    row = evaluated["cohorts"][0]
+    assert row["per_recoverability"]["conventional"]["known_exact"] == 1
+    assert row["per_recoverability"]["visible_identifier"]["known_exact"] == 2
+    assert row["per_recoverability"]["unresolved"]["ambiguous_inputs"] == 3
+    assert evaluated["outcomes"][0]["history_variant"] == "multiline"
+
+
+def test_l006_policy_and_running_status_are_explicit(frozen: Path, tmp_path: Path) -> None:
+    manifest_path = frozen / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["experiment"] = "L006"
+    manifest_path.write_text(json.dumps(manifest))
+
+    class ObservingClient(MockClient):
+        def request(self, body: dict[str, Any], *, tag: str, max_body_bytes: int) -> dict[str, Any]:
+            assert json.loads((frozen / "results.json").read_text())["status"] == "running"
+            return super().request(body, tag=tag, max_body_bytes=max_body_bytes)
+
+    client = ObservingClient(tmp_path / "ledger")
+    with pytest.raises(ValueError, match="unsupported"):
+        run(frozen, client=client, tag_prefix="L006/", wave_limit=11)
+    with pytest.raises(ValueError, match="policy differs"):
+        run(frozen, client=client, tag_prefix="L005/")
+    run(frozen, client=client, tag_prefix="L006/", wave_limit=10, max_requests=1)
+    run(frozen, client=client, tag_prefix="L006/", wave_limit=10)

@@ -24,6 +24,7 @@ CHOICES = ("join", "split", "unresolved")
 SUM_TOLERANCE = 0.015000001
 WAVE_LIMIT = 5.0
 TAG_PREFIX = "L001/"
+WAVE_LIMITS = {"L001/": 5.0, "L004/": 5.0, "L005/": 5.0, "L006/": 10.0}
 MAX_BODY_BYTES = 200_000
 MAX_BATCH = 3
 ENCODING_COUNT = 3
@@ -252,10 +253,11 @@ def run(
     wave_limit: float = WAVE_LIMIT,
 ) -> dict[str, Any]:
     """Execute only through the root-owned client, preserving resumable checkpoints."""
-    if tag_prefix not in {"L001/", "L004/"} or not 0 < wave_limit <= WAVE_LIMIT:
+    admitted_limit = number(wave_limit)
+    if tag_prefix not in WAVE_LIMITS or admitted_limit is None or not 0 < admitted_limit <= WAVE_LIMITS[tag_prefix]:
         _fail("unknown wave or unsupported wave cap")
     manifest = verify_directory(directory)
-    if (manifest.get("experiment") == "L004") != (tag_prefix == "L004/"):
+    if manifest.get("experiment", "L001") != tag_prefix.rstrip("/"):
         _fail("wave policy differs from frozen experiment")
     if max_requests is not None and (type(max_requests) is not int or max_requests < 1):
         _fail("max_requests must be a positive integer")
@@ -291,6 +293,8 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
     )
     if results.get("manifest_sha256") != manifest_hash:
         _fail("retained results belong to another frozen manifest")
+    results["status"] = "running"
+    checkpoint(result_path, results)
     stop_details = persistent_stops(client, manifest["models"], results["calls"], tag_prefix=tag_prefix)
     stopped = set(stop_details).intersection(manifest["models"])
     completed = {row["request_sha256"] for row in results["calls"] if row["status"] in {"ok", "failed"}}
@@ -364,6 +368,8 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
                 stopped.add(record["model"])
                 row["refused"] = retained is None
                 stop_details = persistent_stops(client, manifest["models"], results["calls"], tag_prefix=tag_prefix)
+        if row["status"] in {"ok", "failed"}:
+            completed.add(digest)
         checkpoint(result_path, results)
     resources = {
         "wall_seconds": time.perf_counter() - start,
@@ -384,6 +390,7 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
     peaks = [row["peak_rss_bytes"] for row in history if row.get("peak_rss_bytes") is not None]
     results.update(
         status="slice_complete" if slice_limited else "complete",
+        **request_accounting(manifest["records"], {row["request_sha256"]: row for row in results["calls"]}),
         planned_requests=len(manifest["records"]),
         completed_requests=sum(row["status"] in {"ok", "failed"} for row in results["calls"]),
         invocation_request_limit=max_requests,
@@ -407,6 +414,50 @@ def _run_locked(  # noqa: C901, PLR0912, PLR0913
     )
     checkpoint(result_path, results)
     return results
+
+
+def request_accounting(records: list[dict[str, Any]], calls: dict[str, dict[str, Any]]) -> dict[str, int]:
+    """Separate complete manifest aliases from distinct transport-body identities."""
+    identities = {row["sha256"] for row in records}
+    completed = {key for key in identities if calls.get(key, {}).get("status") in {"ok", "failed"}}
+    refused = {key for key in identities if calls.get(key, {}).get("refused", False)}
+    return {
+        "planned_records": len(records),
+        "planned_request_bodies": len(identities),
+        "completed_records": sum(row["sha256"] in completed for row in records),
+        "completed_request_bodies": len(completed),
+        "refused_records": sum(row["sha256"] in refused for row in records),
+        "refused_request_bodies": len(refused),
+    }
+
+
+def http_duration(call: dict[str, Any]) -> float | None:
+    """Admit finite nonnegative elapsed time; zero is measured, absence is unknown."""
+    value = call.get("http_elapsed_ms")
+    if value is None:
+        value = call.get("entry", {}).get("elapsed_ms")
+    return number(value)
+
+
+def evidence_strata(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Keep conventional author hypotheses separate from visible identifier controls."""
+    strata = {}
+    for label in sorted({row["recoverability"] for row in rows}):
+        selected = [row for row in rows if row["recoverability"] == label]
+        strata[label] = {
+            "inputs": len(selected),
+            "scored": sum(row["score"] is not None for row in selected),
+            "known_inputs": sum(row["expected"] != "unresolved" for row in selected),
+            "known_exact": sum(
+                bool(row["score"] and row["score"]["answerable"] and row["score"]["description_partition_exact"])
+                for row in selected
+            ),
+            "ambiguous_inputs": sum(row["expected"] == "unresolved" for row in selected),
+            "ambiguous_abstentions": sum(
+                row["expected"] == "unresolved" and row["choice"] == "unresolved" for row in selected
+            ),
+        }
+    return strata
 
 
 def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explicit cohort denominators.
@@ -435,9 +486,11 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
     calls = {row["request_sha256"]: row for row in results["calls"]}
     outcomes = []
     cohort_calls: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    cohort_records: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for record in manifest["records"]:
         call = calls.get(record["sha256"], {})
         cohort_calls[record["model"], record["arm"]].append(call)
+        cohort_records[record["model"], record["arm"]].append(record)
         answers = (
             _evaluation_answers(call["response"], len(record["page_ids"]), manifest.get("experiment"))
             if call.get("status") == "ok"
@@ -454,6 +507,8 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
                 "family": target["family"],
                 "encoding": target["encoding"],
                 "expected": target["expected"],
+                "recoverability": target.get("recoverability", "unspecified"),
+                "history_variant": target.get("history_variant"),
                 "choice": choice,
                 "status": call.get("status", "unattempted"),
                 "refused": call.get("refused", False),
@@ -485,7 +540,10 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
             costs = [row.get("cost", {}).get("effective_usd") for row in fresh]
             total = sum(costs) if costs and all(value is not None for value in costs) else None
             partial = sum(value for value in costs if value is not None)
-            http = sum(row.get("http_elapsed_ms") or row.get("entry", {}).get("elapsed_ms", 0) or 0 for row in fresh)
+            durations = [http_duration(row) for row in fresh]
+            unknown_http = sum(value is None for value in durations)
+            measured_http = sum(value for value in durations if value is not None)
+            http = measured_http if durations and not unknown_http else None
             fresh_inputs = sum(len(call["page_ids"]) for call in fresh if call.get("status") == "ok")
             fresh_exact = 0
             for call in fresh:
@@ -523,6 +581,8 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
                     "refused_inputs": sum(row["refused"] for row in rows),
                     "refusal_reasons": dict(Counter(row["reason"] for row in rows if row["refused"])),
                     "planned_requests": len(entries),
+                    **request_accounting(cohort_records[model, arm], calls),
+                    "per_recoverability": evidence_strata(rows),
                     "unique_transmissions": len(fresh),
                     "fresh_scored_page_inputs": fresh_inputs,
                     "fresh_correct_regions": fresh_exact,
@@ -543,6 +603,8 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
                     "known_cost_component_usd": partial,
                     "unknown_cost_requests": sum(value is None for value in costs),
                     "http_elapsed_ms": http,
+                    "known_http_component_ms": measured_http,
+                    "unknown_http_requests": unknown_http,
                     "pages_per_usd": fresh_inputs / total if total else None,
                     "correct_regions_per_usd": fresh_exact / total if total else None,
                     "api_only_pages_per_minute": fresh_inputs * 60000 / http if http else None,
@@ -568,6 +630,9 @@ def evaluate(directory: Path) -> dict[str, Any]:  # noqa: C901, PLR0912 - explic
             )
     return {
         "schema": 1,
+        "experiment": manifest.get("experiment", "L001"),
+        "accounting_audit_notes": results.get("accounting_audit_notes", []),
+        **request_accounting(manifest["records"], calls),
         "scope": "authored DEV description partition only; not independent documents or full tables",
         "cohorts": cohorts,
         "outcomes": outcomes,
@@ -588,11 +653,16 @@ def report(directory: Path) -> dict[str, Any]:
     evaluation = evaluate(directory)
     checkpoint(_path(directory, "evaluation.json"), evaluation)
     lines = [
-        "# L001 lower-level DEV decisions",
+        f"# {evaluation['experiment']} lower-level DEV decisions",
         "",
         evaluation["scope"] + ".",
         "",
-        f"Completed requests: {evaluation['completed_requests']}/{evaluation['planned_requests']} planned.",
+        (
+            f"Completed request bodies: {evaluation['completed_request_bodies']}/"
+            f"{evaluation['planned_request_bodies']} planned; "
+            f"completed manifest records: {evaluation['completed_records']}/{evaluation['planned_records']}. "
+            f"Refused: {evaluation['refused_request_bodies']} bodies / {evaluation['refused_records']} records."
+        ),
         "",
         (
             "Known exactness scores only the two target-text chunks. Missing/failed inputs remain in denominators. "
@@ -658,15 +728,34 @@ def report(directory: Path) -> dict[str, Any]:
         exact = sum(row["score"]["description_partition_exact"] for row in known)
         abstain = sum(row["choice"] == "unresolved" for row in unknown)
         lines.append(f"| {family} | {exact}/{len(known)} | {abstain}/{len(unknown)} |")
+    if evaluation["accounting_audit_notes"]:
+        lines.extend(["", "Accounting audit notes:", "", *evaluation["accounting_audit_notes"]])
     lines.extend(["", "Per-family model results:", ""])
     lines.extend(
         f"- {row['model']} / {row['arm']}: `{json.dumps(row['per_family'], sort_keys=True)}`."
         for row in evaluation["cohorts"]
     )
+    if any(set(row["per_recoverability"]) != {"unspecified"} for row in evaluation["cohorts"]):
+        lines.extend(
+            [
+                "",
+                (
+                    "History evidence strata: conventional joins are authored hypotheses; visible_identifier splits "
+                    "use explicit source IDs. Neither score measures full table reconstruction."
+                ),
+                "",
+            ]
+        )
+        lines.extend(
+            f"- {row['model']} / {row['arm']}: `{json.dumps(row['per_recoverability'], sort_keys=True)}`."
+            for row in evaluation["cohorts"]
+            if set(row["per_recoverability"]) != {"unspecified"}
+        )
     lines.extend(["", "Request/refusal accounting:", ""])
     lines.extend(
-        f"- {row['model']} / {row['arm']}: {row['completed_requests']}/{row['planned_requests']} "
-        f"requests completed; {row['refused_inputs']} page inputs refused; "
+        f"- {row['model']} / {row['arm']}: {row['completed_request_bodies']}/{row['planned_request_bodies']} "
+        f"request bodies and {row['completed_records']}/{row['planned_records']} records completed; "
+        f"{row['refused_inputs']} page inputs refused; {row['unknown_http_requests']} HTTP durations unknown; "
         f"reasons `{json.dumps(row['refusal_reasons'], sort_keys=True)}`."
         for row in evaluation["cohorts"]
     )
@@ -682,9 +771,11 @@ def main() -> None:
     parser.add_argument("--run-hosted", action="store_true")
     parser.add_argument("--report", action="store_true")
     parser.add_argument("--max-requests", type=int)
+    parser.add_argument("--wave", choices=[key.rstrip("/") for key in WAVE_LIMITS], default="L001")
     args = parser.parse_args()
     if args.run_hosted:
-        run(args.directory, max_requests=args.max_requests)
+        prefix = args.wave + "/"
+        run(args.directory, max_requests=args.max_requests, tag_prefix=prefix, wave_limit=WAVE_LIMITS[prefix])
     print(json.dumps(report(args.directory)["cohorts"], indent=2))
 
 
