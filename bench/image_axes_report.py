@@ -33,7 +33,7 @@ def transmission_stats(rows: list[dict[str, Any]], prices: dict[str, Any]) -> di
         entry = row["entry"]
         rates = entry.get("catalog_rates") or prices.get(row["model"], {})
         cost = request_cost(entry, row.get("usage", {}), rates)
-        costs.append({**cost, "model": row["model"], "arm": row["arm"], "catalog_rates": rates})
+        costs.append({**cost, "model": row["model"], "arm": row["arm"], "catalog_rates": rates, "entry": entry})
     elapsed = [number(r["entry"].get("elapsed_ms")) for r in unique.values()]
     pages = sum(len(r["case_ids"]) for r in unique.values())
     total = sum(c["effective_usd"] for c in costs) if all(c["effective_usd"] is not None for c in costs) else None
@@ -174,6 +174,9 @@ def snapshot(directory: Path) -> dict[str, Any]:
         "failed_unique_batches": sum(r["status"] == "failed" for r in all_actual),
         "rows": output,
         "provider_observations": transmission_stats(all_actual, manifest.get("prices", {})),
+        "source_sha256": manifest.get("source_sha256"),
+        "code_sha256": manifest.get("code_sha256"),
+        "report_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "preparation": manifest.get("preparation"),
         "pricing_provenance": manifest.get("pricing_provenance"),
     }
