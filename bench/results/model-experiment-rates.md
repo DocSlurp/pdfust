@@ -2,11 +2,18 @@
 
 Computed from retained provider responses and request ledger; no new inference. All quality results are DEV, not clean held-out validation.
 
-**Units:** pages/$ = admitted page inputs / provider-reported USD; pages/min =60,000×admitted page inputs / sum of original HTTP milliseconds. Deduplicate request indexes, exclude replay time/charges, count each six-observation batch as six inputs. Decision/assembly/gate inputs are partial-page observations, not full-page extraction. Embedding whole-page rows are actual page images; oracle-ROI rows are one authored crop per page. These are sequential API-only rates, excluding CPU render/extraction, telemetry, scheduling and concurrency.
+**Units:** pages/$ = admitted page inputs / effective USD; pages/min = 60,000 × admitted page inputs / sum of original HTTP milliseconds. Deduplicate request indexes, exclude replay time/charges, count each six-observation batch as six inputs. Decision/assembly/gate inputs are partial-page observations, not full-page extraction. Embedding whole-page rows are actual page images; oracle-ROI rows are one authored crop per page. These are sequential API-only rates, excluding CPU render/extraction, telemetry, scheduling and concurrency.
 
-`$0 reported` means the provider returned zero and division is undefined; it is not a claim of free future inference. Unknown-charge reservations are not spend. Embedding indexing rates exclude shared query embedding: the8-query batch is charged once per model and reused for its three image conditions. No full-pipeline pages/min or hardware-adjusted CPU pages/$ was measured.
+Positive provider-reported costs take precedence. For zero or missing reported costs, `~` marks an estimate from the [OpenRouter catalog](https://openrouter.ai/api/v1/models?output_modalities=decisions) checked 2026-10-09 and retained observed input/output tokens; Luna pricing is $0.10 per million input tokens and $0 per output token. Original provider zeros and the spending ledger remain unchanged; these estimates are not actual campaign spend. Missing token usage or pricing remains unknown. Gemini's failed smoke reported zero input/output tokens, so no positive cost or usable pages/$ estimate exists. Timing and scores are unchanged. Unknown-charge reservations are not spend.
 
-**Scores:** relationship quality uses36known observations from historical test partition; operational rates cover the full96-observation cohort. Gates use8regions. Assembly exactness uses30or9regions; “evidence” is correctness given admitted information, and P/R/F1 are mean record precision/recall/F1. All assemblies conserve100%of admitted source IDs. Retrieval uses6matched and2absent queries over24pages. Absent-query false hits assume forced nearest-neighbor ranking; no rejection threshold is calibrated.
+**Indexing exclusions:** embedding indexing rates exclude shared query embedding: the 8-query batch is charged once per model and reused for its three image conditions. No full-pipeline pages/min or hardware-adjusted CPU pages/$ was measured.
+
+**Score scopes:**
+
+- **Relationships:** quality uses 36 known observations from the historical test partition; operational rates cover the full 96-observation cohort.
+- **Gates:** use 8 regions.
+- **Assembly:** exactness uses 30 or 9 regions. “Evidence” is correctness given admitted information, and P/R/F1 are mean record precision/recall/F1. All assemblies conserve 100% of admitted source IDs.
+- **Retrieval:** uses 6 matched and 2 absent queries over 24 pages. Absent-query false hits assume forced nearest-neighbor ranking; no rejection threshold is calibrated.
 
 ## All model experiments
 
@@ -20,7 +27,7 @@ Computed from retained provider responses and request ledger; no new inference. 
 | google/gemini-2.5-flash-lite | Region gate rich-b1 | 4,049 | 64.9 | 7/8 (87.5%) |
 | google/gemini-2.5-flash-lite | Relationships resolved | 11,221 | 246.7 | 22/36 (61.1%) |
 | google/gemini-2.5-flash-lite | Relationships rich | 13,022 | 255.6 | 25/36 (69.4%) |
-| google/gemini-3.1-flash-lite | Smoke only | $0 reported | — | No completed scored cohort |
+| google/gemini-3.1-flash-lite | Smoke only | — (failed smoke; 0 tokens) | — | No completed scored cohort |
 | google/gemini-embedding-2 | Image embedding oracle-roi512 | 7,830 | 65.6 | Hit@1 0.833; Hit@3 1.000; Recall@1 0.417; Recall@3 0.917; MRR 0.889; pairs 19/24; ties 0; absent false hits 2/2 |
 | google/gemini-embedding-2 | Image embedding page128 | 7,830 | 64.0 | Hit@1 0.833; Hit@3 1.000; Recall@1 0.417; Recall@3 1.000; MRR 0.917; pairs 20/24; ties 0; absent false hits 2/2 |
 | google/gemini-embedding-2 | Image embedding page512 | 7,830 | 64.3 | Hit@1 0.833; Hit@3 1.000; Recall@1 0.417; Recall@3 1.000; MRR 0.917; pairs 22/24; ties 0; absent false hits 2/2 |
@@ -28,27 +35,27 @@ Computed from retained provider responses and request ledger; no new inference. 
 | inception/mercury-decide | Relationships resolved-b1 | 46,274 | 119.2 | 21/36 (58.3%) |
 | liquid/d1 | Region gate resolved-b1 | 3,777 | 138.4 | 6/8 (75.0%) |
 | liquid/d1 | Relationships resolved-b1 | 10,100 | 161.3 | 20/36 (55.6%) |
-| openai/gpt-6-luna-decisions | Assembly blank128 [9-case subset] | $0 reported | 166.7 | Exact 5/9; evidence 2/9; P/R/F1 0.556/0.556/0.556 |
-| openai/gpt-6-luna-decisions | Assembly blur128 [9-case subset] | $0 reported | 153.7 | Exact 3/9; evidence 3/9; P/R/F1 0.333/0.333/0.333 |
-| openai/gpt-6-luna-decisions | Assembly compact-current | $0 reported | 215.0 | Exact 3/30; evidence 30/30; P/R/F1 0.100/0.100/0.100 |
-| openai/gpt-6-luna-decisions | Assembly compact-image128 | $0 reported | 213.9 | Exact 3/30; evidence 9/30; P/R/F1 0.100/0.100/0.100 |
-| openai/gpt-6-luna-decisions | Assembly compact-image512 | $0 reported | 200.7 | Exact 3/30; evidence 9/30; P/R/F1 0.100/0.100/0.100 |
-| openai/gpt-6-luna-decisions | Assembly compact-native | $0 reported | 189.9 | Exact 10/30; evidence 10/30; P/R/F1 0.333/0.333/0.333 |
-| openai/gpt-6-luna-decisions | Assembly context [9-case subset] | $0 reported | 214.8 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly current | $0 reported | 188.5 | Exact 12/30; evidence 0/30; P/R/F1 0.400/0.400/0.400 |
-| openai/gpt-6-luna-decisions | Assembly derived-native | $0 reported | 213.6 | Exact 7/30; evidence 7/30; P/R/F1 0.233/0.233/0.233 |
-| openai/gpt-6-luna-decisions | Assembly fact-native | $0 reported | 196.7 | Exact 14/30; evidence 14/30; P/R/F1 0.467/0.467/0.467 |
-| openai/gpt-6-luna-decisions | Assembly image128 | $0 reported | 199.8 | Exact 12/30; evidence 9/30; P/R/F1 0.400/0.400/0.400 |
-| openai/gpt-6-luna-decisions | Assembly image256 [9-case subset] | $0 reported | 200.8 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly image512 [9-case subset] | $0 reported | 169.5 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly image64 [9-case subset] | $0 reported | 217.3 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly native | $0 reported | 204.7 | Exact 12/30; evidence 12/30; P/R/F1 0.400/0.400/0.400 |
-| openai/gpt-6-luna-decisions | Assembly native-reverse [9-case subset] | $0 reported | 214.5 | Exact 4/9; evidence 4/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly prior [9-case subset] | $0 reported | 214.8 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly prior-both [9-case subset] | $0 reported | 221.6 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Assembly prior-summary [9-case subset] | $0 reported | 161.1 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
-| openai/gpt-6-luna-decisions | Region gate resolved-b1 | $0 reported | 159.1 | 8/8 (100.0%) |
-| openai/gpt-6-luna-decisions | Relationships resolved-b1 | $0 reported | 200.2 | 31/36 (86.1%) |
+| openai/gpt-6-luna-decisions | Assembly blank128 [9-case subset] | ~8,657 | 166.7 | Exact 5/9; evidence 2/9; P/R/F1 0.556/0.556/0.556 |
+| openai/gpt-6-luna-decisions | Assembly blur128 [9-case subset] | ~8,676 | 153.7 | Exact 3/9; evidence 3/9; P/R/F1 0.333/0.333/0.333 |
+| openai/gpt-6-luna-decisions | Assembly compact-current | ~19,031 | 215.0 | Exact 3/30; evidence 30/30; P/R/F1 0.100/0.100/0.100 |
+| openai/gpt-6-luna-decisions | Assembly compact-image128 | ~16,880 | 213.9 | Exact 3/30; evidence 9/30; P/R/F1 0.100/0.100/0.100 |
+| openai/gpt-6-luna-decisions | Assembly compact-image512 | ~15,713 | 200.7 | Exact 3/30; evidence 9/30; P/R/F1 0.100/0.100/0.100 |
+| openai/gpt-6-luna-decisions | Assembly compact-native | ~14,388 | 189.9 | Exact 10/30; evidence 10/30; P/R/F1 0.333/0.333/0.333 |
+| openai/gpt-6-luna-decisions | Assembly context [9-case subset] | ~7,964 | 214.8 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly current | ~9,436 | 188.5 | Exact 12/30; evidence 0/30; P/R/F1 0.400/0.400/0.400 |
+| openai/gpt-6-luna-decisions | Assembly derived-native | ~13,344 | 213.6 | Exact 7/30; evidence 7/30; P/R/F1 0.233/0.233/0.233 |
+| openai/gpt-6-luna-decisions | Assembly fact-native | ~33,929 | 196.7 | Exact 14/30; evidence 14/30; P/R/F1 0.467/0.467/0.467 |
+| openai/gpt-6-luna-decisions | Assembly image128 | ~8,730 | 199.8 | Exact 12/30; evidence 9/30; P/R/F1 0.400/0.400/0.400 |
+| openai/gpt-6-luna-decisions | Assembly image256 [9-case subset] | ~8,586 | 200.8 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly image512 [9-case subset] | ~8,357 | 169.5 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly image64 [9-case subset] | ~8,691 | 217.3 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly native | ~7,077 | 204.7 | Exact 12/30; evidence 12/30; P/R/F1 0.400/0.400/0.400 |
+| openai/gpt-6-luna-decisions | Assembly native-reverse [9-case subset] | ~7,112 | 214.5 | Exact 4/9; evidence 4/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly prior [9-case subset] | ~8,232 | 214.8 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly prior-both [9-case subset] | ~7,855 | 221.6 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Assembly prior-summary [9-case subset] | ~8,186 | 161.1 | Exact 4/9; evidence 2/9; P/R/F1 0.444/0.444/0.444 |
+| openai/gpt-6-luna-decisions | Region gate resolved-b1 | ~4,277 | 159.1 | 8/8 (100.0%) |
+| openai/gpt-6-luna-decisions | Relationships resolved-b1 | ~8,383 | 200.2 | 31/36 (86.1%) |
 | perplexity/pplx-decider-v1.1-27b | Assembly blank128 [9-case subset] | 29,917 | 184.6 | Exact 6/9; evidence 0/9; P/R/F1 0.667/0.667/0.667 |
 | perplexity/pplx-decider-v1.1-27b | Assembly blur128 [9-case subset] | 29,990 | 181.3 | Exact 6/9; evidence 3/9; P/R/F1 0.667/0.667/0.667 |
 | perplexity/pplx-decider-v1.1-27b | Assembly compact-current | 76,908 | 180.8 | Exact 3/30; evidence 30/30; P/R/F1 0.100/0.100/0.100 |
@@ -92,7 +99,7 @@ Computed from retained provider responses and request ledger; no new inference. 
 
 ## Probability and selective-policy diagnostics
 
-Confidence is secondary to measured ability. These retain the original fixed0.9/0.9 policy diagnostics, without using that policy to select the quality winners. All calibration-selected policies in these cohorts abstained; this is not calibrated correctness. Historical “unknown accepted” is an unsupported assertion count, not a proven semantic error.
+Confidence is secondary to measured ability. These retain the original fixed 0.9/0.9 policy diagnostics, without using that policy to select the quality winners. All calibration-selected policies in these cohorts abstained; this is not calibrated correctness. Historical “unknown accepted” is an unsupported assertion count, not a proven semantic error.
 
 | Model | Experiment | Truth Brier | Truth log loss | Truth ECE | Answerability Brier | Answerability log loss | Answerability ECE | Fixed-policy details |
 |---|---|---:|---:|---:|---:|---:|---:|---|
@@ -132,9 +139,9 @@ Confidence is secondary to measured ability. These retain the original fixed0.9/
 
 - [Relationships and task slices](decision-alternatives.md); [complete legacy scores](decisions-latest.md); [gate scores](decisions-controls-latest.md). These also retain task/family breakdowns and selected-policy diagnostics.
 - [Assembly and visual ablations](evidence-repair.md); [image retrieval](image-embedding-retrieval.md); [contamination audit](evidence-contamination-audit.md).
-- Native rule control and constructed candidate oracle both score30/30; CPU/API financial comparability is not available. [Rust color experiment](color-regions.md): native10/10boundary controls, rasterpale8/8atthreshold8and0/8at18/36; outlines2/2with4extras. These are geometry-component results, not hosted model extraction.
-- [Earlier SLANet specialist](specialist-cpu.md): cropped4/4smalltables,35/35smallcells; dense17/35spotcells; prose1/2falsepositives. No defensible per-page rental allocation or comparable timed cohort is available here, so no invented pages/$ rate.
-- Offline model router:29/36versusLuna31/36; it reused existing predictions and incurred no new inference. Nemotron embeddings were catalogued/registered but not benchmarked.
-- Gemini3.1FlashLite smoke had no complete scored cohort; Span and the Clef PrimeIntellect route had availability failures. Failed rows have no accuracy/throughput estimate.
+- **Native controls:** the native rule control and constructed candidate oracle both score 30/30; CPU/API financial comparability is not available. [Rust color experiment](color-regions.md): native 10/10 boundary controls; pale raster 8/8 at threshold 8 and 0/8 at 18/36; outlines 2/2 with 4 extras. These are geometry-component results, not hosted model extraction.
+- [Earlier SLANet specialist](specialist-cpu.md): cropped 4/4 small tables, 35/35 small cells; dense 17/35 spot cells; prose 1/2 false positives. No defensible per-page rental allocation or comparable timed cohort is available here, so no invented pages/$ rate.
+- **Offline model router:** 29/36 versus Luna 31/36; it reused existing predictions and incurred no new inference. Nemotron embeddings were catalogued/registered but not benchmarked.
+- **Availability:** Gemini 3.1 Flash Lite smoke had no complete scored cohort; Span and the Clef PrimeIntellect route had availability failures. Failed rows have no accuracy/throughput estimate.
 
 Generated from `bench/results/pdf-master-artifacts/decisions/{ledger,evaluation,evaluation-controls,context-run-*,retrieval/results}.json`. Values may overlap requests across experiment arms; do not sum per-arm costs to estimate actual campaign spend.

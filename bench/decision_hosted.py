@@ -21,11 +21,12 @@ from bench.decision_evidence import project_case
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "bench/results/pdf-master-artifacts/decisions"
-CAMPAIGN_LIMIT = 3.0
+CAMPAIGN_LIMIT = 5.0
 TOTAL_LIMIT = 15.0
 PRIOR_RENTAL = 0.684
 RESERVATION = 0.30
 MAX_BODY_BYTES = 32_000
+MAX_IMAGE_BODY_BYTES = 750_000
 MAX_QUESTIONS = 16
 MAX_RESPONSE_BYTES = 2_000_000
 MAX_OUTPUT_TOKENS = 2048
@@ -36,6 +37,7 @@ REQUESTED_DECISION_MODELS = (
     "openai/gpt-6-luna-decisions",
     "liquid/d1",
     "cloudflare/clef-flash",
+    "cloudflare/clef",
     "togethercomputer/tev1-4b-experimental",
     "inception/mercury-decide",
     "respan/span-01",
@@ -278,11 +280,39 @@ class DecisionClient:
         old = self.root / "bench/results/structure-artifacts/hosted-ledger.json"
         return sum(accounted_cost(row["accounted_usd"]) for row in json.loads(old.read_text())["requests"])
 
-    def request(self, body: dict[str, Any], *, tag: str) -> dict[str, Any]:
-        """No retries. Unknown charges keep reservations; identical successful requests replay."""
+    def _account_result(self, body: dict[str, Any], result: dict[str, Any], entry: dict[str, Any]) -> None:
+        """Prefer positive reported charges, estimate zero/missing, retain unknown reservations."""
+        cost = result.get("usage", {}).get("cost")
+        if not isinstance(cost, bool) and isinstance(cost, (float, int)) and math.isfinite(cost) and cost >= 0:
+            entry["provider_reported_usd"] = cost
+            if cost > 0:
+                entry.update({"accounted_usd": cost, "cost_status": "provider-reported USD"})
+        if entry["cost_status"] == "reserved":
+            from bench.reprice_model_rates import request_cost  # noqa: PLC0415 - pure offline accounting.
+
+            price_path = self.directory / "langfuse/catalog-prices.json"
+            if price_path.exists():
+                catalog = json.loads(price_path.read_text())
+                pricing = catalog.get("prices", {}).get(body["model"], {})
+                estimate = request_cost(entry, result.get("usage", {}), pricing)
+                if estimate["effective_usd"] is not None:
+                    entry.update(
+                        accounted_usd=estimate["effective_usd"],
+                        cost_status=estimate["basis"],
+                        catalog_fetched_at=catalog.get("fetched_at"),
+                        catalog_rates=pricing,
+                    )
+
+    def request(
+        self, body: dict[str, Any], *, tag: str, max_body_bytes: int = MAX_BODY_BYTES, replay: bool = True
+    ) -> dict[str, Any]:
+        """Replay by default; explicit cache probes may retransmit successful identical bodies."""
+        if type(max_body_bytes) is not int or not 1 <= max_body_bytes <= MAX_IMAGE_BODY_BYTES:
+            message = "request byte admission must be within the bounded image ceiling"
+            raise ValueError(message)
         encoded = json.dumps(body, separators=(",", ":")).encode()
         if (
-            len(encoded) > MAX_BODY_BYTES
+            len(encoded) > max_body_bytes
             or body["model"] not in HOSTED_MODELS
             or (body["model"] in DECISION_MODELS and len(body["questions"]) > MAX_QUESTIONS)
             or (
@@ -308,6 +338,8 @@ class DecisionClient:
             prior = PRIOR_RENTAL + self._prior_api_cost()
             for entry in ledger["requests"]:
                 if entry["request_sha256"] == key and entry.get("response_file"):
+                    if not replay:
+                        continue
                     return {
                         "result": json.loads((self.directory / entry["response_file"]).read_text()),
                         "telemetry": self._telemetry(
@@ -329,6 +361,7 @@ class DecisionClient:
                 "requested_model": body["model"],
                 "request_sha256": key,
                 "request_bytes": len(encoded),
+                "force_transmission": not replay,
                 "case_count": len(body["input"])
                 if body["model"] in EMBEDDING_MODELS
                 else len({name.rsplit("_", 1)[0] for name in body["questions"]})
@@ -374,9 +407,7 @@ class DecisionClient:
                         "generation_id": result.get("id"),
                     }
                 )
-                cost = result.get("usage", {}).get("cost")
-                if not isinstance(cost, bool) and isinstance(cost, (float, int)) and math.isfinite(cost) and cost >= 0:
-                    entry.update({"accounted_usd": cost, "cost_status": "provider-reported USD"})
+                self._account_result(body, result, entry)
             except Exception as error:
                 entry["error"] = (
                     f"HTTP {error.code}" if isinstance(error, urllib.error.HTTPError) else type(error).__name__

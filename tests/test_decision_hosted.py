@@ -145,7 +145,9 @@ def test_existing_campaign_reservations_count_toward_cap(
     client: hosted.DecisionClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    hosted.checkpoint(client.ledger, {"requests": [{"request_sha256": "prior", "accounted_usd": 2.9}]})
+    hosted.checkpoint(
+        client.ledger, {"requests": [{"request_sha256": "prior", "accounted_usd": hosted.CAMPAIGN_LIMIT - 0.1}]}
+    )
     transmit = MagicMock()
     monkeypatch.setattr(hosted.urllib.request, "urlopen", transmit)
     before = client.ledger.read_bytes()
@@ -269,3 +271,48 @@ def test_request_ablation_excludes_gold_without_mutating_evidence() -> None:
     assert set(request["questions"]) == {"q0_yes", "q0_answerable"}
     assert all("observations.q0" in item["instructions"] for item in request["questions"].values())
     assert "gold" not in json.dumps(request)
+
+
+@pytest.mark.parametrize("reported", [0, None])
+def test_zero_or_missing_cost_uses_catalog_and_retains_reported_value(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch, reported: float | None
+) -> None:
+    prices = client.directory / "langfuse/catalog-prices.json"
+    prices.parent.mkdir()
+    prices.write_text(json.dumps({"fetched_at": 123, "prices": {hosted.JEV: {"input": 0.000001, "output": 0}}}))
+    payload = result(cost=reported)
+    payload["usage"].update(input_tokens=1000, output_tokens=0)
+    monkeypatch.setattr(
+        hosted.urllib.request, "urlopen", lambda *_args, **_kwargs: response(json.dumps(payload).encode())
+    )
+    entry = client.request(body(), tag="catalog-fallback")["entry"]
+    assert entry["accounted_usd"] == pytest.approx(0.001)
+    assert entry["cost_status"] == "catalog estimate"
+    assert entry.get("provider_reported_usd") == reported
+    assert entry["catalog_fetched_at"] == 123
+
+
+def test_large_image_admission_is_explicit_and_bounded(client: hosted.DecisionClient) -> None:
+    oversized = body()
+    oversized["state"] = "x" * (hosted.MAX_BODY_BYTES + 1)
+    with pytest.raises(ValueError, match="admission"):
+        client.request(oversized, tag="default-rejects-large-image")
+    with pytest.raises(ValueError, match="ceiling"):
+        client.request(oversized, tag="hard-ceiling", max_body_bytes=hosted.MAX_IMAGE_BODY_BYTES + 1)
+    assert not client.ledger.exists()
+
+
+def test_explicit_cache_probe_retransmits_identical_successful_body(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls = MagicMock(return_value=response(json.dumps(result()).encode()))
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", calls)
+    first = client.request(body(), tag="first")
+    second = client.request(body(), tag="actual-repeat", replay=False)
+    assert calls.call_count == 2
+    assert not first["replayed"]
+    assert not second["replayed"]
+    assert first["entry"]["request_sha256"] == second["entry"]["request_sha256"]
+    assert first["entry"]["index"] != second["entry"]["index"]
+    assert second["entry"]["force_transmission"] is True
+    assert len(json.loads(client.ledger.read_text())["requests"]) == 2

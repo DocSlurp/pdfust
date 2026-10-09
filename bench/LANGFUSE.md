@@ -41,12 +41,26 @@ defines `startDate` and `pricingTiers` as the current creation fields.
 
 Provider-reported `input_tokens`/`output_tokens` win over chat-style
 `prompt_tokens`/`completion_tokens`. Missing usage remains missing, including
-output usage. Provider `usage.cost`, including zero, populates actual cost.
-Catalog estimation is a fallback metadata field only when provider charge is
-absent and provider tokens are present. Unknown ledger reservations are retained
-solely as reservation metadata; they are never exported as a charge. Langfuse
-can additionally calculate a catalog-based cost from its registered models when
-no actual cost was provided; that remains an estimate, not a billing record.
+output usage. Positive provider `usage.cost` takes precedence and populates
+`cost_details.total` with `cost_basis=provider-reported`. When the provider cost
+is zero or missing, retained published catalog/provider rates times the provider's
+reported token counts populate effective `cost_details` with
+`cost_basis=estimated`. The original reported zero is preserved separately as
+`provider_reported_usd=0`; an estimate is not a confirmed billing charge.
+Catalog prices are per token, and zero rates are valid. Invalid, negative,
+non-finite, or unavailable rates are excluded.
+
+Estimates include only measured token components with valid rates. Missing
+input/output tokens are never invented from total usage or treated as zero.
+Partial estimates export component costs without `total`, record missing
+components, and set `catalog_estimate_complete=false` and
+`effective_cost_complete=false`. Complete estimates include a total. Without
+usable rates and counts, cost remains unknown and no cost details are exported.
+`catalog_estimated_usd` is the available component sum, so inspect its completeness
+flag before treating it as a complete request estimate. Ledger reservations stay
+separate as reservation metadata and are never exported as a charge. Langfuse
+may calculate costs from registered models; these remain estimates, not billing
+records. This adapter does not rewrite the spending ledger.
 
 Trace and span IDs derive deterministically from the retained request SHA-256.
 Successful export writes a local marker under ignored
@@ -64,8 +78,9 @@ verification uses `/api/public/v2/observations` with a trace-ID filter, bounded
 time window, and selected core/model/usage fields; it never requests input or
 output. Readback can be pending while asynchronous ingestion completes.
 
-Thirteen mocked CPU tests cover native usage aliases, reported zero charge,
-unknown reservation separation, catalog fallback, sensitive-input exclusion,
+Mocked CPU tests cover native usage aliases, zero/missing charge fallback,
+positive charge precedence, unknown cost, partial estimates, invalid rates,
+reservation separation, sensitive-input exclusion,
 embedding dimensions, deterministic IDs, local replay, sanitized errors,
 configuration precedence, exact pricing registration, preservation/conflicts,
 and verification. Live registration and readback are performed by the root

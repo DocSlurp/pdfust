@@ -13,6 +13,7 @@ from bench.decision_langfuse import (
     _configuration,
     _model_definition,
     _payload,
+    _prices,
     emit_request,
     sync_models,
     verify_trace,
@@ -55,14 +56,17 @@ def attributes(payload: dict[str, Any]) -> dict[str, Any]:
     return {item["key"]: next(iter(item["value"].values())) for item in span["attributes"]}
 
 
-def test_provider_zero_overrides_catalog_estimate_and_native_usage_wins() -> None:
+def test_provider_zero_uses_catalog_estimate_and_native_usage_wins() -> None:
     body, result, entry = sample()
     result["usage"]["prompt_tokens"] = 99999
-    _, payload = _payload(body, result, entry, {MODEL: {"input": 0.1, "output": 0.1}})
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 0.01, "output": 0.5}})
     attrs = attributes(payload)
     assert json.loads(attrs["langfuse.observation.usage_details"]) == {"input": 100, "output": 2}
-    assert json.loads(attrs["langfuse.observation.cost_details"]) == {"total": 0.0}
-    assert "langfuse.observation.metadata.catalog_estimated_usd" not in attrs
+    assert json.loads(attrs["langfuse.observation.cost_details"]) == {"input": 1.0, "output": 1.0, "total": 2.0}
+    assert attrs["langfuse.observation.metadata.provider_reported_usd"] == 0.0
+    assert attrs["langfuse.observation.metadata.catalog_estimated_usd"] == 2.0
+    assert attrs["langfuse.observation.metadata.cost_basis"] == "estimated"
+    assert attrs["langfuse.observation.metadata.effective_cost_complete"] is True
     assert "langfuse.observation.metadata.ledger_reservation_usd" not in attrs
 
 
@@ -73,11 +77,74 @@ def test_unknown_charge_retains_reservation_only_as_metadata() -> None:
     entry.update(accounted_usd=0.3, cost_status="reserved")
     _, payload = _payload(body, result, entry, {MODEL: {"input": 0.001, "output": 0.001}})
     attrs = attributes(payload)
-    assert "langfuse.observation.cost_details" not in attrs
+    assert json.loads(attrs["langfuse.observation.cost_details"]) == {"input": 0.1}
     assert json.loads(attrs["langfuse.observation.usage_details"]) == {"input": 100}
     assert attrs["langfuse.observation.metadata.ledger_reservation_usd"] == 0.3
     assert attrs["langfuse.observation.metadata.catalog_estimated_usd"] == 0.1
     assert attrs["langfuse.observation.metadata.catalog_estimate_is_charge"] is False
+    assert attrs["langfuse.observation.metadata.catalog_estimate_complete"] is False
+    assert attrs["langfuse.observation.metadata.effective_cost_complete"] is False
+    assert json.loads(attrs["langfuse.observation.metadata.catalog_estimate_missing_components"]) == ["output"]
+
+
+def test_positive_provider_charge_wins_over_catalog_estimate() -> None:
+    body, result, entry = sample()
+    result["usage"]["cost"] = 0.25
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 0.01, "output": 0.5}})
+    attrs = attributes(payload)
+    assert json.loads(attrs["langfuse.observation.cost_details"]) == {"total": 0.25}
+    assert attrs["langfuse.observation.metadata.provider_reported_usd"] == 0.25
+    assert attrs["langfuse.observation.metadata.cost_basis"] == "provider-reported"
+    assert "langfuse.observation.metadata.catalog_estimated_usd" not in attrs
+
+
+def test_missing_charge_exports_complete_catalog_estimate_and_retains_reservation() -> None:
+    body, result, entry = sample()
+    del result["usage"]["cost"]
+    entry.update(accounted_usd=0.3, cost_status="reserved")
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 0.01, "output": 0.5}})
+    attrs = attributes(payload)
+    assert json.loads(attrs["langfuse.observation.cost_details"]) == {"input": 1.0, "output": 1.0, "total": 2.0}
+    assert attrs["langfuse.observation.metadata.ledger_reservation_usd"] == 0.3
+    assert attrs["langfuse.observation.metadata.charge_unknown"] is True
+    assert attrs["langfuse.observation.metadata.cost_basis"] == "estimated"
+    assert "langfuse.observation.metadata.provider_reported_usd" not in attrs
+
+
+def test_unknown_cost_with_missing_rates_or_usage_is_not_exported_as_zero() -> None:
+    body, result, entry = sample()
+    for prices, usage in ((None, {"cost": 0}), ({MODEL: {"input": 0.1, "output": 0.1}}, {})):
+        result["usage"] = usage
+        _, payload = _payload(body, result, entry, prices)
+        attrs = attributes(payload)
+        assert "langfuse.observation.cost_details" not in attrs
+        assert attrs["langfuse.observation.metadata.cost_basis"] == "unknown"
+        assert attrs["langfuse.observation.metadata.effective_cost_complete"] is False
+
+
+def test_zero_output_rate_is_valid_and_missing_component_rate_stays_partial() -> None:
+    body, result, entry = sample()
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 1e-7, "output": 0}})
+    attrs = attributes(payload)
+    costs = json.loads(attrs["langfuse.observation.cost_details"])
+    assert costs == {"input": 100 * 1e-7, "output": 0.0, "total": 100 * 1e-7}
+    assert attrs["langfuse.observation.metadata.effective_cost_complete"] is True
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 0.01}})
+    attrs = attributes(payload)
+    assert json.loads(attrs["langfuse.observation.cost_details"]) == {"input": 1.0}
+    assert attrs["langfuse.observation.metadata.effective_cost_complete"] is False
+
+
+def test_invalid_rates_are_not_used_for_estimates_or_registered() -> None:
+    body, result, entry = sample()
+    for invalid in (-1, float("inf"), float("nan"), True, "invalid", None):
+        _, payload = _payload(body, result, entry, {MODEL: {"input": invalid, "output": invalid}})
+        attrs = attributes(payload)
+        assert "langfuse.observation.cost_details" not in attrs
+        assert attrs["langfuse.observation.metadata.cost_basis"] == "unknown"
+        assert _prices({"pricing": {"prompt": invalid, "completion": "0"}}) is None
+    assert _prices({"pricing": []}) is None
+    assert _prices({"pricing": {"prompt": "1e-7", "completion": "0"}}) == {"input": 1e-7, "output": 0}
 
 
 def test_chat_token_aliases_and_missing_usage_are_not_fabricated() -> None:
@@ -245,3 +312,22 @@ def test_verification_uses_exact_trace_current_api_without_io(tmp_path: Path, mo
     assert "/api/public/v2/observations?" in urls[0]
     assert "fromStartTime" in urls[0]
     assert "traceId=" + "a" * 32 in urls[0]
+
+
+def test_provider_cache_retransmissions_have_distinct_trace_identity() -> None:
+    body, result, entry = sample()
+    entry.update(force_transmission=True, index=1)
+    first, payload = _payload(body, result, entry)
+    entry["index"] = 2
+    second, _ = _payload(body, result, entry)
+    assert first != second
+    assert attributes(payload)["langfuse.observation.metadata.request_sha256"] == entry["request_sha256"]
+
+
+def test_cache_read_estimate_uses_published_cached_rate() -> None:
+    body, result, entry = sample()
+    result["usage"]["input_tokens_details"] = {"cached_tokens": 80, "cache_write_tokens": 0}
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 0.1, "output": 0.1, "input_cache_read": 0.01}})
+    attrs = attributes(payload)
+    assert json.loads(attrs["langfuse.observation.cost_details"])["total"] == 3.0
+    assert attrs["langfuse.observation.metadata.cache_status"] == "reported counters"

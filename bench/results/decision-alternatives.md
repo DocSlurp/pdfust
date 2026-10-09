@@ -46,7 +46,7 @@ the first request. That cohort has one failure and seven unattempted cases, not
 zero correct out of eight. Span and PrimeIntellect were not retried silently.
 
 The separate region controls cover four table and four prose regions from six
-existing sources, including dense NICS and Senate tables. They test region type,
+existing sources, including dense NICS and Senate tables. **They test region type**,
 not complete matrices, header ownership or dense-report reconstruction. Sources
 and exact clips are in the retained controls manifest.
 
@@ -84,7 +84,7 @@ predictions could not win. No test labels or predictions selected the routes.
 | Wrap | Luna | 9 | 9 |
 | Combined | | 36/36 | **29/36** |
 
-It loses to using Luna alone (31/36). Tev's header selection fails to generalize.
+**Negative result:** the router loses to using Luna alone (31/36). Tev's header selection fails to generalize.
 This is an exploratory reuse of an already exposed development corpus; it does
 not establish a valid new holdout result. The router code and scorer regressions
 make the negative result reproducible without extra model calls. Do not repair
@@ -105,11 +105,10 @@ chat defaults, accepts optional provider pins without losing chat price caps,
 and limits native requests to 16 questions and 32,000 bytes. This bounds repeated
 state billing as well as payload size. Credentials and bulk outputs stay ignored.
 
-The phase starts at ledger index 628 and ends at 1349: **722 new requests**,
-including 720 successful scored observations and two failed availability probes.
-Provider-reported additional cost is **$0.053802074**; two unknown charges retain
-**$0.60** of reservations. Cumulative reported spend is **$2.046954530**; conservative
-accounting including those reservations is **$2.646954530** against the $15 cap.
+- **Requests:** the phase starts at ledger index 628 and ends at 1349: **722 new requests**, including 720 successful scored observations and two failed availability probes.
+- **Additional cost:** provider-reported cost is **$0.053802074**; two unknown charges retain **$0.60** of reservations.
+- **Cumulative spend:** reported spend is **$2.046954530**; conservative accounting including those reservations is **$2.646954530** against the $15 cap.
+
 No local GPU or new GPU host was used. No GitHub publication occurred.
 
 The full CPU suite passed 1,458 tests, with 16 skips and two expected failures;

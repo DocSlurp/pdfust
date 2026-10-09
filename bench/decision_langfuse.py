@@ -126,6 +126,8 @@ def _error(error: Exception) -> str:
 
 def _prices(model: dict[str, Any]) -> dict[str, float] | None:
     pricing = model.get("pricing", {})
+    if not isinstance(pricing, dict) or any(isinstance(pricing.get(key), bool) for key in ("prompt", "completion")):
+        return None
     try:
         input_price, output_price = float(pricing["prompt"]), float(pricing["completion"])
     except (KeyError, ValueError, TypeError):
@@ -271,8 +273,11 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
     if not isinstance(request_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", request_sha):
         message = "invalid request SHA-256"
         raise ValueError(message)
-    trace_id = request_sha[:32]
-    span_id = hashlib.sha256((request_sha + ":generation").encode()).hexdigest()[:16]
+    trace_seed = request_sha
+    if entry.get("force_transmission"):
+        trace_seed = hashlib.sha256(f"{request_sha}:transmission:{entry['index']}".encode()).hexdigest()
+    trace_id = trace_seed[:32]
+    span_id = hashlib.sha256((trace_seed + ":generation").encode()).hexdigest()[:16]
     usage = result.get("usage", {})
     if not isinstance(usage, dict):
         usage = {}
@@ -308,23 +313,60 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         if isinstance(value, str) and len(value) < _MAX_IDENTIFIER:
             attributes["langfuse.observation.metadata." + key] = value
     if provided_cost is not None:
-        attributes["langfuse.observation.cost_details"] = {"total": provided_cost}
         attributes["langfuse.observation.metadata.provider_reported_usd"] = provided_cost
-    else:
+    if provided_cost is None:
         attributes["langfuse.observation.metadata.charge_unknown"] = True
+    if provided_cost is None or entry.get("cost_status") == "reserved":
         reserved = _number(entry.get("accounted_usd"))
         if reserved is not None:
             attributes["langfuse.observation.metadata.ledger_reservation_usd"] = reserved
-    if (
-        provided_cost is None
-        and prices
-        and model in prices
-        and any(key in normalized_usage for key in ("input", "output"))
-    ):
-        rate = prices[model]
-        estimate = sum(normalized_usage.get(key, 0) * rate.get(key, 0) for key in ("input", "output"))
-        attributes["langfuse.observation.metadata.catalog_estimated_usd"] = estimate
-        attributes["langfuse.observation.metadata.catalog_estimate_is_charge"] = False
+    if provided_cost is not None and provided_cost > 0:
+        attributes["langfuse.observation.cost_details"] = {"total": provided_cost}
+        attributes["langfuse.observation.metadata.cost_basis"] = "provider-reported"
+        attributes["langfuse.observation.metadata.effective_cost_complete"] = True
+    else:
+        rate = prices.get(model, {}) if isinstance(prices, dict) else {}
+        estimated = {}
+        for key in ("input", "output"):
+            unit_price = _number(rate.get(key)) if isinstance(rate, dict) else None
+            if key not in normalized_usage or unit_price is None:
+                continue
+            component = _number(normalized_usage[key] * unit_price)
+            if component is not None:
+                estimated[key] = component
+        estimate = _number(sum(estimated.values())) if estimated else None
+        complete = all(key in estimated for key in ("input", "output")) and estimate is not None
+        attributes["langfuse.observation.metadata.effective_cost_complete"] = complete
+        attributes["langfuse.observation.metadata.cost_basis"] = "estimated" if estimated else "unknown"
+        if estimated:
+            if complete and estimate is not None:
+                estimated["total"] = estimate
+            attributes["langfuse.observation.cost_details"] = estimated
+            if estimate is not None:
+                attributes["langfuse.observation.metadata.catalog_estimated_usd"] = estimate
+            attributes["langfuse.observation.metadata.catalog_estimate_complete"] = complete
+            attributes["langfuse.observation.metadata.catalog_estimate_missing_components"] = [
+                key for key in ("input", "output") if key not in estimated
+            ]
+            attributes["langfuse.observation.metadata.catalog_estimate_is_charge"] = False
+    if provided_cost is None or provided_cost == 0:
+        from bench.reprice_model_rates import request_cost  # noqa: PLC0415 - shared pure pricing projection.
+
+        rate = prices.get(model, {}) if isinstance(prices, dict) else {}
+        quote = request_cost({**entry, "index": entry.get("index", -1)}, usage, rate)
+        for key in ("cache_status", "cache_assumption", "cache_read_tokens", "cache_write_tokens"):
+            if quote.get(key) is not None:
+                attributes["langfuse.observation.metadata." + key] = quote[key]
+        if quote.get("cache_read_counter_present") or quote.get("cache_write_counter_present"):
+            if quote["effective_usd"] is not None:
+                attributes["langfuse.observation.cost_details"] = {"total": quote["effective_usd"]}
+                attributes["langfuse.observation.metadata.catalog_estimated_usd"] = quote["effective_usd"]
+            else:
+                attributes.pop("langfuse.observation.cost_details", None)
+                attributes.pop("langfuse.observation.metadata.catalog_estimated_usd", None)
+                attributes["langfuse.observation.metadata.cost_basis"] = "unknown"
+            attributes["langfuse.observation.metadata.effective_cost_complete"] = quote["effective_usd"] is not None
+            attributes["langfuse.observation.metadata.catalog_estimate_complete"] = quote["effective_usd"] is not None
     vectors = result.get("data")
     if isinstance(vectors, list):
         attributes["langfuse.observation.output"] = {
@@ -371,7 +413,10 @@ def emit_request(root: Path, body: dict[str, Any], result: dict[str, Any], entry
         prices_file = directory / "catalog-prices.json"
         prices = json.loads(prices_file.read_text()).get("prices", {}) if prices_file.exists() else None
         trace_id, payload = _payload(body, result, entry, prices)
-        marker = directory / (str(entry.get("request_sha256") or _sha(body)) + ".json")
+        marker_name = str(entry.get("request_sha256") or _sha(body))
+        if entry.get("force_transmission"):
+            marker_name += f"-transmission-{entry['index']}"
+        marker = directory / (marker_name + ".json")
         if marker.exists():
             return {"status": "replayed", "trace_id": trace_id}
         if len(_canonical(payload)) > _MAX_TELEMETRY:
