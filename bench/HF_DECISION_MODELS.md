@@ -22,7 +22,7 @@ BF16 inference**, not measured minimum VRAM or full-context guarantees.
 | 7. [Cloudflare Clef, 27B](https://huggingface.co/Cloudflare/clef) | Text/JSON + images; encoder defaults to 16,384 tokens | Matched larger sibling for testing whether the joint schema head scales | 80 GB | 12,066 / 1,930 |
 | 8. [Bespoke-Nimble-9B](https://huggingface.co/bespokelabs/Bespoke-Nimble-9B) | Text-only reference scorer; 8,192-token prompt cap, up to 255 choices per field | Context-grounded control for glyph strings, geometry and rolling row state | 32–48 GB | 6,405 / 235 |
 
-All eight selected releases declare Apache-2.0. GEV's Gemma 4 base also uses
+All eight releases in the main table declare Apache-2.0. GEV's Gemma 4 base also uses
 [Apache-2.0](https://ai.google.dev/gemma/apache_2). The similarly named Nimble
 **v3** is a different, noncommercial release and is not this selection. The
 Perplexity card still mentions private access, but the live Hub API reported
@@ -106,6 +106,96 @@ adoption and a base/head compatibility discrepancy that needs a cold-load check.
 is a compact text option, but its documented 2,048-token
 limit makes it less suitable for the larger evidence packets. General-purpose
 Qwen or LFM vision models remain separate constrained-output baselines.
+
+## Small stock vision baselines with vLLM
+
+The user also requested popular small models. These stock image-text models use
+schema-constrained generated labels; they do not expose the trained candidate
+probabilities of the main table. All four official configurations retain the
+vision tower (`Qwen3_5ForConditionalGeneration` plus `vision_config`) and declare
+Apache-2.0. Start with 4B and 9B; retain 0.8B and 2B for the efficiency curve.
+
+| Stock model | Hub revision | HF monthly downloads / likes | Initial service cap / planning GPU class |
+|---|---|---:|---|
+| [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | `2fc06364715b967f1860aea9cf38778875588b17` | 2,568,293 / 752 | 8,192 total tokens / 16–24 GB |
+| [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | `15852e8c16360a2fea060d615a32b45270f8a8fc` | 3,550,177 / 431 | 8,192 total tokens / 16–24 GB |
+| [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` | 8,018,081 / 1,032 | 8,192 total tokens / 24 GB |
+| [Qwen3.5-9B](https://huggingface.co/Qwen/Qwen3.5-9B) | `c202236235762e1c871ad0ccb60c8ee5ba337b9a` | 8,386,311 / 2,129 | 8,192 total tokens / 32–48 GB |
+
+These GPU classes remain estimates, not measured minima. The adapter
+`bench/remote_vllm.py` preserves literal source text, criteria and ordered PNG
+bytes, disables thinking, and constrains each named field to
+`join`/`split`/`unresolved` with the current `structured_outputs.json` API.
+It returns actual server usage and literal choices without fabricating confidence
+or probability vectors. Its server endpoint is loopback-only. The coordinator
+must stage the pinned model and start vLLM with a matching served model ID;
+loading the adapter does not download or launch the server.
+
+The [official Qwen recipe](https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3.5.html)
+recommends `vllm/vllm-openai:cu130-nightly` for Blackwell. Resolve and retain the
+container digest before testing. The [GPU installation guide](https://docs.vllm.ai/en/stable/getting_started/installation/gpu/)
+requires CUDA 12.8 or newer for B200/GB200 and offers CUDA 13.0 builds.
+The current [vLLM 0.31.0 CUDA requirements](https://github.com/vllm-project/vllm/blob/v0.31.0/requirements/cuda.txt)
+pin Torch 2.13.0 and TorchVision 0.28.0; its common requirements admit Transformers
+5.10.4 through versions below 5.18.0. Keep this environment separate from native
+model reference environments. Record resolved packages, driver, CUDA and runtime
+startup costs; no Blackwell compatibility or model quality was measured here.
+Keep vision enabled: `--language-model-only` would invalidate the image arms.
+
+### Other small vLLM vision baselines
+
+Retain these as separate stock-model architectures alongside Qwen. Their
+[official vLLM support](https://docs.vllm.ai/en/latest/models/supported_models.html)
+does not establish PDF quality or a trained decision head. Use the same bounded
+source packets and label schema, preserving the different model IDs and processor
+settings. Start with an 8,192-token experimental service cap and a 24 GB planning
+GPU class; actual fit, preprocessing and latency remain unmeasured.
+
+| Stock vision release | Pinned revision | HF monthly downloads | Publisher-declared license |
+|---|---|---:|---|
+| [SmolVLM2-2.2B-Instruct](https://huggingface.co/HuggingFaceTB/SmolVLM2-2.2B-Instruct) | `482adb537c021c86670beed01cd58990d01e72e4` | 138,387 | Apache-2.0 |
+| [LFM2-VL-1.6B](https://huggingface.co/LiquidAI/LFM2-VL-1.6B) | `2c2e7f9b0f48a478d7d497ef1864519dfd3994cd` | 62,463 | LFM Open License 1.0; separate research configuration |
+| [MiniCPM-V-4](https://huggingface.co/openbmb/MiniCPM-V-4) | `6f69a8235885be89608f3a71ffd40695b379e1e7` | 45,653 | Apache-2.0 |
+
+LFM2-VL is a different release from LFM2.5-VL and from Liquid's trained D1
+models. Preserve its custom license declaration in provenance rather than
+including it under the Apache-2.0 heading. MiniCPM's required model code and
+processor must be pinned with its weights before a cold-load check.
+
+## Explicit noncommercial research configurations
+
+The user requested these releases for learning and data collection. Their
+publisher-declared licenses and exact IDs are retained separately from the main
+Apache-2.0 selection. This table supplies no legal conclusion about downstream
+use, redistribution or generated data.
+
+| Research-only release | Pinned revision | Native decision path and scope | Declared license |
+|---|---|---|---|
+| [kirp/jpt-4b](https://huggingface.co/kirp/jpt-4b) | `78312f855b8bebf83ae7e9e8f05b5a0f73f519a9` | Merged Qwen3.5-4B decision tuning, retained vision tower; `llm2jev` over HF/SGLang/vLLM, published calibration T=1.036 | CC-BY-NC-4.0 |
+| [kirp/jpt-9b](https://huggingface.co/kirp/jpt-9b) | `9fda2c7f123d36c4789c46c93737e80fc3a6c9fe` | Distinct merged 9B release, same image-capable adapter route; T=1.087 | CC-BY-NC-4.0 |
+| [Bespoke-Nimble-9B-v3](https://huggingface.co/bespokelabs/Bespoke-Nimble-9B-v3) | `8e927b9b4afdbb14479fac10a7364d1a695be208` | LoRA on pinned Qwen3.5-9B; native text-only Choice scorer, 32,768-token cap, candidate float64 softmax without extra temperature | CC-BY-NC-4.0 |
+
+JPT preserves the base vision tower; its publisher describes image evaluations
+as zero-shot. Its documented vLLM route uses the specialized `llm2jev` readout,
+including the published token/logprob serving flags, rather than the stock JSON
+baseline. Verify the adapter and selected backend together before measuring it.
+
+Nimble v3 is a different release from Apache-2.0 `Bespoke-Nimble-9B`. Its
+[publisher native scorer](https://huggingface.co/datasets/bespokelabs/bespoke-nimble-9b-v3-decision-index/blob/654b124d3508a7da0d849405744bde80c4bb1a1b/code/nimble/evaluation/decision_index_engine.py)
+uses text tokenization and a trained candidate-token contract; it has no image
+processor path. `bench/remote_nimble.py` explicitly refuses canonical images and
+requires a separately labeled geometry/text-only ablation. Native shared-prefix
+reuse remains enabled; reported `input_tokens` sums the complete logical question
+prompts and can exceed the tokens actually processed after reuse.
+
+Stage its adapter, base revision `c202236235762e1c871ad0ccb60c8ee5ba337b9a`, and
+publisher `code/nimble` package from dataset revision
+`654b124d3508a7da0d849405744bde80c4bb1a1b`. The adapter checks prompt-source hashes
+and the base contract before loading. Publisher-tested dependencies are Torch
+2.8, Transformers 5.17.0, PEFT 0.21.0, flash-linear-attention 0.5.2,
+causal-conv1d 1.7.0 and Decision Index commit `87d4650`; these are reference
+versions, not a validated Blackwell bootstrap. Retain any required environment
+changes and resulting quality/latency differences.
 
 ## Frozen release identities
 
