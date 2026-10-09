@@ -99,4 +99,47 @@ JPT-4B completed 216/216 inputs with no schema or worker failures. Source reques
 
 Across repeated arms, JPT4 scores 85/144 known cases and 1/72 ambiguous abstentions. Its load is 12.56 wall / 13.76 CPU s; prediction totals 21.96 wall / 43.79 CPU s. Worker totals are 35.10 wall / 57.93 CPU s: 590.05 warm region inputs/min and 369.19 worker-inclusive inputs/min. Process peak RSS is 9.32 GiB; initialization-plus-attempt CUDA run peaks are 8.99 GiB allocated / 10.35 GiB reserved. The device-wide one-second sampler has 35/35 available samples, mean utilization 21.11%, and peak device VRAM 11,285 MiB.
 
-JPT4 is a separate noncommercial research candidate; its release license is CC-BY-NC-4.0. The pinned release is `78312f855b8bebf83ae7e9e8f05b5a0f73f519a9`; the retained environment records Torch 2.14.0, Transformers 5.17.0, FLA 0.5.2 and `llm2jev` commit `2b252d504972764211ef172c1155ac0fedc9c3de`. Host assignment remains to be reconciled with run provenance. Costs and full-page throughput remain unavailable; these are conditional region decisions.
+JPT4 is a separate noncommercial research candidate; its release license is CC-BY-NC-4.0. The pinned release is `78312f855b8bebf83ae7e9e8f05b5a0f73f519a9`; the retained environment records Torch 2.14.0, Transformers 5.17.0, FLA 0.5.2 and `llm2jev` commit `2b252d504972764211ef172c1155ac0fedc9c3de`. JPT4 uses the same PPLX/Nimble host, as recorded below. Costs and full-page throughput remain unavailable; these are conditional region decisions.
+
+## Additional JPT9 and stock Qwen cohorts
+
+JPT9, stock Qwen3.5-2B and stock Qwen3.5-9B each completed 216/216 inputs without schema or worker failures. Each arm has 24 valid results, 16 known cases and eight ambiguous controls; all three have **0/8 ambiguous abstentions in every arm**. Original source, image and request hashes were verified before local scoring. JPT9 changes only the declared transport model scalar to `kirp/jpt-9b`; the stock models reuse the exact original transport body while the server pins the deployed engine identity. Stock models return schema-constrained generated labels, without fabricated native decision probabilities.
+
+| Arm | JPT9 known / 16 | JPT9 inputs/min | Qwen2 known / 16 | Qwen2 inputs/min | Qwen9 known / 16 | Qwen9 inputs/min |
+|---|---:|---:|---:|---:|---:|---:|
+| rgb-512 | 8/16 | 379.40 | 6/16 | 339.22 | 11/16 | 256.98 |
+| rgb-768 | 8/16 | 608.97 | 7/16 | 342.78 | 12/16 | 252.21 |
+| rgb-1024 | 8/16 | 594.49 | 7/16 | 347.06 | 11/16 | 242.74 |
+| gray-512 | 8/16 | 610.70 | 7/16 | 344.66 | 11/16 | 256.75 |
+| gray-768 | 8/16 | 603.27 | 7/16 | 345.48 | 11/16 | 246.61 |
+| gray-1024 | 8/16 | 589.67 | 6/16 | 338.51 | 11/16 | 246.37 |
+| lowbit-512 | 8/16 | 609.96 | 6/16 | 347.33 | 10/16 | 256.94 |
+| lowbit-768 | 9/16 | 632.52 | 7/16 | 335.86 | 11/16 | 266.91 |
+| lowbit-1024 | 8/16 | 552.10 | 7/16 | 353.80 | 11/16 | 245.79 |
+
+Across the nine repeated arms, known scores are JPT9 **73/144**, Qwen2 **60/144**, and Qwen9 **99/144**. These totals count repeated source pages and do not represent independent samples.
+
+| Worker scope | Load wall / CPU s | Predict wall / CPU s | Worker wall / CPU s | Warm inputs/min | Worker inputs/min | Worker peak RSS GiB |
+|---|---:|---:|---:|---:|---:|---:|
+| JPT9 native | 14.73 / 15.99 | 23.01 / 44.72 | 38.33 / 61.11 | 563.11 | 338.09 | 18.394 |
+| Qwen2 client | transport only | 37.70 / 2.25 | 39.34 / 2.46 | 343.78 | 329.40 | 0.030 |
+| Qwen9 client | transport only | 51.40 / 2.38 | 52.92 / 2.51 | 252.16 | 244.92 | 0.040 |
+
+JPT9 initialization-plus-attempt CUDA peaks are 18.06 GiB allocated / 19.44 GiB reserved. JPT4, JPT9 and Nimble ran sequentially on the PPLX host (55084918, Spain, RTX PRO 6000 Blackwell Workstation, 32 effective CPU cores and 1,031,870 MiB host RAM). JPT9 shares JPT4’s retained Torch 2.14 / Transformers 5.17 / FLA 0.5.2 environment. Its release `9fda2c7f123d36c4789c46c93737e80fc3a6c9fe` is CC-BY-NC-4.0. This remains a noncommercial research comparison.
+
+Qwen2/9 run sequentially on the Qwen4 host using the same BF16/eager vLLM configuration, prefix caching disabled and image processor cache zero. Their client load and RSS are not model load or memory. Separate server monitors measure recursive process-tree resources at one-second intervals, with shared pages potentially counted twice. Server startup is measured separately from download and client inference:
+
+| Server | Startup s | Weight download s | Request window s | Fully contained sampled interval s | Observed server CPU s in those intervals | Sampled server RSS peak GiB in window |
+|---|---:|---:|---:|---:|---:|---:|
+| Qwen/Qwen3.5-2B | 27.03 | 9.84 | 39.34 | 38.03 | 51.09 | 5.56 |
+| Qwen/Qwen3.5-9B | 34.04 | 27.79 | 52.91 | 52.05 | 68.25 | 5.63 |
+
+Boundary CPU intervals and pre-observation activity remain unmeasured; server PyTorch allocation/reservation peaks are unavailable. Download timing reflects this particular host/cache/network and is not an inference rate. All separate controls passed; they are excluded from cohort scores and rates. Qwen2 revision: `15852e8c16360a2fea060d615a32b45270f8a8fc`; Qwen9 revision: `c202236235762e1c871ad0ccb60c8ee5ba337b9a`. Whole-wave billing and region inputs/USD remain pending.
+
+An Intern runtime comparison is being prepared separately. The completed original Intern run above remains unchanged; cross-host or runtime changes must not be presented as an isolated model-speed effect.
+
+| Device-wide 1 s sampler | Available samples | Mean utilization | Peak device VRAM MiB |
+|---|---:|---:|---:|
+| JPT9 | 38/38 | 31.18% | 20,597 |
+| Qwen2 | 40/40 | 37.88% | 62,606 |
+| Qwen9 | 53/53 | 84.66% | 63,060 |
