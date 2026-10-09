@@ -1,9 +1,6 @@
-# pylopdf
+# jev-pdf
 
-[![PyPI](https://img.shields.io/pypi/v/pylopdf)](https://pypi.org/project/pylopdf/)
-[![CI](https://github.com/yhay81/pylopdf/actions/workflows/ci.yml/badge.svg)](https://github.com/yhay81/pylopdf/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/pypi/pyversions/pylopdf)](https://pypi.org/project/pylopdf/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/yhay81/pylopdf/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/justsml/jev-pdf/blob/main/LICENSE)
 
 **PDF editing, rendering, extraction, and generation for Python — a
 pymupdf-style API on a pure-Rust core, MIT licensed, with no mandatory Python
@@ -15,7 +12,7 @@ dependencies.**
 [pymupdf migration guide](https://pylopdf.haya.works/migration/) ·
 [Benchmarks](https://pylopdf.haya.works/benchmarks/)
 
-pylopdf combines the 2026 Rust PDF ecosystem behind one Python API:
+jev-pdf combines the 2026 Rust PDF ecosystem behind one Python API:
 [lopdf](https://github.com/J-F-Liu/lopdf) for editing,
 [hayro](https://github.com/LaurenzV/hayro) (the pure-Rust PDF renderer adopted
 by Typst) for rendering and positioned extraction, and
@@ -23,9 +20,9 @@ by Typst) for rendering and positioned extraction, and
 [HarfRust](https://github.com/harfbuzz/harfrust) for shaped, subset-embedded
 text and form appearances.
 
-## Why pylopdf?
+## Why jev-pdf?
 
-| | pylopdf | pymupdf | pypdf | pypdfium2 | pdf_oxide | pikepdf |
+| | jev-pdf | pymupdf | pypdf | pypdfium2 | pdf_oxide | pikepdf |
 |---|---|---|---|---|---|---|
 | License | **MIT** | AGPL / commercial | BSD | Apache/BSD | MIT/Apache-2.0 | MPL-2.0 |
 | Wheel size (MiB) | **~5.0–5.8** | ~17.5–24.7 | small (pure Python) | ~2.7–5.0 | ~9.7–10.9 | ~1.9–4.6 |
@@ -51,18 +48,18 @@ Wheel sizes are the ranges of published files for pylopdf 0.10.0, pymupdf
 ## Install
 
 ```bash
-pip install pylopdf
+pip install "jev-pdf @ git+https://github.com/justsml/jev-pdf.git"
 ```
 
 Optional extras:
 
 ```bash
-pip install "pylopdf[jp]"    # Japanese rendering fallback and text generation
-pip install "pylopdf[ko]"    # Korean
-pip install "pylopdf[zh-cn]" # Simplified Chinese
-pip install "pylopdf[zh-tw]" # Traditional Chinese
-pip install "pylopdf[ar]"    # Arabic generation (also: he, hi, th)
-pip install "pylopdf[ocr]"   # offline PP-OCRv6 recognition, pure Rust,
+pip install "jev-pdf[jp] @ git+https://github.com/justsml/jev-pdf.git"    # Japanese rendering fallback and text generation
+pip install "jev-pdf[ko] @ git+https://github.com/justsml/jev-pdf.git"    # Korean
+pip install "jev-pdf[zh-cn] @ git+https://github.com/justsml/jev-pdf.git" # Simplified Chinese
+pip install "jev-pdf[zh-tw] @ git+https://github.com/justsml/jev-pdf.git" # Traditional Chinese
+pip install "jev-pdf[ar] @ git+https://github.com/justsml/jev-pdf.git"    # Arabic generation (also: he, hi, th)
+pip install "jev-pdf[ocr] @ git+https://github.com/justsml/jev-pdf.git"   # offline PP-OCRv6 recognition, pure Rust,
                              # no system executables or network at runtime
 ```
 
@@ -72,14 +69,27 @@ fonts for Arabic, Hebrew, Devanagari, and Thai. Choose `jp`, `ko`, `zh-cn`, or
 `zh-tw` explicitly for the required regional glyph conventions; there is no
 generic CJK font extra.
 
-Building from source requires a Rust toolchain: `uv sync`.
+The repository is private; source installation requires authorized GitHub access
+and a Rust toolchain. No `jev-pdf` package has been published. From a local
+checkout, install with `uv sync` or `pip install .`; use `pip install ".[ocr]"`
+for the optional OCR data package.
+
+The public import is `jev_pdf`. The complete `pylopdf` import remains compatible
+in the same wheel, with identical public classes, functions and constants.
+Optional `pylopdf-fonts-*` and `pylopdf-ocr-models` data package names are unchanged.
+Use a fresh environment or uninstall the separately installed `pylopdf`
+distribution before migrating: both distributions provide the same `pylopdf`
+module files. The new wheel supplies compatibility without requiring the old
+distribution.
+Upstream pylopdf documentation remains linked above as API background; the
+private repository's README records this distribution and import migration.
 
 ## Quickstart
 
 ```python
-import pylopdf
+import jev_pdf
 
-doc = pylopdf.open("input.pdf")              # or pylopdf.open(stream=pdf_bytes)
+doc = jev_pdf.open("input.pdf")              # or jev_pdf.open(stream=pdf_bytes)
 
 # Extract: plain text, positioned words, search, tables, Markdown
 text = doc.get_page_text(0)
@@ -89,7 +99,7 @@ tables = doc[0].find_tables()                # bordered grids incl. merged cells
 markdown = doc.to_markdown()                 # RAG / LLM preprocessing
 layout = doc[0].get_layout()                 # owned CPU snapshot; no rasterization
 fields = layout.extract_fields([
-    pylopdf.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
+    jev_pdf.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
 ])                                          # ambiguous assignments abstain
 
 # Render: PNG / SVG / raw pixels
@@ -101,9 +111,9 @@ pix = doc[0].get_pixmap(dpi=144)             # immutable RGBA8 for NumPy / PIL
 # Edit: reorganize pages, merge documents
 doc.delete_pages([1, 2])
 doc.select([2, 0])                           # keep / reorder / duplicate
-merged = pylopdf.Document()
-merged.insert_pdf(pylopdf.open("a.pdf"))
-merged.insert_pdf(pylopdf.open("b.pdf"), from_page=0, to_page=2)
+merged = jev_pdf.Document()
+merged.insert_pdf(jev_pdf.open("a.pdf"))
+merged.insert_pdf(jev_pdf.open("b.pdf"), from_page=0, to_page=2)
 
 # Generate: images, overlays, shaped subset-embedded multilingual text
 page = doc[0]
@@ -122,17 +132,17 @@ for i, p in enumerate(doc):
 doc.set_form_field("customer", "Taro Yamada")
 doc.set_form_field("agree", True)
 
-# OCR: add a searchable text layer offline (pip install "pylopdf[ocr]")
-engine = pylopdf.OcrEngine(threads=4)
+# OCR: add a searchable text layer offline (pip install "jev-pdf[ocr] @ git+https://github.com/justsml/jev-pdf.git")
+engine = jev_pdf.OcrEngine(threads=4)
 page.apply_ocr(engine=engine)                # skips pages with existing text
 
 # Save: optimized, or AES-256 encrypted
 doc.save("out.pdf", garbage=True, deflate=True, object_streams=True)
-doc.save("locked.pdf", user_pw="secret", permissions=pylopdf.Permissions.PRINT)
+doc.save("locked.pdf", user_pw="secret", permissions=jev_pdf.Permissions.PRINT)
 
 # Encrypted input and fast probing
-doc = pylopdf.open("locked.pdf", password="secret")
-info = pylopdf.peek_metadata("input.pdf")    # page count / encryption, no full parse
+doc = jev_pdf.open("locked.pdf", password="secret")
+info = jev_pdf.peek_metadata("input.pdf")    # page count / encryption, no full parse
 ```
 
 The [getting started guide](https://pylopdf.haya.works/getting-started/)
@@ -197,10 +207,10 @@ libraries. These recipes are covered by integration tests and detailed in the
 
 ```python
 import typst
-import pylopdf
+import jev_pdf
 
 pdf_bytes = typst.compile("report.typ")         # typesetting: typst
-doc = pylopdf.open(stream=pdf_bytes)            # editing / extraction: pylopdf
+doc = jev_pdf.open(stream=pdf_bytes)            # editing / extraction: jev_pdf
 pdf_a: bytes = typst.compile("report.typ", pdf_standards="a-2b")
 ```
 
@@ -228,9 +238,9 @@ Validating existing PDFs against PDF/A remains
 
 A reproducible benchmark suite ships with the repository — same corpus, same
 tasks, medians, and wins and losses published as-is:
-[latest results](https://github.com/yhay81/pylopdf/blob/main/bench/results/latest.md),
-[free-threaded extraction](https://github.com/yhay81/pylopdf/blob/main/bench/results/free-threaded-latest.md),
-and the [native OCR report](https://github.com/yhay81/pylopdf/blob/main/bench/results/ocr-latest.md)
+[latest results](https://github.com/justsml/jev-pdf/blob/main/bench/results/latest.md),
+[free-threaded extraction](https://github.com/justsml/jev-pdf/blob/main/bench/results/free-threaded-latest.md),
+and the [native OCR report](https://github.com/justsml/jev-pdf/blob/main/bench/results/ocr-latest.md)
 with strict and NFKC character error rates on licensed Japanese fixtures.
 
 ```bash
@@ -282,7 +292,7 @@ inspect them.
 ## Architecture
 
 ```
-pylopdf.Document (Python, pymupdf-style API)
+jev_pdf.Document (Python, pymupdf-style API)
    └─ _Document (PyO3)
         ├─ lopdf 0.44   … editing: open → modify → save
         ├─ hayro 0.7    … rendering and positioned extraction
@@ -304,7 +314,7 @@ with build provenance.
 ## Contributing
 
 Bug reports and focused contributions are welcome. See
-[CONTRIBUTING.md](https://github.com/yhay81/pylopdf/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/justsml/jev-pdf/blob/main/CONTRIBUTING.md)
 for development commands, test expectations, and the rules for sharing PDF
 regression files:
 
@@ -316,11 +326,14 @@ uv run mypy src tests      # type check
 ```
 
 Report security vulnerabilities privately through
-[GitHub Security Advisories](https://github.com/yhay81/pylopdf/security/advisories/new).
+[GitHub Security Advisories](https://github.com/justsml/jev-pdf/security/advisories/new).
 
 ## License
 
-[MIT](https://github.com/yhay81/pylopdf/blob/main/LICENSE). Bundled Rust
+[MIT](https://github.com/justsml/jev-pdf/blob/main/LICENSE). Bundled Rust
 dependencies keep their own permissive licenses (lopdf and HarfRust are MIT;
 hayro and krilla are MIT/Apache-2.0) — see
-[NOTICE.md](https://github.com/yhay81/pylopdf/blob/main/NOTICE.md).
+[NOTICE.md](https://github.com/justsml/jev-pdf/blob/main/NOTICE.md).
+
+This private continuation derives from pylopdf by Yusuke Hayashi. Original
+author attribution, MIT license and bundled dependency notices are preserved.

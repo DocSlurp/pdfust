@@ -10,7 +10,7 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "pylopdf",
+    "jev-pdf",
     "pylopdf-fonts-ar",
     "pylopdf-fonts-he",
     "pylopdf-fonts-hi",
@@ -490,6 +490,119 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
+]
+
+[[package]]
+name = "jev-pdf"
+version = "0.13.0"
+source = { editable = "." }
+
+[package.optional-dependencies]
+ar = [
+    { name = "pylopdf-fonts-ar" },
+]
+he = [
+    { name = "pylopdf-fonts-he" },
+]
+hi = [
+    { name = "pylopdf-fonts-hi" },
+]
+jp = [
+    { name = "pylopdf-fonts-jp" },
+]
+ko = [
+    { name = "pylopdf-fonts-ko" },
+]
+ocr = [
+    { name = "pylopdf-ocr-models" },
+]
+th = [
+    { name = "pylopdf-fonts-th" },
+]
+zh-cn = [
+    { name = "pylopdf-fonts-zh-cn" },
+]
+zh-tw = [
+    { name = "pylopdf-fonts-zh-tw" },
+]
+
+[package.dev-dependencies]
+bench = [
+    { name = "pdfplumber" },
+    { name = "pymupdf" },
+    { name = "pypdf" },
+]
+bench-rich = [
+    { name = "markdown-it-py" },
+    { name = "mdit-py-plugins" },
+    { name = "pdfplumber" },
+    { name = "pymupdf" },
+    { name = "pymupdf4llm" },
+    { name = "pypdf" },
+]
+bench-vision = [
+    { name = "pillow" },
+]
+dev = [
+    { name = "maturin" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+docs = [
+    { name = "zensical" },
+]
+fuzz = [
+    { name = "atheris", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "atheris", version = "3.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+interop = [
+    { name = "pyhanko" },
+    { name = "typst" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pylopdf-fonts-ar", marker = "extra == 'ar'", editable = "fonts/pylopdf-fonts-ar" },
+    { name = "pylopdf-fonts-he", marker = "extra == 'he'", editable = "fonts/pylopdf-fonts-he" },
+    { name = "pylopdf-fonts-hi", marker = "extra == 'hi'", editable = "fonts/pylopdf-fonts-hi" },
+    { name = "pylopdf-fonts-jp", marker = "extra == 'jp'", editable = "fonts/pylopdf-fonts-jp" },
+    { name = "pylopdf-fonts-ko", marker = "extra == 'ko'", editable = "fonts/pylopdf-fonts-ko" },
+    { name = "pylopdf-fonts-th", marker = "extra == 'th'", editable = "fonts/pylopdf-fonts-th" },
+    { name = "pylopdf-fonts-zh-cn", marker = "extra == 'zh-cn'", editable = "fonts/pylopdf-fonts-zh-cn" },
+    { name = "pylopdf-fonts-zh-tw", marker = "extra == 'zh-tw'", editable = "fonts/pylopdf-fonts-zh-tw" },
+    { name = "pylopdf-ocr-models", marker = "extra == 'ocr'", editable = "models/pylopdf-ocr-models" },
+]
+provides-extras = ["ar", "he", "hi", "jp", "ko", "th", "zh-cn", "zh-tw", "ocr"]
+
+[package.metadata.requires-dev]
+bench = [
+    { name = "pdfplumber", specifier = ">=0.11" },
+    { name = "pymupdf", specifier = ">=1.26" },
+    { name = "pypdf", specifier = ">=5" },
+]
+bench-rich = [
+    { name = "markdown-it-py", specifier = ">=4.0" },
+    { name = "mdit-py-plugins", specifier = ">=0.6" },
+    { name = "pdfplumber", specifier = ">=0.11" },
+    { name = "pymupdf", specifier = ">=1.26" },
+    { name = "pymupdf4llm", specifier = ">=1.28.2" },
+    { name = "pypdf", specifier = ">=5" },
+]
+bench-vision = [{ name = "pillow", specifier = ">=12.3" }]
+dev = [
+    { name = "maturin", specifier = ">=1.14.1" },
+    { name = "mypy", specifier = ">=1.14" },
+    { name = "pre-commit", specifier = ">=4.6.1" },
+    { name = "pytest", specifier = ">=8.3" },
+    { name = "ruff", specifier = ">=0.16.0" },
+]
+docs = [{ name = "zensical", specifier = ">=0.0.51,<0.1" }]
+fuzz = [{ name = "atheris", specifier = ">=2.3.0" }]
+interop = [
+    { name = "pyhanko", specifier = ">=0.36.1" },
+    { name = "typst", specifier = ">=0.15" },
 ]
 
 [[package]]
@@ -1568,119 +1681,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/79/92/b2a7ccd13747156fa4cdf4b499664c051a7891ca38d000784274c8da3ba7/pyhanko_certvalidator-0.31.4.tar.gz", hash = "sha256:1d079f2a24d4086d85203ad6df2b8bdbb21a50e16ab361dbed50fc396dd01450", size = 584624, upload-time = "2026-07-25T23:19:12.694Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e3/59/525c00e386cd4fc7efd24b5054cac50f38af5d00ef48dda04f472c409911/pyhanko_certvalidator-0.31.4-py3-none-any.whl", hash = "sha256:864c3c4c7dd5e8db47fc4aa151c762af977ee3f4d7620f4cfb2b6137bf9f933b", size = 111221, upload-time = "2026-07-25T23:19:11.336Z" },
-]
-
-[[package]]
-name = "pylopdf"
-version = "0.13.0"
-source = { editable = "." }
-
-[package.optional-dependencies]
-ar = [
-    { name = "pylopdf-fonts-ar" },
-]
-he = [
-    { name = "pylopdf-fonts-he" },
-]
-hi = [
-    { name = "pylopdf-fonts-hi" },
-]
-jp = [
-    { name = "pylopdf-fonts-jp" },
-]
-ko = [
-    { name = "pylopdf-fonts-ko" },
-]
-ocr = [
-    { name = "pylopdf-ocr-models" },
-]
-th = [
-    { name = "pylopdf-fonts-th" },
-]
-zh-cn = [
-    { name = "pylopdf-fonts-zh-cn" },
-]
-zh-tw = [
-    { name = "pylopdf-fonts-zh-tw" },
-]
-
-[package.dev-dependencies]
-bench = [
-    { name = "pdfplumber" },
-    { name = "pymupdf" },
-    { name = "pypdf" },
-]
-bench-rich = [
-    { name = "markdown-it-py" },
-    { name = "mdit-py-plugins" },
-    { name = "pdfplumber" },
-    { name = "pymupdf" },
-    { name = "pymupdf4llm" },
-    { name = "pypdf" },
-]
-bench-vision = [
-    { name = "pillow" },
-]
-dev = [
-    { name = "maturin" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-docs = [
-    { name = "zensical" },
-]
-fuzz = [
-    { name = "atheris", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "atheris", version = "3.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-interop = [
-    { name = "pyhanko" },
-    { name = "typst" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "pylopdf-fonts-ar", marker = "extra == 'ar'", editable = "fonts/pylopdf-fonts-ar" },
-    { name = "pylopdf-fonts-he", marker = "extra == 'he'", editable = "fonts/pylopdf-fonts-he" },
-    { name = "pylopdf-fonts-hi", marker = "extra == 'hi'", editable = "fonts/pylopdf-fonts-hi" },
-    { name = "pylopdf-fonts-jp", marker = "extra == 'jp'", editable = "fonts/pylopdf-fonts-jp" },
-    { name = "pylopdf-fonts-ko", marker = "extra == 'ko'", editable = "fonts/pylopdf-fonts-ko" },
-    { name = "pylopdf-fonts-th", marker = "extra == 'th'", editable = "fonts/pylopdf-fonts-th" },
-    { name = "pylopdf-fonts-zh-cn", marker = "extra == 'zh-cn'", editable = "fonts/pylopdf-fonts-zh-cn" },
-    { name = "pylopdf-fonts-zh-tw", marker = "extra == 'zh-tw'", editable = "fonts/pylopdf-fonts-zh-tw" },
-    { name = "pylopdf-ocr-models", marker = "extra == 'ocr'", editable = "models/pylopdf-ocr-models" },
-]
-provides-extras = ["ar", "he", "hi", "jp", "ko", "th", "zh-cn", "zh-tw", "ocr"]
-
-[package.metadata.requires-dev]
-bench = [
-    { name = "pdfplumber", specifier = ">=0.11" },
-    { name = "pymupdf", specifier = ">=1.26" },
-    { name = "pypdf", specifier = ">=5" },
-]
-bench-rich = [
-    { name = "markdown-it-py", specifier = ">=4.0" },
-    { name = "mdit-py-plugins", specifier = ">=0.6" },
-    { name = "pdfplumber", specifier = ">=0.11" },
-    { name = "pymupdf", specifier = ">=1.26" },
-    { name = "pymupdf4llm", specifier = ">=1.28.2" },
-    { name = "pypdf", specifier = ">=5" },
-]
-bench-vision = [{ name = "pillow", specifier = ">=12.3" }]
-dev = [
-    { name = "maturin", specifier = ">=1.14.1" },
-    { name = "mypy", specifier = ">=1.14" },
-    { name = "pre-commit", specifier = ">=4.6.1" },
-    { name = "pytest", specifier = ">=8.3" },
-    { name = "ruff", specifier = ">=0.16.0" },
-]
-docs = [{ name = "zensical", specifier = ">=0.0.51,<0.1" }]
-fuzz = [{ name = "atheris", specifier = ">=2.3.0" }]
-interop = [
-    { name = "pyhanko", specifier = ">=0.36.1" },
-    { name = "typst", specifier = ">=0.15" },
 ]
 
 [[package]]
