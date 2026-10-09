@@ -19,6 +19,11 @@ Four generic prompt variants were frozen before inference. Each retains the orig
 | PPLX / alternatives | 24/24 | 8/16 | 0/8 | 0 | 8/24 | 24/24 | 4.049 | 6.435 | 6080.0 |
 | PPLX / identity | 24/24 | 12/16 | 3/8 | 3 | 15/24 | 24/24 | 4.175 | 6.579 | 6080.0 |
 | PPLX / neutral | 24/24 | 10/16 | 0/8 | 1 | 10/24 | 24/24 | 3.976 | 6.371 | 6080.0 |
+| Intern / original RGB512 | 24/24 | 12/16 | 0/8 | 0 | 12/24 | 24/24 | 3.532 | 5.820 | 9081.3 |
+| Intern / sufficiency | 24/24 | 12/16 | 0/8 | 0 | 12/24 | 24/24 | 3.535 | 5.874 | 9081.2 |
+| Intern / alternatives | 24/24 | 8/16 | 0/8 | 0 | 8/24 | 24/24 | 1.983 | 4.319 | 9081.2 |
+| Intern / identity | 24/24 | 9/16 | 0/8 | 2 | 9/24 | 24/24 | 1.982 | 4.315 | 9081.2 |
+| Intern / neutral | 24/24 | 12/16 | 0/8 | 0 | 12/24 | 24/24 | 1.990 | 4.346 | 9081.2 |
 
 | Model / variant | Known gains / losses | Ambiguous abstention gains / losses | Choice changes | Unpaired |
 |---|---:|---:|---:|---:|
@@ -34,6 +39,10 @@ Four generic prompt variants were frozen before inference. Each retains the orig
 | PPLX / alternatives | 2 / 3 | 0 / 0 | 9 | 0 |
 | PPLX / identity | 5 / 2 | 3 / 0 | 10 | 0 |
 | PPLX / neutral | 3 / 2 | 0 / 0 | 10 | 0 |
+| Intern / sufficiency | 2 / 2 | 0 / 0 | 6 | 0 |
+| Intern / alternatives | 2 / 6 | 0 / 0 | 10 | 0 |
+| Intern / identity | 2 / 5 | 0 / 0 | 9 | 0 |
+| Intern / neutral | 2 / 2 | 0 / 0 | 6 | 0 |
 
 | Model / prompt | Tie abstentions | Missing / failed / malformed | CUDA allocated / reserved GiB |
 |---|---:|---:|---:|
@@ -52,6 +61,11 @@ Four generic prompt variants were frozen before inference. Each retains the orig
 | PPLX / alternatives | 0 | 0 / 0 / 0 | 48.75 / 48.82 |
 | PPLX / identity | 2 | 0 / 0 / 0 | 48.75 / 48.82 |
 | PPLX / neutral | 1 | 0 / 0 / 0 | 48.75 / 48.82 |
+| Intern / original RGB512 | 0 | 0 / 0 / 0 | 8.68 / 8.80 |
+| Intern / sufficiency | 0 | 0 / 0 / 0 | 8.67 / 8.79 |
+| Intern / alternatives | 0 | 0 / 0 / 0 | 8.67 / 8.79 |
+| Intern / identity | 1 | 0 / 0 / 0 | 8.67 / 8.79 |
+| Intern / neutral | 0 | 0 / 0 / 0 | 8.67 / 8.79 |
 
 Known and ambiguous denominators remain planned counts, including missing or malformed responses. Tied native maxima conservatively become unresolved; confidence calibration is unvalidated. Partitions and conservation use the source-candidate contract; amount/header/cell reconstruction is unmeasured.
 
