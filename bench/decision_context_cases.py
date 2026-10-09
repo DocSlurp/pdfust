@@ -108,7 +108,7 @@ def _case(family: str, variant: int) -> dict[str, Any]:
     content, cue, prior_pattern, note, gold = _VARIANTS[variant]
     lead, tail, amount = _CONTENT[family][content]
     value_header = {"financial": "Amount USD", "invoice": "Charge USD", "scientific": "Reading mg"}[family]
-    ops = []
+    ops: list[str] = []
     # The same facts go to the renderer and exact native evidence; no inferred gold flags.
     if cue.endswith("rules"):
         boundaries = (614, 574) if cue.startswith("join") else (614, 594, 574)
@@ -140,8 +140,10 @@ def _case(family: str, variant: int) -> dict[str, Any]:
     data = page_pdf("\n".join(ops))
     with pylopdf.Document(stream=data) as doc:
         extracted = doc[0].get_text("words")
-        source_words = [{"id": index, "text": word[4], "bbox": list(word[:4])} for index, word in enumerate(extracted)]
-        drawings = [
+        source_words: list[dict[str, Any]] = [
+            {"id": index, "text": word[4], "bbox": list(word[:4])} for index, word in enumerate(extracted)
+        ]
+        drawings: list[dict[str, Any]] = [
             {
                 "type": drawing["type"],
                 "bbox": list(drawing["rect"]),
@@ -154,7 +156,7 @@ def _case(family: str, variant: int) -> dict[str, Any]:
         ]
     region = [40, 155, 540, 225]
     words = [word for word in source_words if 155 <= word["bbox"][1] <= 225]
-    spans = {}
+    spans: dict[str, list[int]] = {}
     for name, x_min, x_max, y_min, y_max in (
         ("description_header", 40, 300, 155, 175),
         ("value_header", 400, 550, 155, 175),
@@ -165,7 +167,7 @@ def _case(family: str, variant: int) -> dict[str, Any]:
         spans[name] = [
             word["id"] for word in words if x_min <= word["bbox"][0] <= x_max and y_min <= word["bbox"][1] < y_max
         ]
-    evidence = {
+    evidence: dict[str, Any] = {
         "words": words,
         "candidates": spans,
         "assemblies": {"A": _assembly(words, spans, join=True), "B": _assembly(words, spans, join=False)},
