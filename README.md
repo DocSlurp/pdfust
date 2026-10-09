@@ -289,6 +289,112 @@ in Git. Full feature JSON, source copies, raw outputs, model sidecars, images,
 and logs are generated locally and ignored; run the documented commands to
 inspect them.
 
+## Experimental relationship decisions (opt-in)
+
+The private DEV experiments below ask hosted models to group **two selected
+source-text chunks**. They evaluate word boundaries and description-row
+ownership on small authored controls; they do not measure complete PDF
+extraction. No hosted model is enabled by the package API. See the
+[experiment protocol](bench/DECISION_MODELS.md) for explicit hosted execution and
+the persistent spending ledger.
+
+Snapshot: 2026-10-09. Configurations are selected examples from completed DEV
+arms, including Luna's tied-highest completed known-score fraction in the
+basic/prompt/focus matrices;
+they are not universal model recommendations. Known scores use provisional
+authored references. Ambiguous abstention is scored separately, and source
+conservation alone does not establish correct grouping.
+
+| Model / tested evidence | Scored / planned page inputs | Known score / known inputs | Ambiguous abstain / ambiguous inputs | Pages/minute (API only) | Pages/USD |
+|---|---:|---:|---:|---:|---:|
+| Jev 1.13 · words ([basic](bench/results/lowlevel-basic.md)) | 72/72 | 28/48 | 0/24 | 652.3 | 42,932 |
+| d1 · glyphs + vector rules ([basic](bench/results/lowlevel-basic.md)) | 72/72 | 26/48 | 0/24 | 298.0 | 3,636 |
+| d1 · short literal criteria + typed minimal text ([prompts](bench/results/lowlevel-prompt-factors.md)) | 24/24 | 9/16 | 2/8 | 565.8 | 64,977 |
+| PPLX v1.1 · resolved criteria + crop512 ([prompts](bench/results/lowlevel-prompt-factors.md)) | 24/24 | 15/16 | 1/8 | 227.6 | 6,733 |
+| Luna · crop512, singleton ([prompts](bench/results/lowlevel-prompt-factors.md)) | 24/24 | 9/16 | 0/8 | 170.6 | ~4,432 |
+| Clef Flash · bounded focus + lowbit256 ([images](bench/results/lowlevel-images-focus.md)) | 24/24 | 12/16 | 0/8 | 145.0 | 18,028 |
+| Clef · bounded focus + RGB128 ([images](bench/results/lowlevel-images-focus.md)) | 24/24 | 8/16 | 0/8 | 124.2 | 6,777 |
+| Gateway d1 · short typed text ([Gateway text](bench/results/lowlevel-gateway-text.md)) | 24/24¹ | 7/16 | 1/8 | 144.9 | 114,090 |
+| Gateway Laya · supported short text ([compatibility](bench/results/lowlevel-gateway-supported.md)) | 24/24¹ | 10/16 | 0/8 | 146.4 | n/a zero cost |
+| Gateway Laya-free · same short text ([compatibility](bench/results/lowlevel-gateway-supported.md)) | 24/24¹ | 10/16 | 0/8 | 149.7 | n/a zero cost |
+
+Here, a **page input means one supplied region decision on one source page**,
+not complete-page extraction. The 72-input basic arms contain three
+render-equivalent encodings of each of 24 logical cases; their observations are
+correlated. Prompt/image arms use 24 representatives. ¹ The displayed Gateway text scores
+include eight identical-input aliases per arm: their rate numerators count only
+16 fresh page inputs. Other displayed rows have no replay/alias rate numerator.
+API-only time sums retained HTTP intervals and excludes source extraction,
+rendering, preparation and between-call waiting. It is not end-to-end pages/minute.
+
+Costs prefer positive provider-reported charges. `~` marks estimates from
+reported tokens and frozen serving rates; reported zeros remain in the ledger.
+The Clef rows use observed Cloudflare charges, not cheaper rates from a different
+serving route. Missing cost/time makes the corresponding complete rate unknown;
+zero effective cost gives no finite pages/USD rate. Gateway aliases/routes are
+not independent model architectures. Accepted image requests do not establish
+that their pixels affected the decision: Gateway visual sensitivity remains
+under investigation.
+
+For the same original L001 crop512 evidence, the completed frontier comparison
+uses 72 encoded page inputs, 48 authored-known cases and 24 ambiguous cases.
+The generic chat/structured-output transport differs from native decision APIs;
+these rows compare source evidence and grouping outcomes, not identical API
+protocols. See [all frontier arms](bench/results/lowlevel-frontier-basic.md).
+
+| Model / same crop512 evidence | Scored / planned page inputs | Known score / known inputs | Ambiguous abstain / ambiguous inputs | Pages/minute (API only) | Pages/USD |
+|---|---:|---:|---:|---:|---:|
+| Opus 5.5 | 72/72 | 46/48 | 14/24 | 19.2 | 64.8 |
+| Sonnet 5.5 | 72/72 | 37/48 | 10/24 | 70.6 | 150.8 |
+| PPLX v1.1 · original native-decision crop512 | 72/72 | 38/48 | 0/24 | 204.8 | 6,689 |
+| Luna · original native-decision crop512 | 72/72 | 25/48 | 0/24 | 517.7 | ~4,437 |
+| Haiku 5.5 · **incomplete** after HTTP 429 | 12/72 | 6/48 planned | 1/24 planned | 26.8 partial | 2,227 partial |
+
+The [Gateway RGB512 route](bench/results/lowlevel-gateway-vision.md) accepted
+24/24 requests and returned 8/16 known scores, 0/8 ambiguous abstentions, 88.5
+API page inputs/minute and 73,746 page inputs/USD. It is excluded from the visual
+comparison: image-token accounting is invariant across sizes, and actual visual
+sensitivity remains unverified pending a sanity control.
+
+The full reports retain failures and every tested arm. Jev's later prompt sweep
+stopped after a retained failure. PPLX's bounded-focus image sweep completed only
+eight successful inputs before HTTP 429 and a persistent stop; those partial
+arms are not substituted for its completed resolved-crop result above. The original
+Gateway text matrix stopped both Laya aliases on HTTP 422; a separate supported
+text-state experiment completed all 96 configurations with 64 distinct bodies.
+Its completed short-text scores appear above. Expanded string-glyph packets also
+failed HTTP 422 in a separate follow-up, so compatibility is not explained by
+compression alone. All original failures remain retained and are not retried.
+
+The following comparisons change evidence or representation while keeping their
+own cohorts explicit:
+
+| Experiment / cohort | Known score; ambiguous abstention | Pages/minute (API only) | Pages/USD | Observation / full report |
+|---|---|---:|---:|---|
+| Jev raw → lossless compact; history, 36 scored inputs per arm, 12 fresh | 9/18 → 9/18; 0/18 → 0/18 | 183.0 → 204.7 | 1,924 → 6,106 | Reported charges −68.5%; [matched history](bench/results/lowlevel-matched-history.md) |
+| d1 raw → lossless compact; same history cohort | 9/18 → 9/18; 0/18 → 0/18 | 105.7 → 150.6 | 1,953 → 5,759 | Reported charges −66.1%; [matched history](bench/results/lowlevel-matched-history.md) |
+| Luna raw → lossless compact; same history cohort | 12/18 → 12/18; 0/18 → 0/18 | 138.1 → 155.5 | ~1,562 → ~5,053 | Estimated charges −69.1%; aggregate scores match, individual decisions can change; [matched history](bench/results/lowlevel-matched-history.md) |
+| PPLX raw → compact; raw 33/36 scored, compact 36/36 | 15/18 → 12/18; 0/18 → 3/18 | 54.8 → 101.6 | unknown → 15,678 | Raw HTTP 429 leaves three correlated failed inputs and one unknown charged request; [matched history](bench/results/lowlevel-matched-history.md) |
+| Offline geometry + Jev words; 72 paired inputs | 28/48 → 40/48; 0/24 → 0/24 | cascade unmeasured | cascade unmeasured | Zero paired losses; original batches cannot be skipped whole; [hybrid replay](bench/results/lowlevel-hybrid-basic.md) |
+| Offline geometry + PPLX typed/resolved minimal text; 24 paired inputs | 6/16 → 14/16; 4/8 → 4/8 | cascade unmeasured | cascade unmeasured | Adds source-rule evidence; [hybrid prompts](bench/results/lowlevel-hybrid-prompts.md) |
+| Clef Flash lowbit size sweep: 64/128/256/400/500/512; 24 scored per size | 9/9/12/8/10/8 out of 16; 0/8 at every size | 110.0–145.0 | 17,544–18,355 | Larger crops did not improve scores monotonically; [all 18 image arms per model](bench/results/lowlevel-images-focus.md) |
+| Fresh 768/1024 source renders | pending | pending | pending | Separate rendering experiment; retained-crop results above do not establish a native-resolution optimum |
+
+Matched history holds source values, singleton batching and prompt criteria
+fixed; 24 encoding aliases per arm are excluded from rates. Equal aggregate
+scores are not proof of equal decisions or general quality preservation. Offline
+hybrids reuse prepaid model responses: their observed score gains are not
+measured cascade cost/latency savings. The 64–512 sweep downsamples retained
+512-edge crops; resizing and grayscale/lowbit conversion change pixel evidence,
+although PNG encoding itself is lossless. Its reported rates are observed ranges
+across the six sizes, not the throughput of one chosen configuration.
+
+The [natural-document follow-up](bench/LOWLEVEL_NATURAL.md) uses 24 overlapping
+regions on **one** Senate expenditure page, with source-aware single-review
+references. Its region/minute and region/USD rates must not be presented as
+24 independent PDF pages. None of these studies establishes full-table,
+header/value, reading-order or production-document extraction quality.
+
 ## Architecture
 
 ```
