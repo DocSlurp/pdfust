@@ -868,3 +868,54 @@ covers that distinction. Full suite: 2,337 passed, 14 skipped, two expected
 failures; subsequent changes: 43 focused tests, whole-workspace Ruff and mypy
 across 157 files pass. Conservative cumulative accounting is USD 18.81584162
 of the authorized USD 100, including USD 6.05 unresolved reservations.
+
+### R001: remote native decision heads, small vLLM baselines and research licenses
+
+Hypothesis: self-hosted native decision heads can expose processor, batching and
+kernel choices that hosted APIs hide. Small schema-constrained vision models
+provide a distinct generative baseline; noncommercial JPT and Nimble v3 are
+included for research and learning, with their release licenses recorded.
+
+The coordinator reserved USD 18 in the existing shared ledger for a bounded
+four-worker wave, including a USD 2 cleanup margin. The cumulative authorization
+remains USD 100. An independent systemd supervisor enforces a two-hour deadline,
+checks credit and conservative runtime estimates, and removes only exact owned
+instances. Source-only packets cover the same 216 L015 page/size/color conditions;
+DEV scoring targets stay on the coordinator and protected files remain untouched.
+
+The first RTX PRO 6000 96 GB worker loaded pinned Intern-Decision-4B and passed
+circle, square and blank-image controls (3/3). Initialization took 6.52 seconds,
+with 9.18 GB CUDA peak allocation and 9.46 GB process peak RSS. The reference
+Torch fallback is recorded as its own runtime treatment. PDF quality remains
+pending; these controls establish basic image consumption, not PDF ability.
+
+Native Intern, Clef, PPLX, JPT and stock Qwen/vLLM adapters preserve source
+questions and return actual runtime fields. The worker retains complete attempts,
+CPU/RSS, CUDA peaks and one-second device-wide utilization samples, with a hard
+process deadline and three-failure stop. Small-model generated labels do not gain
+invented probability vectors. Raw operational receipts and source evidence remain
+ignored; subsequent checkpoints will record wins, failures, cost and cleanup.
+
+R001 checkpoint: native Clef-Flash and PPLX completed all 216 conditions, with
+RGB512/768/1024 known scores of 10/11/11 and 9/12/12 out of 16 respectively.
+Both abstained on 0/8 ambiguous cases. Measured inference-only throughput was
+748.85 and 292.15 supplied-region inputs/minute. Native PPLX512 falls below its
+hosted 12/16 result; source parity does not imply backend/prompt/processor parity.
+All nine arm scores and measured resources are in the
+[R001 report](bench/results/remote-gpu-r001.md).
+
+The original Intern run, Qwen4 vLLM, Clef27 and text-only Nimble also completed;
+scoring updates follow. A second Intern run adds FLA alone with Torch/Transformers
+pinned, retaining the original fallback measurements. The vLLM baseline disables
+prefix and multimodal processor caches; these are local runtime settings, not
+provider cache hits. A separately frozen, blind prompt screen contains four
+generic instruction variants over the same 24 RGB512 source packets, without
+consulting references or case-specific outputs.
+
+Operational failures remain retained: one unavailable offer created no resource;
+a host image build failed DNS resolution and its instance deletion was verified;
+initial native controls omitted required transport model IDs and failed before
+inference; an early Qwen CLI admission and server-start readiness failure were
+fixed before its later runs. Provider-posted wave charges reached USD 2.551 at
+this checkpoint and are still accruing. The original USD 18 reservation remains
+in force; posted charges are not added again to that reservation.

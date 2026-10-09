@@ -404,10 +404,22 @@ references. Its region/minute and region/USD rates must not be presented as
 24 independent PDF pages. None of these studies establishes full-table,
 header/value, reading-order or production-document extraction quality.
 
-The [self-hosted decision-model shortlist](bench/HF_DECISION_MODELS.md) compares
-eight downloadable candidates by image support, effective context, GPU planning
-class and adoption, with pinned revisions and a matched-evidence experiment plan.
-Self-hosted scores and throughput remain unmeasured.
+The [self-hosted model shortlist](bench/HF_DECISION_MODELS.md) includes native
+decision heads, small Qwen/SmolVLM/LFM/MiniCPM vision baselines through vLLM,
+and separately labeled noncommercial JPT/Nimble research releases.
+[Remote GPU results](bench/results/remote-gpu-r001.md) retain matched image
+conditions, native-versus-hosted differences, CPU/RAM/VRAM and failure records.
+
+| Native model | RGB correct at 512 / 768 / 1024 px, each /16 | Ambiguous abstention, each /8 | Page-region inputs/min | Billed inputs/USD |
+|---|---:|---:|---:|---:|
+| Clef-Flash 9B | 10 / 11 / 11 | 0 | 748.85 | Billing in progress |
+| Perplexity Decider 27B | 9 / 12 / 12 | 0 | 292.15 | Billing in progress |
+
+Rates cover 216 serial supplied-region decisions over 24 representative DEV
+pages and nine image treatments, including preprocessing during inference.
+Model loading, downloads and rental idle time are recorded separately; full-page
+extraction throughput is not established by this experiment. No reference
+answers are sent to workers, and the protected set remains untouched.
 
 ## Architecture
 

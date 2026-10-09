@@ -24,7 +24,14 @@ import time
 from pathlib import Path
 from typing import Any
 
-ADAPTERS = ("bench.remote_intern", "bench.remote_clef", "bench.remote_pplx")
+ADAPTERS = (
+    "bench.remote_intern",
+    "bench.remote_clef",
+    "bench.remote_pplx",
+    "bench.remote_vllm",
+    "bench.remote_jpt",
+    "bench.remote_nimble",
+)
 MAX_MANIFEST_BYTES = 8 * 1024 * 1024
 MAX_REQUEST_BYTES = 2 * 1024 * 1024
 MAX_RECORDS = 4096
