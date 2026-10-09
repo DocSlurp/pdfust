@@ -123,6 +123,14 @@ def test_prepare_complete_fixed_manifest_and_refuse_mutation(tmp_path: Path) -> 
         row.get("request_sha256") for row in perturbed["requests"]
     ]
     assert manifest["private_labels_sha256"] != perturbed["private_labels_sha256"]
+    jpeg_manifest = prepare(tmp_path / "jpeg80", registry, images, jpeg80_only=True)
+    assert jpeg_manifest["logical_requests"] == 64
+    assert len(jpeg_manifest["requests"]) == 64
+    assert jpeg_manifest["arms"] == ("jpeg80-rgb1200",)
+    jpeg_report = evaluate(tmp_path / "jpeg80", jpeg_manifest, {"rows": []})
+    assert jpeg_report["logical_requests"] == 64
+    assert len(jpeg_report["groups"]) == 4
+    assert all(group["logical_pages"] == 16 for group in jpeg_report["groups"].values())
     report = evaluate(directory, manifest, {"rows": []})
     assert all(group["logical_pages"] == 16 for group in report["groups"].values())
     assert all(group["confusion"][0]["unscored"] == 16 for group in report["groups"].values())
