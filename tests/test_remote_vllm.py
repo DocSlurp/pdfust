@@ -2,8 +2,11 @@
 
 import base64
 import hashlib
+import io
 import json
+import urllib.error
 from copy import deepcopy
+from email.message import Message
 from pathlib import Path
 from typing import Any
 
@@ -145,3 +148,19 @@ def test_mismatched_pixels_refused_before_server_call(tmp_path: Path) -> None:
     body["state"].append({"type": "image_url", "image_url": {"url": "data:image/png;base64,AA=="}})
     with pytest.raises(ValueError, match="exact canonical image"):
         stock.request_body(stock.Engine(stock.MODEL_ID, "http://127.0.0.1:8000/v1"), body, [image])
+
+
+def test_loopback_http_error_preserves_bounded_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    raw = io.BytesIO(b'{"error":"missing publisher chat template"}' + b"x" * 5000)
+    error = urllib.error.HTTPError("http://127.0.0.1:8000/v1/chat/completions", 400, "Bad request", Message(), raw)
+
+    class Opener:
+        def open(self, *_args: object, **_kwargs: object) -> None:
+            raise error
+
+    monkeypatch.setattr(stock.urllib.request, "build_opener", lambda *_: Opener())
+    with pytest.raises(RuntimeError, match=r"Local vLLM HTTP 400:.*missing publisher chat template") as caught:
+        stock.Engine(stock.MODEL_ID, "http://127.0.0.1:8000/v1").post({"source": "retained"})
+    assert "response body truncated" in str(caught.value)
+    assert raw.tell() == stock.MAX_ERROR_BODY_BYTES + 1
+    assert len(str(caught.value)) < 4096

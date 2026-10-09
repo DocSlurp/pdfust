@@ -33,7 +33,7 @@ SNAPSHOT_CODE = """
 import sys
 from huggingface_hub import snapshot_download
 snapshot_download(sys.argv[1], revision=sys.argv[2], local_dir=sys.argv[3], token=False,
- allow_patterns=['*.json','*.safetensors','*.py','tokenizer.model','*.tiktoken',
+ allow_patterns=['*.json','*.safetensors','*.py','*.jinja','tokenizer.model','*.tiktoken',
                  'vocab.txt','merges.txt','README.md','LICENSE*'])
 """
 
@@ -72,6 +72,11 @@ def server_command(model: str, snapshot: Path, *, safe_attention: bool = False) 
     ]
     if model.startswith("HuggingFaceTB/SmolVLM2-"):
         command.extend(["--chat-template-content-format", "openai"])
+    if model == "LiquidAI/LFM2-VL-1.6B":
+        # The pinned publisher stores its template separately from tokenizer_config.
+        command.extend(
+            ["--chat-template", str(snapshot / "chat_template.jinja"), "--chat-template-content-format", "openai"]
+        )
     if model == "openbmb/MiniCPM-V-4":
         command.append("--trust-remote-code")
     if safe_attention:

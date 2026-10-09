@@ -13,6 +13,7 @@ from __future__ import annotations
 import base64
 import json
 import time
+import urllib.error
 import urllib.request
 from copy import deepcopy
 from dataclasses import dataclass
@@ -42,6 +43,7 @@ CHOICES = ("join", "split", "unresolved")
 MAX_IMAGE_BYTES = 200_000
 MAX_BODY_BYTES = 2_000_000
 MAX_RESPONSE_BYTES = 1_000_000
+MAX_ERROR_BODY_BYTES = 3072
 MAX_QUESTIONS = 16
 MAX_IMAGES = 8
 
@@ -86,8 +88,16 @@ class Engine:
             self.base_url + "/chat/completions", data=raw, headers={"Content-Type": "application/json"}, method="POST"
         )
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
-        with opener.open(request, timeout=self.timeout) as response:
-            payload = response.read(MAX_RESPONSE_BYTES + 1)
+        try:
+            with opener.open(request, timeout=self.timeout) as response:
+                payload = response.read(MAX_RESPONSE_BYTES + 1)
+        except urllib.error.HTTPError as error:
+            # Only the admitted loopback response body: no headers or request echo.
+            raw = error.read(MAX_ERROR_BODY_BYTES + 1)
+            detail = raw[:MAX_ERROR_BODY_BYTES].decode("utf-8", errors="replace")
+            suffix = " [response body truncated]" if len(raw) > MAX_ERROR_BODY_BYTES else ""
+            message = f"Local vLLM HTTP {error.code}: {detail}{suffix}"
+            raise RuntimeError(message) from error
         if len(payload) > MAX_RESPONSE_BYTES:
             message = "Local vLLM response exceeds byte admission"
             raise ValueError(message)
