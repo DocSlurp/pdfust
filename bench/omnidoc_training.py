@@ -1070,13 +1070,17 @@ def build(output: Path, registry_path: Path) -> dict[str, Any]:
 def main() -> None:
     """Acquire training references without inference or recognition-answer sampling."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--build-synthetic", action="store_true")
+    build_mode = parser.add_mutually_exclusive_group()
+    build_mode.add_argument("--build-synthetic", action="store_true", help="Build the selected reviewed revision")
+    build_mode.add_argument("--build-synthetic-v2", action="store_true", help="Build the earlier comparison scaffold")
     parser.add_argument("--annotations", type=Path)
     parser.add_argument("--dev-registry", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--registry", type=Path, required=True)
     args = parser.parse_args()
-    if args.build_synthetic:
+    if args.build_synthetic_v2:
+        result = build_v2(args.output, args.registry)
+    elif args.build_synthetic:
         result = build(args.output, args.registry)
     else:
         if args.annotations is None or args.dev_registry is None:
