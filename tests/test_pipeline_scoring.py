@@ -132,3 +132,36 @@ def test_corpus_freezes_complete_cohort_and_balanced_pilot(tmp_path: Path) -> No
     assert all(Path(page["pdf_path"]).is_absolute() for page in manifest["pages"])
     assert all("tables" not in page for page in manifest["pages"])
     assert build(tmp_path / "other")["dataset_sha256"] == manifest["dataset_sha256"]
+
+
+def test_none_spans_invalidate_entire_page() -> None:
+    table = _table([["a", "b"], ["c", "d"]])
+    malformed = deepcopy(table)
+    malformed["spans"] = None
+    score = score_page(target(table), [malformed])
+    assert score["error"]
+    assert score["malformed"]
+    assert not score["exact_page"]
+    assert score["correct_cell_slots"] == 0
+    assert score["table_denominator"] == 1
+
+
+def test_complete_table_priority_beats_more_partial_matches() -> None:
+    first = _table([["a", "b"], ["c", "d"]])
+    second = _table([["a", "b"], ["x", "y"]])
+    shared_partial = _table([["a", "b"], ["c", "z"]])
+    score = score_page(target(first, second), [shared_partial, first])
+    assert score["complete_tables"] == 1
+    assert score["correct_cell_slots"] == 6
+    assert score["matched_tables"] == 2
+    assert score["false_positive_tables"] == 0
+
+
+def test_wrong_shape_is_both_missing_and_extra_even_with_same_values() -> None:
+    expected = _table([["a", "b"], ["c", "d"]])
+    observed = _table([["a", "b", "c", "d"]])
+    score = score_page(target(expected), [observed])
+    assert score["missing_tables"] == 1
+    assert score["false_positive_tables"] == 1
+    assert score["correct_cell_slots"] == 0
+    assert score["penalized_cell_slots"] == 8
