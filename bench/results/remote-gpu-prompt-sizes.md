@@ -1,0 +1,9 @@
+# Remote GPU prompt × resolution screen
+
+The source freeze contains 480 inputs: all 24 authored DEV regions at fresh RGB longest edges 128, 256, 400, 500 and 640, each with the four previously approved generic prompts (sufficiency, alternatives, identity and neutral). Flash, Clef, PPLX and Intern are predeclared. These are repeated views of 24 regions, not 480 independent pages.
+
+All 504 fresh source inputs passed source, request, PNG and exact fresh-render verification before selection. The staged matrix passed a second full verification. The 120 selected PNGs are copied exactly; literal source states, geometry, image ordering and choices remain unchanged. Only approved question instructions and criterion descriptions change. The worker manifest contains no scorer references; hashes, aliases and render provenance remain separate.
+
+Inference and scoring are pending. No quality or combined-technique improvement is claimed. The reporter verifies the complete fresh freeze, exact approved transformations and every returned request hash before opening local DEV targets. Missing, failed or malformed answers retain the 24-input denominator per treatment, with 16 known and eight ambiguous cases. Optional matched fresh-original runs provide paired prompt gains/losses; historical raster runs are not substituted for matched controls.
+
+Run the CPU-only helper with `python -m bench.remote_prompt_sizes prepare --fresh DIRECTORY --output NEW_DIRECTORY`. Use `verify --packets DIRECTORY` for admission and `report --packets DIRECTORY --run MODEL=RESULT_DIRECTORY` (repeat for each model), optionally `--baseline MODEL=FRESH_ORIGINAL_RESULT_DIRECTORY`, plus `--json-output PATH --markdown-output PATH` for verified local DEV reporting. Full JSON retains grouping/conservation/oracle metrics, conservative abstentions, partial failures and inference resource scope.
