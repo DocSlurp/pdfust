@@ -174,3 +174,33 @@ New stack: Torch 2.14, Transformers 5.17 and FLA 0.5.2, without causal-conv1d, o
 |---|---:|---:|---:|
 | FLA added | 963/963 | 24.09% | 10,070 |
 | New stack | 31/31 | 27.65% | 9,759 |
+
+## SmolVLM diagnostic admission
+
+SmolVLM2-2.2B-Instruct completed 216/216 source-verified region requests after explicit runtime changes and diagnostic admission despite failed semantic controls. Schema-valid output does not establish visual understanding. Separate controls returned valid labels on 3/3 requests but matched the expected circle/square/blank descriptions on **1/3**: `unresolved`, `split`, `split` versus `join`, `split`, `unresolved`. These controls remain outside the authored cohort.
+
+| Attempt | Admission/outcome | Authored region inputs |
+|---|---|---:|
+| Original vLLM sweep | Pre-health failure: missing `num2words` in the SmolVLM processor | 0 |
+| Retry after dependency installation | Pre-health failure: CUDA segfault during FlashInfer autotuning | 0 |
+| Diagnostic runtime | Health/schema admission succeeded; semantic control gate failed (1/3 correct); explicit diagnostic override admitted cohort | 216 |
+
+The retained final runtime uses Triton main attention, Torch SDPA for vision, and disabled FlashInfer autotuning. It preserves the pinned model and original source evidence. Neither earlier startup failure is discarded or scored as an authored-case prediction. This was not an earlier semantic-skip cohort; both previous attempts failed before health admission.
+
+| Arm | Known-correct / 16 | Ambiguous-abstain / 8 | Region inputs/min | Est. warm inputs/USD |
+|---|---:|---:|---:|---:|
+| rgb-512 | 5/16 | 1/8 | 515.16 | 23625 |
+| rgb-768 | 5/16 | 0/8 | 511.71 | 23467 |
+| rgb-1024 | 5/16 | 1/8 | 505.13 | 23165 |
+| gray-512 | 5/16 | 1/8 | 521.54 | 23918 |
+| gray-768 | 4/16 | 1/8 | 508.80 | 23334 |
+| gray-1024 | 4/16 | 1/8 | 496.97 | 22791 |
+| lowbit-512 | 5/16 | 0/8 | 534.52 | 24513 |
+| lowbit-768 | 6/16 | 1/8 | 509.19 | 23351 |
+| lowbit-1024 | 4/16 | 1/8 | 496.66 | 22777 |
+
+Across repeated arms, known-correct is **43/144** and ambiguous-abstain **7/72**, with zero cohort schema/worker failures. Prediction totals 25.37 wall / 2.30 client CPU s; client-worker totals 29.32 wall / 2.46 CPU s. Warm rate is 510.84 region inputs/min (23427 estimated warm inputs/USD); client-worker rate is 442.03 inputs/min. Client RSS peaks at 0.038 GiB and is not server/model memory. Transport initialization is not model load. Final server startup takes 14.03 s and weight download 10.10 s.
+
+At one-second server-plus-recursive-child sampling, the 29.30 s request window has 28 fully contained intervals spanning 28.02 s and observing 19.65 CPU s. Sampled summed server RSS peaks at 3.68 GiB during requests; shared pages can be counted twice and CPU boundary intervals remain unmeasured. Server PyTorch allocation/reservation peaks are unavailable. Device-wide sampling has 30/30 available samples, mean utilization 46.40%, and peak device VRAM 62,534 MiB, including configured KV-cache allocation.
+
+Release: `482adb537c021c86670beed01cd58990d01e72e4`. This uses the stock-Qwen GPU host and $1.3083333333/h GPU-plus-disk quote; warm inputs/USD excludes all three attempts’ startup/download time, idle and cleanup, and is not billed cost. Serial BF16/eager inference, no prefix caching, no image processor cache, and the common source-only transport remain as above. Full PDF throughput is unavailable.
