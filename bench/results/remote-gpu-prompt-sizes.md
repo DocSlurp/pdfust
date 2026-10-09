@@ -174,13 +174,13 @@ All 504 fresh source packets and exact prompt transformations were verified befo
 | intern / rgb-640/identity | 12/16 | 2/4 | 0/0 | 0 |
 | intern / rgb-640/neutral | 12/16 | 2/3 | 0/0 | 0 |
 
-Qwen9, when explicitly admitted, is an exploratory extension beyond the four predeclared native models. Stock labels have no native probabilities or tie calibration. HTTP latency overlaps at concurrency8. Its sum is not batch elapsed. Client CPU/RSS and CUDA metrics cannot price the separate model server.
+Qwen 9B, when explicitly admitted, is an exploratory extension beyond the four predeclared native models. Stock labels have no native probabilities or tie calibration. HTTP latency overlaps at concurrency 8. Its sum is not batch elapsed. Client CPU/RSS and CUDA metrics cannot price the separate model server.
 
-Missing, failed and malformed responses retain planned denominators. Resource measurements cover the serial native inference process; GPU device-wide utilization is separate. Absent matched fresh-original runs provide no isolated prompt-effect estimate. Full grouping metrics, failures, candidate oracle, tie abstentions and CUDA allocator peaks remain in the JSON report.
+Missing, failed and malformed responses retain planned denominators. Resource measurements cover each native model process; GPU device-wide utilization is separate. Absent matched fresh-original runs provide no isolated prompt-effect estimate. Full grouping metrics, failures, candidate oracle, tie abstentions and CUDA allocator peaks remain in the JSON report.
 
-Qwen9 is a separate exploratory generated-choice extension on the identical480 packets, with eight concurrent HTTP inputs to a shared vLLM server. It returned480/480 valid labels. RGB128/alternatives achieved8/8 ambiguous abstentions while answering0/16 known cases correctly: all24 inputs were unresolved, so this is an all-abstain result rather than resolved ambiguity. No matched fresh-original Qwen256/500 baseline exists, so no isolated prompt-effect pairing is claimed. Native probabilities, tie calibration, model-server CPU/RSS and CUDA allocator peaks are unavailable from its HTTP client. The retained shard status provides batch wall time separately from summed request latency.
+Qwen 9B is a separate exploratory generated-choice extension on the identical 480 packets, with eight concurrent HTTP inputs to a shared vLLM server. It returned 480/480 valid labels. RGB 128/alternatives achieved 8/8 ambiguous abstentions while answering 0/16 known cases correctly: all 24 inputs were unresolved, so this is an all-abstain result rather than resolved ambiguity. No matched fresh-original Qwen RGB 256/500 baseline exists, so no isolated prompt-effect pairing is claimed. Native probabilities, tie calibration, model-server CPU/RSS and CUDA allocator peaks are unavailable from its HTTP client. The retained shard status provides batch wall time separately from summed request latency.
 
-| Qwen9 treatment | Valid/planned | Known correct | Ambiguous abstention |
+| Qwen 9B treatment | Valid/planned | Known correct | Ambiguous abstention |
 |---|---:|---:|---:|
 | rgb-128/sufficiency | 24/24 | 5/16 | 5/8 |
 | rgb-128/alternatives | 24/24 | 0/16 | 8/8 |
