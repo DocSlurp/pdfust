@@ -214,3 +214,30 @@ def test_stubbed_assembly_response_abstains_without_losing_source(tmp_path: Path
     markdown = (tmp_path / "opaque-page.md").read_text()
     for text in ("Name", "Value", "Alpha", "42"):
         assert text in markdown
+
+
+@pytest.mark.parametrize("rotation", [90, 180, 270])
+def test_source_rotation_normalization_aligns_complete_words_and_raster(rotation: int) -> None:
+    raw = pdf_bytes()
+    with pylopdf.open(stream=raw) as baseline:
+        expected_source = runner.source(baseline[0])
+        _, expected_image = runner.image(baseline[0], 256)
+    with pylopdf.open(stream=raw) as owned:
+        owned[0].set_rotation(rotation)
+        rotated_bytes = owned.tobytes()
+    frozen_hash = runner.sha(rotated_bytes)
+    with pylopdf.open(stream=rotated_bytes) as owned:
+        page = owned[0]
+        assert page.rotation == rotation
+        # Interpret and render rotated state first to exercise both cache invalidations.
+        before = runner.source(page)
+        runner.image(page, 256)
+        page.set_rotation(0)
+        after = runner.source(page)
+        _, actual_image = runner.image(page, 256)
+        assert Counter(w["text"] for w in before["words"]) == Counter(w["text"] for w in after["words"])
+        assert after == expected_source
+        assert actual_image["image_sha256"] == expected_image["image_sha256"]
+        assert actual_image["image_size"] == expected_image["image_size"]
+        assert page.rotation == 0
+    assert runner.sha(rotated_bytes) == frozen_hash
