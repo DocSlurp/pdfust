@@ -410,16 +410,38 @@ and separately labeled noncommercial JPT/Nimble research releases.
 [Remote GPU results](bench/results/remote-gpu-r001.md) retain matched image
 conditions, native-versus-hosted differences, CPU/RAM/VRAM and failure records.
 
-| Native model | RGB correct at 512 / 768 / 1024 px, each /16 | Ambiguous abstention, each /8 | Page-region inputs/min | Billed inputs/USD |
+| Model | RGB correct at 512 / 768 / 1024 px, each /16 | RGB ambiguous abstention, each /8 | Page-region inputs/min | Estimated warm inputs/USD |
 |---|---:|---:|---:|---:|
-| Clef-Flash 9B | 10 / 11 / 11 | 0 | 748.85 | Billing in progress |
-| Perplexity Decider 27B | 9 / 12 / 12 | 0 | 292.15 | Billing in progress |
+| Intern-Decision 4B, newer stack | 12 / 12 / 12 | 0 | 658.40 | 28,730 |
+| Clef-Flash 9B | 10 / 11 / 11 | 0 | 748.85 | 35,240 |
+| Perplexity Decider 27B | 9 / 12 / 12 | 0 | 292.15 | 12,748 |
+| Clef 27B | 9 / 11 / 12 | 0 | 266.74 | 12,552 |
+| Qwen3.5-2B, vLLM | 6 / 7 / 7 | 0 | 343.78 | 15,766 |
+| Qwen3.5-4B, vLLM | 10 / 10 / 10 | 0 | 272.36 | 12,490 |
+| Qwen3.5-9B, vLLM | 11 / 12 / 11 | 0 | 252.16 | 11,564 |
+| JPT-4B, noncommercial | 10 / 10 / 9 | 0 | 590.05 | 25,748 |
+| JPT-9B, noncommercial | 8 / 8 / 8 | 0 | 563.11 | 24,572 |
 
 Rates cover 216 serial supplied-region decisions over 24 representative DEV
 pages and nine image treatments, including preprocessing during inference.
-Model loading, downloads and rental idle time are recorded separately; full-page
-extraction throughput is not established by this experiment. No reference
-answers are sent to workers, and the protected set remains untouched.
+Estimated warm inputs/USD divides measured throughput by the actual allocation's
+hourly GPU and disk rate. It excludes model loading, downloads, idle time and
+cleanup; whole-wave provider billing is reported separately. These are conditional
+page-region decisions, **not full-page extraction pages/minute or pages/USD**.
+The Intern newer-stack comparison also changes hosts; same-host isolation is
+underway. The complete report retains every color/size result and resource scope.
+Nimble-v3's separate noncommercial text-only ablation scored 6/16 known cases
+and abstained on 0/8 ambiguous cases. No reference answers are sent to workers,
+and the protected set remains untouched.
+
+The [blind prompt comparison](bench/results/remote-gpu-prompts.md) found
+model-specific gains: PPLX sufficiency wording reaches 13/16 known cases;
+identity wording reaches 12/16 known and 3/8 ambiguous abstentions. Clef's neutral
+wording reaches 12/16, while all four variants reduce Flash's known-case score.
+The [fixed combination comparison](bench/results/remote-gpu-combinations.md)
+records the cost of agreement: at 768/1024 px, unanimity reduces known errors
+but also loses correct decisions, and majority voting does not recover ambiguity.
+These remain exploratory, correlated DEV results.
 
 ## Architecture
 

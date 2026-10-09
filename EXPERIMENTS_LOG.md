@@ -919,3 +919,38 @@ inference; an early Qwen CLI admission and server-start readiness failure were
 fixed before its later runs. Provider-posted wave charges reached USD 2.551 at
 this checkpoint and are still accruing. The original USD 18 reservation remains
 in force; posted charges are not added again to that reservation.
+
+R001 second checkpoint: nine vision releases now have complete 216-input DEV
+cohorts, plus Nimble-v3's 24-input text ablation. Small stock Qwen 2B/4B/9B and
+noncommercial JPT 4B/9B are included without replacing the native decision heads.
+All nine-arm scores and measured CPU/RSS/VRAM are retained. README now links the
+full comparison and labels warm inputs/USD as allocation-rate estimates that
+exclude bootstrap, loading and idle time; billed lifecycle cost remains separate.
+
+The frozen four-variant prompt screen completed on Flash, Clef, PPLX and Intern.
+PPLX sufficiency wording improves known correctness from 9/16 to 13/16; identity
+wording reaches 12/16 known and 3/8 ambiguous abstentions. The same variants hurt
+Flash. Intern's sufficiency/neutral variants preserve its 12/16 aggregate but
+change individual successes and failures. These are DEV-selected observations,
+not a new confirmation set. Fixed majority/unanimity policies and their paired
+misses are documented separately, including the unavailable oracle ceiling.
+
+The newer Intern runtime preserves all 216 original decisions while reducing
+prediction wall time from 945.58 to 19.68 seconds. Host, Torch and Transformers
+change together; this is not yet an isolated causal result. FLA alone on the
+original host remains slow and changes one answer. A same-host follow-up adds
+causal-conv1d, then changes Transformers while retaining the host and Torch.
+
+Fresh source-PDF crops are frozen for 128, 256, 384, 400, 448, 500 and 640 px,
+with independent RGB8, gray8 and two-bit treatments (504 inputs/model).
+Every PNG is re-rendered during verification before scoring; source text and
+questions remain fixed. Flash, Clef, PPLX and Intern are the first native runs.
+
+SmolVLM and LFM hit FlashInfer startup crashes on the rented Blackwell runtime.
+An explicit Triton/SDPA attention treatment retains the failed attempts. LFM's
+snapshot downloader also omitted its publisher's Jinja template; the downloader
+now retains that pinned file. Qwen 0.8B and MiniCPM produced valid but incorrect
+visual-control answers. An opt-in diagnostic admission distinguishes semantic
+control failures from transport/schema failures and does not bypass the latter.
+At the second billing checkpoint the provider has posted USD 4.700; charges are
+still accruing within the original USD 18 fleet reservation and USD 100 cap.
