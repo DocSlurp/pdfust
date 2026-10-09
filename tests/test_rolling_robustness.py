@@ -31,7 +31,7 @@ def test_authored_slot_lines_match_reference_text_without_extraction() -> None:
             assert target["authored_slots"] == []
             continue
         table = target["tables"][0]
-        lines = {}
+        lines: dict[tuple[int, int], list[str]] = {}
         for slot in target["authored_slots"]:
             lines.setdefault((slot["row"], slot["column"]), []).append(slot["text"])
         for row, values in enumerate(table["values"]):

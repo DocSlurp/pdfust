@@ -49,7 +49,7 @@ def fragments(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
         ):
             bands.append([])
         bands[-1].append(word)
-    result = []
+    result: list[dict[str, Any]] = []
     for band_id, band in enumerate(bands):
         runs: list[list[dict[str, Any]]] = []
         for word in sorted(band, key=lambda w: (w["bbox"][0], w["id"])):
@@ -82,7 +82,7 @@ def snapshot(case: dict[str, Any]) -> dict[str, Any]:
         raw = page.get_text("words")
         if len(raw) > MAX_WORDS:
             raise ValueError("Complete source words exceed admission; refusing truncation")
-        words = [{"id": f"w{i}", "bbox": _box(w[:4]), "text": w[4]} for i, w in enumerate(raw)]
+        words: list[dict[str, Any]] = [{"id": f"w{i}", "bbox": _box(w[:4]), "text": w[4]} for i, w in enumerate(raw)]
         if sum(len(w["text"].encode()) for w in words) > 65_536:
             raise ValueError("Complete source text exceeds admission")
         rules = []

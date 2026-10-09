@@ -11,7 +11,7 @@ from bench.rolling_rows import assemble, numeric
 
 
 def page(*, wrap: bool = True) -> dict:
-    words = []
+    words: list[dict[str, str | list[int]]] = []
     for row in range(4):
         y = 30 + row * 40
         for col in range(3):

@@ -9,7 +9,7 @@ import random
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from bench.borderless_challenge import score
 from bench.feature_cases import text_op
@@ -18,7 +18,24 @@ from bench.silver import canonical, guard_path, sha, write_json
 from bench.silver_layouts import _pdf
 from bench.silver_structure import observed_table, process_peak_rss
 
-DESIGN = {
+
+class RobustnessDesign(TypedDict):
+    """Concrete declared generator inputs retained in the pre-extraction manifest."""
+
+    version: int
+    seed: int
+    table_pages: int
+    prose_pages: int
+    total_rows: list[int]
+    columns: list[int]
+    font_sizes: list[int]
+    continuation_lines: list[int]
+    blank_rule: str
+    totals_rule: str
+    semantic_scope: str
+
+
+DESIGN: RobustnessDesign = {
     "version": 1,
     "seed": 813207,
     "table_pages": 16,
@@ -36,7 +53,7 @@ DESIGN = {
 def generate_cases() -> list[dict[str, Any]]:  # noqa: C901, PLR0912
     """Produce immutable source PDFs and separate authored targets before extraction."""
     rng = random.Random(DESIGN["seed"])  # noqa: S311 - frozen reproducible DEV authoring
-    cases = []
+    cases: list[dict[str, Any]] = []
     for setting in range(DESIGN["table_pages"]):
         rows = DESIGN["total_rows"][setting % 4]
         columns = DESIGN["columns"][setting % 3]
