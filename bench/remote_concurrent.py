@@ -31,6 +31,7 @@ ADAPTERS = (
     "bench.remote_jpt",
     "bench.remote_nimble",
 )
+GPU_COLUMNS = 4
 MAX_LOG_BYTES = 64 * 1024 * 1024
 FAILURE_LIMIT = 3
 
@@ -391,6 +392,169 @@ def run(  # noqa: C901, PLR0913
     )
     _write(folder / "status.json", summary)
     return summary
+
+
+def local_evaluate(  # noqa: PLR0913
+    *,
+    source_dir: str | Path,
+    source_index: str | Path,
+    packets: str | Path,
+    output: str | Path,
+    model: str,
+    hourly_usd: float | None = None,
+) -> dict[str, Any]:
+    """Root-only scoring after source verification, with concurrent span rates.
+
+    No CLI invocation calls this function. References remain on the root host;
+    only the source-only orchestration module and packets go to GPU workers.
+    """
+    from bench.remote_report import evaluate  # noqa: PLC0415 -- root-only scorer
+
+    if hourly_usd is not None and (not math.isfinite(hourly_usd) or hourly_usd < 0):
+        message = "hourly allocation quote must be finite and nonnegative"
+        raise ValueError(message)
+    quality = evaluate(
+        source_dir=source_dir, source_index=source_index, worker_output=output, packets=packets, model=model
+    )
+    folder = Path(output)
+    status = quality["worker_status"]
+    events, partial = _events(folder / "attempts.jsonl")
+    if partial:
+        message = "merged concurrent log must contain only complete retained event lines"
+        raise ValueError(message)
+    by_id = {row["id"]: row for row in quality["results"]}
+    completed = {e["id"]: e for e in events if e["event"] == "attempt_completed"}
+    for group in quality["groups"]:
+        rows = [r for r in quality["results"] if r["arm"] == group["arm"]]
+        attempts = [completed[r["id"]] for r in rows if r["id"] in completed]
+        span = (
+            (
+                max(e["monotonic_seconds"] + e["wall_seconds"] for e in attempts)
+                - min(e["monotonic_seconds"] for e in attempts)
+            )
+            if attempts
+            else None
+        )
+        complete = (
+            group["completed_regions"] == group["planned_regions"]
+            and group["schema_failures"] == group["worker_failures"] == 0
+        )
+        rate = group["completed_regions"] * 60 / span if complete and span and span > 0 else None
+        group.update(
+            concurrent_request_span_seconds=span,
+            regions_per_concurrent_minute=rate,
+            estimated_warm_regions_per_usd=rate * 60 / hourly_usd if rate and hourly_usd else None,
+        )
+        # Summed per-request latency is diagnostic work, not concurrent throughput.
+        group["regions_per_inference_minute"] = None
+    samples, _ = _events(folder / "process-samples.jsonl")
+    rss = [s["rss_sum_bytes"] for s in samples if isinstance(s.get("rss_sum_bytes"), (int, float))]
+    observed_cpu = [
+        s["observed_cpu_cumulative_seconds"]
+        for s in samples
+        if isinstance(s.get("observed_cpu_cumulative_seconds"), (int, float))
+    ]
+    gpu_samples, _ = _events(folder / "gpu-samples.jsonl")
+    gpu_values = []
+    for sample in gpu_samples:
+        raw = sample.get("raw_csv")
+        if isinstance(raw, str):
+            for line in raw.splitlines():
+                try:
+                    values = [float(value.strip()) for value in line.split(",")]
+                    if len(values) == GPU_COLUMNS and all(math.isfinite(v) for v in values):
+                        gpu_values.append(values)
+                except ValueError:
+                    continue
+    quality.update(
+        concurrent_lanes=status.get("lanes"),
+        global_wall_seconds=status.get("wall_seconds"),
+        regions_per_global_minute=status.get("regions_per_global_minute"),
+        regions_per_concurrent_span_minute=status.get("regions_per_concurrent_span_minute"),
+        global_concurrent_request_span_seconds=status.get("concurrent_request_span_seconds"),
+        hourly_allocation_quote_usd=hourly_usd,
+        estimated_warm_regions_per_usd=(
+            status["regions_per_concurrent_span_minute"] * 60 / hourly_usd
+            if status.get("regions_per_concurrent_span_minute") and hourly_usd
+            else None
+        ),
+        sampled_process_tree_peak_rss_bytes=max(rss) if rss else None,
+        sampled_process_tree_observed_cpu_seconds=max(observed_cpu) if observed_cpu else None,
+        sample_scope=(
+            "supervisor, worker descendants, optional shared server; union of PIDs; "
+            "shared RSS pages may be counted twice"
+        ),
+        cpu_sample_limitations="pre-observation and unsampled exit intervals unavailable",
+        gpu_available_rows=len(gpu_values),
+        gpu_total_samples=len(gpu_samples),
+        gpu_mean_utilization_percent=sum(v[1] for v in gpu_values) / len(gpu_values) if gpu_values else None,
+        gpu_peak_device_mib=max(v[2] for v in gpu_values) if gpu_values else None,
+        rate_scope=(
+            "same supplied regions; concurrent attempt span includes lane imbalance; full-page extraction unavailable"
+        ),
+        cost_scope=(
+            "warm serving estimate from GPU-plus-disk quote; excludes startup, downloads, "
+            "idle, cleanup; not billed cost"
+        ),
+    )
+    # Results retain all source-scored cases, including unresolved/schema failures.
+    if set(by_id) != {
+        json.loads((folder / "shards.json").read_text())["records"][i]["id"] for i in range(status["planned_records"])
+    }:
+        message = "source-scored inventory differs from planned concurrent records"
+        raise ValueError(message)
+    return quality
+
+
+def markdown(evaluation: dict[str, Any]) -> str:
+    """Render source-verified quality and measured parallel resources locally."""
+
+    def number(value: Any) -> str:  # noqa: ANN401
+        return "unmeasured" if value is None else f"{value:.2f}"
+
+    groups = evaluation["groups"]
+    lines = [
+        f"# Concurrent {evaluation['model']}, {evaluation['concurrent_lanes']} lanes",
+        "",
+        (
+            f"Status: {'checkpoint' if evaluation['checkpoint'] else 'complete'}. "
+            "Source identity verified before root-local DEV scoring; references were not staged remotely."
+        ),
+        "",
+        "| Arm | Valid / planned | Known / denominator | Abstain / denominator | Inputs/min | Est. warm inputs/USD |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for g in groups:
+        lines.append(  # noqa: PERF401
+            f"| {g['arm']} | {g['completed_regions']}/{g['planned_regions']} | "
+            f"{g['known_correct']}/{g['known_denominator']} | "
+            f"{g['ambiguous_abstentions']}/{g['ambiguous_denominator']} | "
+            f"{number(g['regions_per_concurrent_minute'])} | {number(g['estimated_warm_regions_per_usd'])} |"
+        )
+    rss = evaluation["sampled_process_tree_peak_rss_bytes"]
+    lines += [
+        "",
+        (
+            f"Global wall: {number(evaluation['global_wall_seconds'])} s; "
+            f"global rate: {number(evaluation['regions_per_global_minute'])} inputs/min. "
+            f"Concurrent span: {number(evaluation['global_concurrent_request_span_seconds'])} s; "
+            f"span rate: {number(evaluation['regions_per_concurrent_span_minute'])} inputs/min."
+        ),
+        f"Sampled simultaneous process-tree peak RSS: {number(rss / 2**30 if rss is not None else None)} GiB; "
+        f"observed CPU: {number(evaluation['sampled_process_tree_observed_cpu_seconds'])} s. "
+        + evaluation["sample_scope"]
+        + ". "
+        + evaluation["cpu_sample_limitations"]
+        + ".",
+        (
+            f"Device GPU samples: {evaluation['gpu_available_rows']}/{evaluation['gpu_total_samples']}; "
+            f"mean utilization {number(evaluation['gpu_mean_utilization_percent'])}%; "
+            f"peak device memory {number(evaluation['gpu_peak_device_mib'])} MiB. "
+            "Device observations are not summed child CUDA high-water counters."
+        ),
+        evaluation["rate_scope"] + ". " + evaluation["cost_scope"] + ".",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def main() -> None:

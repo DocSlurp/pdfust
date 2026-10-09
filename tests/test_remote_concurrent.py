@@ -194,3 +194,61 @@ def test_run_uses_current_venv_and_keeps_server_shared(tmp_path: Path, monkeypat
     assert all(c[0] == rc.sys.executable for c in commands)
     assert all("shared-server-config" in c for c in commands)
     assert result["server_pid"] == 999
+
+
+def test_local_report_uses_concurrent_span_and_simultaneous_samples(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bench import remote_report  # noqa: PLC0415
+
+    out = tmp_path / "out"
+    manifest = packets(tmp_path, 4)
+    facts = rc.shard(manifest, out, 4, 2)
+    for lane in range(2):
+        complete_worker(out / f"worker-{lane:02d}", [r for r in facts["records"] if r["lane"] == lane])
+    status = rc.collect(out, 3)
+    (out / "process-samples.jsonl").write_text(
+        json.dumps({"rss_sum_bytes": 400, "observed_cpu_cumulative_seconds": 2.5}) + "\n"
+    )
+    (out / "gpu-samples.jsonl").write_text(json.dumps({"raw_csv": "0, 75, 1000, 2000\n"}) + "\n")
+    verified_calls = []
+
+    def fake_verified_evaluate(**options: object) -> dict:
+        verified_calls.append(options)
+        return {
+            "model": "fake",
+            "checkpoint": False,
+            "worker_status": status,
+            "groups": [
+                {
+                    "arm": "a",
+                    "completed_regions": 4,
+                    "planned_regions": 4,
+                    "schema_failures": 0,
+                    "worker_failures": 0,
+                    "known_correct": 2,
+                    "known_denominator": 3,
+                    "ambiguous_abstentions": 1,
+                    "ambiguous_denominator": 1,
+                }
+            ],
+            "results": [{"id": r["id"], "arm": "a", "status": "ok"} for r in facts["records"]],
+        }
+
+    monkeypatch.setattr(remote_report, "evaluate", fake_verified_evaluate)
+    result = rc.local_evaluate(
+        source_dir=tmp_path / "root-source",
+        source_index=tmp_path / "root-index",
+        packets=manifest,
+        output=out,
+        model="fake",
+        hourly_usd=2,
+    )
+    assert len(verified_calls) == 1
+    assert result["groups"][0]["regions_per_concurrent_minute"] == 160
+    assert result["groups"][0]["estimated_warm_regions_per_usd"] == 4800
+    assert result["groups"][0]["regions_per_inference_minute"] is None
+    assert result["sampled_process_tree_peak_rss_bytes"] == 400
+    assert result["sampled_process_tree_observed_cpu_seconds"] == 2.5
+    assert result["gpu_mean_utilization_percent"] == 75
+    assert "2/3" in rc.markdown(result)
