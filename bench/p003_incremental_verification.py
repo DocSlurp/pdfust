@@ -99,6 +99,24 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         uniform_config = frozen["config"]
         if (
             name == "p003_topology_run.py"
+            and digest == "f233a8d32a70f3782beb33b7444ca61ed95bd306e6ecb70d565c61f97328a4e3"
+            and uniform_config.get("ownership_protocol", "row_anchor") == "row_anchor"
+            and set(uniform_config)
+            <= historical_config_keys
+            | {
+                "geometry_only",
+                "band_mode",
+                "transcript_replay",
+                "chunked_inventory",
+                "crossed_tables",
+                "topology_evidence",
+                "geometry_first",
+                "ownership_protocol",
+            }
+        ):
+            continue  # Root reviewed unchanged two-stage ownership before opt-in direct-cell choices.
+        if (
+            name == "p003_topology_run.py"
             and digest == "7d39c0c8029b7a2569c9c14a4250cb37a290709a16b2c64f1a66ec43f6adb047"
             and uniform_config.get("geometry_first", False) is False
             and set(uniform_config)
@@ -279,6 +297,7 @@ def verify_topology(
     """Replay frozen topology/source partition, row ownership, anchors and atomic outputs."""
     from bench import p003_candidate_run as candidate
     from bench import p003_topology_chunks as chunks
+    from bench import p003_topology_direct as direct
     from bench import p003_topology_hybrid as hybrid
     from bench import p003_topology_ownership as ownership
     from bench import p003_topology_run as runner
@@ -301,6 +320,10 @@ def verify_topology(
         config.get("geometry_first") and (not config.get("chunked_inventory") or config.get("geometry_only"))
     ):
         raise ValueError("Invalid geometry-first source ownership treatment")
+    if config.get("ownership_protocol", "row_anchor") not in {"row_anchor", "direct_cell"} or (
+        config.get("ownership_protocol") == "direct_cell" and not config.get("geometry_first")
+    ):
+        raise ValueError("Invalid direct-cell source ownership treatment")
     names = {"source-baseline", "topology-baseline"}
     if config.get("transcript_replay"):
         names.add("original-ownership-run")
@@ -329,6 +352,8 @@ def verify_topology(
         _helpers(frozen, ("p003_topology_chunks.py", "p003_spatial_bands.py"))
     if config.get("geometry_first"):
         _helpers(frozen, ("p003_topology_hybrid.py", "p003_topology_geometry.py"))
+    if config.get("ownership_protocol") == "direct_cell":
+        _helpers(frozen, ("p003_topology_direct.py",))
     if config.get("transcript_replay"):
         _helpers(frozen, ("p003_topology_replay.py",))
     reviewed = config.get("reviewed_parser_sha256", [])
@@ -435,41 +460,48 @@ def verify_topology(
                             retained.append(_retained_response(directory, transcript, request_stem, body, response))
                         calls.append(response)
                         responses.append(response["result"])
-                    rows = question_protocol.collect(question_snapshot, crop["row_bodies"], responses)
-                    if _read(directory / f"{stem}-row-receipt.json") != rows:
-                        raise ValueError("Topology row receipt changed")
-                    bodies = question_protocol.batches(
-                        question_snapshot,
-                        config["model"],
-                        crop["url"],
-                        rows=rows,
-                        max_questions=config["max_questions"],
-                        image=config.get("image", True),
-                        **(
-                            {
-                                "evidence_mode": config.get(
-                                    "topology_evidence", "neighbors" if config.get("geometry_first") else "compact"
-                                )
-                            }
-                            if config.get("chunked_inventory")
-                            else {}
-                        ),
-                    )
-                    if info["cells"] != [f"{stem}-cell-{i}" for i in range(len(bodies))]:
-                        raise ValueError("Topology anchor request inventory changed")
-                    results = []
-                    for request_stem, body in zip(info["cells"], bodies, strict=True):
-                        if _read(directory / f"{request_stem}-request.json") != body:
-                            raise ValueError("Topology anchor question changed")
-                        response = _read(directory / f"{request_stem}-response.json")
-                        _response_identity(body, response)
-                        if transcript is not None:
-                            retained.append(_retained_response(directory, transcript, request_stem, body, response))
-                        calls.append(response)
-                        results.append(response["result"])
-                    audit = question_protocol.assemble(
-                        question_snapshot, crop["row_bodies"], responses, bodies, results
-                    )
+                    if config.get("ownership_protocol") == "direct_cell":
+                        if info["cells"] or info.get("ownership_protocol") != "direct_cell":
+                            raise ValueError("Direct-cell control contains a second decision stage")
+                        audit = direct.assemble(question_snapshot, crop["row_bodies"], responses)
+                        if _read(directory / f"{stem}-direct-receipt.json") != audit.get("direct", {}):
+                            raise ValueError("Direct-cell source receipt differs from exact decision replay")
+                    else:
+                        rows = question_protocol.collect(question_snapshot, crop["row_bodies"], responses)
+                        if _read(directory / f"{stem}-row-receipt.json") != rows:
+                            raise ValueError("Topology row receipt changed")
+                        bodies = question_protocol.batches(
+                            question_snapshot,
+                            config["model"],
+                            crop["url"],
+                            rows=rows,
+                            max_questions=config["max_questions"],
+                            image=config.get("image", True),
+                            **(
+                                {
+                                    "evidence_mode": config.get(
+                                        "topology_evidence", "neighbors" if config.get("geometry_first") else "compact"
+                                    )
+                                }
+                                if config.get("chunked_inventory")
+                                else {}
+                            ),
+                        )
+                        if info["cells"] != [f"{stem}-cell-{i}" for i in range(len(bodies))]:
+                            raise ValueError("Topology anchor request inventory changed")
+                        results = []
+                        for request_stem, body in zip(info["cells"], bodies, strict=True):
+                            if _read(directory / f"{request_stem}-request.json") != body:
+                                raise ValueError("Topology anchor question changed")
+                            response = _read(directory / f"{request_stem}-response.json")
+                            _response_identity(body, response)
+                            if transcript is not None:
+                                retained.append(_retained_response(directory, transcript, request_stem, body, response))
+                            calls.append(response)
+                            results.append(response["result"])
+                        audit = question_protocol.assemble(
+                            question_snapshot, crop["row_bodies"], responses, bodies, results
+                        )
                     if (
                         _read(directory / f"{stem}-audit.json") != audit
                         or _read(directory / f"{stem}-updated-state.json") != audit["state"]
@@ -549,7 +581,9 @@ def verify_topology(
                     ) != json.loads(crop["snapshot"].packet_json):
                         raise ValueError("Prepared topology immutable source snapshot changed")
                     expected_stems = [f"{stem}-row-{i}" for i in range(len(crop["row_bodies"]))]
-                    if info["rows"] != expected_stems or info["maximum_new_ownership_calls"] != 2 * len(expected_stems):
+                    if info["rows"] != expected_stems or info["maximum_new_ownership_calls"] != (
+                        1 if config.get("ownership_protocol") == "direct_cell" else 2
+                    ) * len(expected_stems):
                         raise ValueError("Prepared topology row request inventory changed")
                     for request_stem, body in zip(expected_stems, crop["row_bodies"], strict=True):
                         if _read(directory / f"{request_stem}-request.json") != body:

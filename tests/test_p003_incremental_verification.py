@@ -191,7 +191,10 @@ def test_frozen_generation_gate_replays_exact_provider_response_and_body(
 
 
 @pytest.mark.parametrize("prepare", [False, True])
-def test_geometry_first_admission_and_complete_source_output_replay(tmp_path: Path, *, prepare: bool) -> None:
+@pytest.mark.parametrize("ownership_protocol", ["row_anchor", "direct_cell"])
+def test_geometry_first_admission_and_complete_source_output_replay(
+    tmp_path: Path, ownership_protocol: str, *, prepare: bool
+) -> None:
     source, topology = tmp_path / "source", tmp_path / "topology"
     source_trust, topology_trust = archives(source, topology)
     for i in range(16):
@@ -209,6 +212,7 @@ def test_geometry_first_admission_and_complete_source_output_replay(tmp_path: Pa
             chunked_inventory=True,
             geometry_first=True,
             topology_evidence="neighbors",
+            **({"ownership_protocol": ownership_protocol} if ownership_protocol == "direct_cell" else {}),
         ),
         None if prepare else AttributedClient(tmp_path),
     )
