@@ -41,6 +41,7 @@ IMAGE_MODELS = (
     "cloudflare/clef-omni",
 )
 EDGES = (0, 128, 256, 400, 500, 512, 768, 1024, 1200)
+MAX_EXPECTED_PAGES = 512
 ROOT_REVIEWED_PARSER_SHA256 = frozenset(
     {
         "8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e",
@@ -447,6 +448,9 @@ def run(
     """Authenticate and freeze declared generation inputs before opt-in ranking calls."""
     if not config.get("run_hosted") or not 2 <= len(inputs) <= 4 or len(inputs) != len(trusted_code):
         raise ValueError("Ranking needs 2-4 explicit baseline/trust-map pairs and run_hosted opt-in")
+    expected_pages = config.get("expected_pages", 16)
+    if type(expected_pages) is not int or not 1 <= expected_pages <= MAX_EXPECTED_PAGES:
+        raise ValueError("Expected corpus size must be an explicit integer from 1 through 512")
     image_mode = config.get("image_mode", "rgb")
     visibility = config.get("image_visibility", "source")
     if visibility not in selector_visibility.CONTROLS or (visibility != "source" and not config.get("image_edge")):
@@ -494,11 +498,11 @@ def run(
 
     expected = keyed(records)
     if (
-        len(expected) != 16
-        or len(records) != 16
+        len(expected) != expected_pages
+        or len(records) != expected_pages
         or any(keyed(frozen["records"]) != expected for frozen in frozen_inputs)
     ):
-        raise ValueError("Frozen selector inputs must match the same complete natural16 source inventory")
+        raise ValueError("Frozen selector inputs must match the complete explicitly declared source inventory")
     if any(frozen["manifest_sha256"] != frozen_inputs[0]["manifest_sha256"] for frozen in frozen_inputs):
         raise ValueError("Frozen source manifests differ")
     config = {
@@ -633,6 +637,7 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--image-edge", type=int, choices=EDGES, default=512)
     parser.add_argument("--seed", type=int, default=20261010)
+    parser.add_argument("--expected-pages", type=int, default=16)
     parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
     parser.add_argument("--reviewed-parser-sha256", action="append", default=[])
     parser.add_argument("--evidence-mode", choices=("whole", "differences"), default="whole")
@@ -642,6 +647,8 @@ def main() -> None:
     parser.add_argument("--run-hosted", action="store_true")
     args = parser.parse_args()
     config = {"model": args.model, "image_edge": args.image_edge, "seed": args.seed, "run_hosted": args.run_hosted}
+    if args.expected_pages != 16:
+        config["expected_pages"] = args.expected_pages
     if args.image_mode != "rgb":
         config["image_mode"] = args.image_mode
     if args.image_visibility != "source":

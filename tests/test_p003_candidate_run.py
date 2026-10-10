@@ -108,13 +108,14 @@ class Client:
         return {"entry": entry, "result": answer, "replayed": False}
 
 
-def baseline(
+def baseline(  # noqa: PLR0913 - independent source/model/size fixture controls.
     directory: Path,
     value: str,
     *,
     color: str = "white",
     failed: bool = False,
     provider_name: str | None = None,
+    page_count: int = 16,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
     directory.mkdir()
     url, data = pixels(color)
@@ -134,7 +135,7 @@ def baseline(
     crop["request"] = {"body_sha256": sha(json.dumps(body, separators=(",", ":")).encode())}
     crop["tables"] = transcription.parse(crop["transcription_response"], crop_bounds)["tables"]
     records, results = [], []
-    for i in range(16):
+    for i in range(page_count):
         ident = f"p{i}"
         record = {"id": ident, "pdf_path": "unused-frozen-source.pdf", "pdf_sha256": "frozen-pdf", "page_number": i}
         regions = [deepcopy(crop)] if i == 0 else []
@@ -536,6 +537,39 @@ def test_difference_treatment_exact_request_and_atomic_capacity(tmp_path: Path) 
     assert page["ranking_regions"][0]["ranking_status"] == "evidence_capacity_retained_first"
     assert page["calls"] == original["calls"]
     assert (output / "p0-structure.json").read_bytes() == (first / "p0-structure.json").read_bytes()
+
+
+def test_explicit_confirmation_inventory_never_shrinks_to_completed_pages(tmp_path: Path) -> None:
+    """Forty-eight source records require explicit admission; missing records fail before calls."""
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, a = baseline(first, "first", page_count=48)
+    _, _, b = baseline(second, "second", page_count=48)
+    client = Client(tmp_path)
+    with pytest.raises(ValueError, match="explicitly declared"):
+        runner.run([first, second], [a, b], tmp_path / "default-refused", config(), client)
+    assert not client.bodies
+    report = runner.run(
+        [first, second], [a, b], tmp_path / "confirmation",
+        config(expected_pages=48), client,
+    )
+    assert report["page_count"] == 48
+    assert len(report["results"]) == 48
+    assert report["config"]["expected_pages"] == 48
+    short = tmp_path / "short"
+    _, _, c = baseline(short, "second", page_count=47)
+    before = len(client.bodies)
+    with pytest.raises(ValueError, match="explicitly declared"):
+        runner.run([first, short], [a, c], tmp_path / "missing", config(expected_pages=48), client)
+    assert len(client.bodies) == before
+
+
+@pytest.mark.parametrize("count", [True, 0, 513, "48"])
+def test_expected_inventory_size_is_bounded_before_authentication(tmp_path: Path, count: object) -> None:
+    """Invalid scope must not authenticate inputs or instantiate a provider client."""
+    with pytest.raises(ValueError, match="explicit integer"):
+        runner.run([tmp_path / "absent-a", tmp_path / "absent-b"], [{}, {}],
+                   tmp_path / "never-created", config(expected_pages=count))
+    assert not (tmp_path / "never-created").exists()
 
 
 def test_precall_admission_failure_is_not_labeled_duplicate_pool(tmp_path: Path) -> None:
