@@ -241,13 +241,26 @@ def stop_group(process: subprocess.Popen, sample: Callable[[], None] | None = No
     process.wait()
 
 
+def next_launch_index(ordered: list[dict[str, Any]], active: list[dict[str, Any]], limit: int) -> int | None:
+    """Overlap lightweight arms while retaining the three-heavy-worker CPU bound."""
+    if len(active) >= limit:
+        return None
+    heavy = {"pipeline", "candidate"}
+    heavy_count = sum(arm.get("kind", "pipeline") in heavy for arm in active)
+    return next((i for i, arm in enumerate(ordered)
+                 if heavy_count < MAX_CONCURRENT or arm.get("kind", "pipeline") not in heavy), None)
+
+
 def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit cleanup.
     plan: list[dict[str, Any]], manifest: Path | None, directory: Path, *, seed: int,
-              cutoff: float = P003_PAID_CUTOFF, root: Path = ROOT) -> dict[str, Any]:
+              cutoff: float = P003_PAID_CUTOFF, root: Path = ROOT, max_parallel_arms: int = 3) -> dict[str, Any]:
     """Run only fresh arms, with per-arm snapshots and atomic status checkpoints."""
     directory = guard_path(directory)
     manifest = guard_path(manifest) if manifest is not None else None
     ordered = validate_plan(plan, seed)
+    if type(max_parallel_arms) is not int or max_parallel_arms not in (3, 6):
+        message = "Queue admits exactly three or six concurrent arms"
+        raise ValueError(message)
     for arm in ordered:
         command_for(arm, manifest, directory / arm["name"])
     directory.mkdir(parents=True, exist_ok=False)
@@ -260,7 +273,10 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
     statuses: list[dict[str, Any]] = []
     running: dict[str, tuple[subprocess.Popen, Any, dict[str, Any]]] = {}
     monitor, started = AggregateMonitor(), time.monotonic()
-    record = {"policy": POLICY, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,
+    policy = {**POLICY, "max_concurrent_arms": max_parallel_arms,
+              "max_cpu_heavy_arms": 3, "transport_slot_wait": max_parallel_arms > MAX_CONCURRENT,
+              "scheduler": "first eligible in frozen order; pipeline/candidate are CPU-heavy"}
+    record = {"policy": policy, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,
               "manifest": str(manifest.resolve()) if manifest is not None else None, "arms": statuses,
               "rates_label": "contended per-arm rates separated by experiment kind",
               "aggregate_rates": None, "max_observed_concurrent_arms": 0}
@@ -273,8 +289,12 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
     try:
         while ordered or running:
             remaining = cutoff - time.time()
-            while ordered and len(running) < MAX_CONCURRENT and remaining >= START_MARGIN:
-                arm = ordered.pop(0)
+            while ordered and len(running) < max_parallel_arms and remaining >= START_MARGIN:
+                active = [status for _process, _log, status in running.values()]
+                selected_index = next_launch_index(ordered, active, max_parallel_arms)
+                if selected_index is None:
+                    break
+                arm = ordered.pop(selected_index)
                 name = arm["name"]
                 output = directory / name
                 if output.exists():
@@ -290,8 +310,13 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                 checkpoint()
                 log = (directory / "logs" / (name + ".log")).open("x")
                 try:
+                    environment = os.environ.copy()
+                    environment.pop("JEV_P003_TRANSPORT_SLOTS", None)
+                    if max_parallel_arms > MAX_CONCURRENT:
+                        environment["JEV_P003_TRANSPORT_SLOTS"] = "3"
                     process = subprocess.Popen(  # noqa: S603 - fixed module and literal validated arguments.
                         command, cwd=root, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+                        env=environment,
                     )
                 except BaseException:
                     log.close()
@@ -350,12 +375,13 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=3)
+    parser.add_argument("--max-parallel-arms", type=int, choices=(3, 6), default=3)
     parser.add_argument("--exclusive-paid-work", action="store_true")
     args = parser.parse_args()
     if not args.exclusive_paid_work:
         parser.error("Root must stop all serial/other paid work and reconcile policy offline before acknowledgment")
     run_queue(json.loads(guard_path(args.plan).read_bytes()), guard_path(args.manifest) if args.manifest else None,
-              guard_path(args.directory), seed=args.seed)
+              guard_path(args.directory), seed=args.seed, max_parallel_arms=args.max_parallel_arms)
 
 
 if __name__ == "__main__":

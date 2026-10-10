@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import threading
+import time
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor
 from email.message import Message
@@ -72,6 +73,44 @@ def test_reserves_before_http_and_reuses_accounting_and_telemetry(
     assert (base.directory / out["entry"]["response_file"]).read_bytes() == payload()
     assert telemetry.call_count == 1
     assert "fake-key" not in base.ledger.read_text()
+
+
+def test_six_root_clients_wait_without_oversubscribing_three_paid_reservations(
+    base: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bench import research_policy  # noqa: PLC0415
+    from bench.p003_client import P003ConcurrentClient  # noqa: PLC0415
+
+    monkeypatch.setenv("JEV_P003_TRANSPORT_SLOTS", "3")
+    monkeypatch.setattr(research_policy, "P003_PAID_CUTOFF", float("inf"))
+    lock = threading.Lock()
+    active = peak = 0
+
+    def opener(_request: Any, *, timeout: int) -> MagicMock:  # noqa: ANN401, ARG001
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+            assert sum(r.get("concurrent_state") == "in_flight" for r in ledger(base)["requests"]) <= 3
+        time.sleep(0.15)
+        with lock:
+            active -= 1
+        return response(payload())
+
+    clients = [P003ConcurrentClient(client=base, opener=opener) for _ in range(6)]
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        futures = [
+            pool.submit(client.request, body(str(i)), tag=f"P003/slot-test-{i}") for i, client in enumerate(clients)
+        ]
+        results = [future.result(timeout=10) for future in futures]
+    rows = ledger(base)["requests"]
+    assert peak == 3
+    assert active == 0
+    assert len(rows) == 6
+    assert all(r["concurrent_state"] == "completed" for r in rows)
+    assert sum(r["accounted_usd"] for r in rows) == pytest.approx(0.06)
+    assert all(r["transport_admission"]["slots"] == 3 for r in results)
+    assert any(r["transport_admission"]["wait_seconds"] > 0.1 for r in results)
 
 
 def test_two_http_requests_can_overlap_and_wave_cap_cannot_oversubscribe(base: hosted.DecisionClient) -> None:

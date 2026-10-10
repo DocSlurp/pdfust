@@ -30,7 +30,8 @@ def test_seeded_plan_is_copied_and_control_overrides_rejected():
             parallel.validate_plan([{"name": "a", "arguments": arguments}], 1)
 
 
-def test_queue_cpu_children_overlap_freeze_and_no_overwrite(tmp_path, monkeypatch):
+@pytest.mark.parametrize("limit", [3, 6])
+def test_queue_cpu_children_overlap_freeze_and_no_overwrite(tmp_path, monkeypatch, limit):
     original_popen = subprocess.Popen
     commands = []
 
@@ -50,24 +51,34 @@ def test_queue_cpu_children_overlap_freeze_and_no_overwrite(tmp_path, monkeypatc
     monkeypatch.setattr(parallel.subprocess, "check_output", lambda *_a, **_k: "bench/p003_parallel.py\n")
     directory = tmp_path / "queue"
     root = Path(parallel.__file__).resolve().parent.parent
-    plan = [{"name": f"a{i}", "arguments": []} for i in range(4)]
+    count = limit + 1
+    plan = [{"name": f"a{i}", "kind": "pipeline" if i < 3 else "gate", "arguments": []} for i in range(count)]
     result = parallel.run_queue(plan, tmp_path / "manifest.json", directory,
-                                seed=1, cutoff=time.time() + 1000, root=root)
-    assert result["max_observed_concurrent_arms"] == 3
-    assert len(result["arms"]) == 4
+                                seed=1, cutoff=time.time() + 1000, root=root, max_parallel_arms=limit)
+    assert result["max_observed_concurrent_arms"] == limit
+    assert len(result["arms"]) == count
     assert all(arm["status"] == "completed" for arm in result["arms"])
     assert all("--workers" not in command for command in commands)
     assert all(command[command.index("--transport-concurrency") + 1] == "3" for command in commands)
-    assert len(result["frozen_order"]) == 4
+    assert len(result["frozen_order"]) == count
     assert result["resources"]["cpu_seconds_sampled"] > 0
     assert result["resources"]["peak_aggregate_rss_bytes_sampled"] > 0
     assert result["resources"]["samples"] >= 4
-    assert result["aggregate_rates"]["completed_page_runs_known"] == 4
+    assert result["aggregate_rates"]["completed_page_runs_known"] == 3
     assert result["aggregate_rates"]["completed_page_runs_per_minute"] > 0
-    assert len(list((directory / "trusted-code").glob("*.json"))) == 4
+    assert len(list((directory / "trusted-code").glob("*.json"))) == count
     assert json.loads((directory / "status.json").read_text())["frozen_order"] == result["frozen_order"]
     with pytest.raises(FileExistsError):
         parallel.run_queue(plan, tmp_path / "manifest.json", directory, seed=1)
+
+
+def test_wide_queue_skips_cpu_heavy_head_without_changing_frozen_priority():
+    ordered = [{"name": "heavy", "kind": "candidate"}, {"name": "light", "kind": "topology"}]
+    active = [{"kind": "pipeline"}, {"kind": "candidate"}, {"kind": "pipeline"}]
+    assert parallel.next_launch_index(ordered, active, 6) == 1
+    assert parallel.next_launch_index(ordered, active, 3) is None
+    assert parallel.next_launch_index(ordered[:1], active, 6) is None
+    assert ordered[0]["name"] == "heavy"
 
 
 def test_cutoff_never_launches_and_records_not_started(tmp_path, monkeypatch):
