@@ -20,9 +20,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bench import pipeline_run as pipeline
-from bench.decision_hosted import DECISION_MODELS, DecisionClient, accounted_cost
+from bench.decision_hosted import DECISION_MODELS, accounted_cost
 from bench.decision_p003_native import apply_decision_batches, decision_batches
 from bench.generalization_run import _table_bounds, region_image
+from bench.p003_client import P003DecisionClient
 from bench.pipeline_regions import compose
 from bench.pipeline_source_order import render_source
 from bench.silver import guard_path, sha, write_json
@@ -37,6 +38,10 @@ CODE_FILES = (
     "decision_p003_boundaries.py",
     "decision_p003_native.py",
     "decision_hosted.py",
+    "p003_client.py",
+    "research_policy.py",
+    "decision_langfuse.py",
+    "reprice_model_rates.py",
     "pipeline_assembly.py",
     "pipeline_frontier.py",
     "pipeline_run.py",
@@ -377,7 +382,7 @@ def run(
     }
     write_json(output / "frozen.json", frozen)
     if client is None:
-        client = DecisionClient()
+        client = P003DecisionClient()
     if _entries(client, f"P003/{config['run_id']}/"):
         raise ValueError("Repair run ID already exists in the persistent ledger; choose a fresh run ID")
     with pipeline.Resources() as resources:
