@@ -29,6 +29,7 @@ MODULES = {
     "admission": "bench.p003_structure_admission_run", "micro": "bench.p003_micro_relations_run",
     "diagram": "bench.p003_geometry_diagram_run",
     "header": "bench.p003_header_decision_run",
+    "synthetic_relations": "bench.p003_synthetic_relations_run",
 }
 INCREMENTAL_FIELDS = {
     "candidate": ("ranking_status", "incremental_ranking"),
@@ -38,6 +39,10 @@ INCREMENTAL_FIELDS = {
     "admission": ("decision_status", "incremental_admission"),
     "diagram": ("selection_status", "incremental_selection"),
     "header": ("selection_status", "incremental_header_selection"),
+}
+QUESTION_SCOPES = {
+    "micro": "partial local relationship probes; no complete page output",
+    "synthetic_relations": "one relationship question per synthetic page; no complete extraction or quality claim",
 }
 MAX_ARMS = 64
 MAX_CONCURRENT = 3
@@ -158,7 +163,7 @@ def report_counts(status: dict[str, Any], arm_report: dict[str, Any]) -> None:
     if not isinstance(rows, list):
         message = "Arm report results must be a list"
         raise TypeError(message)
-    if status["kind"] == "micro":
+    if status["kind"] in QUESTION_SCOPES:
         # A local pair answer is not a processed PDF page, even when page IDs are retained.
         statuses = Counter(row.get("status", "missing") for row in rows)
         valid = statuses["valid_nonabstaining"] + statuses["valid_abstention"]
@@ -166,9 +171,19 @@ def report_counts(status: dict[str, Any], arm_report: dict[str, Any]) -> None:
             intended_questions=len(rows), attempted_questions=arm_report["attempted_question_count"],
             valid_returned_questions=valid, nonabstaining_questions=statuses["valid_nonabstaining"],
             question_status_counts=dict(statuses), incremental_accounting=arm_report["charges"],
-            question_rates_scope="partial local relationship probes; no complete page output",
+            question_kind_counts=dict(Counter(row.get("kind", "unspecified") for row in rows)),
+            question_rates_scope=QUESTION_SCOPES[status["kind"]],
+            correctness_measured=False, full_pipeline_rate=None,
+            contended_attempted_questions_per_minute=(
+                arm_report["attempted_question_count"] / status["wall_seconds"] * 60
+            ),
+            contended_nonabstaining_questions_per_minute=statuses["valid_nonabstaining"] / status["wall_seconds"] * 60,
             contended_valid_questions_per_minute=valid / status["wall_seconds"] * 60,
             pages_per_minute=None, pages_per_dollar=None,
+        )
+        effective = arm_report["charges"].get("effective_usd")
+        status["nonabstaining_questions_per_dollar"] = (
+            statuses["valid_nonabstaining"] / effective if effective is not None and effective > 0 else None
         )
         return
     status["completed_pages"] = sum(row.get("status") == "ok" for row in rows)
@@ -190,14 +205,20 @@ def summarize_rates(statuses: list[dict[str, Any]], wall: float, not_started: li
     by_kind = {}
     for kind in MODULES:
         arms = [status for status in statuses if status["kind"] == kind]
-        if kind == "micro":
+        if kind in QUESTION_SCOPES:
             complete = bool(arms) and all(
                 "valid_returned_questions" in status and not status.get("report_metrics_error") for status in arms
             ) and not not_started
             questions = sum(status.get("valid_returned_questions", 0) for status in arms)
+            attempted = sum(status.get("attempted_questions", 0) for status in arms)
+            nonabstaining = sum(status.get("nonabstaining_questions", 0) for status in arms)
             by_kind[kind] = {
                 "valid_returned_questions_known": questions, "complete_metrics": complete,
-                "scope": "partial local relationship probes; no complete page output", "arm_count": len(arms),
+                "scope": QUESTION_SCOPES[kind], "arm_count": len(arms),
+                "attempted_questions_known": attempted, "nonabstaining_questions_known": nonabstaining,
+                "attempted_questions_per_minute": attempted / wall * 60 if complete and wall else None,
+                "nonabstaining_questions_per_minute": nonabstaining / wall * 60 if complete and wall else None,
+                "correctness_measured": False, "full_pipeline_rate": None,
                 "valid_returned_questions_per_minute": questions / wall * 60 if complete and wall else None,
                 "pages_per_minute": None, "pages_per_dollar": None,
             }
@@ -287,7 +308,7 @@ def next_launch_index(ordered: list[dict[str, Any]], active: list[dict[str, Any]
     """Overlap lightweight arms while retaining the three-heavy-worker CPU bound."""
     if len(active) >= limit:
         return None
-    heavy = {"pipeline", "candidate", "admission", "diagram", "header"}
+    heavy = {"pipeline", "candidate", "admission", "diagram", "header", "synthetic_relations"}
     heavy_count = sum(arm.get("kind", "pipeline") in heavy for arm in active)
     return next((i for i, arm in enumerate(ordered)
                  if heavy_count < MAX_CONCURRENT or arm.get("kind", "pipeline") not in heavy), None)
@@ -396,7 +417,8 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
               "max_cpu_heavy_arms": 3, "transport_slot_wait": max_parallel_arms > MAX_CONCURRENT,
               "heartbeat_seconds": HEARTBEAT_SECONDS,
               "declared_arm_duration_overrides": True,
-              "scheduler": "first eligible in frozen order; pipeline/candidate/admission/diagram/header are CPU-heavy"}
+              "scheduler": ("first eligible in frozen order; "
+                            "pipeline/candidate/admission/diagram/header/synthetic_relations are CPU-heavy")}
     if coordination is not None:
         policy.update(exclusive_paid_work_required=False, root_coordinated_micro_only=True)
     record = {"policy": policy, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,

@@ -124,7 +124,7 @@ def test_mixed_kinds_fixed_commands_and_separate_rate_scopes(tmp_path):
     ]}], 1)
     statuses = []
     for kind in parallel.MODULES:
-        if kind == "micro":
+        if kind in parallel.QUESTION_SCOPES:
             continue
         status = {"kind": kind, "wall_seconds": 10}
         report = {"results": [{"status": "ok", "ranking_status": "not_applicable", "repair_status": "completed",

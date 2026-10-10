@@ -1,0 +1,9 @@
+# Synthetic relationship queue integration
+
+The fixed `synthetic_relations` kind invokes `bench.p003_synthetic_relations_run`. Literal arm arguments specify `--input`, `--trusted-code`, one `--model`, `--evidence`, `--image-edge`, and `--viewport`. Queue-owned output, hosted opt-in, and transport concurrency 3 are inserted once. Input and trust paths use the existing protected-path guard. No manifest or worker flag is inserted.
+
+The runner reports question rows, not completed extraction pages. Queue accounting retains all charges and failed/unresolved reservations, counts intended/attempted/valid returned/nonabstaining questions separately, and records relationship-kind and outcome inventories. Valid abstentions count as valid protocol returns; none of these counters measures correctness. Question rates use each arm's contended subprocess wall time (including preparation) and the queue aggregate wall interval, separately from the runner's API interval. Page rates and full-pipeline rates remain undefined. Missing arm reports or unstarted arms suppress aggregate rates; missing effective costs suppress per-dollar rates.
+
+Synthetic source validation and render replay use the existing CPU-heavy lane, capped at three arms. Transport remains the existing shared three-slot P003 policy. The explicit coordinated auxiliary mode remains micro-only; this addition does not authorize synthetic arms in that mode or change live financial policy. Each arm is independent, with no automatic retries or model fallback.
+
+Validation: actual runner CLI parsed with a mocked run function; protected input/trust paths checked in both argument forms; failed, refused, abstained, and unattempted outcomes exercised; unknown costs and incomplete queues retain undefined rates; mixed queue accounting excludes all synthetic questions from pipeline counters.
