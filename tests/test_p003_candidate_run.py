@@ -347,6 +347,48 @@ def test_invalid_other_baseline_is_provenance_not_partial_rescue(tmp_path: Path)
     assert client.bodies == []
 
 
+@pytest.mark.parametrize("image_mode", ["rgb_png", "grayscale8", "rgb_palette16"])
+def test_image_encoding_reaches_request_and_retains_original_provenance(tmp_path: Path, image_mode: str) -> None:
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, a = baseline(first, "first")
+    _, _, b = baseline(second, "second")
+
+    def image_factory(
+        _record: dict[str, Any], _original: dict[str, Any], crop: dict[str, Any], edge: int
+    ) -> tuple[str, dict[str, Any]]:
+        stream = io.BytesIO()
+        Image.new("RGB", (20, 10), (200, 30, 80)).save(stream, format="JPEG", quality=90)
+        data = stream.getvalue()
+        return "data:image/jpeg;base64," + base64.b64encode(data).decode(), {
+            "image_sha256": sha(data),
+            "image_bytes": len(data),
+            "image_viewport": crop["viewport"],
+            "image_edge": edge,
+            "image_size": [20, 10],
+            "image_codec": "JPEG",
+            "image_quality": 90,
+        }
+
+    client = Client(tmp_path)
+    output = tmp_path / "encoded"
+    report = runner.run(
+        [first, second],
+        [a, b],
+        output,
+        config(image_edge=512, image_mode=image_mode, model="cloudflare/clef-omni"),
+        client,
+        image_factory=image_factory,
+    )
+    page = report["results"][0]
+    assert page["ranking_status"] == "completed"
+    metadata = page["ranking_regions"][0]["selector_image"]
+    image_part = client.bodies[0]["state"][1]
+    assert image_part["image_url"]["url"].startswith("data:image/png;base64,")
+    assert metadata["selector_image_mode"] == image_mode
+    assert metadata["source_image_codec"] == "JPEG"
+    assert "p003_selector_image.py" in json.loads((output / "frozen.json").read_bytes())["code_sha256"]
+
+
 def test_later_crop_selector_failure_rolls_back_whole_page(tmp_path: Path) -> None:
     paths = [tmp_path / "first", tmp_path / "second"]
     trusts = []
