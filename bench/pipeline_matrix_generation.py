@@ -26,15 +26,17 @@ SYSTEM = (
 )
 
 
-def request(
+def request(  # noqa: PLR0913 - preserve positional compatibility and add one evidence option.
     source: dict[str, Any],
     model: str,
     url: str | None = None,
     viewport: list[float] | tuple[float, ...] | None = None,
     max_tokens: int = 4096,
+    *,
+    evidence_format: str = "objects",
 ) -> dict[str, Any]:
     """Keep identical source evidence while replacing the verbose anchor answer."""
-    body = anchors.request(source, model, url, viewport, max_tokens)
+    body = anchors.request(source, model, url, viewport, max_tokens, evidence_format=evidence_format)
     body["messages"][0]["content"] = SYSTEM
     cell = {"type": "array", "maxItems": 4096, "items": {"type": "string"}}
     row = {"type": "array", "minItems": 1, "maxItems": 4096, "items": cell}

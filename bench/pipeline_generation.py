@@ -10,6 +10,7 @@ from typing import Any
 
 from bench.pipeline_assembly import MAX_TABLE_SLOTS, _clean_table, _source, validate
 from bench.pipeline_frontier import MODELS, _invalid_constant, _unique_pairs
+from bench.pipeline_generation_evidence import encode
 
 MAX_TABLES = 32
 MAX_RESPONSE_CHARACTERS = 256_000
@@ -103,12 +104,14 @@ def _viewport(value: Any) -> list[float] | None:  # noqa: ANN401
     return list(value)
 
 
-def request(
+def request(  # noqa: PLR0913 - preserve positional compatibility and add one evidence option.
     source: dict[str, Any],
     model: str,
     url: str | None = None,
     viewport: list[float] | tuple[float, ...] | None = None,
     max_tokens: int = 4096,
+    *,
+    evidence_format: str = "objects",
 ) -> dict[str, Any]:
     """Prepare bounded full-source chat evidence; root alone sends and meters it."""
     if model not in MODELS:
@@ -117,12 +120,7 @@ def request(
     retained = _source(source)
     if any(not word["id"] or len(word["id"]) > 128 for word in retained["words"]):
         raise ValueError("Invalid or over-limit source ID")
-    packet = json.dumps(
-        {"page_size": retained["page_size"], "viewport": _viewport(viewport), "words": retained["words"]},
-        ensure_ascii=False,
-        separators=(",", ":"),
-        allow_nan=False,
-    )
+    packet = encode(retained, _viewport(viewport), evidence_format)
     if len(packet) > MAX_PACKET_CHARACTERS:
         raise ValueError("Complete source packet exceeds admission; no truncation")
     content: Any = packet
