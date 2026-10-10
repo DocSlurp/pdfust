@@ -43,3 +43,14 @@ Luna legacy generation repeat scores 278/three with one failed page; matrix-stri
 Sonnet on the existing natural64 DEV cohort independently scores 1,839 strict, 1,851 text and 2,505 structure cells out of 3,847, with 14/93 complete tables, 34 missing and four extra tables, one negative false-positive page out of 24, and zero failures across all 64 pages. Cost is USD 0.455752 for 56 provider-reported attempts. Contended elapsed time is 1,201.285 seconds (3.197 operational pages/minute; 140.43 operational pages/APIUSD), parent CPU 101.401 seconds and sampled parent RSS 618.16 MiB. Worker measurements remain separate in the progress tables. This cohort is existing DEV, not fresh confirmation.
 
 Single-run treatment results and unmatched repeat differences are not calibrated confidence intervals. All rates are labeled by processing scope; no fallback baseline is credited as a successful model decision.
+
+The next independently verified checkpoint adds the following results; all retain the same full natural16 denominator:
+
+| Treatment | Primary scope | Strict / complete | Missing / extra | Errors | Legacy strict / complete | Incremental API USD / basis |
+| --- | --- | ---: | --- | ---: | ---: | --- |
+| PPLX500 palette | Model-selected crops | 980 / 5 | 27 / 0 | 0 | 1083 / 5 | 0.00061344 / reported |
+| Direct Luna bands | Successful composition, geometry included | 242 / 3 | 39 / 1 | 1 | 344 / 3 | 0.2293663 / catalog estimate; reported zero preserved |
+| Direct d1 neighbors | Successful composition, geometry included | 249 / 3 | 39 / 1 | 1 | 351 / 3 | 0.7554552 / reported |
+| Haiku atomic-cell transcription | Complete pipeline output | 358 / 2 | 40 / 0 | 2 | 358 / 2 | 0.0186637 / reported |
+
+Neither the 500-pixel result nor differences among unmatched representations establish a causal optimum. Detailed statuses, evidence, resources and operational rates are retained in the updated progress tables.
