@@ -651,3 +651,37 @@ def test_reviewed_historical_candidate_parser_still_needs_external_admission_and
     bad_trust["baseline-1"]["pipeline_vision_transcription.py"] = "untrusted"
     with pytest.raises(ValueError, match="Untrusted archived"):
         verify_candidate_run(output, report, frozen, bad_trust, reviewed_parser_sha256=(digest,))
+
+
+def test_nonlegacy_helper_inventory_is_required_even_with_trusted_archive(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bench import p003_report
+
+    monkeypatch.setattr(p003_report, "__file__", str(tmp_path / "p003_report.py"))
+    frozen = {
+        "config": {"processor": "vision_regions", "transcription_representation": "atomic_cells"},
+        "code_sha256": {},
+    }
+    with pytest.raises(ValueError, match="strict treatment replay helper"):
+        p003_report.verify_treatment_helpers(frozen)
+    for name in (
+        "p003_transcription_design.py",
+        "generalization_vision_regions.py",
+        "pipeline_vision_transcription.py",
+    ):
+        (tmp_path / name).write_text("# Explicit authenticated strict test helper\n")
+        frozen["code_sha256"][name] = sha((tmp_path / name).read_bytes())
+    p003_report.verify_treatment_helpers(frozen)
+    frozen["code_sha256"]["p003_transcription_design.py"] = "older-unsupported"
+    with pytest.raises(ValueError, match="strict treatment replay helper"):
+        p003_report.verify_treatment_helpers(frozen)
+
+
+def test_transport_failures_preserve_http_errors_without_duplicate_attempt_counts() -> None:
+    from bench.p003_report import transport_failures
+
+    call = {"entry": {"index": 7, "error": "HTTP 429"}}
+    pages = [{"calls": [call, deepcopy(call)], "ranking_calls": [{"entry": {"index": 8, "error": "HTTP 400"}}]}]
+    assert transport_failures(pages) == {"HTTP 429": 1, "HTTP 400": 1}

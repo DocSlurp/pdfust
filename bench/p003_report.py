@@ -204,6 +204,53 @@ def verify_cost_reconciliation(directory: Path, sidecar_path: Path, ledger_path:
     }
 
 
+def verify_treatment_helpers(frozen: dict[str, Any]) -> None:
+    """Require exact current strict replay helpers for newly declared nonlegacy treatments."""
+    config = frozen["config"]
+    representation = config.get("transcription_representation", "legacy")
+    if representation not in {"legacy", "matrix_strict", "atomic_cells"}:
+        raise ValueError("Unknown frozen transcription representation")
+    required = set()
+    if representation != "legacy":
+        if config.get("processor") not in {"vision_regions", "hybrid"}:
+            raise ValueError("Unsupported frozen transcription representation processor")
+        required |= {
+            "p003_transcription_design.py",
+            "generalization_vision_regions.py",
+            "pipeline_vision_transcription.py",
+        }
+    image_mode = config.get("gate_image_mode", "rgb")
+    if image_mode not in {"rgb", "grayscale8", "rgb_palette16"}:
+        raise ValueError("Unknown frozen gate image mode")
+    if image_mode != "rgb":
+        required.add("p003_gate_image.py")
+    for name in required:
+        local = Path(__file__).parent / name
+        if not local.is_file() or frozen["code_sha256"].get(name) != sha(local.read_bytes()):
+            raise ValueError("Unsupported frozen strict treatment replay helper version: " + name)
+
+
+def transport_failures(
+    predictions: list[dict[str, Any]], *, call_keys: tuple[str, ...] = ("calls", "repair_calls", "ranking_calls")
+) -> dict[str, int]:
+    """Retain explicit returned-call transport errors independently of page parser categories."""
+    observed = {}
+    unattributed = Counter()
+    for page in predictions:
+        for key in call_keys:
+            for call in page.get(key, []):
+                entry = call.get("entry", {})
+                error = entry.get("error")
+                if not isinstance(error, str):
+                    continue
+                index = entry.get("index")
+                if type(index) is int:
+                    observed[index] = error
+                else:
+                    unattributed[error] += 1
+    return dict(Counter(observed.values()) + unattributed)
+
+
 def verify_archive(directory: Path, frozen: dict[str, Any], trusted: dict[str, str] | None = None) -> dict[str, str]:
     """Require each archive hash to match a separately trusted local source digest."""
     hashes = frozen["code_sha256"]
@@ -900,6 +947,7 @@ def score_run(
     if len(selected_by_id) != len(selected_rows) or any(selected_by_id.get(r["id"]) != r for r in expected):
         raise ValueError("Selected source manifest does not contain intended corpus inputs")
     code = verify_archive(directory, frozen, trusted_code)
+    verify_treatment_helpers(frozen)
     predictions = report["results"]
     ids = [p["id"] for p in predictions]
     intended = {r["id"] for r in expected}
@@ -1066,6 +1114,14 @@ def score_run(
         "operational_pages": operational,
         "errors": len(expected) - operational,
         "failure_categories": dict(errors),
+        "returned_call_transport_failures": transport_failures(
+            predictions,
+            call_keys=("ranking_calls",)
+            if processor == "p003_candidate_choice"
+            else ("repair_calls",)
+            if incremental
+            else ("calls",),
+        ),
         "scores": scoring["totals"],
         "page_scores": scoring["pages"],
         "positive_macro": scoring["positive_macro"],

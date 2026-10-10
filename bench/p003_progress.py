@@ -394,7 +394,8 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
     for run in runs:
         lines.append(
             f"- `{run['name']}`: evaluation `{run['evaluation_sha256']}`; report `{run['report_sha256']}`; "
-            f"failures `{json.dumps(run.get('failure_categories', {}), sort_keys=True)}`."
+            f"failures `{json.dumps(run.get('failure_categories', {}), sort_keys=True)}`; "
+            f"transport `{json.dumps(run.get('returned_call_transport_failures', {}), sort_keys=True)}`."
         )
         provenance = run.get("baseline_provenance") or {}
         baseline_hashes = [baseline.get("report_sha256") for baseline in provenance.get("candidate_baselines", [])]
