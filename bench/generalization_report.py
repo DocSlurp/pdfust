@@ -34,6 +34,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "a4ff7678b279a875935ce5f989eb81f92544873bab4974f510c343c70aab4964": "69f2d81",
         "baae56a9e99eb624502b1238a51a25f4751bd755752ad7499ae5187d98dfca2a": "1185a06",
         "8c51ca5295c8c9e27cf4cad0f5a7e957c36be94c1739ac616d2aa1cd9f7dd865": "1083b53",
         "b65ce79aef238bceed439bca6998dd003130bb190b4b2c85feb1eaf67eb04456": "0cc3b3f",
@@ -150,8 +151,14 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         required |= {"pipeline_regions.py", "generalization_run.py"}
         if frozen.get("config", {}).get("assembly_method") in {"generate", "gated_generate"}:
             required.add("pipeline_generation.py")
-            if frozen["config"].get("generation_format") == "matrix":
+            if frozen["config"].get("generation_format") in {"matrix", "indices"}:
                 required.add("pipeline_matrix_generation.py")
+            if frozen["config"].get("generation_format") == "indices":
+                required |= {
+                    "pipeline_index_matrix_generation.py",
+                    "pipeline_generation_evidence.py",
+                    "pipeline_frontier.py",
+                }
         if frozen.get("config", {}).get("raster_rules"):
             required.add("pipeline_dense_candidates.py")
         if frozen.get("config", {}).get("ocr_source", "legacy") != "legacy":
@@ -167,6 +174,17 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] = (
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
+    if frozen.get("config", {}).get("generation_format") == "indices" and any(
+        comparison.get(name) != "identical"
+        for name in (
+            "pipeline_index_matrix_generation.py",
+            "pipeline_matrix_generation.py",
+            "pipeline_generation.py",
+            "pipeline_generation_evidence.py",
+            "pipeline_frontier.py",
+        )
+    ):
+        raise ValueError("Trusted ordinal expansion or matrix parser differs from frozen code")
     if processor in {"vision", "vision_regions"}:
         if any(comparison[name] != "identical" for name in required - {"generalization_vision_run.py"}):
             raise ValueError("Trusted local vision adapter differs from frozen code")

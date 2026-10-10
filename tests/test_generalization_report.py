@@ -646,3 +646,32 @@ def test_regional_vision_atomic_failure_does_not_verify_success_artifacts(tmp_pa
         "operational": False,
         "conserved": False,
     }
+
+
+def test_index_generation_requires_exact_trusted_expansion_and_matrix_parser(fixture: dict[str, Any]) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    frozen["config"].update(processor="regions", assembly_method="generate", generation_format="indices")
+    local = Path(module.__file__).parent
+    for name in (
+        "pipeline_regions.py",
+        "generalization_run.py",
+        "pipeline_generation.py",
+        "pipeline_matrix_generation.py",
+        "pipeline_index_matrix_generation.py",
+        "pipeline_generation_evidence.py",
+        "pipeline_frontier.py",
+    ):
+        data = (local / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    assert verify_code(f["run"], frozen, processor="regions")["archive_hashes_verified"]
+    missing = deepcopy(frozen)
+    missing["code_sha256"].pop("pipeline_index_matrix_generation.py")
+    with pytest.raises(ValueError, match="required verifier dependencies"):
+        verify_code(f["run"], missing, processor="regions")
+    altered = b"# Unreviewed ordinal conversion.\n"
+    (f["run"] / "code" / "pipeline_index_matrix_generation.py").write_bytes(altered)
+    frozen["code_sha256"]["pipeline_index_matrix_generation.py"] = sha(altered)
+    with pytest.raises(ValueError, match="ordinal expansion"):
+        verify_code(f["run"], frozen, processor="regions")
