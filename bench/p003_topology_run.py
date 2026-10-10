@@ -322,7 +322,9 @@ def process_page(
                 "snapshot_file": f"{stem}-snapshot.json",
                 "status": "prepared",
                 "word_count": len(json.loads(crop["snapshot"].packet_json)["source"]["words"]),
-                "maximum_new_ownership_calls": 0 if config.get("geometry_only") else 2 * len(crop["row_bodies"]),
+                "maximum_new_ownership_calls": 0
+                if config.get("geometry_only") or config.get("transcript_replay")
+                else 2 * len(crop["row_bodies"]),
                 "rows": [],
                 "cells": [],
             }
@@ -430,7 +432,8 @@ def process_page(
             "scope": "retained page artifacts through processing, before final result write",
             "wall_seconds": time.perf_counter() - started,
             "cpu_seconds": time.process_time() - cpu,
-            "returned_calls": len(result["topology_calls"]),
+            "returned_calls": 0 if config.get("transcript_replay") else len(result["topology_calls"]),
+            **({"retained_response_count": len(result["topology_calls"])} if config.get("transcript_replay") else {}),
         }
         write_json(output / f"{ident}-result.json", result)
     return result
@@ -480,8 +483,10 @@ def run(
     client: Any = None,
 ) -> dict[str, Any]:
     """Authenticate exact retained sources and freeze provenance before root opt-in calls."""
-    if sum(bool(config.get(k)) for k in ("run_hosted", "prepare_only", "geometry_only")) != 1:
-        raise ValueError("Choose exactly one explicit run_hosted, prepare_only, or geometry_only mode")
+    if sum(bool(config.get(k)) for k in ("run_hosted", "prepare_only", "geometry_only", "transcript_replay")) != 1:
+        raise ValueError("Choose exactly one explicit hosted, preparation, geometry, or transcript mode")
+    if config.get("transcript_replay") and client is None:
+        raise ValueError("Transcript replay requires an injected offline exact-body transport")
     if config.get("boundary_words", "strict") not in {"strict", "residual"}:
         raise ValueError("Unknown boundary word treatment")
     transport = config.get("transport_concurrency", 1)
@@ -524,7 +529,11 @@ def run(
     (output / "code").mkdir()
     code = {}
     root = Path(__file__).parent
-    for name in CODE_FILES + (("p003_topology_geometry.py",) if config.get("geometry_only") else ()):
+    for name in (
+        CODE_FILES
+        + (("p003_topology_geometry.py",) if config.get("geometry_only") else ())
+        + (("p003_topology_replay.py",) if config.get("transcript_replay") else ())
+    ):
         data = (root / name).read_bytes()
         (output / "code" / name).write_bytes(data)
         code[name] = sha(data)
@@ -543,7 +552,7 @@ def run(
     if config.get("run_hosted") and client is None:
         client = (P003ConcurrentClient if transport == 3 else P003DecisionClient)()
     prefix = f"P003/{config['run_id']}/"
-    if _entries(client, prefix):
+    if _entries(None if config.get("transcript_replay") else client, prefix):
         raise ValueError("Run ID already retained in shared ledger; no automatic retry")
     sm, tm = ({row["id"]: row for row in report["results"]} for report in (sr, tr))
     with pipeline.Resources() as resources:
@@ -560,7 +569,7 @@ def run(
             )
             for r in sf["records"]
         ]
-    attempts = _entries(client, prefix)
+    attempts = _entries(None if config.get("transcript_replay") else client, prefix)
     # Retain shared transport evidence for every attempt, including failed reservations.
     transport_dir = output / "transport"
     transport_dir.mkdir()
@@ -596,7 +605,12 @@ def run(
         ),
         "incremental_ownership": {
             "metrics": metrics,
-            "returned_calls": sum(len(r["topology_calls"]) for r in results),
+            "returned_calls": 0 if config.get("transcript_replay") else sum(len(r["topology_calls"]) for r in results),
+            **(
+                {"retained_response_count": sum(len(r["topology_calls"]) for r in results)}
+                if config.get("transcript_replay")
+                else {}
+            ),
             "status_counts": dict(Counter(r["topology_status"] for r in results)),
             "maximum_new_ownership_calls_from_preflight": sum(
                 info["maximum_new_ownership_calls"] for row in results for info in row["topology_regions"]
