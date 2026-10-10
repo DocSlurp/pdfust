@@ -106,3 +106,25 @@ portions. The failed pages contribute no predicted tables to primary quality;
 the legacy columns preserve original fallback outputs separately. All costs
 cover incremental attempts only. Luna's reported zero is preserved and its
 effective cost uses labeled catalog estimates; the other two costs are reported.
+
+The following completed controls are also independently verified with full
+natural16 denominators. Candidate values remain selected-only; ownership values
+are successful composition including geometry, with each failed page excluded
+from table credit.
+
+| Arm | Primary strict / complete | Missing / extra | Operational failures | Legacy strict / complete | Incremental API USD |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Direct Tev bands | 249 / 3 | 39 / 1 | 1 | 351 / 3 | 1.809086664 |
+| Direct PPLX neighbors text | 249 / 3 | 39 / 1 | 1 | 351 / 3 | 0.6206455 |
+| Hybrid Luna neighbors | 198 / 2 | 39 / 1 | 1 | 300 / 2 | 0.230661 |
+| PPLX400 palette repeat2 | 978 / 5 | 27 / 0 | 0 | 1081 / 5 | 0.00060236 |
+| PPLX400 RGB repeat2 | 978 / 5 | 27 / 0 | 0 | 1081 / 5 | 0.00060236 |
+| PPLX500 RGB | 1083 / 5 | 26 / 3 | 0 | 1083 / 5 | 0.00061344 |
+| PPLX512 RGB blank | 2 / 0 | 52 / 0 | 0 | 784 / 3 | 0.00061408 |
+
+Luna's cost is a catalog estimate over 155 attempts with reported zero preserved;
+the other costs are provider reported. These are incremental decisions over
+retained evidence. Matching observed scores across some arms do not establish
+equivalent mechanisms, and the 500 RGB result retains three extra tables. The
+blank 512 RGB control receives only two strict cells on actual selected crops,
+despite its original baseline-retaining score of 784 cells.
