@@ -16,6 +16,7 @@ from typing import Any
 from bench import p003_candidate_run as candidate
 from bench import p003_topology_chunks as chunks
 from bench import p003_topology_geometry as geometry
+from bench import p003_topology_hybrid as hybrid
 from bench import p003_topology_ownership as ownership
 from bench import pipeline_run as pipeline
 from bench import pipeline_vision_transcription as transcription
@@ -258,6 +259,23 @@ def prepare_page(
                 raise ValueError("body capacity")
         except ValueError as error:
             raise UnsupportedError("ownership_inventory_or_menu_capacity") from error
+        if config.get("geometry_first"):
+            local_ids = {w["id"] for w in words}
+            baseline_tables = [
+                deepcopy(table)
+                for table in prior["tables"]
+                if {i for cell in table["cells"] for i in cell["source_ids"]} <= local_ids
+            ]
+            mixed = hybrid.prepare(frozen, baseline_tables)
+            row_bodies = hybrid.batches(
+                mixed,
+                config["model"],
+                crop["url"],
+                max_questions=config["max_questions"],
+                image=config.get("image", True),
+                evidence_mode=config.get("topology_evidence", "neighbors"),
+            )
+            crop["hybrid"] = mixed
         crop.update(snapshot=frozen, row_bodies=row_bodies)
         regions.append(
             {
@@ -359,6 +377,17 @@ def process_page(
                 "cells": [],
             }
             result["topology_regions"].append(info)
+            if config.get("geometry_first"):
+                mixed = crop["hybrid"]
+                admission = json.loads(mixed.audit_json)
+                info["geometry_first"] = {
+                    "hybrid_snapshot_sha256": mixed.sha256,
+                    "geometry_locked_count": len(admission["locked"]),
+                    "disputed_count": len(admission["disputed_ids"]),
+                    "baseline_topology_compatible": admission["baseline_topology_compatible"],
+                    "status": admission["status"],
+                }
+                write_json(output / f"{stem}-hybrid-admission.json", admission)
             if config.get("prepare_only"):
                 for i, body in enumerate(crop["row_bodies"]):
                     write_json(output / f"{stem}-row-{i}-request.json", body)
@@ -373,6 +402,44 @@ def process_page(
                 info["placement_mechanism"] = (
                     "source_band_geometry" if config.get("band_mode") == "source" else "uniform_geometry"
                 )
+                continue
+            if config.get("geometry_first"):
+                responses = []
+                for i, body in enumerate(crop["row_bodies"]):
+                    request_stem = f"{stem}-row-{i}"
+                    info["rows"].append(request_stem)
+                    response = _request(
+                        client, body, output, request_stem, f"P003/{config['run_id']}/{ident}/{crop['id']}/row/{i}"
+                    )
+                    result["topology_calls"].append(response)
+                    responses.append(response["result"])
+                rows = hybrid.collect(mixed, crop["row_bodies"], responses)
+                write_json(output / f"{stem}-row-receipt.json", rows)
+                cell_bodies = hybrid.batches(
+                    mixed,
+                    config["model"],
+                    crop["url"],
+                    rows=rows,
+                    max_questions=config["max_questions"],
+                    image=config.get("image", True),
+                    evidence_mode=config.get("topology_evidence", "neighbors"),
+                )
+                stage = f"{crop['id']}/cells"
+                cell_responses = []
+                for i, body in enumerate(cell_bodies):
+                    request_stem = f"{stem}-cell-{i}"
+                    info["cells"].append(request_stem)
+                    response = _request(
+                        client, body, output, request_stem, f"P003/{config['run_id']}/{ident}/{crop['id']}/cell/{i}"
+                    )
+                    result["topology_calls"].append(response)
+                    cell_responses.append(response["result"])
+                stage = f"{crop['id']}/assembly"
+                audit = hybrid.assemble(mixed, crop["row_bodies"], responses, cell_bodies, cell_responses)
+                states[crop["id"]] = audit["state"]
+                write_json(output / f"{stem}-audit.json", audit)
+                write_json(output / f"{stem}-updated-state.json", audit["state"])
+                info["status"] = "staged"
                 continue
             responses = []
             for i, body in enumerate(crop["row_bodies"]):
@@ -529,6 +596,13 @@ def run(
         raise ValueError("Choose exactly one explicit hosted, preparation, geometry, or transcript mode")
     if config.get("transcript_replay") and client is None:
         raise ValueError("Transcript replay requires an injected offline exact-body transport")
+    if type(config.get("geometry_first", False)) is not bool or (
+        config.get("geometry_first")
+        and (not config.get("chunked_inventory") or config.get("geometry_only") or config.get("transcript_replay"))
+    ):
+        raise ValueError("Geometry-first model disputes require explicit chunked preparation or hosted mode")
+    if config.get("geometry_first"):
+        config = {**config, "topology_evidence": config.get("topology_evidence", "neighbors")}
     if config.get("crossed_tables", "strict") not in {"strict", "residual_prose"}:
         raise ValueError("Unknown crossed baseline table treatment")
     if type(config.get("chunked_inventory", False)) is not bool:
@@ -589,6 +663,7 @@ def run(
     for name in (
         CODE_FILES
         + (("p003_topology_geometry.py",) if config.get("geometry_only") else ())
+        + (("p003_topology_hybrid.py", "p003_topology_geometry.py") if config.get("geometry_first") else ())
         + (("p003_topology_replay.py",) if config.get("transcript_replay") else ())
         + (("p003_spatial_bands.py",) if config.get("band_mode") == "source" else ())
         + (("p003_topology_chunks.py", "p003_spatial_bands.py") if config.get("chunked_inventory") else ())
@@ -700,6 +775,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", choices=ownership.DECISION_MODELS, required=True)
     parser.add_argument("--text-only", action="store_true")
+    parser.add_argument("--geometry-first", action="store_true")
     parser.add_argument("--chunked-inventory", action="store_true")
     parser.add_argument("--topology-evidence", choices=("compact", "neighbors", "bands"))
     parser.add_argument("--crossed-tables", choices=("strict", "residual_prose"), default="strict")
@@ -716,6 +792,8 @@ def main() -> None:
     config = {
         k: getattr(args, k) for k in ("model", "max_questions", "run_hosted", "prepare_only", "reviewed_parser_sha256")
     }
+    if args.geometry_first:
+        config["geometry_first"] = True
     if args.chunked_inventory:
         config["chunked_inventory"] = True
     if args.topology_evidence is not None:
