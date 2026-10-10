@@ -111,6 +111,7 @@ Legacy retained pipeline output quality follows separately.
 | choice-pplx-128-rgb-blur-r0-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=128, image_visibility=blur | 16/16 | 0 | 3/53 | 784/2333 | 795 | 1045 | 30 | 5 | 0/4 | 2 |
 | choice-pplx-400-rgb_palette16-r2-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=400, image_mode=rgb_palette16 | 16/16 | 0 | 5/53 | 1081/2333 | 1092 | 1267 | 26 | 3 | 0/4 | 3 |
 | ownership-hybrid-luna-neighbors-r0-c6 | openai/gpt-6-luna-decisions | processor=p003_topology_source, geometry_first=True, chunked_inventory=True, topology_evidence=neighbors, boundary_words=residual, crossed_tables=residual_prose | 16/16 | 0 | 2/53 | 300/2333 | 313 | 465 | 38 | 1 | 0/4 | 2 |
+| natural64-ordinal-ocredge3072-512-r0-c6 | anthropic/claude-haiku-5.5 | processor=regions, preset=ordinal, transcription_representation=legacy, image_edge=512, gate_image=True | 62/64 | 2 | 12/93 | 1204/3847 | 1223 | 1484 | 46 | 15 | 0/24 | 5 |
 | choice-pplx-400-rgb-r2-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=400 | 16/16 | 0 | 5/53 | 1081/2333 | 1092 | 1267 | 26 | 3 | 0/4 | 3 |
 | choice-pplx-500-rgb-r0-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=500 | 16/16 | 0 | 5/53 | 1083/2333 | 1094 | 1267 | 26 | 3 | 0/4 | 3 |
 | ownership-direct-clefomni-neighbors-r0-c6 | cloudflare/clef-omni | processor=p003_topology_source, geometry_first=True, ownership_protocol=direct_cell, chunked_inventory=True, topology_evidence=neighbors, boundary_words=residual, crossed_tables=residual_prose | 16/16 | 0 | 2/53 | 303/2333 | 316 | 465 | 38 | 1 | 0/4 | 2 |
@@ -230,6 +231,7 @@ Full-pipeline rates count verified operational outputs. Cost overlays leave orig
 | choice-pplx-128-rgb-blur-r0-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00059822 | 0.00059822 | Unmeasured | Unmeasured |
 | choice-pplx-400-rgb_palette16-r2-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00060236 | 0.00060236 | Unmeasured | Unmeasured |
 | ownership-hybrid-luna-neighbors-r0-c6 | incremental ownership conditional on frozen topology and source | contended (3) | Unmeasured | Unmeasured | 0.230661 | 0.230661 | Unmeasured | Unmeasured |
+| natural64-ordinal-ocredge3072-512-r0-c6 | complete pipeline | contended (3) | 2.56929 | 1009.5 | 0.0614165 | 0.0614165 | Unmeasured | Unmeasured |
 | choice-pplx-400-rgb-r2-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00060236 | 0.00060236 | Unmeasured | Unmeasured |
 | choice-pplx-500-rgb-r0-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00061344 | 0.00061344 | Unmeasured | Unmeasured |
 | ownership-direct-clefomni-neighbors-r0-c6 | incremental ownership conditional on frozen topology and source | contended (3) | Unmeasured | Unmeasured | 0.428161 | 0.428161 | Unmeasured | Unmeasured |
@@ -361,6 +363,9 @@ CPU/RSS observations retain their process scopes; worker RSS peaks are never add
 | choice-pplx-128-rgb-blur-r0-c6 | parent | 224.891 | 31.8377 | 303648768 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
 | choice-pplx-400-rgb_palette16-r2-c6 | parent | 313.54 | 32.0255 | 303751168 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
 | ownership-hybrid-luna-neighbors-r0-c6 | parent | 822.379 | 231.939 | 356847616 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| natural64-ordinal-ocredge3072-512-r0-c6 | parent | 1447.87 | 2201.75 | 764043264 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| natural64-ordinal-ocredge3072-512-r0-c6 | detector worker initialization | 3.98606 | 9.64805 | 1074024448 | Child worker process_time CPU; own /proc/self/statm RSS every 100 ms plus endpoints; getrusage lifetime peak RSS; no parent or subprocess usage included |
+| natural64-ordinal-ocredge3072-512-r0-c6 | detector worker request intervals | 19.4943 | 68.1182 | 1200394240 | 63 retained single-worker request intervals; sum recorded interval wall/CPU; max sampled RSS. Separate CPU worker subprocess; parent process CPU/RSS excludes worker. Do not sum RSS peaks or overlapping parent per-page CPU intervals. |
 | choice-pplx-400-rgb-r2-c6 | parent | 330.185 | 36.547 | 302592000 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
 | choice-pplx-500-rgb-r0-c6 | parent | 208.354 | 34.9417 | 289378304 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
 | ownership-direct-clefomni-neighbors-r0-c6 | parent | 499.816 | 159.738 | 368517120 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
@@ -515,6 +520,7 @@ Provider cache counters are unmeasured in these evaluation-only inputs unless ex
 | ownership-hybrid-luna-neighbors-r0-c6 | current measured stage | 155/155 | Unmeasured | Unmeasured | 155 | 155 | True |
 | ownership-hybrid-luna-neighbors-r0-c6 | historical baseline 0 | 18/18 | 0 | 0 | 0 | 0 | True |
 | ownership-hybrid-luna-neighbors-r0-c6 | historical baseline 1 | 19/19 | 0 | 6497 | 0 | 0 | True |
+| natural64-ordinal-ocredge3072-512-r0-c6 | current measured stage | 55/55 | 0 | 0 | 0 | 0 | True |
 | choice-pplx-400-rgb-r2-c6 | current measured stage | 16/16 | Unmeasured | Unmeasured | 16 | 16 | True |
 | choice-pplx-400-rgb-r2-c6 | historical baseline 0 | 19/19 | 0 | 6497 | 0 | 0 | True |
 | choice-pplx-400-rgb-r2-c6 | historical baseline 1 | 19/19 | 0 | 0 | 0 | 0 | True |
@@ -611,6 +617,7 @@ Provider cache counters are unmeasured in these evaluation-only inputs unless ex
 - `choice-pplx-400-rgb_palette16-r2-c6`: evaluation `5b7710ebafdc5a7e97c35f0eb99d013299ad4b78b4284deccfe3ae6dac4e9a47`; report `ffcdd76b56a89a9652e86282bb87ee8d9c656f4386f369440fddb8b0069e57e9`; failures `{}`; transport `{}`.
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
 - `ownership-hybrid-luna-neighbors-r0-c6`: evaluation `804d888a87e8f23c06c4dff65e4f5a5cad3c2dc60f7428339f0a6312dbd611ca`; report `067978f212f21d6d4df039157eb6266075c435a65dab8308aea824de83e2e8be`; failures `{}`; transport `{}`.
+- `natural64-ordinal-ocredge3072-512-r0-c6`: evaluation `8c3050856ca46c835e22906e3075d7a5912ff8cc5486646e9d14dadf30f73d67`; report `f15c42875a6e3f2be5c0a89ef97a259beab41e128b7f9bdb87a77d6f60951a45`; failures `{"OCR detector exceeded the 4096-region safety limit": 1, "Response was truncated or has no normal finish": 1}`; transport `{}`.
 - `choice-pplx-400-rgb-r2-c6`: evaluation `fc00d34a7137d06f0ae666cad83210d32af47fc6efc22824c264f4d862bd4a06`; report `d3afcb2bcfafccba4dfa44fe7f66b979cc70e069b10f8e16fb8ab72ea81281e4`; failures `{}`; transport `{}`.
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
 - `choice-pplx-500-rgb-r0-c6`: evaluation `5b06a0dcc48c0b108a4b7cc10d2b641948be73380f1ec1b953a9edcad8906e68`; report `b0c9372b07cfadc07ca9224f4c376e15bfc53fa2320a415d056562a2c4fcf3b7`; failures `{}`; transport `{}`.
@@ -624,4 +631,4 @@ Provider cache counters are unmeasured in these evaluation-only inputs unless ex
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
 - `screen-crops-luna-1024-pinned-r2-c6`: evaluation `eeea591de6acba39c2045e834ac024e31ee4f243e1b71564ce23c6fce576410d`; report `12891ba7d4de75ac69144189b6ddf19d7b9a99c8b5124524d204c89ebc9c3dce`; failures `{"Table matrix must contain rectangular literal string cells": 1}`; transport `{}`.
 
-Pending completed evaluation: `full276-ordinal-ocr300-512-r0-c6`, `full276-crops-luna-1024-r0-c6`, `natural64-ordinal-ocredge3072-512-r0-c6`.
+Infrastructure-stopped incomplete arms, excluded from complete-run rates and model ranking: `full276-ordinal-ocr300-512-r0-c6`, `full276-crops-luna-1024-r0-c6`. All 60 completed arms are independently verified.

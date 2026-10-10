@@ -1,6 +1,6 @@
 # P003 current queue: decision-confirmed evidence
 
-This checkpoint covers independently verified completed arms from the explicit `parallel-mechanisms-generalization-v3/status.json` inventory. Detailed quality, exact-page counts, resources, cost bases, provider cache coverage and hashes are in [the progress tables](p003-current-queue-progress.md). Infrastructure-stopped full276 arms remain incomplete; they are not model-quality failures.
+This final drained-queue checkpoint covers all 60 independently verified completed arms from the explicit `parallel-mechanisms-generalization-v3/status.json` inventory. Detailed quality, exact-page counts, resources, cost bases, provider cache coverage and hashes are in [the progress tables](p003-current-queue-progress.md). Infrastructure-stopped full276 arms remain incomplete; they are not model-quality failures.
 
 Primary candidate quality credits only committed model-selected complete crop states. Abstained, failed and deterministic duplicate-only crops predict no tables. All 16 pages, 53 tables and 2,333 anchor cells remain in the denominator. Legacy retained pipeline outputs remain separate provenance.
 
@@ -158,3 +158,19 @@ Luna's atomic-cell arm produces six extra positive-page tables, and unmatched
 repeat variation prevents treating its difference as isolated representation
 causality. Blur's baseline-retaining legacy score remains 784/three; primary
 model-selected quality gives it only 51 strict cells and no complete table.
+
+The final ordinal OCR edge3,072 arm retains all 64 natural pages, 93 tables and
+3,847 cells: 1,204 strict, 1,223 text and 1,484 structure cells, 12 complete
+tables, 46 missing and 15 extra tables, zero false-positive negative pages out
+of 24, and two failures. Reported API cost is USD 0.0614165 over 55 attempts.
+Contended elapsed time is 1,447.868 seconds, parent CPU 2,201.746 seconds and
+sampled parent RSS 728.648 MiB; observed operational throughput is 2.569
+pages/minute and 1,009.5 pages/APIUSD. Worker resources remain separate.
+The earlier edge2,048 observation was 1,125/ten with eleven extras and one
+failure; these single observations do not establish an OCR resolution optimum.
+
+All 62 declared arms are drained: 60 completed and independently verified, plus
+two infrastructure-stopped full276 runs. Their partial outputs and wall-limit
+failures remain separate; no missing pages are silently credited or retried in
+this report. Any authenticated continuation will be reported separately with
+its original segment provenance.
