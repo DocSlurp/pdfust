@@ -1,6 +1,6 @@
 # Acquisition and auxiliary32 DEV comparison
 
-Checkpoint: 18/32 independently verified arms. The frozen plan contains 13 complete generation, 9 structure-admission and 10 geometry-diagram arms. Pending arms remain visible below. All quality counts use 16 pages, 53 tables, 2333 reference cells and 4 negative pages. This is the established DEV screen, separate from fresh confirmation 48.
+Checkpoint: 20/32 independently verified arms. The frozen plan contains 13 complete generation, 9 structure-admission and 10 geometry-diagram arms. Pending arms remain visible below. All quality counts use 16 pages, 53 tables, 2333 reference cells and 4 negative pages. This is the established DEV screen, separate from fresh confirmation 48.
 Generation arms include acquisition and transcription. Admission arms retain only model-admitted source-owned TATR tables; rejected, unresolved or failed pages receive no historical table credit. Diagram arms count independently selected complete disjoint crops, including valid partial predictions on operational error pages. Duplicate, unresolved and failed crops receive zero credit; conflicting positive crops are all refused. No cross-model fallback or retry is credited.
 Single runs are observations, with no confidence interval or repeat estimate available for these arms. Diagram instructions explicitly identify artificial geometry-only pixels, so comparison against source pixels changes evidence framing as well as pixels. Large cell-count differences can be concentrated in dense pages. No fresh confirmation result selected these configurations.
 
@@ -19,7 +19,7 @@ Single runs are observations, with no confidence interval or repeat estimate ava
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | verified | 362 | 362 | 606 | 3 | 36 | 1 | 0 | 1 | 2 | 0.26580000 | 4.306 | 56.433 |
 | acquisition-sonnet-yolo1280-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | verified | 262 | 262 | 314 | 3 | 42 | 0 | 0 | 4 | 2 | 0.00795502 | 0.832 | 1508.481 |
-| acquisition-gemma31-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-gemma31-yolo1280-crop1024-r0-c3 | verified | 269 | 270 | 332 | 3 | 42 | 0 | 0 | 3 | 2 | 0.00312786 | 2.313 | 4156.196 |
 | acquisition-ministral14-yolo640-crop1024-r0-c3 | verified | 207 | 207 | 319 | 2 | 41 | 1 | 0 | 3 | 2 | 0.00365820 | 4.773 | 3553.660 |
 | acquisition-ministral14-yolo1280-crop1024-r0-c3 | verified | 574 | 581 | 986 | 2 | 38 | 7 | 0 | 4 | 2 | 0.00543680 | 2.790 | 2207.181 |
 
@@ -31,7 +31,7 @@ Rate is operational usable pages/minute for complete generation, intended retain
 | Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | admission-pplx-detector05-edge0-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
-| admission-pplx-detector05-edge128-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-pplx-detector05-edge128-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 | admission-pplx-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 | admission-lunadec-detector05-edge0-r0-c3 | verified | 185 | 187 | 315 | 2 | 42 | 0 | 0 | 0 | 1 | 0.00999040 | 14.089 | 1601.537 |
 | admission-lunadec-detector05-edge128-r0-c3 | verified | 111 | 113 | 237 | 1 | 44 | 0 | 0 | 0 | 0 | 0.01006960 | 13.802 | 1588.941 |
@@ -56,7 +56,7 @@ Rate is operational usable pages/minute for complete generation, intended retain
 | diagram-lunadec-filled-128-r0-c3 | verified | 0 | 0 | 0 | 0 | 53 | 0 | 0 | 14 | 0 | 0.00260390 | 33.121 | 6144.629 |
 | diagram-lunadec-filled-512-r0-c3 | verified | 0 | 0 | 0 | 0 | 53 | 0 | 0 | 14 | 0 | 0.00279310 | 16.060 | 5728.402 |
 | diagram-clefomni-filled-128-r0-c3 | verified | 108 | 119 | 130 | 0 | 50 | 3 | 0 | 12 | 0 | 0.00511740 | 30.098 | 3126.588 |
-| diagram-clefomni-filled-512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| diagram-clefomni-filled-512-r0-c3 | verified | 106 | 117 | 120 | 0 | 51 | 3 | 0 | 12 | 0 | 0.00523635 | 26.524 | 3055.564 |
 
 Rate is operational usable pages/minute for complete generation, intended retained-evidence pages/minute for admission, and attempted questions/minute for diagram. Incremental rates exclude historical acquisition/generation and are not fresh pipeline throughput.
 
@@ -77,6 +77,7 @@ Rate is operational usable pages/minute for complete generation, intended retain
 | admission-clefomni-detector05-edge0-r0-c3 | reject=15, retain=3, unresolved=1 | 19 | 0 | — | — | provider-reported USD | 694.933 |
 | admission-clefomni-detector05-edge512-r0-c3 | reject=7, retain=12 | 19 | 0 | — | — | provider-reported USD | 677.356 |
 | diagram-clefomni-filled-128-r0-c3 | not_applicable_duplicates=3, selected=3, unresolved=13 | 16 | 13 | 3 | 1 | provider-reported USD | 3126.588 |
+| diagram-clefomni-filled-512-r0-c3 | not_applicable_duplicates=3, selected=2, unresolved=14 | 16 | 14 | 2 | 2 | provider-reported USD | 3055.564 |
 
 ## Fixed dense-page sensitivity
 
@@ -96,10 +97,12 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 | admission-clefomni-detector05-edge0-r0-c3 | 0 | 94 | 0.133 |
 | admission-clefomni-detector05-edge512-r0-c3 | 0 | 196 | 0.391 |
 | diagram-clefomni-filled-128-r0-c3 | 103 | 5 | 0.028 |
+| diagram-clefomni-filled-512-r0-c3 | 103 | 3 | 0.021 |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 0 | 290 | 0.570 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 0 | 292 | 0.616 |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | 71 | 291 | 0.580 |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | 0 | 262 | 0.472 |
+| acquisition-gemma31-yolo1280-crop1024-r0-c3 | 0 | 269 | 0.497 |
 | acquisition-ministral14-yolo640-crop1024-r0-c3 | 0 | 207 | 0.380 |
 | acquisition-ministral14-yolo1280-crop1024-r0-c3 | 369 | 205 | 0.405 |
 
@@ -120,10 +123,12 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 | admission-clefomni-detector05-edge0-r0-c3 | 0.02302380 | 0.02302380 | 0 | provider-reported USD |
 | admission-clefomni-detector05-edge512-r0-c3 | 0.02362125 | 0.02362125 | 0 | provider-reported USD |
 | diagram-clefomni-filled-128-r0-c3 | 0.00511740 | 0.00511740 | 0 | provider-reported USD |
+| diagram-clefomni-filled-512-r0-c3 | 0.00523635 | 0.00523635 | 0 | provider-reported USD |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 0.02486862 | 0.00000000 | 0 | provider-reported BYOK upstream plus gateway USD |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 0.22463800 | 0.22463800 | 0 | provider-reported USD |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | 0.26580000 | 0.26580000 | 0 | provider-reported USD |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | 0.00795502 | 0.00795502 | 0 | provider-reported USD |
+| acquisition-gemma31-yolo1280-crop1024-r0-c3 | 0.00312786 | 0.00312786 | 0 | provider-reported USD |
 | acquisition-ministral14-yolo640-crop1024-r0-c3 | 0.00365820 | 0.00365820 | 0 | provider-reported USD |
 | acquisition-ministral14-yolo1280-crop1024-r0-c3 | 0.00543680 | 0.00519840 | 0 | catalog estimate, provider-reported USD |
 Reported zero is preserved separately from estimates. No cost sidecar replaces original reports; unresolved or missing cost components cannot become a complete total.
@@ -148,10 +153,12 @@ All arms are contended, with per-arm transport cap 3 and a shared paid-request c
 | admission-clefomni-detector05-edge0-r0-c3 | 55.929 | 26.918 | 192.371 | 30.622 | unmeasured | unmeasured | f098ed6fda71 |
 | admission-clefomni-detector05-edge512-r0-c3 | 43.862 | 26.946 | 219.457 | 31.973 | unmeasured | unmeasured | db858f1f159f |
 | diagram-clefomni-filled-128-r0-c3 | 31.896 | 22.433 | 149.449 | unmeasured | unmeasured | unmeasured | cdc70bc25435 |
+| diagram-clefomni-filled-512-r0-c3 | 36.194 | 22.956 | 174.559 | unmeasured | unmeasured | unmeasured | c099e1e5bb88 |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 511.804 | 67.823 | 389.703 | unmeasured | 85.763 | 1376.164 | a737190c53c6 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 170.031 | 37.908 | 390.012 | unmeasured | 24.566 | 1122.324 | 5fb427c1fb00 |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | 209.030 | 41.430 | 389.371 | unmeasured | 52.200 | 1275.758 | 28b33f4c44bd |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | 865.341 | 36.174 | 400.684 | unmeasured | 24.120 | 1110.707 | 076e8cf38034 |
+| acquisition-gemma31-yolo1280-crop1024-r0-c3 | 337.166 | 43.327 | 390.527 | unmeasured | 91.529 | 1407.062 | f14da57edc8a |
 | acquisition-ministral14-yolo640-crop1024-r0-c3 | 163.407 | 33.607 | 403.801 | unmeasured | 24.070 | 1134.379 | c396756b53cb |
 | acquisition-ministral14-yolo1280-crop1024-r0-c3 | 258.021 | 41.523 | 381.656 | unmeasured | 90.654 | 1368.422 | 6530e32ed6d9 |
 
