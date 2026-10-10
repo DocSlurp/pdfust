@@ -98,6 +98,13 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         digest = frozen["code_sha256"].get(name)
         uniform_config = frozen["config"]
         if (
+            name == "decision_gateway.py"
+            and digest == "ce182e15faf9d8bb853f2f24e7b36e56ebe188a53c4edbdfd31c02f4a5d1eefd"
+            and uniform_config.get("processor") == "p003_gate"
+            and uniform_config.get("gate_provider") == "vercel"
+        ):
+            continue  # Root reviewed unchanged wire/normalization; only fixed diagnostic hints were added.
+        if (
             name == "p003_topology_run.py"
             and digest in {
                 "d40fc7789a2644e1ea85e38b2adc2d6d2c9a6c2e5b897b24a69215f4adb53165",
@@ -161,6 +168,7 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         if (
             name == "p003_topology_run.py"
             and frozen["config"].get("boundary_words", "strict") == "strict"
+            and frozen["config"].get("image", True) is True
             and set(frozen["config"]) <= historical_config_keys
             and digest == "3368006228075df064d2e6cceb024ff6896817dce3e1c6b210ce4fb84b15a13f"
         ):
