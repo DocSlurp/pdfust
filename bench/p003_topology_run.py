@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from bench import p003_candidate_run as candidate
+from bench import p003_topology_geometry as geometry
 from bench import p003_topology_ownership as ownership
 from bench import pipeline_run as pipeline
 from bench import pipeline_vision_transcription as transcription
@@ -321,7 +322,7 @@ def process_page(
                 "snapshot_file": f"{stem}-snapshot.json",
                 "status": "prepared",
                 "word_count": len(json.loads(crop["snapshot"].packet_json)["source"]["words"]),
-                "maximum_new_ownership_calls": 2 * len(crop["row_bodies"]),
+                "maximum_new_ownership_calls": 0 if config.get("geometry_only") else 2 * len(crop["row_bodies"]),
                 "rows": [],
                 "cells": [],
             }
@@ -330,6 +331,14 @@ def process_page(
                 for i, body in enumerate(crop["row_bodies"]):
                     write_json(output / f"{stem}-row-{i}-request.json", body)
                     info["rows"].append(f"{stem}-row-{i}")
+                continue
+            if config.get("geometry_only"):
+                audit = geometry.place(crop["snapshot"])
+                states[crop["id"]] = audit["state"]
+                write_json(output / f"{stem}-geometry-audit.json", audit)
+                write_json(output / f"{stem}-updated-state.json", audit["state"])
+                info["status"] = "staged"
+                info["placement_mechanism"] = "uniform_geometry"
                 continue
             responses = []
             for i, body in enumerate(crop["row_bodies"]):
@@ -471,8 +480,8 @@ def run(
     client: Any = None,
 ) -> dict[str, Any]:
     """Authenticate exact retained sources and freeze provenance before root opt-in calls."""
-    if bool(config.get("run_hosted")) == bool(config.get("prepare_only")):
-        raise ValueError("Choose exactly one explicit run_hosted or prepare_only mode")
+    if sum(bool(config.get(k)) for k in ("run_hosted", "prepare_only", "geometry_only")) != 1:
+        raise ValueError("Choose exactly one explicit run_hosted, prepare_only, or geometry_only mode")
     if config.get("boundary_words", "strict") not in {"strict", "residual"}:
         raise ValueError("Unknown boundary word treatment")
     transport = config.get("transport_concurrency", 1)
@@ -515,7 +524,7 @@ def run(
     (output / "code").mkdir()
     code = {}
     root = Path(__file__).parent
-    for name in CODE_FILES:
+    for name in CODE_FILES + (("p003_topology_geometry.py",) if config.get("geometry_only") else ()):
         data = (root / name).read_bytes()
         (output / "code" / name).write_bytes(data)
         code[name] = sha(data)
@@ -624,10 +633,13 @@ def main() -> None:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--run-hosted", action="store_true")
     mode.add_argument("--prepare-only", action="store_true")
+    mode.add_argument("--geometry-only", action="store_true")
     args = parser.parse_args()
     config = {
         k: getattr(args, k) for k in ("model", "max_questions", "run_hosted", "prepare_only", "reviewed_parser_sha256")
     }
+    if args.geometry_only:
+        config["geometry_only"] = True
     if args.boundary_words == "residual":
         config["boundary_words"] = "residual"
     if args.transport_concurrency == 3:
