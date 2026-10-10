@@ -82,3 +82,96 @@ literal inventory, annotation exclusion, exact source order, raw confidence and
 rounding, malformed late batches, duplicate/missing identities, crop mutation,
 invalid bounds/spans, overlapping tables, empty inventory and bounded refusal.
 No gold or source artifact was used to generate protocol evidence.
+
+## Retained incremental harness
+
+`bench/p003_topology_run.py` accepts a source-owned `regions` baseline and a
+separately authenticated `vision_regions` baseline, both matching the complete
+same16 PDF/page/manifest inventory. The predeclared topology baseline is chosen
+without reference labels; it contributes strictly admitted normalized bounds,
+dimensions and merged spans only. All generated strings are stripped before any
+new native decision request. Its retained crop image bytes, request model/provider
+pin, original body digest, image hash, byte count and display viewport must agree.
+No image rerendering, OCR, extraction, detection or initial topology generation is
+repeated. Both historical generation reports and all original failures remain
+separate provenance, with no combined historical cost inferred by summing them.
+
+Coordinates must match the same original page display viewport and rotation.
+A source baseline that actually normalized a nonzero rotation is unsupported,
+even when page dimensions happen to match. Each complete source word must be
+wholly contained in one positive-topology crop or remain outside every crop;
+straddling boxes and duplicate ownership are refused. Existing source tables may
+not cross that partition. Crops overlapping retained vector grids are refused.
+Empty source cannot recover image text. Every crop is capacity checked before the
+first paid call on a page, including the complete local native menus and the
+750,000-byte transport cap. Unsupported pages retain their baseline outputs and
+explicit reasons; they are not silently omitted from quality denominators.
+
+This first harness processes only positive admitted topology crops. Empty
+retained topology does not trigger a new classifier or remove an original table;
+such pages/crops retain the baseline and are `not_applicable`. This treatment is
+conditional placement research, not a new detector or a missing-source-text
+solution. Residual source regions retain unaffected baseline tables and literal
+words. All newly staged crop states compose through the unchanged source-region
+validator. New table overlap or late rendering failures retain the complete
+original page, including original structure/Markdown bytes, status, calls and
+source ownership. Earlier staged crops become discarded rather than successful.
+
+Root can prepare in a fresh directory before any paid run:
+
+```sh
+python -m bench.p003_topology_run \
+  --source-baseline SOURCE_REGIONS_DIRECTORY \
+  --source-trusted-code ROOT_AUTHENTICATED_SOURCE_MAP.json \
+  --topology-baseline FIXED_VISION_DIRECTORY \
+  --topology-trusted-code ROOT_AUTHENTICATED_TOPOLOGY_MAP.json \
+  --model cloudflare/clef-omni --output FRESH_PREPARATION_DIRECTORY \
+  --prepare-only
+```
+
+Preparation constructs no client and exposes source counts, unsupported reasons,
+exact row requests and maximum ownership call counts. To measure fresh root-paid
+choices, use another fresh directory with `--run-hosted` instead. Root coordinates
+spending and exclusive paid work. Optional `--transport-concurrency 3` selects the
+shared persistent P003 concurrent circuit breaker; default is serial. Local
+workers remain one. Explicit historical Sonnet parser compatibility takes the
+same repeatable root-reviewed digest flag as the candidate runner, retaining
+independent trusted-map requirements and current strict parsing. No reconciliation
+or ledger activation occurs in this harness.
+
+Current and baseline code archives, original source/topology requests/responses,
+full immutable baseline outputs, planned source partitions, word/crop snapshots,
+all new request/response pairs, row receipts, final ownership audits and updated
+states remain in the output. Transport evidence is copied for every shared-ledger
+attempt, including failed or unresolved reservations. Incremental metrics cover
+retained-artifact preparation inside processing, waits, validation, composition,
+rendering and writing; authentication/code/baseline copying precede that measured
+interval and are separately labeled unmeasured. Historical pipeline wall/CPU/cost
+remain untouched. `pages_per_minute` and `pages_per_dollar` are undefined. CPU/RSS
+use existing one-process resource measurements with 100ms sampling, and hosted
+GPU is unmeasured.
+
+Independent replay seam: `frozen.config.processor` is `p003_topology_source`;
+`frozen.source_baseline` and `frozen.topology_baseline` contain original config,
+separate trusted maps, `file_sha256` inventories and copied directories
+`source-baseline`/`topology-baseline`. `frozen.manifest_sha256` pins their source
+manifest. Each page retains `{id}-ownership-plan.json`; each crop snapshot file
+contains the canonical JSON for `ownership.Plan`. Its region metadata lists row
+and cell request stems, each with `-request.json` and `-response.json`. Responses
+retain typed `response.result`. Reconstruct the no-text topology from the strict
+raw retained transcription, reproduce the exact original-source partition, then
+call `ownership.assemble` on complete retained batches and compare audit/updated
+state. Compose every residual/new region and use the recorded original/legacy
+source-order renderer. All fallback output bytes must match the independently
+verified source baseline. Current and both historical archives require separate
+root-authenticated code maps; copied digest inventories are not their own trust
+roots. No archived Python code is executed.
+
+Twenty-seven helper/harness tests, plus the twenty-nine strict transcription
+scaffold tests, use only synthetic JSON, temporary fake ledgers and mocked native
+answers. Coverage includes complete same16 authentication/preparation, no client
+in preparation, ownership conservation, absent generated-string evidence, exact
+fallback after a later crop fails, all-crop preflight, native protection, rotation
+and word-boundary refusal, preserved baseline errors, separate historical/new
+cost intervals and strict complete-page replay. No source PDF, reference, API,
+credential or GPU was accessed during implementation or tests.
