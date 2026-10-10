@@ -459,6 +459,7 @@ def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
         ("stop", "Unknown source ID", "invalid_source_ids"),
         ("stop", "Overlapping merged spans", "invalid_table_topology"),
         (None, "Response was truncated or has no normal finish", "unclassified_completion_failure"),
+        (None, "No extracted or recognized source text", "missing_source_text"),
     ],
 )
 def test_failure_categories_use_retained_responses_not_generic_error_messages(

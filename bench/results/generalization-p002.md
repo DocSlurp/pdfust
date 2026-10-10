@@ -15,6 +15,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-generate-sonnet | 16/16 | 0 | 1/12 | 2 | 10 | 419/2333 | 295 | 14588/16640 | 15 | 7 | 2.59737 | 13.3194 | 1.20126 |
 | natural16-generate-whitespace | 15/16 | 1 | 1/12 | 2 | 7 | 447/2333 | 236 | 16144/16640 | 13 | 7 | 2.15636 | 12.0499 | 1.24482 |
 | natural16-matrix-sonnet-512 | 14/16 | 2 | 1/12 | 2 | 9 | 327/2333 | 227 | 15229/16640 | 13 | 9 | 2.7044 | 14.4924 | 0.966024 |
+| natural16-matrix-haiku-512 | 16/16 | 0 | 1/12 | 2 | 10 | 406/2333 | 240 | 14902/16640 | 14 | 3 | 1.98919 | 225.443 | 0.0709715 |
 
 ### natural16-whole-reviewed
 
@@ -229,6 +230,36 @@ Whole-run wall 310.605s; CPU 360.122s; sampled RSS 647983104 bytes; verified out
 
 Ledger attempts 44; reported USD subtotal 0.966024; missing reported charges 0; cost bases `{"provider-reported USD": 44}`. Reservation amount 0; estimate amount 0.
 
+
+### natural16-matrix-haiku-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Failure categories: `{}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 3 |
+| remaining_fourteen | 2/14 | 1/10 | 237 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 47 | 47 | 0.0709715 | 0 / 47 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 10 | 406/2333 | 14902/16640 | 0/4 |
+
+Whole-run wall 482.609s; CPU 393.46s; sampled RSS 639729664 bytes; verified output pages/min 1.98919; exact positive pages/min 0.124324. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 47; reported USD subtotal 0.0709715; missing reported charges 0; cost bases `{"provider-reported USD": 47}`. Reservation amount 0; estimate amount 0.
+
 ## Corrected full corpus-r2 DEV baseline
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -236,6 +267,7 @@ Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d092842955
 | Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 39.3111 | unmeasured | 0 |
+| native-regional-full-r2 | 272/276 | 4 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 36.7759 | unmeasured | 0 |
 
 ### native-full-r2
 
@@ -258,6 +290,31 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 | omnidoc | 64/64 | 0 | 0 | 0/3847 | 27350/27350 | 0/24 |
 
 Whole-run wall 412.098s; CPU 1232.85s; sampled RSS 725770240 bytes; verified output pages/min 39.3111; exact positive pages/min 13.9773. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bases `{}`. Reservation amount 0; estimate amount 0.
+
+
+### native-regional-full-r2
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 272/276.
+
+Failure categories: `{"missing_source_text": 4}`.
+
+Policy `native`; assembly `select`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| No retained remote requests | 0 | 0 | unmeasured | unmeasured |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| authored | 156/156 | 120 | 120 | 4258/5050 | 4389/27830 | 0/24 |
+| native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
+| omnidoc | 64/64 | 0 | 0 | 0/3847 | 27350/27350 | 0/24 |
+
+Whole-run wall 443.769s; CPU 1345.78s; sampled RSS 709750784 bytes; verified output pages/min 36.7759; exact positive pages/min 12.9797. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bases `{}`. Reservation amount 0; estimate amount 0.
 
@@ -296,7 +353,6 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- natural16-matrix-haiku-512 and native-regional-full-r2: complete reports not yet retained
 - YOLO matrix and image-only vision transcription controls: queued; different settings are separate treatments
 
 ## Interpretation
@@ -368,3 +424,41 @@ verification records remain in ignored `verified-evaluation.json` artifacts
 under each named run. The compact report is derived from those independently
 verified complete artifacts. No heldout evidence or hosted inference is used by
 the report command.
+
+## Matrix Haiku cost and density tradeoff
+
+The completed matrix Haiku 512 arm has 16/16 operational outputs, two complete
+tables on one exact positive page (1/12), ten exact topologies, 406 structural
+cells, 240 exact text cells, fourteen localized tables, and three extra tables.
+All four negative pages remain empty. Its 47 positively provider-charged calls
+cost USD 0.0709715, versus Sonnet matrix USD 0.966024. Wall time is higher,
+482.61 versus 310.61 seconds; this is a measured quality/cost/latency tradeoff,
+not a throughput or generalization claim.
+
+The posthoc split exposes an aggregate limitation. Haiku recovers only three
+exact text cells and 75 structural cells on the two dense newspapers, versus
+Sonnet's 59 and 121. Neither completes a dense table. On the remaining fourteen,
+Haiku obtains fourteen low-threshold table correspondences with no missing or
+extra tables, 331 structural cells, and 237 exact text cells; Sonnet has 206
+structural and 168 text cells there. A correspondence is not detection recall
+or a complete table. The cheaper arm is promising for this easier subset, but
+its dense-page losses forbid extrapolating the cost advantage into broadly
+accurate PDF extraction. Full sixteen-page scores remain primary.
+
+## Native regional full-corpus confirmation
+
+The completed regional native control retains 272/276 operational outputs,
+versus 270/276 in the earlier whole-page native control. All four remaining
+failures are unscored native diagnostics with no extracted or recognized text.
+Natural cohort operational errors improve from one to zero; native diagnostic
+errors improve from five to four. Positive table quality is unchanged: 120
+complete authored tables, 4258 structural/text cells, 96/172 exact positive
+pages, and zero complete natural tables. The natural cohort still misses all
+93 reference tables. This improves operational coverage without improving
+natural table accuracy.
+
+Wall time rises from 412.10 to 443.77 seconds and process CPU from 1232.85 to
+1345.78 seconds; sampled peak RSS decreases from 725.77 to 709.75 MB. Both
+runs have zero hosted calls or API charges. Measurements share the documented
+100 ms parent-process RSS and process CPU scope; concurrent workloads may
+affect timings.

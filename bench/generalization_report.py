@@ -440,6 +440,8 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
             category = "provider_content_filter"
         elif finish in {"length", "max_tokens"}:
             category = "provider_output_length"
+        elif "no extracted or recognized source text" in lower:
+            category = "missing_source_text"
         elif "anchor" in lower:
             category = "invalid_anchor_collection"
         elif "source id" in lower or "source_id" in lower or "unknown id" in lower:
