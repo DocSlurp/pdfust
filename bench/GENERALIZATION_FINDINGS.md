@@ -22,7 +22,7 @@ flowchart TD
     Native --> Grid[Validate native grid and source ownership]
     Native --> OCR[CPU OCR when extractable text is absent]
     PDF --> Detector[CPU layout detector]
-    Grid --> Exclude[Exclude proposals contained by native grids]
+    Grid --> Exclude[Exclude proposals overlapping native grids]
     Detector --> Exclude
     Exclude --> Crop[Bounded image crops]
     Crop --> Model[Haiku or Sonnet table transcription]
