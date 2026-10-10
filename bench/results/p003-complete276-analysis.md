@@ -2,6 +2,8 @@
 
 On the existing natural64 DEV subset, Luna crop transcription obtains 1,953 strict cells and 14 complete tables, versus ordinal OCR/Haiku 1,182 cells and nine tables. The full corpus aggregate is dominated by authored layouts: their 5,050 reference cells supply most of both totals. Natural, authored and unadjudicated native diagnostics are therefore reported separately. These are single contended observations, without a treatment selection for fresh confirmation.
 
+The dedicated Luna natural64 run previously scored 1,348 strict cells and 12 complete tables, with one page error. The natural64 portion of this repeat scores 1,953 and 14, with no page errors. This is repeated-run variation, not a stable frontier win: all 64 source records and crop plans match, and all 56 paired crop requests have identical actual compact wire-body hashes and identical encoded image hashes. Both frozen configs declare transport concurrency three. Only seven crop table outputs and 30 complete page table outputs match across observations; the source-only audit found no changed or missing paired requests. No fresh confirmation configuration was selected from these outcomes.
+
 Each run attempted all 276 original source pages. Cell/table quality is defined on 220 scored pages (249 tables, 8,897 cells); 56 native pages remain diagnostic-only. All operational failures remain in 276-page error/rate counts and the relevant scored subset, without inventing diagnostic gold.
 
 | Cohort | Pipeline | Attempted / usable / errors | Scored / diagnostic | Strict / expected cells | Text | Structure | Complete / expected tables | Missing / extra | Negative FP |
