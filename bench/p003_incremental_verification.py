@@ -98,6 +98,23 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         digest = frozen["code_sha256"].get(name)
         uniform_config = frozen["config"]
         if (
+            name == "p003_topology_run.py"
+            and digest == "7d39c0c8029b7a2569c9c14a4250cb37a290709a16b2c64f1a66ec43f6adb047"
+            and uniform_config.get("geometry_first", False) is False
+            and set(uniform_config)
+            <= historical_config_keys
+            | {
+                "geometry_only",
+                "band_mode",
+                "transcript_replay",
+                "chunked_inventory",
+                "crossed_tables",
+                "topology_evidence",
+                "geometry_first",
+            }
+        ):
+            continue  # Root reviewed unchanged existing branches before opt-in geometry-first questions.
+        if (
             name == "decision_gateway.py"
             and digest == "ce182e15faf9d8bb853f2f24e7b36e56ebe188a53c4edbdfd31c02f4a5d1eefd"
             and uniform_config.get("processor") == "p003_gate"
@@ -106,7 +123,8 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
             continue  # Root reviewed unchanged wire/normalization; only fixed diagnostic hints were added.
         if (
             name == "p003_topology_run.py"
-            and digest in {
+            and digest
+            in {
                 "d40fc7789a2644e1ea85e38b2adc2d6d2c9a6c2e5b897b24a69215f4adb53165",
                 "dcad1cc35f0a9d2b756e00e3bb9d5c2866829871bb2b770aee55a797988159b5",
             }
@@ -175,6 +193,20 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
             continue  # Root reviewed default partition/body semantics; only cost-scope label differs.
         if digest != sha((Path(__file__).parent / name).read_bytes()):
             raise ValueError("Unsupported incremental replay helper version: " + name)
+
+
+def _hybrid_admission(directory: Path, stem: str, crop: dict[str, Any], info: dict[str, Any]) -> None:
+    mixed = crop["hybrid"]
+    admission = json.loads(mixed.audit_json)
+    expected = {
+        "hybrid_snapshot_sha256": mixed.sha256,
+        "geometry_locked_count": len(admission["locked"]),
+        "disputed_count": len(admission["disputed_ids"]),
+        "baseline_topology_compatible": admission["baseline_topology_compatible"],
+        "status": admission["status"],
+    }
+    if info.get("geometry_first") != expected or _read(directory / f"{stem}-hybrid-admission.json") != admission:
+        raise ValueError("Geometry-first ownership admission differs from frozen source/baseline replay")
 
 
 def imported_baseline(
@@ -247,6 +279,7 @@ def verify_topology(
     """Replay frozen topology/source partition, row ownership, anchors and atomic outputs."""
     from bench import p003_candidate_run as candidate
     from bench import p003_topology_chunks as chunks
+    from bench import p003_topology_hybrid as hybrid
     from bench import p003_topology_ownership as ownership
     from bench import p003_topology_run as runner
     from bench import pipeline_run as pipeline
@@ -264,6 +297,10 @@ def verify_topology(
     if config.get("crossed_tables", "strict") not in {"strict", "residual_prose"}:
         raise ValueError("Invalid crossed source table treatment")
     protocol = chunks if config.get("chunked_inventory") else ownership
+    if type(config.get("geometry_first", False)) is not bool or (
+        config.get("geometry_first") and (not config.get("chunked_inventory") or config.get("geometry_only"))
+    ):
+        raise ValueError("Invalid geometry-first source ownership treatment")
     names = {"source-baseline", "topology-baseline"}
     if config.get("transcript_replay"):
         names.add("original-ownership-run")
@@ -290,6 +327,8 @@ def verify_topology(
             _helpers(frozen, ("p003_spatial_bands.py",))
     if config.get("chunked_inventory"):
         _helpers(frozen, ("p003_topology_chunks.py", "p003_spatial_bands.py"))
+    if config.get("geometry_first"):
+        _helpers(frozen, ("p003_topology_hybrid.py", "p003_topology_geometry.py"))
     if config.get("transcript_replay"):
         _helpers(frozen, ("p003_topology_replay.py",))
     reviewed = config.get("reviewed_parser_sha256", [])
@@ -362,6 +401,10 @@ def verify_topology(
                     directory / info["snapshot_file"]
                 ) != json.loads(crop["snapshot"].packet_json):
                     raise ValueError("Topology immutable source snapshot changed")
+                question_protocol = hybrid if config.get("geometry_first") else protocol
+                question_snapshot = crop["hybrid"] if config.get("geometry_first") else crop["snapshot"]
+                if config.get("geometry_first"):
+                    _hybrid_admission(directory, stem, crop, info)
                 if config.get("geometry_only"):
                     from bench import p003_topology_geometry as geometry
 
@@ -392,18 +435,22 @@ def verify_topology(
                             retained.append(_retained_response(directory, transcript, request_stem, body, response))
                         calls.append(response)
                         responses.append(response["result"])
-                    rows = protocol.collect(crop["snapshot"], crop["row_bodies"], responses)
+                    rows = question_protocol.collect(question_snapshot, crop["row_bodies"], responses)
                     if _read(directory / f"{stem}-row-receipt.json") != rows:
                         raise ValueError("Topology row receipt changed")
-                    bodies = protocol.batches(
-                        crop["snapshot"],
+                    bodies = question_protocol.batches(
+                        question_snapshot,
                         config["model"],
                         crop["url"],
                         rows=rows,
                         max_questions=config["max_questions"],
                         image=config.get("image", True),
                         **(
-                            {"evidence_mode": config.get("topology_evidence", "compact")}
+                            {
+                                "evidence_mode": config.get(
+                                    "topology_evidence", "neighbors" if config.get("geometry_first") else "compact"
+                                )
+                            }
                             if config.get("chunked_inventory")
                             else {}
                         ),
@@ -420,7 +467,9 @@ def verify_topology(
                             retained.append(_retained_response(directory, transcript, request_stem, body, response))
                         calls.append(response)
                         results.append(response["result"])
-                    audit = protocol.assemble(crop["snapshot"], crop["row_bodies"], responses, bodies, results)
+                    audit = question_protocol.assemble(
+                        question_snapshot, crop["row_bodies"], responses, bodies, results
+                    )
                     if (
                         _read(directory / f"{stem}-audit.json") != audit
                         or _read(directory / f"{stem}-updated-state.json") != audit["state"]
@@ -487,6 +536,8 @@ def verify_topology(
                     raise ValueError("Prepared topology crop inventory changed")
                 for crop, info in zip(work["crops"], page["topology_regions"], strict=True):
                     stem = f"{ident}-{crop['id']}"
+                    if config.get("geometry_first"):
+                        _hybrid_admission(directory, stem, crop, info)
                     if (
                         info["status"] != "prepared"
                         or info["cells"]

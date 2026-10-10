@@ -188,3 +188,38 @@ def test_frozen_generation_gate_replays_exact_provider_response_and_body(
     write_json(request, body)
     with pytest.raises(ValueError, match="source packet differs"):
         verify_gate(output, report, frozen, {"baseline": trusted})
+
+
+@pytest.mark.parametrize("prepare", [False, True])
+def test_geometry_first_admission_and_complete_source_output_replay(tmp_path: Path, *, prepare: bool) -> None:
+    source, topology = tmp_path / "source", tmp_path / "topology"
+    source_trust, topology_trust = archives(source, topology)
+    for i in range(16):
+        write_json(source / f"p{i}-request-0.json", {"offline_fake_only": True})
+    output = tmp_path / "hybrid"
+    report = runner.run(
+        source,
+        topology,
+        source_trust,
+        topology_trust,
+        output,
+        config(
+            prepare_only=prepare,
+            run_hosted=not prepare,
+            chunked_inventory=True,
+            geometry_first=True,
+            topology_evidence="neighbors",
+        ),
+        None if prepare else AttributedClient(tmp_path),
+    )
+    frozen = json.loads((output / "frozen.json").read_bytes())
+    trust = {"source-baseline": source_trust, "topology-baseline": topology_trust}
+    _, verified = verify_topology(output, report, frozen, trust)
+    assert len(verified) == 16
+    path = output / "p0-topology-0-hybrid-admission.json"
+    admission = json.loads(path.read_bytes())
+    admission["disputed_ids"] = []
+    admission["tampered"] = True
+    write_json(path, admission)
+    with pytest.raises(ValueError, match="Geometry-first ownership admission"):
+        verify_topology(output, report, frozen, trust)
