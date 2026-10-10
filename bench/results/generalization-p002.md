@@ -2514,7 +2514,12 @@ recover 115 cells across one matched table with no complete dense tables. The
 other fourteen recover 280 cells and all three complete tables. All 18 reported
 charges total USD 0.0189111, at 2.55 operational pages/minute and 846.06 pages/API USD.
 Supplementary positive-page macro recall is 55.17% cells and 20.83% complete tables.
-There are no retained failures, missing pages or parser repairs.
+There are no retained failures, missing pages or parser repairs. The final part
+of this combined run, from approximately 06:49:32 through 06:51 UTC, overlapped the
+root repository pytest suite. Parent and detector CPU measurements cover their
+own processes, while elapsed time and throughput may include CPU contention.
+The later fresh logical hybrid started after those tests completed, with no
+other heavy benchmark CPU work active.
 
 This treatment exceeds simple ordinal 512 (311 cells/two complete tables) and
 matrix columns (332 cells/two complete tables) on this fixed screen. It also
