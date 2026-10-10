@@ -379,7 +379,9 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
                 attributes["langfuse.observation.cost_details"] = {"total": quote["effective_usd"]}
             else:
                 attributes.pop("langfuse.observation.cost_details", None)
-            attributes.pop("langfuse.observation.metadata.catalog_estimated_usd", None)
+            for key in tuple(attributes):
+                if key.startswith("langfuse.observation.metadata.catalog_estimat"):
+                    attributes.pop(key)
             attributes["langfuse.observation.metadata.effective_cost_complete"] = quote["effective_usd"] is not None
         elif quote.get("cache_read_counter_present") or quote.get("cache_write_counter_present"):
             if quote["effective_usd"] is not None:

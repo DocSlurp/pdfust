@@ -98,6 +98,19 @@ def test_positive_provider_charge_wins_over_catalog_estimate() -> None:
     assert "langfuse.observation.metadata.catalog_estimated_usd" not in attrs
 
 
+@pytest.mark.parametrize("gateway", [0, 0.0005])
+def test_byok_telemetry_preserves_gateway_zero_and_reports_complete_upstream_cost(gateway: float) -> None:
+    body, result, entry = sample()
+    result["usage"].update(cost=gateway, is_byok=True, cost_details={"upstream_inference_cost": 0.01})
+    _, payload = _payload(body, result, entry, {MODEL: {"input": 99, "output": 99}})
+    attrs = attributes(payload)
+    assert json.loads(attrs["langfuse.observation.cost_details"])["total"] == pytest.approx(0.01 + gateway)
+    assert attrs["langfuse.observation.metadata.provider_reported_usd"] == gateway
+    assert attrs["langfuse.observation.metadata.upstream_inference_usd"] == 0.01
+    assert attrs["langfuse.observation.metadata.effective_cost_complete"] is True
+    assert not any(key.startswith("langfuse.observation.metadata.catalog_estimat") for key in attrs)
+
+
 def test_p003_changed_price_uses_telemetry_alias_without_changing_request() -> None:
     body, result, entry = sample()
     body["model"] = "cloudflare/clef-flash"
