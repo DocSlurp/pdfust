@@ -608,3 +608,46 @@ def test_candidate_verifier_replays_complete_pools_and_atomic_fallback(tmp_path:
         write_json(output / "p0-result.json", changed["results"][0])
         with pytest.raises(ValueError, match="selected origin"):
             verify_candidate_run(output, changed, frozen, trust)
+
+
+def test_reviewed_historical_candidate_parser_still_needs_external_admission_and_trust(tmp_path: Path) -> None:
+    import json
+
+    from bench import p003_candidate_run as runner
+    from bench.p003_report import verify_candidate_run
+    from bench.silver import write_json
+    from test_p003_candidate_run import Client, baseline, config
+
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, trust0 = baseline(first, "first")
+    _, _, trust1 = baseline(second, "second")
+    archived = second / "code/pipeline_vision_transcription.py"
+    old = archived.read_text().replace(
+        "Model is outside the admitted matched transcription controls",
+        "Model is outside the matched Anthropic 5.5 controls",
+    )
+    archived.write_text(old)
+    digest = sha(archived.read_bytes())
+    assert digest in runner.ROOT_REVIEWED_PARSER_SHA256
+    trust1["pipeline_vision_transcription.py"] = digest
+    original = json.loads((second / "frozen.json").read_bytes())
+    original["code_sha256"]["pipeline_vision_transcription.py"] = digest
+    write_json(second / "frozen.json", original)
+    output = tmp_path / "ranked"
+    report = runner.run(
+        [first, second],
+        [trust0, trust1],
+        output,
+        config(reviewed_parser_sha256=[digest]),
+        Client(tmp_path, abstain=True),
+    )
+    frozen = json.loads((output / "frozen.json").read_bytes())
+    trust = {"baseline-0": trust0, "baseline-1": trust1}
+    with pytest.raises(ValueError, match="independently supplied root-reviewed"):
+        verify_candidate_run(output, report, frozen, trust)
+    _, verified = verify_candidate_run(output, report, frozen, trust, reviewed_parser_sha256=(digest,))
+    assert all(page["operational"] for page in verified.values())
+    bad_trust = deepcopy(trust)
+    bad_trust["baseline-1"]["pipeline_vision_transcription.py"] = "untrusted"
+    with pytest.raises(ValueError, match="Untrusted archived"):
+        verify_candidate_run(output, report, frozen, bad_trust, reviewed_parser_sha256=(digest,))

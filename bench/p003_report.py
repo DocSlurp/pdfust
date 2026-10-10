@@ -401,6 +401,8 @@ def verify_candidate_run(
     report: dict[str, Any],
     frozen: dict[str, Any],
     trusted_inputs: dict[str, dict[str, str]] | None,
+    *,
+    reviewed_parser_sha256: tuple[str, ...] = (),
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     """Replay authenticated whole-crop pools and fresh selector decisions without generation."""
     from bench import generalization_vision_regions as regions
@@ -409,6 +411,14 @@ def verify_candidate_run(
     from bench import pipeline_vision_transcription as transcription
 
     config = frozen["config"]
+    reviewed = config.get("reviewed_parser_sha256", [])
+    if (
+        not isinstance(reviewed, list)
+        or any(digest not in runner.ROOT_REVIEWED_PARSER_SHA256 for digest in reviewed)
+        or any(digest not in runner.ROOT_REVIEWED_PARSER_SHA256 for digest in reviewed_parser_sha256)
+        or not set(reviewed) <= set(reviewed_parser_sha256)
+    ):
+        raise ValueError("Historical candidate parser requires explicit independently supplied root-reviewed digest")
     inventories = frozen["candidate_inputs"]
     names = [f"baseline-{i}" for i in range(len(inventories))]
     if not 2 <= len(inventories) <= 4 or trusted_inputs is None or set(trusted_inputs) != set(names):
@@ -449,7 +459,7 @@ def verify_candidate_run(
         if not required <= set(hashes):
             raise ValueError("Candidate baseline hash inventory lacks original requests or output evidence")
         verify_archive(copied, original_frozen, trusted_inputs[name])
-        runner.authenticate(copied, trusted_inputs[name])
+        runner.authenticate(copied, trusted_inputs[name], reviewed_parser_sha256=tuple(reviewed))
         directories.append(copied)
         baseline_reports.append(baseline)
     if report["candidate_generation_reports"] != baseline_reports:
@@ -862,6 +872,7 @@ def score_run(
     trusted_code: dict[str, str] | None = None,
     baseline_trusted_code: dict[str, str] | None = None,
     candidate_trusted_code: dict[str, dict[str, str]] | None = None,
+    reviewed_parser_sha256: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """Validate existing runner artifacts without calling inference or executing archives."""
     # The existing offline verifier reconstructs source ownership and Markdown.
@@ -929,7 +940,9 @@ def score_run(
         raise ValueError("Frozen code lacks required processor dependencies")
     incremental = processor in {"p003_boundary_repair", "p003_candidate_choice"}
     if processor == "p003_candidate_choice":
-        baseline_provenance, repair_verified = verify_candidate_run(directory, report, frozen, candidate_trusted_code)
+        baseline_provenance, repair_verified = verify_candidate_run(
+            directory, report, frozen, candidate_trusted_code, reviewed_parser_sha256=reviewed_parser_sha256
+        )
     elif incremental:
         baseline_provenance, repair_verified = verify_incremental_run(directory, report, frozen, baseline_trusted_code)
     else:
@@ -1340,6 +1353,12 @@ def main() -> None:
         action="append",
         help="Independent baseline-N digest maps; one shared or one per --run",
     )
+    parser.add_argument(
+        "--reviewed-parser-sha256",
+        action="append",
+        default=[],
+        help="Explicit root-reviewed historical candidate parser digest; archive trust still required",
+    )
     parser.add_argument("--cost-ledger", type=Path, help="Explicit shared ledger JSON for cost overlay verification")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown", type=Path)
@@ -1372,6 +1391,7 @@ def main() -> None:
             trusted_code=code,
             baseline_trusted_code=baseline_code,
             candidate_trusted_code=candidate_code,
+            reviewed_parser_sha256=tuple(args.reviewed_parser_sha256),
         )
         for p, code, baseline_code, candidate_code in zip(
             args.run, trusted, baseline_trusted, candidate_trusted, strict=True

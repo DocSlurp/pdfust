@@ -359,3 +359,27 @@ first-baseline fallback rule; individual crops must not be chosen as inputs by
 DEV gold. Ignored full artifacts are under
 `pipeline-p003/preflight-candidate-luna-haiku-r0/`, including clearly fake
 preflight evidence, exhaustive oracle and Sonnet source/crop compatibility.
+
+Root explicitly authenticated the full historical Sonnet source archive from Git
+and reviewed historical parser digest
+`8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e`.
+Candidate verification requires both the independent baseline digest map and
+external `--reviewed-parser-sha256 <digest>` admission matching the frozen
+configuration. The sole reviewed digest is allowlisted; archived code remains
+unexecuted and current strict parsing/recomposition runs. Frozen self-declared
+compatibility alone cannot admit an older parser.
+
+Additional exhaustive posthoc DEV whole-run pool bounds are:
+
+| Declared whole16 candidate inputs | Strict cells / 2333 | Text cells | Complete tables / 53 | Extra tables | Negative FP / 4 | Errors |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Luna + Sonnet | 1088 | 1099 | 5 | 3 | 0 | 0 |
+| Luna + Haiku + Sonnet | 1097 | 1110 | 5 | 0 | 0 | 0 |
+
+Both independently optimized complete-table ceilings are five, and both retain
+26 missing tables. The same strict-cell objective and atomic first-baseline
+fallback rule apply, including the Haiku-error page in the three-input bound.
+Each complete source run supplies every eligible crop; no input crop is selected
+by gold. These ceilings describe only exact retained alternatives, not an
+achievable model result, repeat variance or cost comparison. Oracle selections
+stay in ignored offline diagnostics and do not enter source-only evidence.
