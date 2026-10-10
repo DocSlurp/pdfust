@@ -137,6 +137,16 @@ def test_incremental_declared_paths_use_guard_before_launch(tmp_path, monkeypatc
         parallel.validate_plan([{"name": "a", "kind": "boundary", "arguments": ["--baseline=blocked-fixture"]}], 1)
 
 
+def test_explicit_per_arm_manifest_keeps_corpus_identity_and_path_guard(tmp_path):
+    declared = tmp_path / "natural64.json"
+    arm = {"name": "wide", "manifest": str(declared), "arguments": ["--preset", "ordinal"]}
+    validated = parallel.validate_plan([arm], 1)[0]
+    command = parallel.command_for(validated, tmp_path / "natural16.json", tmp_path / "wide")
+    assert command[command.index("--manifest") + 1] == str(declared)
+    with pytest.raises(ValueError, match="Only pipeline"):
+        parallel.validate_plan([{**arm, "kind": "gate"}], 1)
+
+
 def test_pipeline_queue_command_passes_real_cli_parser(tmp_path, monkeypatch):
     captured = []
     monkeypatch.setattr(p003_run.pipeline_run, "run", lambda *args: captured.append(args) or {})

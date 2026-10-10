@@ -68,6 +68,11 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
         if arm.get("kind", "pipeline") not in MODULES:
             message = "Experiment kind must be pipeline, candidate, boundary, gate or topology"
             raise ValueError(message)
+        if "manifest" in arm:
+            if arm.get("kind", "pipeline") != "pipeline" or not isinstance(arm["manifest"], str):
+                message = "Only pipeline arms may declare an explicit manifest path"
+                raise ValueError(message)
+            arm["manifest"] = str(guard_path(Path(arm["manifest"])))
         name, arguments = arm.get("name"), arm.get("arguments")
         if (not isinstance(name, str) or not name or name in names
                 or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for c in name)):
@@ -118,6 +123,8 @@ def command_for(arm: dict[str, Any], manifest: Path | None, output: Path) -> lis
     command = [sys.executable, "-m", MODULES[kind], "--output", str(output.resolve()),
                "--transport-concurrency", "3"]
     if kind == "pipeline":
+        if "manifest" in arm:
+            manifest = guard_path(Path(arm["manifest"]))
         if manifest is None:
             message = "Pipeline arms require an explicit manifest"
             raise ValueError(message)
