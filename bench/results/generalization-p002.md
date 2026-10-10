@@ -46,6 +46,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-crops-sonnet-2048-q50 | 15/16 | 1 | 2/12 | 3 | 14 | 361/2333 | 292/2333 | 13211/16640 | 14 | 3 | 10.2095 | 81.3123 | 0.184474 |
 | natural16-vision-crops-haiku-2048-q50 | 14/16 | 2 | 2/12 | 2 | 10 | 332/2333 | 268/2333 | 14130/16640 | 12 | 0 | 7.88064 | 1016.28 | 0.0137757 |
 | natural16-yolo-matrix-haiku-512-row-evidence | 15/16 | 1 | 1/12 | 2 | 11 | 347/2333 | 225/2333 | 14143/16640 | 14 | 1 | 3.12581 | 416.142 | 0.0360454 |
+| natural16-yolo-indices-haiku-512-gated-row-evidence | 16/16 | 0 | 1/12 | 2 | 13 | 473/2333 | 336/2333 | 13164/16640 | 15 | 0 | 3.3343 | 558.889 | 0.0286282 |
 
 ### natural16-whole-reviewed
 
@@ -1311,6 +1312,41 @@ Ledger attempts 18; reported USD subtotal 0.0360454; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.70852s, CPU 6.04068s; 16 per-page measurement entries, request CPU total 14.4566s; maximum sampled request RSS 1191841792 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-yolo-indices-haiku-512-gated-row-evidence
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 51.53%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 80 |
+| remaining_fourteen | 2/14 | 1/10 | 256 |
+
+Policy `gated`; assembly `gated_generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 16 | 16 | 0.0230941 | 0 / 16 / 0 |
+| perplexity/pplx-decider-v1.1-27b | 19 | 19 | 0.00553414 | 0 / 0 / 19 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 13 | 473/2333 | 13164/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 287.917s; CPU 306.321s; sampled RSS 621281280 bytes; verified output pages/min 3.3343; exact positive pages/min 0.208394. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 35; reported USD subtotal 0.0286282; missing reported charges 0; cost bases `{"provider-reported USD": 35}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.58886s, CPU 5.28254s; 16 per-page measurement entries, request CPU total 14.1049s; maximum sampled request RSS 1198190592 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -2399,3 +2435,31 @@ tables, exact positive pages and the negative false positive stay unchanged.
 API cost rises by approximately 53% from USD 0.0234843. This frozen screen offers
 no evidence that the added mechanical row context improves the complete pipeline.
 Its independently configured gated ordinal variant remains a separate control.
+
+
+## Gate-only row context with ordinal generation
+
+The gated ordinal control with explicit gate row evidence verifies all sixteen
+source-conserved outputs. It recovers 336/2333 exact cells, 473 structural cells,
+thirteen exact topologies and two complete tables on one exact positive page.
+There are no extra tables or negative false positives; 37 reference tables remain
+missing. Dense pages contribute eighty exact cells across two matched tables,
+with no complete dense tables; the remaining fourteen contribute 256 cells.
+
+All 35 reported charges total USD 0.02862824, giving 3.33 operational pages/minute
+and 558.89 pages/API USD. Supplementary positive-page macro recall is 51.53% cells
+and 12.50% complete tables. There are no failed retained responses or omitted
+pages. Exact gate-row context dependencies match trusted current source bytes.
+
+The frozen configuration differs from matched gated ordinal generation only
+by `gate_row_evidence=False` to `True`, plus an explicit legacy source-order flag
+matching the prior implicit default. Generation row evidence remains disabled;
+the source-only row features enter the independent semantic gate. Compared with
+that matched control, exact cells rise 104 (336 versus 232), operational pages
+rise one (16 versus 15), topologies rise four and seven extra positive-page
+fragments disappear. Complete tables and exact positive pages stay unchanged.
+API charges rise approximately 3.0%. This is a useful observed gate-context
+improvement in a single fresh response sample, without establishing a universal
+row-evidence advantage: the separately matched matrix-generation row control
+loses quality and costs more. Full276 gated expansion remains independently
+scheduled and cannot be inferred from the natural16 result.
