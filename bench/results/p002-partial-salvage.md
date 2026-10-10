@@ -81,3 +81,44 @@ Every input was rehashed at audit completion and remained unchanged. Each saved 
 ```sh
 PYTHONPATH=. python bench/results/pdf-master-artifacts/pipeline-p002/partial-salvage-audit.py
 ```
+
+## Tracked reproduction and partial review gallery
+
+The audit implementation is now retained in `bench/generalization_partial_audit.py`.
+It reads only the explicit natural16 corpus files and five named control directories;
+there is no directory discovery or inference. Missing/changed report identity,
+changed corpus identity, duplicate/missing predictions or verified page scores,
+and input mutation fail the audit. The helper specification and table metrics
+remain exactly those frozen in `20b87cc`.
+
+```sh
+python -m bench.generalization_partial_audit \
+  --artifact-root bench/results/pdf-master-artifacts/pipeline-p002 \
+  --output bench/results/pdf-master-artifacts/pipeline-p002/partial-review \
+  --gallery
+```
+
+Generated `partial-review/audit.json` reproduces all five earlier primary and
+secondary metric sets, partial inventories, quarantine decisions and charges
+exactly. Two refreshed authoritative evaluations add a run-interval resource
+scope note; their measurements and scores are unchanged. The new artifact copies
+that clarification and records fresh exact input hashes.
+
+The separate `partial-review/hybrid-partial-review/index.html` includes all sixteen
+hybrid Sonnet outcomes in fixed manifest order. Every section prominently says
+**PARTIAL**, shows the original source page with its original rotation, reports
+the unchanged original status, renders literal isolated tables as escaped HTML,
+and lists escaped quarantine reasons. Empty or failed cases remain visible.
+Gallery rendering verifies original PDF hashes before and after reading and
+retains every source-image hash, viewport and rotation in `source-images.json`.
+The gallery function receives only the source manifest and partial outcomes,
+never targets, reference tables or quality scores; content is not selected using
+gold. These are review artifacts, with unverified coverage and no complete-page
+or source-conservation claim.
+
+Nineteen focused helper/audit tests pass, including missing/changed identity,
+complete sixteen-page coverage and HTML escaping. Ruff and mypy pass. The full
+tracked audit plus all sixteen source renders took 1.796535 s wall and 1.798291 s
+process CPU, with lifetime maximum RSS 440,488 KiB on the same recorded Linux/
+Python platform. Single CPU process; operation timing excludes imports, peak RSS
+includes imports and was not sampled. No new provider calls or charges occurred.
