@@ -372,3 +372,57 @@ def test_later_crop_selector_failure_rolls_back_whole_page(tmp_path: Path) -> No
     assert report["incremental_ranking"]["ledger_attempts"] == 2
     assert (output / "p0-structure.json").read_bytes() == (paths[0] / "p0-structure.json").read_bytes()
     assert (output / "p0.md").read_bytes() == (paths[0] / "p0.md").read_bytes()
+
+
+def test_reviewed_historical_parser_needs_explicit_independent_approval(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, trusted = baseline(first, "first")
+    _, _, other = baseline(second, "second")
+    path = first / "code/pipeline_vision_transcription.py"
+    path.write_bytes(path.read_bytes() + b"\n# Mock historical error-message-only adapter.\n")
+    digest = sha(path.read_bytes())
+    trusted["pipeline_vision_transcription.py"] = digest
+    frozen = json.loads((first / "frozen.json").read_bytes())
+    frozen["code_sha256"]["pipeline_vision_transcription.py"] = digest
+    write_json(first / "frozen.json", frozen)
+    with pytest.raises(ValueError, match="current strict"):
+        runner.authenticate(first, trusted)
+    with pytest.raises(ValueError, match="explicit root"):
+        runner.authenticate(first, trusted, reviewed_parser_sha256=(digest,))
+    # Simulate root reviewing this synthetic adapter, without executing archived code.
+    monkeypatch.setattr(runner, "ROOT_REVIEWED_PARSER_SHA256", frozenset({digest}))
+    with pytest.raises(ValueError, match="independent trusted"):
+        runner.authenticate(first, {}, reviewed_parser_sha256=(digest,))
+    result = runner.run([first, second], [trusted, other], tmp_path / "reviewed",
+                        config(reviewed_parser_sha256=[digest]), Client(tmp_path))
+    assert result["results"][0]["ranking_status"] == "completed"
+    archived = json.loads((tmp_path / "reviewed/frozen.json").read_bytes())
+    assert archived["config"]["reviewed_parser_sha256"] == [digest]
+    assert archived["code_sha256"]["pipeline_vision_transcription.py"] == sha(Path(transcription.__file__).read_bytes())
+
+
+def test_candidate_concurrent_factory_is_root_client_and_frozen(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bench import p003_client  # noqa: PLC0415
+
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, a = baseline(first, "first")
+    _, _, b = baseline(second, "second")
+    client, called = Client(tmp_path), []
+
+    def factory() -> Client:
+        called.append(True)
+        return client
+
+    monkeypatch.setattr(p003_client, "P003ConcurrentClient", factory)
+    report = runner.run([first, second], [a, b], tmp_path / "concurrent", config(transport_concurrency=3))
+    assert called == [True]
+    assert report["config"]["transport_concurrency"] == 3
+    assert report["metrics"]["concurrency"] == 1
+    frozen = json.loads((tmp_path / "concurrent/frozen.json").read_bytes())
+    assert "decision_concurrent.py" in frozen["code_sha256"]
+    with pytest.raises(ValueError, match="concurrency"):
+        runner.run([first, second], [a, b], tmp_path / "bad-control", config(transport_concurrency=2), client)

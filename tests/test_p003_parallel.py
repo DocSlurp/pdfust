@@ -81,3 +81,54 @@ def test_stop_group_reaps_cpu_child():
     process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"], start_new_session=True)
     parallel.stop_group(process)
     assert process.poll() is not None
+
+
+def test_mixed_kinds_fixed_commands_and_separate_rate_scopes(tmp_path):
+    for kind, module in parallel.MODULES.items():
+        arm = {"name": kind, "kind": kind, "arguments": ["--model", "mock"]}
+        command = parallel.command_for(arm, tmp_path / "manifest", tmp_path / kind)
+        assert command[2] == module
+        assert ("--manifest" in command) is (kind == "pipeline")
+        assert ("--workers" in command) is (kind == "pipeline")
+        assert ("--run-hosted" in command) is (kind != "pipeline")
+        assert command[command.index("--transport-concurrency") + 1] == "3"
+    with pytest.raises(ValueError, match="manifest"):
+        parallel.command_for({"name": "a", "arguments": []}, None, tmp_path / "a")
+    with pytest.raises(ValueError, match="kind"):
+        parallel.validate_plan([{"name": "a", "kind": "arbitrary", "arguments": []}], 1)
+    assert parallel.validate_plan([{"name": "a", "kind": "candidate", "arguments": [
+        "--baseline", str(tmp_path / "base"), "--trusted-code=" + str(tmp_path / "trust.json"),
+    ]}], 1)
+    statuses = []
+    for kind in parallel.MODULES:
+        status = {"kind": kind, "wall_seconds": 10}
+        report = {"results": [{"status": "ok", "ranking_status": "not_applicable", "repair_status": "completed"}],
+                  "incremental_ranking": {"returned_calls": 1}, "incremental_repair": {"returned_calls": 2}}
+        parallel.report_counts(status, report)
+        assert ("contended_pages_per_minute" in status) is (kind == "pipeline")
+        statuses.append(status)
+    summary = parallel.summarize_rates(statuses, 20, [])
+    assert summary["completed_page_runs_known"] == 1
+    assert summary["by_kind"]["candidate"]["scope"] == "incremental retained artifacts"
+    assert summary["by_kind"]["boundary"]["completed_page_runs_known"] == 1
+    assert statuses[1]["incremental_status_counts"] == {"not_applicable": 1}
+
+
+def test_incremental_declared_paths_use_guard_before_launch(tmp_path, monkeypatch):
+    seen = []
+
+    def guarded(path):
+        seen.append(str(path))
+        if str(path) == "blocked-fixture":
+            message = "Mock protected path refusal"
+            raise ValueError(message)
+        return tmp_path / path.name
+
+    monkeypatch.setattr(parallel, "guard_path", guarded)
+    plan = [{"name": "a", "kind": "candidate", "arguments": ["--baseline", "base", "--trusted-code=trust"]}]
+    frozen = parallel.validate_plan(plan, 1)
+    assert seen == ["base", "trust"]
+    assert frozen[0]["arguments"] == ["--baseline", str(tmp_path / "base"), "--trusted-code=" + str(tmp_path / "trust")]
+    assert plan[0]["arguments"][1] == "base"
+    with pytest.raises(ValueError, match="Mock protected"):
+        parallel.validate_plan([{"name": "a", "kind": "boundary", "arguments": ["--baseline=blocked-fixture"]}], 1)

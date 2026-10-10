@@ -38,7 +38,17 @@ IMAGE_MODELS = (
     "cloudflare/clef-omni",
 )
 EDGES = (0, 256, 512, 768, 1024)
+ROOT_REVIEWED_PARSER_SHA256 = frozenset({
+    "8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e",
+})
 CODE_FILES = (
+    "decision_concurrent.py",
+    "decision_hosted.py",
+    "decision_gateway.py",
+    "decision_langfuse.py",
+    "reprice_model_rates.py",
+    "research_policy.py",
+    "p003_client.py",
     "p003_candidate_run.py",
     "p003_candidate_choice.py",
     "p003_boundary_run.py",
@@ -83,8 +93,15 @@ def _crop_bytes(body: dict[str, Any]) -> tuple[str, bytes]:
     return url, data
 
 
-def authenticate(directory: Path, trusted: dict[str, str]) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
+def authenticate(
+    directory: Path, trusted: dict[str, str], *, reviewed_parser_sha256: tuple[str, ...] = (),
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
     """Authenticate all archived code against an independent operator-supplied map."""
+    if any(
+        not isinstance(digest, str) or digest not in ROOT_REVIEWED_PARSER_SHA256
+        for digest in reviewed_parser_sha256
+    ):
+        raise ValueError("Historical parser digest lacks an explicit root compatibility review")
     frozen, report = _read(directory / "frozen.json"), _read(directory / "report.json")
     if frozen["config"].get("processor") != "vision_regions" or report["config"].get("processor") != "vision_regions":
         raise ValueError("Candidate ranking targets vision_regions baseline format only")
@@ -107,7 +124,8 @@ def authenticate(directory: Path, trusted: dict[str, str]) -> tuple[dict[str, An
         ):
             raise ValueError("Baseline archived code differs from independent trusted map")
     # No archived source is executed. Require the strict local adapter to match its authenticated version.
-    if hashes.get("pipeline_vision_transcription.py") != sha(Path(transcription.__file__).read_bytes()):
+    parser_digest = hashes.get("pipeline_vision_transcription.py")
+    if parser_digest != sha(Path(transcription.__file__).read_bytes()) and parser_digest not in reviewed_parser_sha256:
         raise ValueError("Authenticated candidate parser differs from current strict replay adapter")
     records = frozen["records"]
     results = {row["id"]: row for row in report["results"]}
@@ -377,6 +395,14 @@ def run(
     """Authenticate and freeze declared generation inputs before opt-in ranking calls."""
     if not config.get("run_hosted") or not 2 <= len(inputs) <= 4 or len(inputs) != len(trusted_code):
         raise ValueError("Ranking needs 2-4 explicit baseline/trust-map pairs and run_hosted opt-in")
+    transport = config.get("transport_concurrency", 1)
+    if type(transport) is not int or transport not in (1, 3):
+        raise ValueError("P003 ranking transport concurrency must be 1 or 3")
+    reviewed = config.get("reviewed_parser_sha256", [])
+    if not isinstance(reviewed, list) or any(
+        not isinstance(digest, str) or digest not in ROOT_REVIEWED_PARSER_SHA256 for digest in reviewed
+    ):
+        raise ValueError("Historical parser allowlist requires explicit root-reviewed digests")
     edge, model = config["image_edge"], config["model"]
     if (
         type(edge) is not int
@@ -388,7 +414,10 @@ def run(
     if type(config.get("seed", 20261010)) is not int:
         raise ValueError("Alias order seed must be an integer")
     inputs, output = [guard_path(path) for path in inputs], guard_path(output)
-    authenticated = [authenticate(directory, trusted) for directory, trusted in zip(inputs, trusted_code, strict=True)]
+    authenticated = [
+        authenticate(directory, trusted, reviewed_parser_sha256=tuple(reviewed))
+        for directory, trusted in zip(inputs, trusted_code, strict=True)
+    ]
     frozen_inputs, reports = [row[0] for row in authenticated], [row[1] for row in authenticated]
     records = frozen_inputs[0]["records"]
 
@@ -452,7 +481,7 @@ def run(
             }
         )
     root = Path(__file__).resolve().parent
-    available_code = [*CODE_FILES, *(["p003_client.py"] if (root / "p003_client.py").exists() else [])]
+    available_code = CODE_FILES
     (output / "code").mkdir()
     code = {}
     for name in available_code:
@@ -472,9 +501,9 @@ def run(
         },
     )
     if client is None:
-        from bench.p003_client import P003DecisionClient
+        from bench.p003_client import P003ConcurrentClient, P003DecisionClient
 
-        client = P003DecisionClient()
+        client = (P003ConcurrentClient if transport == 3 else P003DecisionClient)()
     if _entries(client, f"P003/{config['run_id']}/"):
         raise ValueError("Ranking run ID already exists in persistent ledger")
     maps = [{row["id"]: row for row in report["results"]} for report in reports]
@@ -496,6 +525,7 @@ def run(
         **resources.summary(),
         "scope": "incremental ranking on retained frozen candidates",
         "concurrency": 1,
+        "transport_concurrency": transport,
         "end_to_end_pipeline_measured": False,
         "generation_repeated": False,
         "input_authentication_resources": "unmeasured separately",
@@ -531,9 +561,15 @@ def main() -> None:
     parser.add_argument("--model", required=True)
     parser.add_argument("--image-edge", type=int, choices=EDGES, default=512)
     parser.add_argument("--seed", type=int, default=20261010)
+    parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
+    parser.add_argument("--reviewed-parser-sha256", action="append", default=[])
     parser.add_argument("--run-hosted", action="store_true")
     args = parser.parse_args()
     config = {"model": args.model, "image_edge": args.image_edge, "seed": args.seed, "run_hosted": args.run_hosted}
+    if args.transport_concurrency == 3:
+        config["transport_concurrency"] = 3
+    if args.reviewed_parser_sha256:
+        config["reviewed_parser_sha256"] = args.reviewed_parser_sha256
     report = run(args.baseline, [_read(path) for path in args.trusted_code], args.output, config)
     print(
         json.dumps({k: v for k, v in report.items() if k not in {"results", "candidate_generation_reports"}}, indent=2)

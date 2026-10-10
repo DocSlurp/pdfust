@@ -23,7 +23,7 @@ from bench import pipeline_run as pipeline
 from bench.decision_hosted import DECISION_MODELS, accounted_cost
 from bench.decision_p003_native import apply_decision_batches, decision_batches
 from bench.generalization_run import _table_bounds, region_image
-from bench.p003_client import P003DecisionClient
+from bench.p003_client import P003ConcurrentClient, P003DecisionClient
 from bench.pipeline_regions import compose
 from bench.pipeline_source_order import render_source
 from bench.silver import guard_path, sha, write_json
@@ -38,6 +38,8 @@ CODE_FILES = (
     "decision_p003_boundaries.py",
     "decision_p003_native.py",
     "decision_hosted.py",
+    "decision_concurrent.py",
+    "decision_gateway.py",
     "p003_client.py",
     "research_policy.py",
     "decision_langfuse.py",
@@ -306,6 +308,9 @@ def run(
     """Freeze immutable baseline provenance before explicitly authorized hosted repair."""
     if not config.get("run_hosted"):
         raise ValueError("Repair inference is opt-in; root must explicitly set run_hosted")
+    transport = config.get("transport_concurrency", 1)
+    if type(transport) is not int or transport not in (1, 3):
+        raise ValueError("P003 repair transport concurrency must be 1 or 3")
     if config["model"] not in DECISION_MODELS or config["image_edge"] not in (0, 256, 512, 1024):
         raise ValueError("Unknown native repair model or independent image edge")
     baseline_directory, output = guard_path(baseline_directory), guard_path(output)
@@ -391,7 +396,7 @@ def run(
     }
     write_json(output / "frozen.json", frozen)
     if client is None:
-        client = P003DecisionClient()
+        client = (P003ConcurrentClient if transport == 3 else P003DecisionClient)()
     if _entries(client, f"P003/{config['run_id']}/"):
         raise ValueError("Repair run ID already exists in the persistent ledger; choose a fresh run ID")
     with pipeline.Resources() as resources:
@@ -409,6 +414,7 @@ def run(
         "interval": "After baseline/code copying: region images, request waits, decoding, composition and output",
         "baseline_freezing_resources": "unmeasured separately",
         "concurrency": 1,
+        "transport_concurrency": transport,
         "end_to_end_pipeline_measured": False,
         "baseline_work_repeated": False,
     }
@@ -445,11 +451,14 @@ def main() -> None:
     parser.add_argument("--max-questions", type=int, choices=range(1, 17), default=16)
     parser.add_argument("--minimum-join", type=float, default=0.8)
     parser.add_argument("--minimum-margin", type=float, default=0.25)
+    parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
     parser.add_argument("--run-hosted", action="store_true")
     args = parser.parse_args()
     config = vars(args).copy()
     config.pop("baseline")
     config.pop("output")
+    if args.transport_concurrency == 1:
+        config.pop("transport_concurrency")
     report = run(args.baseline, args.output, config)
     print(json.dumps({k: v for k, v in report.items() if k not in {"results", "baseline_report"}}, indent=2))
 

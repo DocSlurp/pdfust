@@ -67,3 +67,35 @@ subprocesses: circuit breaking, BYOK components, identical matched admissions,
 unique reservations, default rejection, P003-only policy, seeded plans, override
 rejection, three-arm overlap, trusted maps, aggregate resource counters, no
 restart/overwrite, cutoff and process cleanup. No source PDF or gold is read.
+
+## Mixed incremental arms
+
+Plan items optionally declare `kind`: `pipeline` (default), `candidate`, or
+`boundary`. Each selects a fixed Python module; arbitrary executable modules are
+not allowed. Pipeline arms alone receive the queue manifest and workers=1.
+Candidate/boundary arms receive `--run-hosted` under root's explicit exclusive
+paid-work acknowledgment and take their own declared baseline paths and, for
+candidate pools, independent trusted maps. All kinds use transport concurrency3,
+and guarded declared paths reject protected locations before opening artifacts.
+Manifest is optional for a queue containing only incremental arms.
+
+Per-arm pipeline rates retain the contended label. Incremental rates count
+retained artifact processing, including authentication/copying, with separate
+ranking/repair status counts and incremental accounting. They exclude historical
+pipeline generation. Queue aggregate metrics are separated by kind; its legacy
+summary counts only pipeline page runs. There is no combined full-pipeline rate
+for mixed arms. Incremental runners preserve one local worker, record optional
+`config.transport_concurrency=3`, and freeze concurrent-client/transport sources.
+
+Candidate historical strict-adapter compatibility remains denied by default.
+Root explicitly reviewed only SHA-256
+`8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e`:
+18 archived Sonnet P002 code files authenticated against committed Git versions;
+the transcription adapter difference changes only model-admission error text,
+with no parser/request semantics change for Sonnet. Root may declare this digest
+using repeatable `--reviewed-parser-sha256`; arbitrary digests remain rejected.
+The recorded list is frozen under `config.reviewed_parser_sha256`. Every archived
+file must still match the separately supplied trusted map and its actual bytes.
+The current local strict parser executes; archived code is never executed.
+The independent evaluator must authenticate the separate historical and current
+trusted maps and enforce the same reviewed list.

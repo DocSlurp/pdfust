@@ -11,6 +11,7 @@ import signal
 import subprocess
 import sys
 import time
+from collections import Counter
 from collections.abc import Callable  # noqa: TC003 - public cleanup callback type.
 from contextlib import suppress
 from pathlib import Path
@@ -22,6 +23,7 @@ from bench.decision_hosted import ROOT
 from bench.research_policy import P003_PAID_CUTOFF
 from bench.silver import guard_path, write_json
 
+MODULES = {"pipeline": "bench.p003_run", "candidate": "bench.p003_candidate_run", "boundary": "bench.p003_boundary_run"}
 MAX_ARMS = 64
 MAX_CONCURRENT = 3
 MAX_WALL = 2400
@@ -43,16 +45,20 @@ POLICY = {
 }
 
 
-def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401, C901 - explicit independent argument checks.
+def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401, C901, PLR0912 - explicit independent argument checks.
     """Validate literal arms and freeze a deterministic randomized execution order."""
     if not isinstance(plan, list) or not 1 <= len(plan) <= MAX_ARMS:
         message = "Parallel queue requires 1 through 64 declared arms"
         raise ValueError(message)
+    plan = json.loads(json.dumps(plan))  # Preserve caller input while resolving declared paths.
     names = set()
     for arm in plan:
         if not isinstance(arm, dict):
             message = "Each arm must be an object"
             raise TypeError(message)
+        if arm.get("kind", "pipeline") not in MODULES:
+            message = "Experiment kind must be pipeline, candidate or boundary"
+            raise ValueError(message)
         name, arguments = arm.get("name"), arm.get("arguments")
         if (not isinstance(name, str) or not name or name in names
                 or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789-_" for c in name)):
@@ -66,6 +72,18 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
             message = "Queue owns output, manifest, workers, transport and gate-provider controls"
             raise ValueError(message)
         for i, value in enumerate(arguments):
+            if value.split("=", 1)[0] in {"--baseline", "--trusted-code"}:
+                path = value.split("=", 1)[1] if "=" in value else (
+                    arguments[i + 1] if i + 1 < len(arguments) else ""
+                )
+                if not path or path.startswith("--"):
+                    message = "Declared baseline/trust-map path is missing"
+                    raise ValueError(message)
+                resolved = str(guard_path(Path(path)))
+                if "=" in value:
+                    arguments[i] = value.split("=", 1)[0] + "=" + resolved
+                else:
+                    arguments[i + 1] = resolved
             if value.split("=", 1)[0] == "--gate-provider":
                 provider = value.split("=", 1)[1] if "=" in value else (
                     arguments[i + 1] if i + 1 < len(arguments) else None
@@ -80,6 +98,64 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
     ordered = json.loads(json.dumps(plan))
     random.Random(seed).shuffle(ordered)  # noqa: S311 - reproducible experiment order, not security.
     return ordered
+
+
+def command_for(arm: dict[str, Any], manifest: Path | None, output: Path) -> list[str]:
+    """Build a fixed module command with kind-specific hosted controls."""
+    kind = arm.get("kind", "pipeline")
+    command = [sys.executable, "-m", MODULES[kind], "--output", str(output.resolve()),
+               "--transport-concurrency", "3"]
+    if kind == "pipeline":
+        if manifest is None:
+            message = "Pipeline arms require an explicit manifest"
+            raise ValueError(message)
+        command.extend(["--manifest", str(manifest.resolve()), "--workers", "1"])
+    else:
+        command.append("--run-hosted")
+    return [*command, *arm["arguments"]]
+
+
+def report_counts(status: dict[str, Any], arm_report: dict[str, Any]) -> None:
+    """Label complete-pipeline rates separately from incremental artifact processing."""
+    rows = arm_report["results"]
+    if not isinstance(rows, list):
+        message = "Arm report results must be a list"
+        raise TypeError(message)
+    status["completed_pages"] = sum(row.get("status") == "ok" for row in rows)
+    status["attempted_pages"] = len(rows)
+    rate = status["completed_pages"] / status["wall_seconds"] * 60
+    if status["kind"] == "pipeline":
+        status["contended_pages_per_minute"] = rate
+    else:
+        status["incremental_artifact_pages_per_minute"] = rate
+        stage = "ranking_status" if status["kind"] == "candidate" else "repair_status"
+        status["incremental_status_counts"] = dict(Counter(row.get(stage, "missing") for row in rows))
+        accounting = arm_report["incremental_ranking" if status["kind"] == "candidate" else "incremental_repair"]
+        status["incremental_accounting"] = accounting
+        status["rate_scope"] = "retained artifacts including authentication/copying; original pipeline excluded"
+
+
+def summarize_rates(statuses: list[dict[str, Any]], wall: float, not_started: list[str]) -> dict[str, Any]:
+    """Aggregate independent arms by kind without merging pipeline/incremental rates."""
+    by_kind = {}
+    for kind in MODULES:
+        arms = [status for status in statuses if status["kind"] == kind]
+        complete = bool(arms) and all(
+            "completed_pages" in status and not status.get("report_metrics_error") for status in arms
+        ) and not not_started
+        pages = sum(status.get("completed_pages", 0) for status in arms)
+        by_kind[kind] = {"completed_page_runs_known": pages, "complete_metrics": complete,
+                         "scope": "complete pipeline" if kind == "pipeline" else "incremental retained artifacts",
+                         "completed_page_runs_per_minute": pages / wall * 60 if complete and wall else None,
+                         "arm_count": len(arms)}
+        if kind != "pipeline":
+            by_kind[kind]["incremental_artifact_page_runs_per_minute"] = by_kind[kind].pop(
+                "completed_page_runs_per_minute"
+            )
+    return {"label": "contended queue aggregate by kind; repeated pages count per arm",
+            "by_kind": by_kind, "not_a_serial_comparison": True,
+            # Preserve pipeline-only queue summary compatibility; excludes incremental arms.
+            **by_kind["pipeline"]}
 
 
 class AggregateMonitor:
@@ -146,10 +222,14 @@ def stop_group(process: subprocess.Popen, sample: Callable[[], None] | None = No
 
 
 def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit cleanup.
-    plan: list[dict[str, Any]], manifest: Path, directory: Path, *, seed: int,
+    plan: list[dict[str, Any]], manifest: Path | None, directory: Path, *, seed: int,
               cutoff: float = P003_PAID_CUTOFF, root: Path = ROOT) -> dict[str, Any]:
     """Run only fresh arms, with per-arm snapshots and atomic status checkpoints."""
+    directory = guard_path(directory)
+    manifest = guard_path(manifest) if manifest is not None else None
     ordered = validate_plan(plan, seed)
+    for arm in ordered:
+        command_for(arm, manifest, directory / arm["name"])
     directory.mkdir(parents=True, exist_ok=False)
     (directory / "logs").mkdir()
     (directory / "trusted-code").mkdir()
@@ -161,7 +241,8 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
     running: dict[str, tuple[subprocess.Popen, Any, dict[str, Any]]] = {}
     monitor, started = AggregateMonitor(), time.monotonic()
     record = {"policy": POLICY, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,
-              "manifest": str(manifest.resolve()), "arms": statuses, "rates_label": "contended per-arm rates",
+              "manifest": str(manifest.resolve()) if manifest is not None else None, "arms": statuses,
+              "rates_label": "contended per-arm rates separated by experiment kind",
               "aggregate_rates": None, "max_observed_concurrent_arms": 0}
 
     def checkpoint() -> None:
@@ -182,10 +263,8 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                 files = subprocess.check_output([git, "ls-files", "bench/*.py"], cwd=root, text=True).splitlines()  # noqa: S603
                 trust = {Path(p).name: hashlib.sha256((root / p).read_bytes()).hexdigest() for p in files}
                 write_json(directory / "trusted-code" / (name + ".json"), trust)
-                command = [sys.executable, "-m", "bench.p003_run", "--manifest", str(manifest.resolve()),
-                           "--output", str(output.resolve()), "--workers", "1", "--transport-concurrency", "3",
-                           *arm["arguments"]]
-                status = {"name": name, "status": "starting", "command": command,
+                command = command_for(arm, manifest, output)
+                status = {"name": name, "kind": arm.get("kind", "pipeline"), "status": "starting", "command": command,
                           "started_at": time.time(), "rate_label": "contended", "retry": False}
                 statuses.append(status)
                 checkpoint()
@@ -216,13 +295,7 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                     if report_path.exists():
                         try:
                             arm_report = json.loads(report_path.read_bytes())
-                            rows = arm_report["results"]
-                            if isinstance(rows, list):
-                                status["completed_pages"] = sum(row.get("status") == "ok" for row in rows)
-                                status["attempted_pages"] = len(rows)
-                                status["contended_pages_per_minute"] = (
-                                    status["completed_pages"] / status["wall_seconds"] * 60
-                                )
+                            report_counts(status, arm_report)
                         except (ValueError, KeyError, TypeError, AttributeError):
                             status["report_metrics_error"] = "unreadable_report"
                     log.close()
@@ -245,15 +318,7 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
         monitor.sample()
         record["interrupted"] = interrupted
         wall = time.monotonic() - started
-        complete = all("completed_pages" in status for status in statuses) and not record.get("not_started")
-        pages = sum(status.get("completed_pages", 0) for status in statuses)
-        record["aggregate_rates"] = {
-            "label": "contended queue aggregate across independent arms; repeated pages count per arm",
-            "completed_page_runs_known": pages,
-            "complete_metrics": complete,
-            "completed_page_runs_per_minute": pages / wall * 60 if complete and wall else None,
-            "not_a_serial_comparison": True,
-        }
+        record["aggregate_rates"] = summarize_rates(statuses, wall, record.get("not_started", []))
         checkpoint()
     return record
 
@@ -262,14 +327,14 @@ def main() -> None:
     """Require root's explicit exclusivity acknowledgment; never reconcile ledgers."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, required=True)
-    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--manifest", type=Path)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=3)
     parser.add_argument("--exclusive-paid-work", action="store_true")
     args = parser.parse_args()
     if not args.exclusive_paid_work:
         parser.error("Root must stop all serial/other paid work and reconcile policy offline before acknowledgment")
-    run_queue(json.loads(guard_path(args.plan).read_bytes()), guard_path(args.manifest),
+    run_queue(json.loads(guard_path(args.plan).read_bytes()), guard_path(args.manifest) if args.manifest else None,
               guard_path(args.directory), seed=args.seed)
 
 

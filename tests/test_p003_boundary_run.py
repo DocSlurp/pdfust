@@ -281,3 +281,23 @@ def test_budget_reservation_refuses_before_transmission(tmp_path: Path) -> None:
     assert client.bodies == []
     assert report["incremental_repair"]["ledger_attempts"] == 0
     assert json.loads(client.ledger.read_bytes())["requests"][0]["accounted_usd"] == 49.8
+
+
+def test_boundary_concurrent_factory_and_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    prior = tmp_path / "baseline"
+    baseline(prior)
+    client, called = MockClient(tmp_path), []
+
+    def factory() -> MockClient:
+        called.append(True)
+        return client
+
+    monkeypatch.setattr(repair, "P003ConcurrentClient", factory)
+    report = repair.run(prior, tmp_path / "concurrent", configuration(transport_concurrency=3))
+    assert called == [True]
+    assert report["config"]["transport_concurrency"] == 3
+    assert report["metrics"]["concurrency"] == 1
+    frozen = json.loads((tmp_path / "concurrent/frozen.json").read_bytes())
+    assert "decision_concurrent.py" in frozen["code_sha256"]
+    with pytest.raises(ValueError, match="concurrency"):
+        repair.run(prior, tmp_path / "bad-control", configuration(transport_concurrency=True), client)
