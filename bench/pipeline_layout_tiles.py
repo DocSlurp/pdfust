@@ -110,7 +110,7 @@ def multiscale(
                     display[1] + window[3] / height * (display[3] - display[1]),
                 ]
                 body = io.BytesIO()
-                raster.crop(tuple(window)).save(body, format="PNG")
+                raster.crop((window[0], window[1], window[2], window[3])).save(body, format="PNG")
                 result = detector.detect(body.getvalue(), viewport=tile_viewport)
                 call_id = f"g{grid}-t{index}"
                 result.update(call_id=call_id, tile_pixel_bbox=window, tile_viewport=tile_viewport)

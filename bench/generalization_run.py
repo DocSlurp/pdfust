@@ -184,6 +184,7 @@ def generate_region(
             "usage": response["result"].get("usage", {}),
             "replayed": response["replayed"],
             "kind": "source_id_generation",
+            "finish_reason": (response["result"].get("choices") or [{}])[0].get("finish_reason"),
             "client_wall_seconds": time.perf_counter() - began,
             "client_cpu_seconds": time.process_time() - cpu,
         }
@@ -204,6 +205,13 @@ def select_region(
     native = native_state(snapshot)
     info: dict[str, Any] = {"id": region["id"], "boundary": region["boundary"], "bbox": region["bbox"]}
     raster = native if region.get("kind") == "raster" else None
+    if (
+        region.get("kind") == "detector_proposal"
+        and not region.get("context_complete", True)
+        and config.get("detector_boundary", "retain") == "retain"
+    ):
+        info["route"] = "detector_incomplete_context_retained"
+        return native, info
     if (
         config.get("layout_detector") == "yolo"
         and config.get("detector_residual", "retain") == "retain"
@@ -312,8 +320,13 @@ def process(
         with pylopdf.open(stream=data) as document:
             page = document[record["page_number"]]
             result["original_rotation"] = page.rotation
-            if config.get("normalize_rotation", True) and page.rotation:
+            rotation_mode = config.get("rotation_mode", "always")
+            normalize = config.get("normalize_rotation", True) and rotation_mode != "preserve"
+            if normalize and rotation_mode == "native":
+                normalize = bool(page.get_text("words"))
+            if normalize and page.rotation:
                 page.set_rotation(0)
+            result["effective_rotation"] = page.rotation
             snapshot = baseline.source(page)
             ocr_source = config.get("ocr_source", "legacy")
             if ocr_source != "legacy" and (
@@ -366,16 +379,33 @@ def process(
                 from bench.pipeline_layout_detector import detector_regions
 
                 began, detector_cpu = time.perf_counter(), time.process_time()
-                detector_scale = config.get("detector_edge", 1536) / max(page.rect.width, page.rect.height)
+                tiles = config.get("detector_tiles", "none")
+                detector_edge = config.get("detector_edge", 1536) if tiles == "none" else 3071
+                detector_scale = detector_edge / max(page.rect.width, page.rect.height)
                 raster = page.render(scale=detector_scale, background=(255, 255, 255))
-                detection = config["_layout_detector"].detect(raster, viewport=list(page.rect))
+                if tiles == "none":
+                    detection = config["_layout_detector"].detect(raster, viewport=list(page.rect))
+                    plan = detector_regions(snapshot, detection["boxes"], **region_options)
+                else:
+                    from bench.pipeline_layout_tiles import multiscale, tile_regions
+
+                    grids = {"2x2": (2,), "3x3": (3,), "both": (2, 3)}[tiles]
+                    detection = multiscale(config["_layout_detector"], raster, viewport=list(page.rect), grids=grids)
+                    measurements = [call["metrics"] for call in detection["calls"]]
+                    detection["metrics"] = {
+                        "cpu_seconds": sum(m["cpu_seconds"] for m in measurements),
+                        "wall_seconds": sum(m["wall_seconds"] for m in measurements),
+                        "peak_sampled_rss_bytes": max(m["peak_sampled_rss_bytes"] for m in measurements),
+                        "measurement": "Child inference intervals summed; peak sampled child RSS is maximum, not sum. "
+                        "Initialization is recorded separately; full parent wall includes all calls and rendering.",
+                    }
+                    plan = tile_regions(snapshot, detection["boxes"], **region_options)
                 result["layout_detector"] = {
                     **detection,
                     "image_sha256": sha(raster),
                     "parent_wall_seconds": time.perf_counter() - began,
                     "parent_cpu_seconds": time.process_time() - detector_cpu,
                 }
-                plan = detector_regions(snapshot, detection["boxes"], **region_options)
             else:
                 plan = split(snapshot, **region_options)
             for region in plan["regions"]:
@@ -437,6 +467,9 @@ def main() -> None:
     parser.add_argument("--layout-detector", choices=("none", "yolo"), default="none")
     parser.add_argument("--detector-edge", type=int, choices=(1024, 1536, 2000), default=1536)
     parser.add_argument("--detector-residual", choices=("retain", "analyze"), default="retain")
+    parser.add_argument("--detector-tiles", choices=("none", "2x2", "3x3", "both"), default="none")
+    parser.add_argument("--detector-boundary", choices=("retain", "analyze"), default="retain")
+    parser.add_argument("--rotation-mode", choices=("always", "native", "preserve"), default="always")
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
     parser.add_argument("--pilot", action="store_true")
