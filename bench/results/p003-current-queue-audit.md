@@ -128,3 +128,33 @@ retained evidence. Matching observed scores across some arms do not establish
 equivalent mechanisms, and the 500 RGB result retains three extra tables. The
 blank 512 RGB control receives only two strict cells on actual selected crops,
 despite its original baseline-retaining score of 784 cells.
+
+Opus legacy transcription on the existing natural64 DEV cohort independently
+scores 1,617 strict, 1,627 text and 2,215 structure cells, with 15 complete tables,
+36 missing and three extra tables. All 64 pages, 93 tables and 3,847 cells remain
+in the denominator, including two failed pages; none of the 24 negative pages
+has a false-positive table. Provider-reported cost is USD 0.85678 over 55 attempts.
+The observed operational rate is 6.404 pages/minute and 72.36 pages/APIUSD under
+contended transport. Resource details remain in the progress tables.
+
+Sonnet's earlier same-cohort observation was 1,839 strict cells, 14 complete
+tables and zero failures. Opus's higher complete-table count therefore coexists
+with fewer strict cells and two failures. These single observations do not
+establish a causal model difference or a treatment choice for fresh confirmation.
+
+Additional full-natural16 observations retain 16/53/2,333:
+
+| Arm | Primary scope | Strict / complete | Missing / extra | Failures | Incremental API USD |
+| --- | --- | ---: | --- | ---: | ---: |
+| Luna legacy repeat2 | Complete pipeline | 291 / 4 | 39 / 0 | 1 | 0.010607825 |
+| Luna atomic cells | Complete pipeline | 515 / 4 | 35 / 6 | 0 | 0.0188228 |
+| Direct ClefOmni neighbors | Successful composition, geometry included | 201 / 2 | 39 / 1 | 1 | 0.4281609 |
+| PPLX512 RGB blur | Model-selected crops | 51 / 0 | 47 / 0 | 0 | 0.00061408 |
+
+The two Luna values cover generation API attempts rather than incremental
+decisions. Their positive upstream-plus-gateway BYOK basis preserves the reported
+gateway zero. ClefOmni and PPLX costs cover reported incremental decisions only.
+Luna's atomic-cell arm produces six extra positive-page tables, and unmatched
+repeat variation prevents treating its difference as isolated representation
+causality. Blur's baseline-retaining legacy score remains 784/three; primary
+model-selected quality gives it only 51 strict cells and no complete table.

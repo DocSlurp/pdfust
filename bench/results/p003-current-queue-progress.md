@@ -29,6 +29,7 @@ Primary candidate quality includes only model-selected complete crop states. Abs
 | choice-pplx-400-rgb-r2-c6 | 978/2333 | 5/53 | 27 | 0 | 0/4 | 0 | 3 |
 | choice-pplx-500-rgb-r0-c6 | 1083/2333 | 5/53 | 26 | 3 | 0/4 | 0 | 3 |
 | choice-pplx-512-rgb-blank-r0-c6 | 2/2333 | 0/53 | 52 | 0 | 0/4 | 0 | 0 |
+| choice-pplx-512-rgb-blur-r0-c6 | 51/2333 | 0/53 | 47 | 0 | 0/4 | 0 | 0 |
 Retained pipeline output quality (including historical fallback outputs):
 
 Successful incremental ownership composition, including deterministic geometry and protected source. Failed, skipped and no-question baseline pages receive no composition credit. This is not model-only attribution.
@@ -54,6 +55,7 @@ Successful incremental ownership composition, including deterministic geometry a
 | ownership-direct-tev-bands-r0-c6 | 249/2333 | 3/53 | 39 / 1 | 0/4 | 1 |
 | ownership-direct-pplx-neighbors-text-r0-c6 | 249/2333 | 3/53 | 39 / 1 | 0/4 | 1 |
 | ownership-hybrid-luna-neighbors-r0-c6 | 198/2333 | 2/53 | 39 / 1 | 0/4 | 1 |
+| ownership-direct-clefomni-neighbors-r0-c6 | 201/2333 | 2/53 | 39 / 1 | 0/4 | 1 |
 Legacy retained pipeline output quality follows separately.
 
 | Run | Model | Treatment | Outputs/intended | Errors | Complete tables | Strict cells | Text cells | Structure cells | Missing tables | Extra tables | Negative FP | Exact positive pages |
@@ -111,7 +113,12 @@ Legacy retained pipeline output quality follows separately.
 | ownership-hybrid-luna-neighbors-r0-c6 | openai/gpt-6-luna-decisions | processor=p003_topology_source, geometry_first=True, chunked_inventory=True, topology_evidence=neighbors, boundary_words=residual, crossed_tables=residual_prose | 16/16 | 0 | 2/53 | 300/2333 | 313 | 465 | 38 | 1 | 0/4 | 2 |
 | choice-pplx-400-rgb-r2-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=400 | 16/16 | 0 | 5/53 | 1081/2333 | 1092 | 1267 | 26 | 3 | 0/4 | 3 |
 | choice-pplx-500-rgb-r0-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=500 | 16/16 | 0 | 5/53 | 1083/2333 | 1094 | 1267 | 26 | 3 | 0/4 | 3 |
+| ownership-direct-clefomni-neighbors-r0-c6 | cloudflare/clef-omni | processor=p003_topology_source, geometry_first=True, ownership_protocol=direct_cell, chunked_inventory=True, topology_evidence=neighbors, boundary_words=residual, crossed_tables=residual_prose | 16/16 | 0 | 2/53 | 303/2333 | 316 | 465 | 38 | 1 | 0/4 | 2 |
+| screen-crops-luna-1024-atomic-cells-r0-c6 | openai/gpt-6-luna | processor=vision_regions, preset=vision_regions, transcription_representation=atomic_cells, image_edge=1024, gate_image=True | 16/16 | 0 | 4/53 | 515/2333 | 515 | 725 | 35 | 6 | 0/4 | 3 |
 | choice-pplx-512-rgb-blank-r0-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=512, image_visibility=blank | 16/16 | 0 | 3/53 | 784/2333 | 795 | 1045 | 30 | 5 | 0/4 | 2 |
+| natural64-crops-opus-1024-legacy-r0-c6 | anthropic/claude-opus-5.5 | processor=vision_regions, preset=vision_regions, transcription_representation=legacy, image_edge=1024, gate_image=True | 62/64 | 2 | 15/93 | 1617/3847 | 1627 | 2215 | 36 | 3 | 0/24 | 8 |
+| choice-pplx-512-rgb-blur-r0-c6 | perplexity/pplx-decider-v1.1-27b | processor=p003_candidate_choice, image_edge=512, image_visibility=blur | 16/16 | 0 | 3/53 | 784/2333 | 795 | 1045 | 30 | 5 | 0/4 | 2 |
+| screen-crops-luna-1024-pinned-r2-c6 | openai/gpt-6-luna | processor=vision_regions, preset=vision_regions, transcription_representation=legacy, image_edge=1024, gate_image=True | 15/16 | 1 | 4/53 | 291/2333 | 291 | 361 | 39 | 0 | 0/4 | 3 |
 
 Fresh model decisions are separate from retained pipeline outputs. A valid unresolved response is an abstention, not a model-selected output. Served model version aliases are retained as provenance; they alone do not establish model substitution.
 
@@ -164,7 +171,9 @@ Fresh model decisions are separate from retained pipeline outputs. A valid unres
 | ownership-hybrid-luna-neighbors-r0-c6 | 155 | 155 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | 0 | 0 |
 | choice-pplx-400-rgb-r2-c6 | 16 | 16 | 15 | 1 | 15 | 10 | 1 | 0 | 0 |
 | choice-pplx-500-rgb-r0-c6 | 16 | 16 | 16 | 0 | 16 | 11 | 0 | 0 | 0 |
+| ownership-direct-clefomni-neighbors-r0-c6 | 99 | 99 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | 0 | 0 |
 | choice-pplx-512-rgb-blank-r0-c6 | 16 | 16 | 1 | 15 | 1 | 0 | 11 | 0 | 0 |
+| choice-pplx-512-rgb-blur-r0-c6 | 16 | 16 | 6 | 10 | 6 | 3 | 8 | 0 | 0 |
 
 Full-pipeline rates count verified operational outputs. Cost overlays leave original report costs visible. Transport concurrency is part of the treatment; contended runs are separate evidence.
 
@@ -223,7 +232,12 @@ Full-pipeline rates count verified operational outputs. Cost overlays leave orig
 | ownership-hybrid-luna-neighbors-r0-c6 | incremental ownership conditional on frozen topology and source | contended (3) | Unmeasured | Unmeasured | 0.230661 | 0.230661 | Unmeasured | Unmeasured |
 | choice-pplx-400-rgb-r2-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00060236 | 0.00060236 | Unmeasured | Unmeasured |
 | choice-pplx-500-rgb-r0-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00061344 | 0.00061344 | Unmeasured | Unmeasured |
+| ownership-direct-clefomni-neighbors-r0-c6 | incremental ownership conditional on frozen topology and source | contended (3) | Unmeasured | Unmeasured | 0.428161 | 0.428161 | Unmeasured | Unmeasured |
+| screen-crops-luna-1024-atomic-cells-r0-c6 | complete pipeline | contended (3) | 2.58368 | 850.033 | 0.0188228 | 0.0188228 | Unmeasured | Unmeasured |
 | choice-pplx-512-rgb-blank-r0-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00061408 | 0.00061408 | Unmeasured | Unmeasured |
+| natural64-crops-opus-1024-legacy-r0-c6 | complete pipeline | contended (3) | 6.4036 | 72.364 | 0.85678 | 0.85678 | Unmeasured | Unmeasured |
+| choice-pplx-512-rgb-blur-r0-c6 | incremental ranking on retained candidates | contended (3) | Unmeasured | Unmeasured | 0.00061408 | 0.00061408 | Unmeasured | Unmeasured |
+| screen-crops-luna-1024-pinned-r2-c6 | complete pipeline | contended (3) | 4.57148 | 1414.05 | 0.0106078 | 0.0106078 | Unmeasured | Unmeasured |
 
 Incremental processing rates exclude historical baseline generation.
 
@@ -276,7 +290,9 @@ Incremental processing rates exclude historical baseline generation.
 | ownership-hybrid-luna-neighbors-r0-c6 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
 | choice-pplx-400-rgb-r2-c6 | Unmeasured | Unmeasured | 2.90746 | 26562.2 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
 | choice-pplx-500-rgb-r0-c6 | Unmeasured | Unmeasured | 4.60755 | 26082.4 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
+| ownership-direct-clefomni-neighbors-r0-c6 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
 | choice-pplx-512-rgb-blank-r0-c6 | Unmeasured | Unmeasured | 3.94216 | 26055.2 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
+| choice-pplx-512-rgb-blur-r0-c6 | Unmeasured | Unmeasured | 12.5928 | 26055.2 | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
 
 CPU/RSS observations retain their process scopes; worker RSS peaks are never added to parent peaks.
 
@@ -347,7 +363,18 @@ CPU/RSS observations retain their process scopes; worker RSS peaks are never add
 | ownership-hybrid-luna-neighbors-r0-c6 | parent | 822.379 | 231.939 | 356847616 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
 | choice-pplx-400-rgb-r2-c6 | parent | 330.185 | 36.547 | 302592000 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
 | choice-pplx-500-rgb-r0-c6 | parent | 208.354 | 34.9417 | 289378304 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| ownership-direct-clefomni-neighbors-r0-c6 | parent | 499.816 | 159.738 | 368517120 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| screen-crops-luna-1024-atomic-cells-r0-c6 | parent | 371.563 | 36.6637 | 429056000 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| screen-crops-luna-1024-atomic-cells-r0-c6 | detector worker initialization | 5.19488 | 13.3287 | 1077403648 | Child worker process_time CPU; own /proc/self/statm RSS every 100 ms plus endpoints; getrusage lifetime peak RSS; no parent or subprocess usage included |
+| screen-crops-luna-1024-atomic-cells-r0-c6 | detector worker request intervals | 5.93729 | 19.9863 | 1170497536 | 16 retained single-worker request intervals; sum recorded interval wall/CPU; max sampled RSS. Separate CPU worker subprocess; parent process CPU/RSS excludes worker. Do not sum RSS peaks or overlapping parent per-page CPU intervals. |
 | choice-pplx-512-rgb-blank-r0-c6 | parent | 243.521 | 36.0784 | 288636928 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| natural64-crops-opus-1024-legacy-r0-c6 | parent | 580.923 | 110.247 | 602714112 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| natural64-crops-opus-1024-legacy-r0-c6 | detector worker initialization | 2.83644 | 5.51815 | 1077526528 | Child worker process_time CPU; own /proc/self/statm RSS every 100 ms plus endpoints; getrusage lifetime peak RSS; no parent or subprocess usage included |
+| natural64-crops-opus-1024-legacy-r0-c6 | detector worker request intervals | 24.2429 | 80.6835 | 1223688192 | 64 retained single-worker request intervals; sum recorded interval wall/CPU; max sampled RSS. Separate CPU worker subprocess; parent process CPU/RSS excludes worker. Do not sum RSS peaks or overlapping parent per-page CPU intervals. |
+| choice-pplx-512-rgb-blur-r0-c6 | parent | 76.2341 | 36.9474 | 285036544 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| screen-crops-luna-1024-pinned-r2-c6 | parent | 196.873 | 39.1079 | 399515648 | psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses |
+| screen-crops-luna-1024-pinned-r2-c6 | detector worker initialization | 2.66411 | 5.02447 | 1080975360 | Child worker process_time CPU; own /proc/self/statm RSS every 100 ms plus endpoints; getrusage lifetime peak RSS; no parent or subprocess usage included |
+| screen-crops-luna-1024-pinned-r2-c6 | detector worker request intervals | 5.767 | 19.2624 | 1194749952 | 16 retained single-worker request intervals; sum recorded interval wall/CPU; max sampled RSS. Separate CPU worker subprocess; parent process CPU/RSS excludes worker. Do not sum RSS peaks or overlapping parent per-page CPU intervals. |
 
 Provider cache counters are unmeasured in these evaluation-only inputs unless explicitly retained as provider-reported usage. No local replay or cache-hit claim is inferred from latency or cost.
 
@@ -494,9 +521,18 @@ Provider cache counters are unmeasured in these evaluation-only inputs unless ex
 | choice-pplx-500-rgb-r0-c6 | current measured stage | 16/16 | Unmeasured | Unmeasured | 16 | 16 | True |
 | choice-pplx-500-rgb-r0-c6 | historical baseline 0 | 19/19 | 0 | 6497 | 0 | 0 | True |
 | choice-pplx-500-rgb-r0-c6 | historical baseline 1 | 19/19 | 0 | 0 | 0 | 0 | True |
+| ownership-direct-clefomni-neighbors-r0-c6 | current measured stage | 99/99 | Unmeasured | Unmeasured | 99 | 99 | True |
+| ownership-direct-clefomni-neighbors-r0-c6 | historical baseline 0 | 18/18 | 0 | 0 | 0 | 0 | True |
+| ownership-direct-clefomni-neighbors-r0-c6 | historical baseline 1 | 19/19 | 0 | 6497 | 0 | 0 | True |
+| screen-crops-luna-1024-atomic-cells-r0-c6 | current measured stage | 19/19 | 0 | 10064 | 0 | 0 | True |
 | choice-pplx-512-rgb-blank-r0-c6 | current measured stage | 16/16 | Unmeasured | Unmeasured | 16 | 16 | True |
 | choice-pplx-512-rgb-blank-r0-c6 | historical baseline 0 | 19/19 | 0 | 6497 | 0 | 0 | True |
 | choice-pplx-512-rgb-blank-r0-c6 | historical baseline 1 | 19/19 | 0 | 0 | 0 | 0 | True |
+| natural64-crops-opus-1024-legacy-r0-c6 | current measured stage | 55/55 | 0 | 0 | 0 | 0 | True |
+| choice-pplx-512-rgb-blur-r0-c6 | current measured stage | 16/16 | Unmeasured | Unmeasured | 16 | 16 | True |
+| choice-pplx-512-rgb-blur-r0-c6 | historical baseline 0 | 19/19 | 0 | 6497 | 0 | 0 | True |
+| choice-pplx-512-rgb-blur-r0-c6 | historical baseline 1 | 19/19 | 0 | 0 | 0 | 0 | True |
+| screen-crops-luna-1024-pinned-r2-c6 | current measured stage | 19/19 | 0 | 6497 | 0 | 0 | True |
 
 - `choice-pplx-128-rgb-r2-c6`: evaluation `235adc2a6e9e6cd50172c44a999193a2611dcc0be9ef00a566d7cf19cf559985`; report `b99ec9bdedeb5a5c0951c05a83f23ba7107ea94c50d0e25baa950b97482450f6`; failures `{}`; transport `{}`.
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
@@ -579,7 +615,13 @@ Provider cache counters are unmeasured in these evaluation-only inputs unless ex
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
 - `choice-pplx-500-rgb-r0-c6`: evaluation `5b06a0dcc48c0b108a4b7cc10d2b641948be73380f1ec1b953a9edcad8906e68`; report `b0c9372b07cfadc07ca9224f4c376e15bfc53fa2320a415d056562a2c4fcf3b7`; failures `{}`; transport `{}`.
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
+- `ownership-direct-clefomni-neighbors-r0-c6`: evaluation `d868f5f86040febae1527398aceb5a16a141619d94fcb33434f2a266069b0458`; report `099adbfe9685ac63c6bcd947b0ae77f8eb5b0ff5c5c9287eec438980aa3e3a30`; failures `{}`; transport `{}`.
+- `screen-crops-luna-1024-atomic-cells-r0-c6`: evaluation `3ddc7285cfea501f19274d7de19c6cdf19118e3ddcbded45bd8e2fdd90666b9b`; report `f29d6c7f407bc05f348aa8862a701f70da733882935504f943e6d776e1dc6943`; failures `{}`; transport `{}`.
 - `choice-pplx-512-rgb-blank-r0-c6`: evaluation `376951457c4540a47a4d9affd5f138a39e3e2320f0d4fbdcfaf9eb9ae4d21117`; report `10fc05fb9dd30c9af477d29c4826aab031813a6b00fa29f222c92c7e74dd13bb`; failures `{}`; transport `{}`.
   Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
+- `natural64-crops-opus-1024-legacy-r0-c6`: evaluation `afb90c5d674eaef72ebab917275ecee8ffd2286ac38954286203f7dae064e0d6`; report `2475faec4a637a721eab55a0ad17a56784cf23caa83d90af0e4e50160c894cf0`; failures `{"Table bounds are outside normalized image coordinates": 2}`; transport `{}`.
+- `choice-pplx-512-rgb-blur-r0-c6`: evaluation `1b4ecd1cc64ab88f876dbc42534d5ebe491aa520d565609a4e0a7d00e17cda63`; report `395e2eaab127422942d949a7b06a8667226d7c1413608180d6bf7f59923f73cf`; failures `{}`; transport `{}`.
+  Historical baseline report hashes: `bbf43f93e726aa9f64b65db03d871694af23ce5a3db3566d6b27726cf8923a69`, `58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
+- `screen-crops-luna-1024-pinned-r2-c6`: evaluation `eeea591de6acba39c2045e834ac024e31ee4f243e1b71564ce23c6fce576410d`; report `12891ba7d4de75ac69144189b6ddf19d7b9a99c8b5124524d204c89ebc9c3dce`; failures `{"Table matrix must contain rectangular literal string cells": 1}`; transport `{}`.
 
-Pending completed evaluation: `full276-ordinal-ocr300-512-r0-c6`, `full276-crops-luna-1024-r0-c6`, `natural64-ordinal-ocredge3072-512-r0-c6`, `ownership-direct-clefomni-neighbors-r0-c6`, `screen-crops-luna-1024-atomic-cells-r0-c6`, `natural64-crops-opus-1024-legacy-r0-c6`, `choice-pplx-512-rgb-blur-r0-c6`.
+Pending completed evaluation: `full276-ordinal-ocr300-512-r0-c6`, `full276-crops-luna-1024-r0-c6`, `natural64-ordinal-ocredge3072-512-r0-c6`.
