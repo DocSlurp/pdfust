@@ -47,6 +47,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-crops-haiku-2048-q50 | 14/16 | 2 | 2/12 | 2 | 10 | 332/2333 | 268/2333 | 14130/16640 | 12 | 0 | 7.88064 | 1016.28 | 0.0137757 |
 | natural16-yolo-matrix-haiku-512-row-evidence | 15/16 | 1 | 1/12 | 2 | 11 | 347/2333 | 225/2333 | 14143/16640 | 14 | 1 | 3.12581 | 416.142 | 0.0360454 |
 | natural16-yolo-indices-haiku-512-gated-row-evidence | 16/16 | 0 | 1/12 | 2 | 13 | 473/2333 | 336/2333 | 13164/16640 | 15 | 0 | 3.3343 | 558.889 | 0.0286282 |
+| natural16-yolo-ocr300-indices-haiku-512-columns | 16/16 | 0 | 2/12 | 3 | 13 | 465/2333 | 395/2333 | 12738/16640 | 15 | 0 | 2.55283 | 846.064 | 0.0189111 |
 
 ### natural16-whole-reviewed
 
@@ -1347,6 +1348,40 @@ Ledger attempts 35; reported USD subtotal 0.0286282; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.58886s, CPU 5.28254s; 16 per-page measurement entries, request CPU total 14.1049s; maximum sampled request RSS 1198190592 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-yolo-ocr300-indices-haiku-512-columns
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 55.17%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 115 |
+| remaining_fourteen | 3/14 | 2/10 | 280 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 18 | 18 | 0.0189111 | 0 / 18 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 13 | 465/2333 | 12738/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 376.053s; CPU 794.476s; sampled RSS 736731136 bytes; verified output pages/min 2.55283; exact positive pages/min 0.319104. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 18; reported USD subtotal 0.0189111; missing reported charges 0; cost bases `{"provider-reported USD": 18}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.49515s, CPU 5.31512s; 16 per-page measurement entries, request CPU total 14.9448s; maximum sampled request RSS 1197596672 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -1536,6 +1571,8 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
+- full276-yolo-matrix-haiku-512-gated: deferred before any request; fixed 25-minute allowance did not fit the deadline
+- full276-hybrid-haiku-1024-logical: fresh explicitly configured full276 run in progress; no completed result yet
 
 ## Interpretation
 
@@ -1580,10 +1617,12 @@ while the primary 53-table/2,333-cell micro totals remain unchanged.
 Multiscale detection restores ten Table proposals on formerly missed dense p1,
 with Haiku recovering 161 cells there, but complete dense-table recovery remains
 zero. Larger2048/JPEG50 crops do not fix strict failures; smaller768/512/400
-crops trade recovery and operational coverage. Source-derived row evidence
-loses33 exact cells versus matched base512 while increasing API cost53% and
-retaining the same15/16 operational count. Existing columns and ordinal controls
-remain separately labeled, without claiming an OCR-only or universal prompt win.
+crops trade recovery and operational coverage. Matrix row context loses33 exact
+cells versus matched base512 while raising API cost53% at the same15/16 coverage.
+Gate-only row context with ordinal generation instead gains104 cells and removes
+seven extra tables in its single matched fresh sample. The combined OCR300,
+ordinal512 and columns control reaches395 cells with no errors or extra tables;
+its multiple changes cannot establish an OCR-only or universal prompt win.
 
 Priorities are reliable source-based native ordering, complete detector coverage,
 strict format reliability and independent fresh repeat measurement. Any partial
@@ -2463,3 +2502,32 @@ improvement in a single fresh response sample, without establishing a universal
 row-evidence advantage: the separately matched matrix-generation row control
 loses quality and costs more. Full276 gated expansion remains independently
 scheduled and cannot be inferred from the natural16 result.
+
+
+## Combined OCR 300, ordinal 512 and columns treatment
+
+The predeclared combined source-ID arm verifies 16/16 source-conserved outputs
+and recovers 395/2333 exact cells,465 structural cells, thirteen exact topologies
+and three complete tables on two exact positive pages. There are no extra tables
+or negative false positives;38 reference tables remain missing. Dense pages
+recover 115 cells across one matched table with no complete dense tables. The
+other fourteen recover 280 cells and all three complete tables. All 18 reported
+charges total USD 0.0189111, at 2.55 operational pages/minute and 846.06 pages/API USD.
+Supplementary positive-page macro recall is 55.17% cells and 20.83% complete tables.
+There are no retained failures, missing pages or parser repairs.
+
+This treatment exceeds simple ordinal 512 (311 cells/two complete tables) and
+matrix columns (332 cells/two complete tables) on this fixed screen. It also
+recovers eight more exact cells and one more operational page than the earlier
+OCR 300/matrix 1024 arm (387 cells/three complete tables,15/16 operational), at
+approximately 14% more API cost. These are combined differences in OCR source,
+image evidence, format and prompt; no single factor's effect can be identified
+from this comparison. The optimistic OCR 300 inventory ceiling remains far above
+actual assembly quality, and dense detector coverage remains limited.
+
+The scheduler deferred `full276-yolo-matrix-haiku-512-gated` before any request:
+the fixed 25-minute allowance no longer fit the remaining paid-run deadline.
+There is no completed expansion result or charge to invent. A separately frozen
+fresh `full276-hybrid-haiku-1024-logical` run started after CPU validation finished;
+it will retain all 276 intended pages and explicit logical-native provenance,
+with a new measured result rather than replacing offline replay or physical rows.
