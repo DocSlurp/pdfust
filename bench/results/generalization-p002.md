@@ -23,6 +23,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-yolo-matrix-haiku-512 | 15/16 | 1 | 1/12 | 2 | 12 | 359/2333 | 258/2333 | 13879/16640 | 14 | 1 | 3.24057 | 638.725 | 0.0234843 |
 | natural16-vision-sonnet-2048 | 11/16 | 5 | 2/12 | 3 | 12 | 244/2333 | 203/2333 | 13931/16640 | 12 | 0 | 12.8658 | 79.7668 | 0.137902 |
 | natural16-vision-haiku-2048 | 11/16 | 5 | 2/12 | 3 | 11 | 244/2333 | 201/2333 | 14419/16640 | 12 | 2 | 11.4908 | 1255.84 | 0.0087591 |
+| natural16-yolo-matrix-haiku-1024 | 14/16 | 2 | 1/12 | 2 | 11 | 336/2333 | 247/2333 | 14369/16640 | 12 | 1 | 3.56989 | 662.449 | 0.0211337 |
 
 ### natural16-whole-reviewed
 
@@ -483,6 +484,38 @@ Whole-run wall 57.4374s; CPU 8.0963s; sampled RSS 230289408 bytes; verified outp
 
 Ledger attempts 11; reported USD subtotal 0.0087591; missing reported charges 0; cost bases `{"provider-reported USD": 11}`. Reservation amount 0; estimate amount 0.
 
+
+### natural16-yolo-matrix-haiku-1024
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 14/16.
+
+Failure categories: `{"local_input_or_output_admission": 2}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 2/14 | 1/10 | 247 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 17 | 0.0211337 | 0 / 17 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 11 | 336/2333 | 14369/16640 | 1/4 |
+
+Whole-run wall 235.301s; CPU 297.055s; sampled RSS 580620288 bytes; verified output pages/min 3.56989; exact positive pages/min 0.254992. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 17; reported USD subtotal 0.0211337; missing reported charges 0; cost bases `{"provider-reported USD": 17}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.61326s, CPU 5.2969s; 16 per-page measurement entries, request CPU total 14.1969s; maximum sampled request RSS 1211076608 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -603,8 +636,8 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 
 ## Pending completed reports
 
-- natural16-generate-haiku: interrupted 4/16; 12 missing; unresolved USD 0.30 reservation / unknown rate; excluded completed comparison
-- Matched Haiku1024/OCR300 and larger-image JPEG50/crop controls remain independent queued treatments
+- natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing remain failures; unresolved USD 0.30 reservation and unknown rate exclude completed comparison
+- Matched OCR300 and fixed-edge2048 source arms, JPEG50 and crop/hybrid controls remain independently queued treatments
 
 ## Interpretation
 
@@ -826,7 +859,7 @@ failures. Its eleven admitted outputs contain three complete tables on two
 exact positive pages, 244 structural cells and 201 exact text cells, with two
 extra tables and one negative-page false positive. All eleven requests carry
 positive charges totaling USD 0.0087591; throughput is 11.49 operational
-pages/minute and 1255.84 operational pages/API USD. Compared with Sonnet2048,
+pages/minute and 1255.84 operational pages/API USD. Compared with Sonnet 2048,
 Haiku loses two exact text cells and introduces two extras at roughly one
 sixteenth the API cost. Both are table-only comparators with zero conserved
 pages and unchanged full-target denominators. Local concurrency during these
@@ -938,3 +971,21 @@ child directory, and detector worker measurements remain separate from parent
 CPU/RSS. Gallery labels preserve the mixed provenance and original rotation.
 These checks prepare future hybrid runs; they do not assert quality before
 those runs complete.
+
+## Matched Haiku512 versus Haiku1024 source-ID images
+
+The 1024-pixel generation-image arm retains 14/16 outputs versus 15/16 at 512,
+336 versus 359 structural cells,247 versus 258 exact text cells,12 versus 14
+localized tables, and two complete tables on one exact positive page in both
+arms. All 53 tables and 2333 anchor cells remain primary. Both retain one extra
+table and one negative false-positive page. Both dense pages still produce
+zero admitted tables.
+
+The larger-image arm has two atomic errors from the frozen model/input
+admission, each after a retained earlier normal-stop call. These are not
+output-token exhaustion. Successful prefixes remain unscored. All17 requests
+have positive charges totalingUSD 0.0211337; throughput is 3.57 verified
+pages/minute and 662.45 verified pages/API USD. The 512 arm costsUSD 0.0234843
+for 18 requests and 3.24 pages/minute. Lower cost and fewer admitted outputs
+are related here; this is not evidence that larger images improve quality.
+The admission change prevents isolating image resolution from coverage.

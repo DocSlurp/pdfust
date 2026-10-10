@@ -751,6 +751,7 @@ def score_run(
     statuses["missing"] += len(expected) - len(predictions)
     return {
         "name": directory.name,
+        "report_sha256": sha(guard_path(directory / "report.json").read_bytes()),
         "config": config,
         "manifest_sha256": frozen["manifest_sha256"],
         "dataset_sha256": manifest["dataset_sha256"],
