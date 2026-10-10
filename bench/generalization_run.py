@@ -305,7 +305,28 @@ def process(
             if config.get("normalize_rotation", True) and page.rotation:
                 page.set_rotation(0)
             snapshot = baseline.source(page)
-            if not snapshot["words"] and config.get("ocr_empty", True):
+            ocr_source = config.get("ocr_source", "legacy")
+            if ocr_source != "legacy" and (
+                not snapshot["words"] or config.get("ocr_mode", "empty") == "uncovered_images"
+            ):
+                from bench.pipeline_ocr_sources import extract
+
+                began = time.perf_counter()
+                evidence = extract(
+                    page,
+                    mode=config.get("ocr_mode", "empty"),
+                    dpi=config.get("ocr_dpi", 150),
+                    engine=baseline.ocr_engine(),
+                    tokenization=ocr_source,
+                )
+                snapshot = {**snapshot, **evidence["source"]}
+                result["ocr"] = {
+                    **evidence["diagnostics"],
+                    "engine": "RTen native CPU",
+                    "threads": 4,
+                    "wall_seconds": time.perf_counter() - began,
+                }
+            elif not snapshot["words"] and config.get("ocr_empty", True):
                 began = time.perf_counter()
                 recognized = page.apply_ocr(dpi=config.get("ocr_dpi", 150), engine=baseline.ocr_engine())
                 result["ocr"] = {
@@ -378,6 +399,8 @@ def main() -> None:
     parser.add_argument("--region-words", type=int, default=256)
     parser.add_argument("--region-characters", type=int, default=8000)
     parser.add_argument("--ocr-dpi", type=int, choices=(100, 150, 200, 300), default=150)
+    parser.add_argument("--ocr-source", choices=("legacy", "reextract", "whitespace"), default="legacy")
+    parser.add_argument("--ocr-mode", choices=("empty", "uncovered_images"), default="empty")
     parser.add_argument("--answer-tokens", type=int, choices=(1024, 2048, 4096), default=2048)
     parser.add_argument("--packet-characters", type=int, choices=(25000, 80000, 128000), default=25000)
     parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
@@ -389,6 +412,8 @@ def main() -> None:
     parser.add_argument("--no-columns", action="store_true")
     parser.add_argument("--pilot", action="store_true")
     args = parser.parse_args()
+    if args.ocr_source == "legacy" and args.ocr_mode != "empty":
+        parser.error("Uncovered image OCR requires an explicit reextract or whitespace source")
     config = vars(args).copy()
     config.pop("manifest")
     config.pop("output")

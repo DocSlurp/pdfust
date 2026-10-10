@@ -477,6 +477,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                         "pipeline_regions.py",
                         "pipeline_generation.py",
                         "pipeline_dense_candidates.py",
+                        "pipeline_ocr_sources.py",
                     ]
                     if config.get("processor") == "regions"
                     else []
