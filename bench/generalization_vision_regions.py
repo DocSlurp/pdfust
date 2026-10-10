@@ -23,8 +23,9 @@ MAX_PAGE_SLOTS = 4096
 DETECTOR_EDGE = 1536
 RENDER_EDGE = 4096
 CROP_EDGE = 1024
-CROP_EDGES = (400, 512, 768, 1024)
+CROP_EDGES = (400, 512, 768, 1024, 2048)
 JPEG_QUALITY = 90
+JPEG_QUALITIES = (50, 70, 90)
 DETECTOR_CONFIDENCE = 0.25
 
 
@@ -104,12 +105,18 @@ def compose(regions: list[dict[str, Any]], viewport: list[float]) -> dict[str, A
 
 
 def _crop(
-    image: Any, viewport: list[float], bounds: list[float], crop_edge: int = CROP_EDGE
+    image: Any,
+    viewport: list[float],
+    bounds: list[float],
+    crop_edge: int = CROP_EDGE,
+    jpeg_quality: int = JPEG_QUALITY,
 ) -> tuple[str, dict[str, Any]]:
     from PIL import Image
 
     if type(crop_edge) is not int or crop_edge not in CROP_EDGES:
         raise ValueError("Crop image edge is outside the fixed comparison settings")
+    if type(jpeg_quality) is not int or jpeg_quality not in JPEG_QUALITIES:
+        raise ValueError("Crop JPEG quality is outside the fixed comparison settings")
     box = _contained(bounds, viewport)
     width, height = image.size
     scale_x, scale_y = width / (viewport[2] - viewport[0]), height / (viewport[3] - viewport[1])
@@ -126,12 +133,12 @@ def _crop(
     target = (max(1, round(target_width * ratio)), max(1, round(target_height * ratio)))
     cropped = image.transform(target, Image.Transform.EXTENT, pixel_box, resample=Image.Resampling.BICUBIC)
     stream = io.BytesIO()
-    cropped.save(stream, format="JPEG", quality=JPEG_QUALITY)
+    cropped.save(stream, format="JPEG", quality=jpeg_quality)
     data = stream.getvalue()
     metadata = {
         "image_codec": "JPEG",
         "image_mode": "RGB",
-        "image_quality": JPEG_QUALITY,
+        "image_quality": jpeg_quality,
         "image_edge": crop_edge,
         "image_size": list(target),
         "image_viewport": box,
@@ -170,7 +177,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             "detector_edge": DETECTOR_EDGE,
             "render_edge_cap": RENDER_EDGE,
             "crop_edge": config.get("image_edge", CROP_EDGE),
-            "jpeg_quality": JPEG_QUALITY,
+            "jpeg_quality": config.get("jpeg_quality", JPEG_QUALITY),
             "class": "Table",
             "confidence": DETECTOR_CONFIDENCE,
             "maximum_regions": MAX_REGIONS,
@@ -183,9 +190,10 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             config.get("campaign", "P002") != "P002"
             or type(config.get("image_edge", CROP_EDGE)) is not int
             or config.get("image_edge", CROP_EDGE) not in CROP_EDGES
-            or config.get("jpeg_quality", JPEG_QUALITY) != JPEG_QUALITY
+            or type(config.get("jpeg_quality", JPEG_QUALITY)) is not int
+            or config.get("jpeg_quality", JPEG_QUALITY) not in JPEG_QUALITIES
         ):
-            raise ValueError("Crop control requires P002, a declared fixed image edge and JPEG90")
+            raise ValueError("Crop control requires P002 and declared fixed image edge/JPEG quality")
         detector = config.get("_layout_detector")
         if detector is None:
             raise ValueError("Crop control requires an initialized persistent CPU detector")
@@ -224,7 +232,13 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
                     result["render_image_size"] = list(image.size)
                     for region in regions:
                         stage = "crop"
-                        url, metadata = _crop(image, viewport, region["viewport"], config.get("image_edge", CROP_EDGE))
+                        url, metadata = _crop(
+                            image,
+                            viewport,
+                            region["viewport"],
+                            config.get("image_edge", CROP_EDGE),
+                            config.get("jpeg_quality", JPEG_QUALITY),
+                        )
                         region["image"] = metadata
                         stage = "request"
                         body = adapter.request(
