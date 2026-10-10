@@ -1,9 +1,10 @@
 # P001: complete PDF pipeline experiments
 
-Status: implementation and DEV screening, 2026-10-09. This wave has a USD 50
+Status: completed, 2026-10-10 UTC (2026-10-09 local). This wave has a USD 50
 ceiling inside the newly authorized cumulative USD 150 cap. Prior accounting,
 including unresolved reservations, is retained. No protected confirmation files
-are accessed. Root alone coordinates metered inference.
+were accessed. Root alone coordinated metered inference. All 56 runs are complete;
+see the [final findings and accounting](results/pipeline-conclusions.md).
 
 The previous experiments mostly measured decisions on supplied regions. P001
 starts with a PDF page, discovers words and candidate structure automatically,
@@ -179,7 +180,7 @@ from the persistent ledger; use a fresh output directory for each condition.
   --manifest bench/results/pdf-master-artifacts/pipeline-p001/corpus/manifest.json \
   --output bench/results/pdf-master-artifacts/pipeline-p001/example-reviewed \
   --policy gated --model perplexity/pplx-decider-v1.1-27b \
-  --image-edge 256 --normalize-rotation --ocr-empty \
+  --image-edge 256 --normalize-rotation --ocr-empty --column-consensus \
   --gate-review-model anthropic/claude-sonnet-5.5
 ```
 
@@ -198,7 +199,7 @@ Markdown, source ownership and provenance. It opens as a standalone HTML file:
 
 ```bash
 .venv/bin/python -m bench.pipeline_demo \
-  --run bench/results/pdf-master-artifacts/pipeline-p001/pilot-oriented-pplx-256 \
+  --run bench/results/pdf-master-artifacts/pipeline-p001/full-column-reviewed-pplx \
   --page p16e14ea079d4c7949923 \
   --output bench/results/pdf-master-artifacts/pipeline-p001/demo-wrapped \
   --image-edge 1024

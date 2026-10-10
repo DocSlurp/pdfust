@@ -4,57 +4,64 @@ Offline private scoring after complete pipeline runs. Chronological completed-re
 
 Dataset SHA-256: `3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9b2`. Manifest bytes SHA-256: `7570272d524d68ff3aad59ac1b5ea080e48b77acf605ba8bb30bef27205b94c8`. The fixed pilot is selected by frozen manifest membership; absent results remain failures. Full and pilot cohorts have distinct denominators.
 
-| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | column_consensus | compact_packet | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |
-|---|---|---|---|---|---:|---:|---|---|---|---|---|---|---:|---:|---:|---:|
-| native-r1 | full | native | CPU only | — | — | — | — | False | False | — | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
-| pilot-pplx-512 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 512 | 1 | True | False | False | — | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| native-r2 | full | native | CPU only | — | — | — | — | False | False | — | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
-| native-text-r1 | full | native_text | CPU only | — | — | — | — | False | False | — | False | False | 178/181 | 3/35 | 26/133 | 3/1 |
-| native-r3 | full | native | CPU only | — | — | — | — | False | False | — | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
-| pilot-flash-512 | pilot | assembly | cloudflare/clef-flash | — | 512 | 1 | True | False | False | — | False | False | 32/32 | 5/16 | 0/16 | 0/0 |
-| pilot-luna-512 | pilot | assembly | openai/gpt-6-luna-decisions | — | 512 | 1 | True | False | False | — | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| pilot-flash-256 | pilot | assembly | cloudflare/clef-flash | — | 256 | 1 | True | False | False | — | False | False | 32/32 | 3/16 | 0/16 | 0/0 |
-| pilot-luna-256 | pilot | assembly | openai/gpt-6-luna-decisions | — | 256 | 1 | True | False | False | — | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| pilot-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | False | False | — | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| pilot-flash-1024 | pilot | assembly | cloudflare/clef-flash | — | 1024 | 1 | True | False | False | — | False | False | 32/32 | 6/16 | 1/16 | 0/0 |
-| pilot-luna-1024 | pilot | assembly | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | False | False | — | False | False | 32/32 | 15/16 | 2/16 | 0/0 |
-| pilot-pplx-1024 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 1024 | 1 | True | False | False | — | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| pilot-repair-flash-c1 | pilot | repair | cloudflare/clef-flash | — | 512 | 1 | True | False | False | — | False | False | 32/32 | 10/16 | 5/16 | 0/0 |
-| pilot-repair-luna-c1 | pilot | repair | openai/gpt-6-luna-decisions | — | 512 | 1 | True | False | False | — | False | False | 32/32 | 10/16 | 5/16 | 0/0 |
-| pilot-repair-pplx-c1 | pilot | repair | perplexity/pplx-decider-v1.1-27b | — | 512 | 1 | True | False | False | — | False | False | 32/32 | 11/16 | 6/16 | 0/0 |
-| pilot-repair-flash-c3 | pilot | repair | cloudflare/clef-flash | — | 512 | 3 | True | False | False | — | False | False | 32/32 | 10/16 | 6/16 | 0/0 |
-| pilot-repair-luna-c3 | pilot | repair | openai/gpt-6-luna-decisions | — | 512 | 3 | True | False | False | — | False | False | 32/32 | 10/16 | 6/16 | 0/0 |
-| pilot-repair-pplx-c3 | pilot | repair | perplexity/pplx-decider-v1.1-27b | — | 512 | 3 | True | False | False | — | False | False | 32/32 | 11/16 | 5/16 | 0/0 |
-| pilot-oriented-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | — | False | False | 32/32 | 16/16 | 4/16 | 0/0 |
-| pilot-gated-pplx-minimal | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | minimal | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
-| pilot-gated-pplx-relational | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | relational | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
-| pilot-gated-luna-1024 | pilot | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | False | relational | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
-| pilot-gated-flash-512 | pilot | gated | cloudflare/clef-flash | — | 512 | 1 | True | True | False | relational | False | False | 32/32 | 10/16 | 0/16 | 0/0 |
-| pilot-adaptive-pplx | pilot | adaptive | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | — | False | False | 32/32 | 12/16 | 6/16 | 0/0 |
-| pilot-adaptive-luna | pilot | adaptive | openai/gpt-6-luna-decisions | — | 256 | 1 | True | True | False | — | False | False | 32/32 | 10/16 | 4/16 | 0/0 |
-| pilot-text-pplx | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 0 | 1 | True | True | False | — | False | False | 32/32 | 16/16 | 4/16 | 0/0 |
-| pilot-text-luna | pilot | assembly | openai/gpt-6-luna-decisions | — | 0 | 1 | True | True | False | — | False | False | 32/32 | 15/16 | 3/16 | 0/0 |
-| pilot-text-flash | pilot | assembly | cloudflare/clef-flash | — | 0 | 1 | True | True | False | — | False | False | 32/32 | 0/16 | 0/16 | 0/0 |
-| pilot-frontier-haiku | pilot | assembly | anthropic/claude-haiku-5.5 | — | 512 | 1 | True | True | False | — | False | False | 32/32 | 16/16 | 3/16 | 0/0 |
-| pilot-frontier-sonnet | pilot | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | False | — | False | False | 32/32 | 16/16 | 0/16 | 0/0 |
-| pilot-frontier-opus | pilot | assembly | anthropic/claude-opus-5.5 | — | 512 | 1 | True | True | False | — | False | False | 32/32 | 16/16 | 0/16 | 0/0 |
-| pilot-gated-reading-pplx | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | reading_order | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
-| pilot-gated-reading-luna | pilot | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | False | reading_order | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
-| pilot-gated-reviewed-pplx | pilot | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | False | relational | False | False | 32/32 | 16/16 | 0/16 | 0/0 |
-| full-native-ocr | full | native | CPU only | — | — | — | — | True | True | — | False | False | 178/181 | 16/35 | 0/133 | 3/0 |
-| full-assembly-pplx | full | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | 175/181 | 34/35 | 27/133 | 6/0 |
-| full-gated-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | relational | False | False | 178/181 | 34/35 | 4/133 | 3/0 |
-| full-gated-reading-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | reading_order | False | False | 178/181 | 34/35 | 9/133 | 3/0 |
-| full-gated-luna | full | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | True | relational | False | False | 178/181 | 34/35 | 6/133 | 3/0 |
-| full-gated-flash | full | gated | cloudflare/clef-flash | — | 512 | 1 | True | True | True | relational | False | False | 178/181 | 22/35 | 5/133 | 3/0 |
-| full-adaptive-pplx | full | adaptive | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | 178/181 | 28/35 | 30/133 | 3/0 |
-| full-gated-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | False | False | 178/181 | 34/35 | 0/133 | 3/0 |
-| full-frontier-haiku | full | assembly | anthropic/claude-haiku-5.5 | — | 512 | 1 | True | True | True | — | False | False | 175/181 | 34/35 | 18/133 | 6/0 |
-| full-frontier-sonnet | full | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | True | — | False | False | 174/181 | 34/35 | 0/133 | 7/1 |
-| full-frontier-opus | full | assembly | anthropic/claude-opus-5.5 | — | 512 | 1 | True | True | True | — | False | False | 175/181 | 34/35 | 0/133 | 6/0 |
-| full-cascade-pplx | full | cascade | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | 177/181 | 34/35 | 27/133 | 4/0 |
-| full-column-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | relational | True | False | 178/181 | 35/35 | 4/133 | 3/0 |
-| full-column-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | True | False | 178/181 | 35/35 | 0/133 | 3/0 |
+| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | column_consensus | compact_packet | readable_packet | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |
+|---|---|---|---|---|---:|---:|---|---|---|---|---|---|---|---:|---:|---:|---:|
+| native-r1 | full | native | CPU only | — | — | — | — | False | False | — | False | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
+| pilot-pplx-512 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 512 | 1 | True | False | False | — | False | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
+| native-r2 | full | native | CPU only | — | — | — | — | False | False | — | False | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
+| native-text-r1 | full | native_text | CPU only | — | — | — | — | False | False | — | False | False | False | 178/181 | 3/35 | 26/133 | 3/1 |
+| native-r3 | full | native | CPU only | — | — | — | — | False | False | — | False | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
+| pilot-flash-512 | pilot | assembly | cloudflare/clef-flash | — | 512 | 1 | True | False | False | — | False | False | False | 32/32 | 5/16 | 0/16 | 0/0 |
+| pilot-luna-512 | pilot | assembly | openai/gpt-6-luna-decisions | — | 512 | 1 | True | False | False | — | False | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-flash-256 | pilot | assembly | cloudflare/clef-flash | — | 256 | 1 | True | False | False | — | False | False | False | 32/32 | 3/16 | 0/16 | 0/0 |
+| pilot-luna-256 | pilot | assembly | openai/gpt-6-luna-decisions | — | 256 | 1 | True | False | False | — | False | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | False | False | — | False | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-flash-1024 | pilot | assembly | cloudflare/clef-flash | — | 1024 | 1 | True | False | False | — | False | False | False | 32/32 | 6/16 | 1/16 | 0/0 |
+| pilot-luna-1024 | pilot | assembly | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | False | False | — | False | False | False | 32/32 | 15/16 | 2/16 | 0/0 |
+| pilot-pplx-1024 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 1024 | 1 | True | False | False | — | False | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-repair-flash-c1 | pilot | repair | cloudflare/clef-flash | — | 512 | 1 | True | False | False | — | False | False | False | 32/32 | 10/16 | 5/16 | 0/0 |
+| pilot-repair-luna-c1 | pilot | repair | openai/gpt-6-luna-decisions | — | 512 | 1 | True | False | False | — | False | False | False | 32/32 | 10/16 | 5/16 | 0/0 |
+| pilot-repair-pplx-c1 | pilot | repair | perplexity/pplx-decider-v1.1-27b | — | 512 | 1 | True | False | False | — | False | False | False | 32/32 | 11/16 | 6/16 | 0/0 |
+| pilot-repair-flash-c3 | pilot | repair | cloudflare/clef-flash | — | 512 | 3 | True | False | False | — | False | False | False | 32/32 | 10/16 | 6/16 | 0/0 |
+| pilot-repair-luna-c3 | pilot | repair | openai/gpt-6-luna-decisions | — | 512 | 3 | True | False | False | — | False | False | False | 32/32 | 10/16 | 6/16 | 0/0 |
+| pilot-repair-pplx-c3 | pilot | repair | perplexity/pplx-decider-v1.1-27b | — | 512 | 3 | True | False | False | — | False | False | False | 32/32 | 11/16 | 5/16 | 0/0 |
+| pilot-oriented-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | — | False | False | False | 32/32 | 16/16 | 4/16 | 0/0 |
+| pilot-gated-pplx-minimal | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | minimal | False | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-pplx-relational | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | relational | False | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-luna-1024 | pilot | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | False | relational | False | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-flash-512 | pilot | gated | cloudflare/clef-flash | — | 512 | 1 | True | True | False | relational | False | False | False | 32/32 | 10/16 | 0/16 | 0/0 |
+| pilot-adaptive-pplx | pilot | adaptive | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | — | False | False | False | 32/32 | 12/16 | 6/16 | 0/0 |
+| pilot-adaptive-luna | pilot | adaptive | openai/gpt-6-luna-decisions | — | 256 | 1 | True | True | False | — | False | False | False | 32/32 | 10/16 | 4/16 | 0/0 |
+| pilot-text-pplx | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 0 | 1 | True | True | False | — | False | False | False | 32/32 | 16/16 | 4/16 | 0/0 |
+| pilot-text-luna | pilot | assembly | openai/gpt-6-luna-decisions | — | 0 | 1 | True | True | False | — | False | False | False | 32/32 | 15/16 | 3/16 | 0/0 |
+| pilot-text-flash | pilot | assembly | cloudflare/clef-flash | — | 0 | 1 | True | True | False | — | False | False | False | 32/32 | 0/16 | 0/16 | 0/0 |
+| pilot-frontier-haiku | pilot | assembly | anthropic/claude-haiku-5.5 | — | 512 | 1 | True | True | False | — | False | False | False | 32/32 | 16/16 | 3/16 | 0/0 |
+| pilot-frontier-sonnet | pilot | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | False | — | False | False | False | 32/32 | 16/16 | 0/16 | 0/0 |
+| pilot-frontier-opus | pilot | assembly | anthropic/claude-opus-5.5 | — | 512 | 1 | True | True | False | — | False | False | False | 32/32 | 16/16 | 0/16 | 0/0 |
+| pilot-gated-reading-pplx | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | reading_order | False | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-reading-luna | pilot | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | False | reading_order | False | False | False | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-reviewed-pplx | pilot | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | False | relational | False | False | False | 32/32 | 16/16 | 0/16 | 0/0 |
+| full-native-ocr | full | native | CPU only | — | — | — | — | True | True | — | False | False | False | 178/181 | 16/35 | 0/133 | 3/0 |
+| full-assembly-pplx | full | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | False | 175/181 | 34/35 | 27/133 | 6/0 |
+| full-gated-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | relational | False | False | False | 178/181 | 34/35 | 4/133 | 3/0 |
+| full-gated-reading-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | reading_order | False | False | False | 178/181 | 34/35 | 9/133 | 3/0 |
+| full-gated-luna | full | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | True | relational | False | False | False | 178/181 | 34/35 | 6/133 | 3/0 |
+| full-gated-flash | full | gated | cloudflare/clef-flash | — | 512 | 1 | True | True | True | relational | False | False | False | 178/181 | 22/35 | 5/133 | 3/0 |
+| full-adaptive-pplx | full | adaptive | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | False | 178/181 | 28/35 | 30/133 | 3/0 |
+| full-gated-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | False | False | False | 178/181 | 34/35 | 0/133 | 3/0 |
+| full-frontier-haiku | full | assembly | anthropic/claude-haiku-5.5 | — | 512 | 1 | True | True | True | — | False | False | False | 175/181 | 34/35 | 18/133 | 6/0 |
+| full-frontier-sonnet | full | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | True | — | False | False | False | 174/181 | 34/35 | 0/133 | 7/1 |
+| full-frontier-opus | full | assembly | anthropic/claude-opus-5.5 | — | 512 | 1 | True | True | True | — | False | False | False | 175/181 | 34/35 | 0/133 | 6/0 |
+| full-cascade-pplx | full | cascade | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | False | 177/181 | 34/35 | 27/133 | 4/0 |
+| full-column-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | relational | True | False | False | 178/181 | 35/35 | 4/133 | 3/0 |
+| full-column-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | True | False | False | 178/181 | 35/35 | 0/133 | 3/0 |
+| full-compact-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | relational | False | True | False | 178/181 | 31/35 | 4/133 | 3/0 |
+| full-compact-text-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 0 | 1 | True | True | True | relational | False | True | False | 178/181 | 28/35 | 5/133 | 3/0 |
+| full-column-compact-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | relational | True | True | False | 178/181 | 32/35 | 4/133 | 3/0 |
+| full-column-compact-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | True | True | False | 178/181 | 32/35 | 0/133 | 3/0 |
+| full-column-compact-haiku-review | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-haiku-5.5 | 256 | 1 | True | True | True | relational | True | True | False | 177/181 | 31/35 | 10/133 | 4/1 |
+| full-column-compact-sonnet | full | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | True | — | True | True | False | 166/181 | 33/35 | 2/133 | 15/7 |
+| full-column-readable-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | True | False | True | 178/181 | 35/35 | 0/133 | 3/0 |
 
 Every successful page's retained Markdown is checked byte-for-byte against a trusted deterministic rendering of its complete source-owned final state. Artifact Python is never executed.
 
@@ -111,6 +118,13 @@ Legacy frozen renderer source unavailable: `native-r1`. Their Markdown matches t
 | full-cascade-pplx | 140/168 | 34/62 | 34/35 | 35/35 | 433/437/969 | 0/27 | 177/177 | 34/35 |
 | full-column-pplx | 164/168 | 35/39 | 35/35 | 35/35 | 437/437/527 | 0/4 | 178/178 | 35/35 |
 | full-column-reviewed-pplx | 168/168 | 35/35 | 35/35 | 35/35 | 437/437/437 | 0/0 | 178/178 | 35/35 |
+| full-compact-pplx | 160/168 | 31/42 | 31/35 | 32/35 | 397/437/590 | 3/7 | 178/178 | 34/35 |
+| full-compact-text-pplx | 156/168 | 28/46 | 28/35 | 29/35 | 361/437/638 | 6/11 | 178/178 | 34/35 |
+| full-column-compact-pplx | 161/168 | 32/42 | 32/35 | 32/35 | 401/437/590 | 3/7 | 178/178 | 35/35 |
+| full-column-compact-reviewed-pplx | 165/168 | 32/38 | 32/35 | 32/35 | 401/437/500 | 3/3 | 178/178 | 35/35 |
+| full-column-compact-haiku-review | 154/168 | 31/48 | 31/35 | 31/35 | 389/437/710 | 4/13 | 177/177 | 35/35 |
+| full-column-compact-sonnet | 159/168 | 33/37 | 33/35 | 33/35 | 413/437/476 | 2/2 | 166/166 | 35/35 |
+| full-column-readable-reviewed-pplx | 168/168 | 35/35 | 35/35 | 35/35 | 437/437/437 | 0/0 | 178/178 | 35/35 |
 
 | Run | Output p/min | Output p/USD | Exact positive p/min | Exact positive p/USD | Wall s | CPU s | Peak sampled RSS bytes | Provider USD | Missing provider charges | Effective USD | Accounted USD | Cost bases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -163,6 +177,13 @@ Legacy frozen renderer source unavailable: `native-r1`. Their Markdown matches t
 | full-cascade-pplx | 58.74 | 10893 | 11.2834 | 2092.45 | 180.797 | 98.8326 | 561770496 | 0.0162489 | 0 | 0.0162489 | 0.0162489 | {"provider-reported USD": 159} |
 | full-column-pplx | 114.119 | 25915.7 | 22.4391 | 5095.79 | 93.5868 | 61.0101 | 527753216 | 0.00686842 | 0 | 0.00686842 | 0.00686842 | {"provider-reported USD": 85} |
 | full-column-reviewed-pplx | 72.3586 | 1725.88 | 14.2278 | 339.359 | 147.598 | 66.3178 | 547733504 | 0.103136 | 0 | 0.103136 | 0.103136 | {"provider-reported USD": 91} |
+| full-compact-pplx | 113.934 | 29823.1 | 19.8425 | 5193.92 | 93.7383 | 62.1688 | 544456704 | 0.00596852 | 0 | 0.00596852 | 0.00596852 | {"provider-reported USD": 84} |
+| full-compact-text-pplx | 102.103 | 31226.9 | 16.0612 | 4912.09 | 104.6 | 64.4532 | 528424960 | 0.00570022 | 0 | 0.00570022 | 0.00570022 | {"provider-reported USD": 85} |
+| full-column-compact-pplx | 107.54 | 27062.5 | 19.333 | 4865.17 | 99.3121 | 64.708 | 531001344 | 0.00657736 | 0 | 0.00657736 | 0.00657736 | {"provider-reported USD": 85} |
+| full-column-compact-reviewed-pplx | 69.0265 | 1751.22 | 12.4093 | 314.826 | 154.723 | 65.7487 | 543662080 | 0.101643 | 0 | 0.101643 | 0.101643 | {"provider-reported USD": 91} |
+| full-column-compact-haiku-review | 81.5534 | unknown | 14.2834 | unknown | 130.222 | 68.1271 | 532701184 | 0.0103152 | 1 | unknown | 0.310315 | {"provider-reported USD": 99, "reserved": 1} |
+| full-column-compact-sonnet | 13.5659 | 113.444 | 2.69683 | 22.5522 | 734.196 | 107.983 | 555094016 | 1.46327 | 0 | 1.46327 | 1.46327 | {"provider-reported USD": 175} |
+| full-column-readable-reviewed-pplx | 71.7085 | 1754.59 | 14.1 | 345.004 | 148.936 | 65.0606 | 539107328 | 0.101448 | 0 | 0.101448 | 0.101448 | {"provider-reported USD": 91} |
 
 Successful retained calls by requested model:
 
@@ -217,6 +238,16 @@ Primary and optional review models form one experimental policy; both charges en
 | full-column-pplx | perplexity/pplx-decider-v1.1-27b | 85 | 0.00686842 | 0 | 0.00686842 | 0.00686842 | {"provider-reported USD": 85} |
 | full-column-reviewed-pplx | anthropic/claude-sonnet-5.5 | 12 | 0.096634 | 0 | 0.096634 | 0.096634 | {"provider-reported USD": 12} |
 | full-column-reviewed-pplx | perplexity/pplx-decider-v1.1-27b | 79 | 0.00650174 | 0 | 0.00650174 | 0.00650174 | {"provider-reported USD": 79} |
+| full-compact-pplx | perplexity/pplx-decider-v1.1-27b | 84 | 0.00596852 | 0 | 0.00596852 | 0.00596852 | {"provider-reported USD": 84} |
+| full-compact-text-pplx | perplexity/pplx-decider-v1.1-27b | 85 | 0.00570022 | 0 | 0.00570022 | 0.00570022 | {"provider-reported USD": 85} |
+| full-column-compact-pplx | perplexity/pplx-decider-v1.1-27b | 85 | 0.00657736 | 0 | 0.00657736 | 0.00657736 | {"provider-reported USD": 85} |
+| full-column-compact-reviewed-pplx | anthropic/claude-sonnet-5.5 | 12 | 0.095344 | 0 | 0.095344 | 0.095344 | {"provider-reported USD": 12} |
+| full-column-compact-reviewed-pplx | perplexity/pplx-decider-v1.1-27b | 79 | 0.00629942 | 0 | 0.00629942 | 0.00629942 | {"provider-reported USD": 79} |
+| full-column-compact-haiku-review | anthropic/claude-haiku-5.5 | 12 | 0.0035237 | 0 | 0.0035237 | 0.0035237 | {"provider-reported USD": 12} |
+| full-column-compact-haiku-review | perplexity/pplx-decider-v1.1-27b | 87 | 0.0067915 | 0 | 0.0067915 | 0.0067915 | {"provider-reported USD": 87} |
+| full-column-compact-sonnet | anthropic/claude-sonnet-5.5 | 166 | 1.32593 | 0 | 1.32593 | 1.32593 | {"provider-reported USD": 166} |
+| full-column-readable-reviewed-pplx | anthropic/claude-sonnet-5.5 | 12 | 0.095004 | 0 | 0.095004 | 0.095004 | {"provider-reported USD": 12} |
+| full-column-readable-reviewed-pplx | perplexity/pplx-decider-v1.1-27b | 79 | 0.0064442 | 0 | 0.0064442 | 0.0064442 | {"provider-reported USD": 79} |
 
 Candidate oracle coverage uses private references to choose an already-retained complete candidate. It is reference-informed and unrunnable as an extraction policy; it does not synthesize missing candidates. Coverage is policy-specific: it scores only alternatives retained by that run. No output or model was supplied references during inference. Exactness compares complete matrices and spans after whitespace normalization; extra tables charge both table and cell denominators. Errors on negative pages remain failures, not correct zero-table pages.
 
@@ -1762,6 +1793,349 @@ API cost excludes local electricity and amortization. Positive provider charges 
 | full-column-reviewed-pplx | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
 | full-column-reviewed-pplx | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
 | full-column-reviewed-pplx | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-compact-pplx | companion/borderless-wrap | 6/0 | 3/6 | 0/0 | 3/6 | 0 |
+| full-compact-pplx | companion/prose | 12/0 | 0/0 | 4/12 | 8/12 | 0 |
+| full-compact-pplx | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-compact-pplx | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-compact-pplx | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-compact-pplx | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-compact-pplx | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-compact-pplx | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-pplx | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-pplx | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-pplx | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-pplx | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-pplx | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-borderless-scanned | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-compact-pplx | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-pplx | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-pplx | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-pplx | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-pplx | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-compact-text-pplx | companion/borderless-wrap | 6/0 | 0/6 | 0/0 | 0/6 | 0 |
+| full-compact-text-pplx | companion/prose | 12/0 | 0/0 | 5/12 | 7/12 | 0 |
+| full-compact-text-pplx | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-compact-text-pplx | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-compact-text-pplx | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-compact-text-pplx | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-compact-text-pplx | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-compact-text-pplx | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-compact-text-pplx | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-text-pplx | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-text-pplx | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-text-pplx | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-text-pplx | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-borderless-scanned | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-compact-text-pplx | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-compact-text-pplx | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-compact-text-pplx | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-text-pplx | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-compact-text-pplx | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-compact-pplx | companion/borderless-wrap | 6/0 | 3/6 | 0/0 | 3/6 | 0 |
+| full-column-compact-pplx | companion/prose | 12/0 | 0/0 | 4/12 | 8/12 | 0 |
+| full-column-compact-pplx | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-column-compact-pplx | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-column-compact-pplx | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-column-compact-pplx | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-pplx | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-pplx | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-pplx | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-pplx | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-pplx | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-pplx | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-pplx | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-borderless-scanned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-pplx | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-pplx | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-pplx | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-pplx | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-compact-reviewed-pplx | companion/borderless-wrap | 6/0 | 3/6 | 0/0 | 3/6 | 0 |
+| full-column-compact-reviewed-pplx | companion/prose | 12/0 | 0/0 | 0/12 | 12/12 | 0 |
+| full-column-compact-reviewed-pplx | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-column-compact-reviewed-pplx | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-column-compact-reviewed-pplx | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-column-compact-reviewed-pplx | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-reviewed-pplx | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-borderless-scanned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-reviewed-pplx | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-reviewed-pplx | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-compact-haiku-review | companion/borderless-wrap | 6/0 | 3/6 | 0/0 | 3/6 | 0 |
+| full-column-compact-haiku-review | companion/prose | 12/0 | 0/0 | 10/12 | 2/12 | 0 |
+| full-column-compact-haiku-review | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-column-compact-haiku-review | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-column-compact-haiku-review | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-column-compact-haiku-review | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-haiku-review | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-borderless-scanned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 1 |
+| full-column-compact-haiku-review | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-haiku-review | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-haiku-review | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-compact-sonnet | companion/borderless-wrap | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-compact-sonnet | companion/prose | 12/0 | 0/0 | 1/12 | 6/12 | 5 |
+| full-column-compact-sonnet | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-column-compact-sonnet | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-column-compact-sonnet | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-column-compact-sonnet | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/multilevel-table | 5/0 | 4/5 | 0/0 | 4/5 | 1 |
+| full-column-compact-sonnet | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/three-column | 5/0 | 0/0 | 1/5 | 4/5 | 0 |
+| full-column-compact-sonnet | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-compact-sonnet | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-borderless-scanned | 1/0 | 0/1 | 0/0 | 0/1 | 1 |
+| full-column-compact-sonnet | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-compact-sonnet | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-compact-sonnet | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-readable-reviewed-pplx | companion/borderless-wrap | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-column-readable-reviewed-pplx | companion/prose | 12/0 | 0/0 | 0/12 | 12/12 | 0 |
+| full-column-readable-reviewed-pplx | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-column-readable-reviewed-pplx | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-column-readable-reviewed-pplx | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-column-readable-reviewed-pplx | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-column-readable-reviewed-pplx | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-borderless-scanned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-column-readable-reviewed-pplx | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-column-readable-reviewed-pplx | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
 
 </details>
 
@@ -1769,9 +2143,9 @@ Incomplete frozen runs (not scored):
 
 No completed report exists for these frozen runs; they may be running or aborted. Result-file counts are progress evidence only. Accuracy, charges, wall/CPU and RSS remain unknown. Jobs not yet frozen by the runner are outside this observed inventory.
 
-| Run | Policy | Model | Gate review model | column_consensus | compact_packet | Planned pages | Result files | Source contract matches |
-|---|---|---|---|---|---|---:|---:|---|
-| full-compact-pplx | gated | perplexity/pplx-decider-v1.1-27b | — | False | True | 181 | 109 | True |
+| Run | Policy | Model | Gate review model | column_consensus | compact_packet | readable_packet | Planned pages | Result files | Source contract matches |
+|---|---|---|---|---|---|---|---:|---:|---|
+| None observed | — | — | — | False | False | False | — | — | — |
 
 Measurement and frozen provenance:
 
@@ -1824,3 +2198,10 @@ Measurement and frozen provenance:
 - `full-cascade-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
 - `full-column-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
 - `full-column-reviewed-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-compact-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_compact_packet.py": "e96a93d0f91778b32ac3962541d8261f4226fdffe784a159a66d04db2b612e27", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-compact-text-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_compact_packet.py": "e96a93d0f91778b32ac3962541d8261f4226fdffe784a159a66d04db2b612e27", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-column-compact-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_compact_packet.py": "e96a93d0f91778b32ac3962541d8261f4226fdffe784a159a66d04db2b612e27", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-column-compact-reviewed-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_compact_packet.py": "e96a93d0f91778b32ac3962541d8261f4226fdffe784a159a66d04db2b612e27", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "28adb733e62e27236cd0d7060d3b5d6ba205c2cc4fa89d45d6ac270d51680e88", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-column-compact-haiku-review`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_compact_packet.py": "e96a93d0f91778b32ac3962541d8261f4226fdffe784a159a66d04db2b612e27", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "28adb733e62e27236cd0d7060d3b5d6ba205c2cc4fa89d45d6ac270d51680e88", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-column-compact-sonnet`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_compact_packet.py": "e96a93d0f91778b32ac3962541d8261f4226fdffe784a159a66d04db2b612e27", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "28adb733e62e27236cd0d7060d3b5d6ba205c2cc4fa89d45d6ac270d51680e88", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-column-readable-reviewed-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "decision_hosted.py": "dda278ddc7dec74aeea7c4a0265a98d7389023466ed7fb24340c6507d46dd1be", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_column_consensus.py": "6082527e48dc22c6ea86a9d8b51079d8ea2cfcc81fb72d495b28bfd3a59fb3cc", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_readable_packet.py": "9329b3b40f02785483a59bede4d9ad910c13dddfe84ce181f5374da5474c0701", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8b2c1fe769382204a686985cfa566059223b034cf6dac8c47a6ff9e264923077", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.

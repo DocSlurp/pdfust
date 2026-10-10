@@ -1255,3 +1255,64 @@ the recovered strings in their correct columns, preserving its intentionally emp
 last cell. Raw demos remain local ignored artifacts. The plan documents mixed
 vector/borderless pages and narrower uses of rolling-row edits as next experiments;
 those additional coverage claims are not implied by this single-table DEV cohort.
+
+
+### P001 final layer and completion — 2026-10-10 UTC
+
+All 56 configurations finished: 31 balanced 32-page pilots and 25 full 181-page
+runs. Three parallel worktree agents developed and audited source-only assembly,
+corpus/scoring, and bounded edits. Paid requests remained root-coordinated and
+serial for comparable end-to-end timing. No local GPU or remote rental was used.
+The complete comparison is in `bench/results/pipeline-p001.md`; conclusions,
+limitations and final accounting are in `bench/results/pipeline-conclusions.md`.
+
+Lossless compact evidence is a measured regression: original gated PPLX has
+34/35 exact tables, while compact has 31/35. Source/candidate inventories and
+admission answers match; three wrapped companions change from four complete rows
+to seven sparse rows. Packet length falls about 39%, but indirect indexed cell
+references obscure composed strings. Columns plus compact recovers the OCR table
+but retains these three losses. Text-only compact falls further to 28/35 and five
+negative false-positive pages, versus 31/35 and four with 256-pixel images.
+
+The cheaper Haiku-review substitution worsens negative false positives to ten;
+one PPLX admission HTTP 500 also leaves its total expense unknown. Direct Sonnet
+with columns and compact packets reaches 159/168 exact scored pages, 33/35 tables,
+two negative false-positive pages and 166/181 outputs. Nine responses truncate
+under the fixed 1,024-token answer limit. Its complete attempted cost is
+USD 1.463274, including unsuccessful calls; successful-call subtotals alone are
+not its cost. Both losses remain published.
+
+The final derivative retains literal coordinates and composed cell values while
+deduplicating shared cells. With columns, PPLX admission and selective Sonnet
+review, it recovers 35/35 exact tables, 437/437 cells and 35/35 span structures,
+with zero negative false positives: 168/168 scored pages and 178/181 outputs.
+It costs USD 0.1014482 (79 PPLX calls plus 12 Sonnet reviews), measuring 71.71
+output pages/minute and 1,754.59 pages/API USD. CPU time is 65.06 seconds; sampled
+peak RSS is 539,107,328 bytes. All 178 comparable source/candidate inventories
+match the original reviewed column arm. This ties original-format quality; the
+small single-run cost change is not established as repeatable. Two empty OCR
+sources and one invalid native grid remain diagnostic failures.
+
+An inspected provider HTTP 500 received exactly one scoped replacement in the
+readable run. Ledger entry 17423 records `retry_of_index=17158`; its positive
+reported charge is USD 0.00002982. The old USD 0.30 reservation remains unchanged.
+Tests cover exact request matching, fresh reservations, one-use consumption and
+rejection of unrelated failures. Gateway rejects this optional OpenRouter-only
+permission. No automatic retry or local response replay was enabled.
+
+Final P001 accounting: 3,127 attempts; USD 7.728498482 positive reported charges,
+USD 0.09586 catalog estimates for 330 reported-zero Luna attempts, and USD 0.30
+unresolved reservation. Known charges plus estimates are USD 7.824358482;
+conservative wave accounting is USD 8.124358482 of USD 50. Cumulative conservative
+accounting is USD 36.6672001068 of USD 150, including USD 6.35 of retained old/new
+unresolved reservations. Actual total expense remains incomplete. All 857
+Anthropic responses report zero cached input tokens; 2,269 retained decision-model
+responses omit that field and remain unknown. All paid jobs have finished.
+
+Validation: 300 targeted CPU tests passed; repository-wide Ruff and strict mypy
+for source, tests and pipeline modules (201 files) passed. Reports verify frozen
+source/code, complete JSON source ownership, and byte-exact Markdown reproduction.
+Wrapped-table and corrected OCR-table offline demos were visually checked. The
+heldout set was untouched. Single-table authored DEV results do not establish
+natural-document, semantic, multipage or mixed-table generalization. Next tests
+are documented; no additional paid run is started by this completion checkpoint.

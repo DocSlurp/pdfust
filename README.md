@@ -296,7 +296,9 @@ PDF input through source discovery, candidate assembly, model decisions, validat
 table JSON and Markdown. Its frozen DEV corpus has 181 pages: 168 with table
 structure references and 13 diagnostic pages. See the [experiment contract](bench/PIPELINE_EXPERIMENTS.md)
 for the 32-page balanced pilot, resource measurements, cost rules and limitations.
-These results are exploratory; general prose, math and form semantics are not gold-scored.
+All 56 configurations are complete. The [findings and accounting](bench/results/pipeline-conclusions.md)
+explain the winning combinations and measured regressions. These results are exploratory;
+general prose, math and form semantics are not gold-scored.
 
 The experimental path normalizes page rotation, extracts positioned words and
 vector rules, applies CPU OCR when no text is available, and keeps validated
@@ -320,11 +322,17 @@ scored non-table pages and 13 diagnostics):
 | PPLX gate + Sonnet review, 256 px | 178 | 34 | 0 | 167 | 72.4 | 1,659 |
 | PPLX column consensus + gate, 256 px | 178 | 35 | 4 | 164 | 114.1 | 25,916 |
 | PPLX column consensus + gate + Sonnet review, 256 px | 178 | 35 | 0 | 168 | 72.4 | 1,726 |
+| PPLX columns + compact evidence + gate, 256 px | 178 | 32 | 4 | 161 | 107.5 | 27,063 |
+| PPLX columns + readable deduplication + Sonnet review, 256 px | 178 | 35 | 0 | 168 | 71.7 | 1,755 |
+| PPLX columns + compact evidence + Sonnet review, 256 px | 178 | 32 | 0 | 165 | 69.0 | 1,751 |
+| PPLX columns + compact evidence + Haiku review, 256 px | 177 | 31 | 10 | 154 | 81.6 | Unknown |
+| PPLX gate, compact geometry/text only | 178 | 28 | 5 | 156 | 102.1 | 31,227 |
 | PPLX adaptive row edits | 178 | 28 | 30 | 131 | 151.6 | 69,429 |
 | Luna gate, 1024 px | 178 | 34 | 6 | 161 | 105.8 | 6,321 (estimate) |
 | Clef Flash gate, 512 px | 178 | 22 | 5 | 150 | 58.5 | 10,958 |
 | Haiku 5.5 assembly, 512 px | 175 | 34 | 18 | 149 | 22.0 | 2,093 |
 | Sonnet 5.5 assembly, 512 px | 174 | 34 | 0 | 166 | 15.9 | 108 |
+| Sonnet 5.5 columns + compact evidence, 512 px | 166 | 33 | 2 | 159 | 13.6 | 113 |
 | Opus 5.5 assembly, 512 px | 175 | 34 | 0 | 167 | 13.0 | 56 |
 
 These are single serial runs on authored DEV silver, with different routing and
