@@ -325,8 +325,8 @@ def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - com
         "The fixed pilot is selected by frozen manifest membership; absent results remain failures. "
         "Full and pilot cohorts have distinct denominators.",
         "",
-        "| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
-        "|---|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|",
+        "| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | column_consensus | compact_packet | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
+        "|---|---|---|---|---|---:|---:|---|---|---|---|---|---|---:|---:|---:|---:|",
     ]
     for item in runs:
         config, pos, neg = item["config"], item["positive"], item["negative"]
@@ -341,6 +341,7 @@ def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - com
             f"| {_label(item['name'])} | {'pilot' if config['pilot'] else 'full'} | {_label(config['policy'])} | "
             f"{_label(model)} | {_label(review_model)} | {image_edge} | {context_rows} | {legend} | "
             f"{config.get('normalize_rotation', False)} | {config.get('ocr_empty', False)} | {_label(premise)} | "
+            f"{config.get('column_consensus', False)} | {config.get('compact_packet', False)} | "
             f"{item['operational_pages']}/{item['scores']['pages']} | {pos['exact_page']}/{pos['scored_pages']} | "
             f"{neg['false_positive_page']}/{neg['scored_pages']} | {item['all_errors']}/{item['scores']['error']} |"
         )
@@ -477,8 +478,8 @@ def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - com
         "Result-file counts are progress evidence only. Accuracy, charges, wall/CPU and RSS remain unknown. "
         "Jobs not yet frozen by the runner are outside this observed inventory.",
         "",
-        "| Run | Policy | Model | Gate review model | Planned pages | Result files | Source contract matches |",
-        "|---|---|---|---|---:|---:|---|",
+        "| Run | Policy | Model | Gate review model | column_consensus | compact_packet | Planned pages | Result files | Source contract matches |",
+        "|---|---|---|---|---|---|---:|---:|---|",
     ]
     for item in incomplete:
         config = item["config"]
@@ -486,10 +487,11 @@ def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - com
         lines.append(
             f"| {_label(item['name'])} | {_label(config.get('policy', 'unknown'))} | "
             f"{_label(model)} | {_label(config.get('gate_review_model') or '—')} | "
+            f"{config.get('column_consensus', False)} | {config.get('compact_packet', False)} | "
             f"{item['planned_pages']} | {item['result_files']} | {item['source_contract_matches']} |"
         )
     if not incomplete:
-        lines.append("| None observed | — | — | — | — | — | — |")
+        lines.append("| None observed | — | — | — | False | False | — | — | — |")
     lines += ["", "Measurement and frozen provenance:", ""]
     for item in runs:
         lines.append(
