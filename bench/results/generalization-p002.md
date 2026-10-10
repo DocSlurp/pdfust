@@ -297,7 +297,7 @@ Whole-run wall 231.4s; CPU 304.83s; sampled RSS 612708352 bytes; verified output
 
 Ledger attempts 19; reported USD subtotal 0.286868; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
-Separate CPU detector worker: initialization wall 2.56802s, CPU 5.28494s; 16 measured requests, request CPU total 14.4786s; maximum sampled request RSS 1189687296 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+Separate CPU detector worker: initialization wall 2.56802s, CPU 5.28494s; 16 per-page measurement entries, request CPU total 14.4786s; maximum sampled request RSS 1189687296 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 
 ### natural16-yolo-tiles2-matrix-sonnet-512
@@ -329,7 +329,7 @@ Whole-run wall 386.294s; CPU 317.07s; sampled RSS 603447296 bytes; verified outp
 
 Ledger attempts 29; reported USD subtotal 0.449296; missing reported charges 0; cost bases `{"provider-reported USD": 29}`. Reservation amount 0; estimate amount 0.
 
-Separate CPU detector worker: initialization wall 2.61685s, CPU 5.46881s; 16 measured requests, request CPU total 69.3252s; maximum sampled request RSS 1206677504 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+Separate CPU detector worker: initialization wall 2.61685s, CPU 5.46881s; 16 per-page measurement entries, request CPU total 69.3252s; maximum sampled request RSS 1206677504 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 
 ### natural16-vision-sonnet-1200
@@ -421,7 +421,7 @@ Whole-run wall 277.729s; CPU 302.662s; sampled RSS 573603840 bytes; verified out
 
 Ledger attempts 18; reported USD subtotal 0.0234843; missing reported charges 0; cost bases `{"provider-reported USD": 18}`. Reservation amount 0; estimate amount 0.
 
-Separate CPU detector worker: initialization wall 2.62406s, CPU 5.34481s; 16 measured requests, request CPU total 15.4999s; maximum sampled request RSS 1178177536 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+Separate CPU detector worker: initialization wall 2.62406s, CPU 5.34481s; 16 per-page measurement entries, request CPU total 15.4999s; maximum sampled request RSS 1178177536 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 
 ### natural16-vision-sonnet-2048
@@ -483,7 +483,7 @@ Whole-run wall 57.4374s; CPU 8.0963s; sampled RSS 230289408 bytes; verified outp
 
 Ledger attempts 11; reported USD subtotal 0.0087591; missing reported charges 0; cost bases `{"provider-reported USD": 11}`. Reservation amount 0; estimate amount 0.
 
-## Corrected full corpus-r2 DEV baseline
+## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
 
@@ -491,6 +491,7 @@ Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d092842955
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 39.3111 | unmeasured | 0 |
 | native-regional-full-r2 | 272/276 | 4 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 36.7759 | unmeasured | 0 |
+| full276-yolo-matrix-haiku-512 | 270/276 | 6 | 136/172 | 166 | 197 | 6784/8897 | 6329/8897 | 25472/55180 | 180 | 10 | 12.6423 | 2116.13 | 0.127591 |
 
 ### native-full-r2
 
@@ -541,6 +542,33 @@ Whole-run wall 443.769s; CPU 1345.78s; sampled RSS 709750784 bytes; verified out
 
 Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bases `{}`. Reservation amount 0; estimate amount 0.
 
+
+### full276-yolo-matrix-haiku-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 270/276.
+
+Failure categories: `{"missing_source_text": 4, "provider_output_length": 2}`.
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 119 | 119 | 0.127591 | 0 / 119 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| authored | 156/156 | 155 | 155 | 5030/5050 | 7602/27830 | 8/24 |
+| native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
+| omnidoc | 64/64 | 11 | 42 | 1754/3847 | 17870/27350 | 1/24 |
+
+Whole-run wall 1281.41s; CPU 1288.23s; sampled RSS 795222016 bytes; verified output pages/min 12.6423; exact positive pages/min 6.36797. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 119; reported USD subtotal 0.127591; missing reported charges 0; cost bases `{"provider-reported USD": 119}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.91058s, CPU 6.57843s; 272 per-page measurement entries, request CPU total 256.538s; maximum sampled request RSS 1245454336 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Historical full-r1 snapshot — invalid scan carriers
 
 Dataset SHA-256: `68dda47aa6b0e3fd61cb751d53c7d8ae11546dea4e97ab74e6f9cac6d528332b`.
@@ -575,8 +603,8 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 
 ## Pending completed reports
 
-- natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- Higher-budget/tiled YOLO matrix and matched 2048-pixel/ROI vision controls: queued; different settings are separate treatments
+- natural16-generate-haiku: interrupted 4/16; 12 missing; unresolved USD 0.30 reservation / unknown rate; excluded completed comparison
+- Matched Haiku1024/OCR300 and larger-image JPEG50/crop controls remain independent queued treatments
 
 ## Interpretation
 
@@ -820,3 +848,74 @@ negative pages. Every intended page and table target remains in the primary
 denominator. Both whole-page and crop vision galleries preserve original
 rotation and label the outputs as table-only model transcription with no
 source conservation. This contract does not yet assert crop-run quality.
+
+## Full 276 fixed Haiku detector and matrix expansion
+
+The configuration was selected before its natural 16 score and ran all 276 pages
+with fresh processing and API requests, without child replay. It yields 270/276
+verified and source-conserved outputs versus 272/276 for native regional control.
+All 220 annotated pages,56 unscored diagnostics,249 tables and 8897 anchor cells
+remain primary:166 complete tables versus 120 native,6784 structural cells and
+6329 exact text cells versus 4258/4258, and 136/172 exact positive pages versus 96.
+Natural 64 contributes 11/93 complete tables,1754 structural cells,1299 exact
+text cells,49 localized tables,44 missing tables and one extra/negative-page
+false positive. The authored cohort contributes 155/156 complete tables but
+eight false-positive negative pages: six prose and two decorative pages.
+An authored mixed page loses one table and adds an extra table. Those regressions
+remain in the results; authored wins cannot establish broad natural accuracy.
+
+All 119 requests have positive charges totalingUSD 0.1275912. Whole-run elapsed
+time is 1281.41 seconds and parent process CPU 1288.23 seconds, with 795222016
+bytes sampled parent peak RSS. Throughput is 12.64 verified pages/minute and
+2116.13 verified pages/API USD. Separate CPU detector worker measurements appear
+above; parent CPU/RSS excludes that worker, parent elapsed time includes it,
+and RSS peaks are not summed. Concurrent root tests and agent preprocessing
+may affect these CPU timings.
+
+Four missing-source-text failures are unchanged unscored diagnostics. Two
+additional atomic failures have retained `length` finishes: one natural
+multiple-table newspaper and one native senate diagnostic. The complete family
+inventory follows, including all unscored diagnostic families. Exact positive
+page and complete-table denominators remain different units.
+
+| Family | Pages | Errors | Complete / expected tables | Structure / cells | Exact text / cells | Extra tables | Negative FP pages |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| authored/ruled | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| authored/borderless | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| authored/mixed | 12 | 0 | 23/24 | 508/528 | 508/528 | 1 | 0 |
+| authored/multiple | 12 | 0 | 24/24 | 528/528 | 528/528 | 0 | 0 |
+| authored/dense | 12 | 0 | 12/12 | 1894/1894 | 1894/1894 | 0 | 0 |
+| authored/wrapped | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| authored/blank | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| authored/merged | 12 | 0 | 12/12 | 252/252 | 252/252 | 0 | 0 |
+| authored/rotated | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| authored/cropped | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| authored/decorative | 12 | 0 | 0/0 | 0/0 | 0/0 | 2 | 2 |
+| authored/prose | 12 | 0 | 0/0 | 0/0 | 0/0 | 6 | 6 |
+| authored/ocr-carrier | 12 | 0 | 12/12 | 264/264 | 264/264 | 0 | 0 |
+| native/f1040.pdf | 2 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/pdf20-simple.pdf | 1 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/usrguide.pdf | 19 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/bill-hr815.pdf | 19 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/mhlw-doc.pdf | 2 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/bunka-kokugo-series-019-p4.pdf | 1 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/patent-us223898.pdf | 4 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/wdl6812-manuscript.pdf | 2 | 1 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/nics-background-checks-2015-11.pdf | 1 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/senate-expenditures.pdf | 1 | 1 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/pdfium-type3.pdf | 1 | 1 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/pdfium-smask-blend.pdf | 1 | 1 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/pdfium-jpx-lzw.pdf | 1 | 1 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| native/pdfium-links-highlights-annots.pdf | 1 | 0 | 0/0 | 0/0 | 0/0 | 0 | 0 |
+| omni/multiple-table | 16 | 1 | 7/69 | 875/2921 | 610/2921 | 0 | 0 |
+| omni/single-table | 24 | 0 | 4/24 | 879/926 | 689/926 | 0 | 0 |
+| omni/no-table | 24 | 0 | 0/0 | 0/0 | 0/0 | 1 | 1 |
+
+The 64 natural pages include 16 earlier-screen pages and 48 additional DEV pages.
+This posthoc split retains 64 natural pages as the primary cohort. It is not
+a heldout-silver test or an independently selected deployment claim.
+
+| Natural diagnostic | Pages | Complete / tables | Exact text / cells | Errors | Extra tables |
+|---|---:|---:|---:|---:|---:|
+| Earlier screen16 | 16 | 2/53 | 258/2333 | 1 | 1 |
+| Additional DEV48 | 48 | 9/40 | 1041/1514 | 0 | 0 |
