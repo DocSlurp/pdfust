@@ -5,10 +5,9 @@ import re
 import urllib.error
 from email.message import Message
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    import pytest
+import pytest
 from bench.decision_langfuse import (
     _configuration,
     _model_definition,
