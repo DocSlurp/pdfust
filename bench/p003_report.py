@@ -1101,7 +1101,12 @@ def score_run(
     from bench.generalization_report import _bounds, load_corpus, verify_output
 
     directory = guard_path(directory)
-    manifest, targets = load_corpus(corpus)
+    if _read(corpus / "manifest.json").get("identity_basis") == "source-only-confirmation-v1":
+        from bench.p003_confirmation import load_corpus as load_confirmation
+
+        manifest, targets = load_confirmation(corpus)
+    else:
+        manifest, targets = load_corpus(corpus)
     manifest_path = manifest_path or corpus / "manifest.json"
     selected_manifest = _read(manifest_path)
     if selected_manifest.get("split") != "DEV" or selected_manifest.get("dataset_sha256") != manifest["dataset_sha256"]:
