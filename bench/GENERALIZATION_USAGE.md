@@ -109,6 +109,24 @@ It cannot be applied to detector crops or source/OCR/hybrid runners. Do not mix
 legacy non-atomic wave admission with this concurrent experiment; keep historical
 prior-cost ledgers immutable. A reservation must cover the model's possible charge.
 
+The detector-crop comparison uses all fixed CPU YOLO proposals, with no score-based
+page selection. Its 1024-pixel Sonnet control is reproduced with:
+
+```sh
+.venv/bin/python -m bench.generalization_vision_run \
+  --manifest "$p002/screens/natural16/manifest.json" \
+  --output "$p002/repro-$repro_id-crops-sonnet" --detector-crops \
+  --generation-model anthropic/claude-sonnet-5.5 --generation-tokens 16384 \
+  --image-edge 1024 --jpeg-quality 90 --workers 1
+```
+
+The Haiku comparison changes only `--generation-model` to
+`anthropic/claude-haiku-5.5` and uses a different new output directory. Explicit
+400/512/768-pixel JPEG90 controls change `--image-edge`; the 2048-pixel JPEG50
+control changes both edge and quality. Every crop must validate before a page
+is admitted. Failed crops remain charged, and no successful prefix becomes a
+successful page. Fresh responses may differ even for identical request bytes.
+
 Hybrid keeps validated native tables, obtains detector-crop transcriptions for
 non-native proposals, and combines them with all remaining native/OCR words:
 
