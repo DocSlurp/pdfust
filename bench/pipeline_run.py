@@ -449,6 +449,10 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
         from bench.generalization_vision_regions import process as vision_region_process
 
         processor = vision_region_process
+    elif config.get("processor") == "hybrid":
+        from bench.generalization_hybrid_run import process as hybrid_process
+
+        processor = hybrid_process
     elif config.get("processor") not in (None, "whole"):
         raise ValueError("Unknown pipeline processor")
     manifest = json.loads(guard_path(manifest_path).read_bytes())
@@ -497,7 +501,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                         "pipeline_layout_tiles.py",
                         "pipeline_layout_fusion.py",
                     ]
-                    if config.get("processor") == "regions"
+                    if config.get("processor") in ("regions", "hybrid")
                     else []
                 ),
                 *(["pipeline_column_consensus.py"] if config.get("column_consensus") else []),
@@ -505,12 +509,17 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
                 *(
                     ["generalization_vision_run.py", "pipeline_vision_transcription.py"]
-                    if config.get("processor") in ("vision", "vision_regions")
+                    if config.get("processor") in ("vision", "vision_regions", "hybrid")
                     else []
                 ),
                 *(
                     ["generalization_vision_regions.py", "pipeline_layout_detector.py"]
-                    if config.get("processor") == "vision_regions"
+                    if config.get("processor") in ("vision_regions", "hybrid")
+                    else []
+                ),
+                *(
+                    ["generalization_hybrid_run.py", "pipeline_hybrid_composition.py"]
+                    if config.get("processor") == "hybrid"
                     else []
                 ),
             )

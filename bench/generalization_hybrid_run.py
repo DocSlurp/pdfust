@@ -159,7 +159,7 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--generation-model", choices=vision.MODELS, default=vision.MODELS[1])
-    parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384, 32768), default=16384)
+    parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=16384)
     parser.add_argument("--ocr-source", choices=("reextract", "whitespace"), default="whitespace")
     parser.add_argument("--ocr-dpi", type=int, choices=(100, 150, 200, 300), default=150)
     parser.add_argument("--ocr-edge", type=int, choices=(0, 1536, 2048, 3072), default=0)
