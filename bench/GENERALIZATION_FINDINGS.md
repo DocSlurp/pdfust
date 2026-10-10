@@ -83,7 +83,12 @@ for review without relabeling failed pages as complete.
 - **Better prompts can move errors instead of eliminating them.** Column-track
   instructions gain 101 cells on dense pages while losing 27 elsewhere.
   Gated ordinal assembly removes one negative-page false positive but loses
-  79 exact cells and one successful page. Publish both effects.
+  79 exact cells and one successful page. Adding row context to that gate then
+  recovers 104 cells, restores sixteen successful pages, removes all seven
+  extra tables, and costs about 3% more than the matched gated control. Adding
+  row context directly to matrix generation instead loses 33 cells and costs
+  about 53% more. The place where evidence enters the pipeline matters; these
+  are single fresh comparisons, not a universal benefit from more context.
 - **Concurrency improves throughput only within its measured scope.** A fresh
   four-worker whole-page Haiku control reaches 30.93 output pages/minute versus
   12.43 serial, with different fresh-response outcomes. Atomic reservations and
