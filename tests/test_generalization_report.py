@@ -13,7 +13,9 @@ from bench.generalization_report import (
     _bounds,
     _costs,
     _evaluate,
+    _failure_taxonomy,
     _model_breakdown,
+    _posthoc_density,
     _ratio,
     load_corpus,
     markdown_report,
@@ -446,3 +448,63 @@ def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
     frozen["code_sha256"]["pipeline_vision_transcription.py"] = sha(changed)
     with pytest.raises(ValueError, match="differs from frozen"):
         verify_code(f["run"], frozen, processor="vision")
+
+
+@pytest.mark.parametrize(
+    ("finish", "error", "category"),
+    [
+        ("content_filter", "Response was truncated or has no normal finish", "provider_content_filter"),
+        ("length", "Response was truncated or has no normal finish", "provider_output_length"),
+        ("stop", "Invalid anchor cell collection", "invalid_anchor_collection"),
+        ("stop", "Unknown source ID", "invalid_source_ids"),
+        ("stop", "Overlapping merged spans", "invalid_table_topology"),
+        (None, "Response was truncated or has no normal finish", "unclassified_completion_failure"),
+    ],
+)
+def test_failure_categories_use_retained_responses_not_generic_error_messages(
+    tmp_path: Path,
+    finish: str | None,
+    error: str,
+    category: str,
+) -> None:
+    directory = tmp_path / "artifacts" / "pipeline-p002" / "run"
+    responses = directory.parent.parent / "decisions"
+    raw = {"choices": [{"finish_reason": finish, "message": {"content": None}}]}
+    write(responses / "response-1.json", raw)
+    prediction = {
+        "id": "p",
+        "status": "error",
+        "error": error,
+        "calls": [{"entry": {"response_file": "response-1.json"}}],
+    }
+    taxonomy = _failure_taxonomy(directory, [prediction])
+    assert taxonomy["counts"] == {category: 1}
+    observation = taxonomy["pages"][0]["response_observations"][0]
+    assert observation["finish_reason"] == finish
+    assert observation["sha256"] == sha((responses / "response-1.json").read_bytes())
+    assert "payload" not in observation
+    assert "content" not in observation
+
+
+def test_failure_response_filename_may_not_escape_retained_directory(tmp_path: Path) -> None:
+    prediction = {"id": "p", "status": "error", "calls": [{"entry": {"response_file": "../other.json"}}]}
+    with pytest.raises(ValueError, match="Unsafe retained API"):
+        _failure_taxonomy(tmp_path, [prediction])
+
+
+def test_posthoc_density_preserves_all_targets_and_positive_denominators() -> None:
+    dense = ["p1bfa52a41a5e15015698", "p98d10ef50dee4b24506a"]
+    ids = dense + [f"p{i}" for i in range(14)]
+    table = {"row_count": 1, "col_count": 1, "values": [["A"]], "spans": []}
+    targets = [{"id": ident, "tables": [table] if index < 12 else []} for index, ident in enumerate(ids)]
+    predictions = [{"id": ident, "tables": t["tables"]} for ident, t in zip(ids, targets, strict=True)]
+    result = _posthoc_density([{"id": i} for i in ids], targets, predictions)
+    assert result is not None
+    groups = result["groups"]
+    assert groups["two_dense_newspapers"]["pages"] == 2
+    assert groups["remaining_fourteen"]["pages"] == 14
+    assert groups["remaining_fourteen"]["positive_page"] == 10
+    assert groups["remaining_fourteen"]["exact_positive_page"] == 10
+    assert groups["remaining_fourteen"]["exact_page"] == 14
+    assert sum(g["expected_tables"] for g in groups.values()) == 12
+    assert _posthoc_density([{"id": "other"}], targets, predictions) is None

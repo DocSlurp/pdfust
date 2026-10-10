@@ -22,6 +22,7 @@ from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, guard_path, sha
 
 LOCALIZATION_IOU = 0.5
+NATURAL_SCREEN_PAGES = 16
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 
@@ -31,6 +32,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "4a88118faa12c6dfd92ce692daf04e215c3ff848335f66ddd57b073ffda87d0b": "ac1f842",
         "e9cfae5504773e6ee5e2e0265fcaa447ce4786e2bc015ead37c548593419180f": "119a9ca",
         "a5bc281951becd59633a78d00bdeae125405789e09b3368617ff85ecbd191b26": "7395782",
         "3945a5efaace0c02d80866460e32f67d7f2acb1c9c35500376a32edf0f151f38": "6afe326",
@@ -394,6 +396,98 @@ def _model_breakdown(predictions: list[dict[str, Any]], audits: list[dict[str, A
     }
 
 
+def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dict[str, Any]:
+    """Classify failed pages from retained API finishes separately from parser errors.
+
+    Read only response filenames explicitly retained in those pages' calls.
+    Generic completion errors do not prove token-budget exhaustion.
+    """
+    response_directory = directory.parent.parent / "decisions"
+    failures = []
+    for prediction in predictions:
+        if prediction.get("status") == "ok":
+            continue
+        error = str(prediction.get("error", "unclassified failure"))
+        responses = []
+        direct = prediction.get("transcription_response")
+        if isinstance(direct, dict):
+            responses.append({"source": "transcription_response", "payload": direct})
+        for call in prediction.get("calls", []):
+            filename = call.get("entry", {}).get("response_file")
+            if filename is not None:
+                if not isinstance(filename, str) or Path(filename).name != filename or filename in {".", ".."}:
+                    raise ValueError("Unsafe retained API response filename")
+                path = guard_path(response_directory / filename)
+                if path.is_file():
+                    responses.append({"source": filename, "sha256": sha(path.read_bytes()), "payload": _read(path)})
+            elif isinstance(call.get("finish_reason"), str):
+                responses.append({"source": "retained_call_metadata", "finish_reason": call["finish_reason"]})
+        observations = []
+        for response in responses:
+            raw = response.pop("payload", None)
+            if raw is not None:
+                choices = raw.get("choices")
+                if isinstance(choices, list) and len(choices) == 1 and isinstance(choices[0], dict):
+                    response["finish_reason"] = choices[0].get("finish_reason")
+                    message = choices[0].get("message", {})
+                    response["content_missing"] = not isinstance(message, dict) or message.get("content") is None
+            observations.append(response)
+        finish = observations[-1].get("finish_reason") if observations else None
+        if not isinstance(finish, str):
+            finish = None
+        lower = error.lower()
+        if finish == "content_filter":
+            category = "provider_content_filter"
+        elif finish in {"length", "max_tokens"}:
+            category = "provider_output_length"
+        elif "anchor" in lower:
+            category = "invalid_anchor_collection"
+        elif "source id" in lower or "source_id" in lower or "unknown id" in lower:
+            category = "invalid_source_ids"
+        elif any(word in lower for word in ("span", "topology", "rectangular", "overlapping", "tiling")):
+            category = "invalid_table_topology"
+        elif any(word in lower for word in ("admission", "exceeds", "over-limit", "budget")):
+            category = "local_input_or_output_admission"
+        elif "finish" in lower or "truncat" in lower:
+            category = "unclassified_completion_failure"
+        else:
+            category = "other_failure"
+        failures.append(
+            {"id": prediction["id"], "category": category, "error": error, "response_observations": observations}
+        )
+    return {
+        "counts": dict(Counter(f["category"] for f in failures)),
+        "pages": failures,
+        "scope": "Failed retained pages only; missing pages are counted separately in run statuses. "
+        "Provider finish codes come from retained responses or explicit call metadata; generic parser "
+        "messages never imply output-token exhaustion. No response content is copied into this summary.",
+    }
+
+
+def _posthoc_density(
+    records: list[dict[str, Any]], targets: list[dict[str, Any]], predictions: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """Report a labeled posthoc two-newspaper contrast without changing primary gold."""
+    dense = {"p1bfa52a41a5e15015698", "p98d10ef50dee4b24506a"}
+    if len(records) != NATURAL_SCREEN_PAGES or not dense <= {r["id"] for r in records}:
+        return None
+    groups = {}
+    for name, include_dense in (("two_dense_newspapers", True), ("remaining_fourteen", False)):
+        members = [t for t in targets if (t["id"] in dense) == include_dense]
+        ids = {t["id"] for t in members}
+        evaluation = _evaluate(members, [p for p in predictions if p["id"] in ids])
+        groups[name] = evaluation["totals"]
+        groups[name]["exact_positive_page"] = sum(
+            bool(page.get("positive_page") and page.get("exact_page")) for page in evaluation["pages"]
+        )
+    return {
+        "scope": "Posthoc density diagnostic only; all sixteen pages and all targets remain primary. "
+        "The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.",
+        "dense_page_ids": sorted(dense),
+        "groups": groups,
+    }
+
+
 def score_run(
     directory: Path, manifest_path: Path, manifest: dict[str, Any], targets: dict[str, Any]
 ) -> dict[str, Any]:
@@ -495,6 +589,8 @@ def score_run(
         "groups": groups,
         "authored_legacy_exact": authored_legacy["totals"],
         "statuses": dict(statuses),
+        "failure_taxonomy": _failure_taxonomy(directory, predictions),
+        "posthoc_density": _posthoc_density(records, private, scoring_predictions),
         "operational_pages": operational,
         "all_errors": len(expected) - operational,
         "markdown_bytes_verified_pages": operational,
@@ -718,6 +814,28 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
                 ),
                 "",
             ]
+            lines += [
+                "Failure categories: `" + json.dumps(r["failure_taxonomy"]["counts"], sort_keys=True) + "`.",
+                "",
+            ]
+            density = r["posthoc_density"]
+            if density is not None:
+                lines += [
+                    density["scope"],
+                    "",
+                    (
+                        "| Posthoc group | Complete tables / expected | "
+                        "Exact positive pages / positive pages | Exact text cells |"
+                    ),
+                    "|---|---:|---:|---:|",
+                ]
+                for density_label, ds in density["groups"].items():
+                    lines.append(
+                        f"| {density_label} | {ds.get('complete_tables', 0)}/{ds.get('expected_tables', 0)} | "
+                        f"{ds.get('exact_positive_page', 0)}/{ds.get('positive_page', 0)} | "
+                        f"{ds.get('correct_text_cells', 0)} |"
+                    )
+                lines += [""]
             config = r["config"]
             method = config.get("assembly_method", "select" if config.get("policy") == "gated" else "native")
             lines += [
@@ -803,6 +921,8 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
         ),
         "",
         (
+            "Complete tables and exact positive pages use different units and denominators: "
+            "two complete tables may occupy only one exact positive page. "
             "Negative-page empty outputs can be exact without recovering a positive table. "
             "Authored DEV silver, independently annotated Omni pages, and unscored native diagnostics "
             "remain separate. A protocol screen is a predeclared DEV experiment, not a heldout estimate. "
