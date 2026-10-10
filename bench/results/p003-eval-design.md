@@ -311,3 +311,51 @@ pages processed per minute/APIUSD are incremental processing rates, and fresh
 full-pipeline throughput remains null. Combined cost across generation pools
 requires ledger-index deduplication and cannot be inferred by summing copied
 reports, particularly when historical BYOK accounting overlays exist.
+
+### Real frozen candidate-pool preflight and posthoc ceiling
+
+The Luna-first/Haiku-second natural16 preflight used an isolated fake ledger and
+always-unresolved typed selector at a declared 512-pixel crop edge. It made zero
+paid requests and measured no selector quality. All sixteen original Luna
+structure/Markdown outputs remained byte-identical. Independent verification
+found seventeen whole-crop pools: fifteen distinct eligible pools on eleven
+pages, two duplicate-only pools, two no-crop pages, and one page skipped because
+Haiku failed. Actual selector bodies were 13,521–143,646 bytes, within the
+750,000-byte admission. No source, image, inventory or request-body mismatch
+occurred. The whole CPU process, including copying authenticated originals,
+rendering/cropping and independent verification, took 12.16 seconds wall and
+12.26 seconds CPU with peak RSS 431,412 KiB via process `getrusage`; no OCR,
+network inference or GPU ran. This offline preflight is separate from run rates.
+
+| Evidence on natural16 | Complete tables / 53 | Strict cells / 2333 | Text cells | Negative FP / 4 | Errors | Pages/min | Pages/APIUSD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Fresh P003 Luna crops1024 | 3 | 784 | 795 | 0 | 0 | 4.188 | 1234.108, reconciled |
+| Fresh P003 pinned Haiku crops1024 | 3 | 393 | 406 | 1 | 1 | 8.491 | 1822.069 |
+| Posthoc exact Luna/Haiku whole-crop oracle | 4 | 796 | 809 | 0 | 0 | Unmeasured | Unmeasured |
+| Historical P002 Sonnet crops1024 | 5 | 982 | 982 | 0 | 0 | 6.878 | 69.412 |
+
+The oracle enumerates every whole-crop combination (at most four per page),
+maximizing strict exact cells, then complete tables, then fewer false tables.
+The Haiku-error page keeps the predeclared Luna fallback. Its independent
+complete-table ceiling is also four. It has only twelve additional strict cells
+and one additional complete table over Luna; these are finite retained-pool DEV
+ceilings, not achievable hosted performance or unbiased validation. DEV
+references were opened only after source-only pools froze, and neither requests
+nor candidate helpers received oracle selections. No oracle cost/productivity
+rate is inferred. Historical run timings and financial bases differ and are not
+matched throughput trials. Luna's immutable original report has unknown effective
+cost; the verified accounting overlay reports USD 0.012964825 across nineteen
+BYOK attempts and supplies the separately labeled rate above.
+
+The explicitly named complete P002 Sonnet run has the same frozen sixteen source
+records/manifest, detector crop inventories and all nineteen original request
+crop pixel hashes. Its report matches tracked P002 SHA
+`58bf4a7f437f257d73671302aa285ed68a182bd43f8ab3485704491262455a57`.
+Its historical strict adapter differs from the current adapter by one model
+admission error-message string. That finding permits operator review, not
+self-authentication or automatic admission of historical code. Expanding pools
+requires an authenticated, separately reviewed whole-run input and keeps the
+first-baseline fallback rule; individual crops must not be chosen as inputs by
+DEV gold. Ignored full artifacts are under
+`pipeline-p003/preflight-candidate-luna-haiku-r0/`, including clearly fake
+preflight evidence, exhaustive oracle and Sonnet source/crop compatibility.
