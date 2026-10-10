@@ -32,6 +32,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "8c51ca5295c8c9e27cf4cad0f5a7e957c36be94c1739ac616d2aa1cd9f7dd865": "1083b53",
         "b65ce79aef238bceed439bca6998dd003130bb190b4b2c85feb1eaf67eb04456": "0cc3b3f",
         "4c02938d7abea98dbc070944aa0b962f85ef5069e2b07c9f801a80c308b40b80": "01273f1",
         "4a88118faa12c6dfd92ce692daf04e215c3ff848335f66ddd57b073ffda87d0b": "ac1f842",
@@ -936,7 +937,8 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
                     (
                         "Separate CPU detector worker: initialization wall "
                         f"{_fmt(initialization.get('wall_seconds'))}s, "
-                        f"CPU {_fmt(initialization.get('cpu_seconds'))}s; {len(requests)} measured requests, "
+                        f"CPU {_fmt(initialization.get('cpu_seconds'))}s; "
+                        f"{len(requests)} per-page measurement entries, "
                         f"request CPU total {_fmt(cpu)}s; maximum sampled request RSS "
                         f"{_fmt(max(valid_peaks) if valid_peaks else None)} bytes. " + worker["scope"]
                     ),

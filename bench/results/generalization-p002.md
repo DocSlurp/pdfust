@@ -20,6 +20,9 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-yolo-tiles2-matrix-sonnet-512 | 15/16 | 1 | 1/12 | 2 | 10 | 431/2333 | 250/2333 | 14446/16640 | 14 | 1 | 2.32983 | 33.3856 | 0.449296 |
 | natural16-vision-sonnet-1200 | 15/16 | 1 | 2/12 | 3 | 14 | 408/2333 | 299/2333 | 12984/16640 | 14 | 0 | 6.50775 | 106.649 | 0.140648 |
 | natural16-vision-haiku-1200 | 13/16 | 3 | 2/12 | 2 | 8 | 358/2333 | 245/2333 | 14802/16640 | 9 | 3 | 6.40679 | 1527.9 | 0.0085084 |
+| natural16-yolo-matrix-haiku-512 | 15/16 | 1 | 1/12 | 2 | 12 | 359/2333 | 258/2333 | 13879/16640 | 14 | 1 | 3.24057 | 638.725 | 0.0234843 |
+| natural16-vision-sonnet-2048 | 11/16 | 5 | 2/12 | 3 | 12 | 244/2333 | 203/2333 | 13931/16640 | 12 | 0 | 12.8658 | 79.7668 | 0.137902 |
+| natural16-vision-haiku-2048 | 11/16 | 5 | 2/12 | 3 | 11 | 244/2333 | 201/2333 | 14419/16640 | 12 | 2 | 11.4908 | 1255.84 | 0.0087591 |
 
 ### natural16-whole-reviewed
 
@@ -38,8 +41,8 @@ Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-dec
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.039142 | 0 / 1 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 16 | 16 | 0.0104728 | 0 / 0 / 16 |
+| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.039142 | 0 / 1 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -69,8 +72,8 @@ Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-dec
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.028466 | 0 / 1 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 24 | 24 | 0.0073622 | 0 / 0 / 24 |
+| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.028466 | 0 / 1 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -100,8 +103,8 @@ Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-dec
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.122232 | 0 / 5 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 56 | 56 | 0.0239754 | 0 / 0 / 56 |
+| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.122232 | 0 / 5 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -131,8 +134,8 @@ Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-dec
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.121322 | 0 / 5 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 57 | 57 | 0.0226022 | 0 / 0 / 57 |
+| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.121322 | 0 / 5 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -387,6 +390,98 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 Whole-run wall 121.746s; CPU 9.48039s; sampled RSS 283582464 bytes; verified output pages/min 6.40679; exact positive pages/min 0.98566. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 16; reported USD subtotal 0.0085084; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
+
+
+### natural16-yolo-matrix-haiku-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
+
+Failure categories: `{"provider_output_length": 1}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 2/14 | 1/10 | 258 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 18 | 18 | 0.0234843 | 0 / 18 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 12 | 359/2333 | 13879/16640 | 1/4 |
+
+Whole-run wall 277.729s; CPU 302.662s; sampled RSS 573603840 bytes; verified output pages/min 3.24057; exact positive pages/min 0.216038. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 18; reported USD subtotal 0.0234843; missing reported charges 0; cost bases `{"provider-reported USD": 18}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.62406s, CPU 5.34481s; 16 measured requests, request CPU total 15.4999s; maximum sampled request RSS 1178177536 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-vision-sonnet-2048
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"local_input_or_output_admission": 5}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 3/14 | 2/10 | 203 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-sonnet-5.5`; review `unmeasured`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 16 | 11 | 0.137902 | 0 / 11 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 12 | 244/2333 | 13931/16640 | 0/4 |
+
+Whole-run wall 51.2988s; CPU 8.4647s; sampled RSS 252555264 bytes; verified output pages/min 12.8658; exact positive pages/min 2.33924. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 11; reported USD subtotal 0.137902; missing reported charges 0; cost bases `{"provider-reported USD": 11}`. Reservation amount 0; estimate amount 0.
+
+
+### natural16-vision-haiku-2048
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"local_input_or_output_admission": 5}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 3/14 | 2/10 | 201 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 16 | 11 | 0.0087591 | 0 / 11 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 11 | 244/2333 | 14419/16640 | 1/4 |
+
+Whole-run wall 57.4374s; CPU 8.0963s; sampled RSS 230289408 bytes; verified output pages/min 11.4908; exact positive pages/min 2.08923. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 11; reported USD subtotal 0.0087591; missing reported charges 0; cost bases `{"provider-reported USD": 11}`. Reservation amount 0; estimate amount 0.
 
 ## Corrected full corpus-r2 DEV baseline
 
@@ -672,3 +767,40 @@ Wall time rises from 412.10 to 443.77 seconds and process CPU from 1232.85 to
 runs have zero hosted calls or API charges. Measurements share the documented
 100 ms parent-process RSS and process CPU scope; concurrent workloads may
 affect timings.
+
+## Wave 6 completed controls
+
+The untiled YOLO matrix Haiku512 run admits 15/16 complete outputs and retains
+359 structural cells, 258 exact text cells, 12 exact topologies, and two complete
+tables on one exact positive page. All 53 tables and 2333 reference cells remain
+primary. The remaining fourteen pages account for every admitted table; the
+two dense newspapers contribute zero tables, including one atomic page failure
+with a retained provider `length` finish. One extra table creates one negative
+page false positive. All 18 attempts are charged: USD 0.0234843, 3.24 operational
+pages/minute and 638.72 operational pages/API USD. This cheaper expansion was
+selected before its sixteen-page quality score; it is not established as the
+best pipeline.
+
+Whole-page Sonnet2048 admits 11/16 outputs, three complete tables on two exact
+positive pages, 244 structural cells and 203 exact text cells. Five pages fail
+locally before inference because their requests exceed the frozen 750000-byte
+body admission, including both dense newspapers. The eleven requests cost
+USD 0.137902; throughput is 12.87 operational pages/minute and 79.77 operational
+pages/API USD. This control does not measure model readability for rejected
+images. It retains the whole-page table-only model-transcription label and zero
+source-conserved pages. No resizing, retries, or partial success outputs repair
+these errors. The larger-image comparison changes admitted coverage as well as
+image resolution, so the lower 203 versus 299 exact text cells does not isolate
+a resolution effect.
+
+The matched Haiku2048 whole-page control has the same five local body-admission
+failures. Its eleven admitted outputs contain three complete tables on two
+exact positive pages, 244 structural cells and 201 exact text cells, with two
+extra tables and one negative-page false positive. All eleven requests carry
+positive charges totaling USD 0.0087591; throughput is 11.49 operational
+pages/minute and 1255.84 operational pages/API USD. Compared with Sonnet2048,
+Haiku loses two exact text cells and introduces two extras at roughly one
+sixteenth the API cost. Both are table-only comparators with zero conserved
+pages and unchanged full-target denominators. Local concurrency during these
+waves is disclosed by the run resource records; timing differences alone do
+not establish model serving performance.
