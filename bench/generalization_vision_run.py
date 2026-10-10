@@ -24,12 +24,14 @@ MAX_BODY_BYTES = 750_000
 IMAGE_EDGES = (512, 1024, 1200, 2048)
 
 
-def image(page: Any, edge: int) -> tuple[str, dict[str, Any]]:
+def image(page: Any, edge: int, quality: int = 90) -> tuple[str, dict[str, Any]]:
     """Render one whole display page as explicit RGB JPEG without changing rotation."""
     from PIL import Image
 
     if type(edge) is not int or edge not in IMAGE_EDGES:
         raise ValueError("Vision image edge is outside the frozen choices")
+    if type(quality) is not int or quality not in (50, 70, 90):
+        raise ValueError("Vision JPEG quality is outside the frozen choices")
     viewport = list(page.rect)
     adapter._viewport(viewport)  # noqa: SLF001 - reuse the strict adapter display admission.
     scale = edge / max(page.rect.width, page.rect.height)
@@ -38,12 +40,12 @@ def image(page: Any, edge: int) -> tuple[str, dict[str, Any]]:
         # Remove at most raster rounding; never adapt edge or quality to body admission.
         rgb.thumbnail((edge, edge), Image.Resampling.LANCZOS)
         stream = io.BytesIO()
-        rgb.save(stream, format="JPEG", quality=90)
+        rgb.save(stream, format="JPEG", quality=quality)
         data = stream.getvalue()
         metadata = {
             "image_codec": "JPEG",
             "image_mode": "RGB",
-            "image_quality": 90,
+            "image_quality": quality,
             "image_edge": edge,
             "image_size": list(rgb.size),
             "image_viewport": viewport,
@@ -161,7 +163,7 @@ def process(
         with pylopdf.open(stream=data) as document:
             page = document[record["page_number"]]
             result.update(original_rotation=page.rotation, rotation_normalized=False, viewport=list(page.rect))
-            url, metadata = image(page, config.get("image_edge", 1200))
+            url, metadata = image(page, config.get("image_edge", 1200), config.get("jpeg_quality", 90))
             result["image"] = metadata
         result["stages"]["render_seconds"] = time.perf_counter() - began
         stage = "request"
@@ -195,6 +197,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--generation-model", choices=MODELS, default=MODELS[1])
     parser.add_argument("--image-edge", type=int, choices=IMAGE_EDGES, default=1200)
+    parser.add_argument("--jpeg-quality", type=int, choices=(50, 70, 90), default=90)
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=16384)
     parser.add_argument("--pilot", action="store_true")
     args = parser.parse_args()

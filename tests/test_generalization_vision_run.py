@@ -27,6 +27,18 @@ def settings(**extra: Any) -> dict[str, Any]:
     return {"campaign": "P002", "run_id": "mock-vision", "generation_model": "anthropic/claude-sonnet-5.5", **extra}
 
 
+def test_explicit_jpeg_quality_preserves_requested_pixel_dimensions() -> None:
+    with pylopdf.open(stream=pdf_bytes()) as document:
+        default_url, default = runner.image(document[0], 2048)
+        compressed_url, compressed = runner.image(document[0], 2048, 70)
+    assert default["image_size"] == compressed["image_size"]
+    assert default["image_viewport"] == compressed["image_viewport"]
+    assert compressed["image_quality"] == 70
+    assert compressed["image_bytes"] < default["image_bytes"]
+    assert compressed_url != default_url
+    assert compressed["body_limit_adaptation"] is False
+
+
 def response(*, finish: str = "stop", tables: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     if tables is None:
         tables = [{"bbox": [100, 200, 900, 800], "matrix": [["Name", "Value"], ["Alpha", "42"]], "mergedspans": []}]
