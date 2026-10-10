@@ -63,7 +63,7 @@ def recover(regions: list[dict[str, Any]], viewport: list[float]) -> dict[str, A
         if region.get("index") != index or region.get("request_index") != index:
             raise ValueError("Region order or request identity differs")
         bounds = crops._contained(region["viewport"], viewport)
-        if region.get("transcription_representation", "legacy") != "legacy":
+        if region.get("transcription_representation", "legacy") not in {"legacy", "matrix_strict"}:
             raise ValueError("Partial-table experiment requires original matrix representation")
         response = region.get("transcription_response")
         if response is None:
