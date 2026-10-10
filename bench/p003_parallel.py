@@ -26,12 +26,16 @@ from bench.silver import guard_path, write_json
 MODULES = {
     "pipeline": "bench.p003_run", "candidate": "bench.p003_candidate_run", "boundary": "bench.p003_boundary_run",
     "gate": "bench.p003_gate_run", "topology": "bench.p003_topology_run",
+    "admission": "bench.p003_structure_admission_run", "micro": "bench.p003_micro_relations_run",
+    "diagram": "bench.p003_geometry_diagram_run",
 }
 INCREMENTAL_FIELDS = {
     "candidate": ("ranking_status", "incremental_ranking"),
     "boundary": ("repair_status", "incremental_repair"),
     "gate": ("gate_status", "incremental_gate"),
     "topology": ("topology_status", "incremental_ownership"),
+    "admission": ("decision_status", "incremental_admission"),
+    "diagram": ("selection_status", "incremental_selection"),
 }
 MAX_ARMS = 64
 MAX_CONCURRENT = 3
@@ -75,7 +79,7 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
             message = "Declared arm duration must be an integer from 30 through 10800 seconds"
             raise ValueError(message)
         if arm.get("kind", "pipeline") not in MODULES:
-            message = "Experiment kind must be pipeline, candidate, boundary, gate or topology"
+            message = "Experiment kind is not a supported fixed runner"
             raise ValueError(message)
         if "manifest" in arm:
             if arm.get("kind", "pipeline") != "pipeline" or not isinstance(arm["manifest"], str):
@@ -98,6 +102,7 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
             if value.split("=", 1)[0] in {
                 "--baseline", "--trusted-code", "--source-baseline", "--topology-baseline",
                 "--source-trusted-code", "--topology-trusted-code",
+                "--input", "--pool", "--pool-trusted-code", "--selector-trusted-code", "--input-trusted-code",
             }:
                 path = value.split("=", 1)[1] if "=" in value else (
                     arguments[i + 1] if i + 1 < len(arguments) else ""
@@ -150,6 +155,19 @@ def report_counts(status: dict[str, Any], arm_report: dict[str, Any]) -> None:
     if not isinstance(rows, list):
         message = "Arm report results must be a list"
         raise TypeError(message)
+    if status["kind"] == "micro":
+        # A local pair answer is not a processed PDF page, even when page IDs are retained.
+        statuses = Counter(row.get("status", "missing") for row in rows)
+        valid = statuses["valid_nonabstaining"] + statuses["valid_abstention"]
+        status.update(
+            intended_questions=len(rows), attempted_questions=arm_report["attempted_question_count"],
+            valid_returned_questions=valid, nonabstaining_questions=statuses["valid_nonabstaining"],
+            question_status_counts=dict(statuses), incremental_accounting=arm_report["charges"],
+            question_rates_scope="partial local relationship probes; no complete page output",
+            contended_valid_questions_per_minute=valid / status["wall_seconds"] * 60,
+            pages_per_minute=None, pages_per_dollar=None,
+        )
+        return
     status["completed_pages"] = sum(row.get("status") == "ok" for row in rows)
     status["attempted_pages"] = len(rows)
     rate = status["completed_pages"] / status["wall_seconds"] * 60
@@ -169,6 +187,18 @@ def summarize_rates(statuses: list[dict[str, Any]], wall: float, not_started: li
     by_kind = {}
     for kind in MODULES:
         arms = [status for status in statuses if status["kind"] == kind]
+        if kind == "micro":
+            complete = bool(arms) and all(
+                "valid_returned_questions" in status and not status.get("report_metrics_error") for status in arms
+            ) and not not_started
+            questions = sum(status.get("valid_returned_questions", 0) for status in arms)
+            by_kind[kind] = {
+                "valid_returned_questions_known": questions, "complete_metrics": complete,
+                "scope": "partial local relationship probes; no complete page output", "arm_count": len(arms),
+                "valid_returned_questions_per_minute": questions / wall * 60 if complete and wall else None,
+                "pages_per_minute": None, "pages_per_dollar": None,
+            }
+            continue
         complete = bool(arms) and all(
             "completed_pages" in status and not status.get("report_metrics_error") for status in arms
         ) and not not_started
@@ -254,7 +284,7 @@ def next_launch_index(ordered: list[dict[str, Any]], active: list[dict[str, Any]
     """Overlap lightweight arms while retaining the three-heavy-worker CPU bound."""
     if len(active) >= limit:
         return None
-    heavy = {"pipeline", "candidate"}
+    heavy = {"pipeline", "candidate", "admission", "diagram"}
     heavy_count = sum(arm.get("kind", "pipeline") in heavy for arm in active)
     return next((i for i, arm in enumerate(ordered)
                  if heavy_count < MAX_CONCURRENT or arm.get("kind", "pipeline") not in heavy), None)
@@ -286,7 +316,7 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
               "max_cpu_heavy_arms": 3, "transport_slot_wait": max_parallel_arms > MAX_CONCURRENT,
               "heartbeat_seconds": HEARTBEAT_SECONDS,
               "declared_arm_duration_overrides": True,
-              "scheduler": "first eligible in frozen order; pipeline/candidate are CPU-heavy"}
+              "scheduler": "first eligible in frozen order; pipeline/candidate/admission/diagram are CPU-heavy"}
     record = {"policy": policy, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,
               "manifest": str(manifest.resolve()) if manifest is not None else None, "arms": statuses,
               "rates_label": "contended per-arm rates separated by experiment kind",

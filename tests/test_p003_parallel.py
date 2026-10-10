@@ -123,11 +123,15 @@ def test_mixed_kinds_fixed_commands_and_separate_rate_scopes(tmp_path):
     ]}], 1)
     statuses = []
     for kind in parallel.MODULES:
+        if kind == "micro":
+            continue
         status = {"kind": kind, "wall_seconds": 10}
         report = {"results": [{"status": "ok", "ranking_status": "not_applicable", "repair_status": "completed",
-                               "gate_status": "complete", "topology_status": "completed"}],
+                               "gate_status": "complete", "topology_status": "completed",
+                               "decision_status": "evaluated", "selection_status": "selected"}],
                   "incremental_ranking": {"returned_calls": 1}, "incremental_repair": {"returned_calls": 2},
-                  "incremental_gate": {"returned_calls": 3}, "incremental_ownership": {"returned_calls": 4}}
+                  "incremental_gate": {"returned_calls": 3}, "incremental_ownership": {"returned_calls": 4},
+                  "incremental_admission": {"returned_calls": 5}, "incremental_selection": {"returned_calls": 6}}
         parallel.report_counts(status, report)
         assert ("contended_pages_per_minute" in status) is (kind == "pipeline")
         statuses.append(status)
@@ -197,3 +201,47 @@ def test_union_cli_activates_cpu_detector_and_declared_overlap_policy(tmp_path, 
     assert config["conflict_policy"] == "small_area_then_probability"
     assert config["gate_enabled"] is True
     assert config["workers"] == 1
+
+
+def test_micro_relationship_metrics_never_become_page_rates():
+    status = {"kind": "micro", "wall_seconds": 20}
+    report = {"results": [
+        {"status": "valid_nonabstaining", "page_id": "p0"},
+        {"status": "valid_abstention", "page_id": "p0"},
+        {"status": "transport_error", "page_id": "p1"},
+        {"status": "not_attempted", "page_id": "p2"},
+    ], "attempted_question_count": 3, "charges": {"effective_usd": None}}
+    parallel.report_counts(status, report)
+    assert status["valid_returned_questions"] == 2
+    assert status["nonabstaining_questions"] == 1
+    assert status["attempted_questions"] == 3
+    assert status["contended_valid_questions_per_minute"] == 6
+    assert status["pages_per_minute"] is None
+    assert "completed_pages" not in status
+    summary = parallel.summarize_rates([status], 40, [])
+    assert summary["completed_page_runs_known"] == 0
+    assert summary["by_kind"]["micro"]["valid_returned_questions_per_minute"] == 3
+    assert summary["by_kind"]["micro"]["pages_per_dollar"] is None
+    incomplete = parallel.summarize_rates([status, {"kind": "micro"}], 40, [])
+    assert incomplete["by_kind"]["micro"]["valid_returned_questions_per_minute"] is None
+
+
+@pytest.mark.parametrize("flag", [
+    "--input", "--pool", "--pool-trusted-code", "--selector-trusted-code", "--input-trusted-code",
+])
+def test_auxiliary_paths_guarded_before_admission(tmp_path, monkeypatch, flag):
+    seen = []
+    def guarded(path):
+        seen.append(path)
+        return tmp_path / "approved"
+    monkeypatch.setattr(parallel, "guard_path", guarded)
+    for argument in ([flag, "source"], [flag + "=source"]):
+        out = parallel.validate_plan([{"name": "probe", "kind": "admission", "arguments": argument}], 1)
+        assert str(tmp_path / "approved") in " ".join(out[0]["arguments"])
+    assert seen == [Path("source"), Path("source")]
+
+
+def test_auxiliary_replay_obeys_cpu_capacity():
+    active = [{"kind": "admission"}, {"kind": "diagram"}, {"kind": "candidate"}]
+    ordered = [{"kind": "diagram"}, {"kind": "admission"}, {"kind": "micro"}]
+    assert parallel.next_launch_index(ordered, active, 6) == 2
