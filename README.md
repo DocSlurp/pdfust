@@ -376,7 +376,7 @@ Selected natural-screen comparisons (all 16 intended pages remain scored):
 | YOLO + gated Haiku ordinal cells, gate row context, 512 px | 16 | 2 | 336 | 3.33 | 558.89 |
 | YOLO + Haiku, OCR300 + arrays + ordinal cells + column instructions, 512 px | 16 | 3 | 395 | 2.55 | 846.06 |
 
-Both cropped configurations beat the measured whole-page Opus configuration in
+The 1024-pixel JPEG90 Sonnet and Haiku crop configurations beat the measured whole-page Opus configuration in
 complete tables and exact cells at lower API cost. This compares complete input
 strategies, not model ability on identical images. Sonnet crops produce no extra
 tables; Haiku crops produce three on dense positive pages and fail two pages
