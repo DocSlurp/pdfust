@@ -4,13 +4,16 @@
 # ruff: noqa: ANN401, EM101, TRY003, PLC0415, PLR2004, C901, PLR0912, TRY301
 from __future__ import annotations
 
+import argparse
 import io
+import json
 import time
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from bench import generalization_vision_regions as regions
+from bench import generalization_vision_run as vision
 from bench.pipeline_layout_detector import MAX_BOXES, _box
 from bench.pipeline_layout_fusion import THRESHOLDS, fuse
 from bench.pipeline_layout_tiles import tile_windows
@@ -247,3 +250,42 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     result.update(wall_seconds=time.perf_counter() - began, cpu_seconds=time.process_time() - cpu)
     write_json(output / f"{record['id']}-result.json", result)
     return result
+
+
+def main() -> None:
+    """Expose only run inputs and model budget; proposal/crop settings stay frozen."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--generation-model", "--model", choices=vision.MODELS, default=vision.MODELS[1])
+    parser.add_argument(
+        "--generation-tokens", "--tokens", type=int, choices=(4096, 8192, 16384, 32768, 65536), default=16384
+    )
+    parser.add_argument("--pilot", action="store_true")
+    args = parser.parse_args()
+    config = {
+        "run_id": args.output.name,
+        "processor": "vision_multiscale",
+        "campaign": "P002",
+        "policy": "gated",
+        "layout_detector": "yolo",
+        "detector_tiles": "2x2",
+        "detector_fusion": "larger_containment",
+        "image_edge": 1024,
+        "jpeg_quality": 90,
+        "generation_model": args.generation_model,
+        "model": args.generation_model,
+        "generation_tokens": args.generation_tokens,
+        "pilot": args.pilot,
+        "order_seed": 20261010,
+        "normalize_rotation": False,
+        "rotation_mode": "preserve",
+        "ocr_empty": False,
+        "output_scope": "table_only",
+    }
+    report = vision.baseline.run(args.manifest, args.output, config)
+    print(json.dumps({key: value for key, value in report.items() if key != "results"}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
