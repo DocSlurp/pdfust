@@ -1,7 +1,7 @@
 """Verify and report complete P002 natural-PDF runs offline."""
 
 # Retained experiment schemas have heterogeneous dictionaries.
-# ruff: noqa: C901, PLR0912, EM101, TRY003
+# ruff: noqa: C901, PLR0912, EM101, TRY003, PLC0415
 from __future__ import annotations
 
 import argparse
@@ -46,6 +46,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "fa51763aa571aedd12f3b625174e80b2fc57f4485b0898bb2d1bef225f8a8449": "3745e7e reviewed pre-image/rubric runner",
         "944e10e8670b57b4f4067e4abc54015d45ded6198eb757f75c5d9875ac4f10b7": "42bf028",
         "a4ff7678b279a875935ce5f989eb81f92544873bab4974f510c343c70aab4964": "69f2d81",
         "baae56a9e99eb624502b1238a51a25f4751bd755752ad7499ae5187d98dfca2a": "1185a06",
@@ -203,6 +204,10 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         if processor in {"vision", "vision_regions", "vision_multiscale"}
         else {"pipeline_run.py", "pipeline_assembly.py"}
     )
+    if frozen.get("config", {}).get("gate_image_mode", "rgb") != "rgb":
+        required.add("p003_gate_image.py")
+    if frozen.get("config", {}).get("gate_instructions", "legacy") not in ("legacy", "region"):
+        required.add("p003_prompt_variants.py")
     if representation != "legacy":
         required.add("p003_transcription_design.py")
     if processor in {"vision_regions", "vision_multiscale"}:
@@ -290,6 +295,17 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         "p003_transcription_design.py", "generalization_vision_regions.py", "pipeline_vision_transcription.py",
     )):
         raise ValueError("Trusted transcription representation helpers differ from frozen code")
+    if "p003_gate_image.py" in required and comparison["p003_gate_image.py"] != "identical":
+        raise ValueError("Trusted gate image encoder differs from frozen code")
+    if "p003_prompt_variants.py" in required and comparison["p003_prompt_variants.py"] != "identical":
+        raise ValueError("Trusted semantic gate instruction helper differs from frozen code")
+    if (
+        frozen.get("config", {}).get("gate_image_mode", "rgb") != "rgb"
+        or frozen.get("config", {}).get("gate_instructions", "legacy") not in ("legacy", "region")
+    ) and any(comparison.get(name) != "identical" for name in (
+        "generalization_run.py", "pipeline_run.py", "pipeline_frontier.py",
+    )):
+        raise ValueError("Trusted gate treatment runtime or request builder differs from frozen code")
     historical_helpers = {}
     if processor == "hybrid" and comparison["generalization_hybrid_run.py"] != "identical":
         if (
@@ -324,6 +340,11 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         source_order == "original"
         and processor in {"regions", "hybrid"}
         and comparison["generalization_run.py"] != "identical"
+        and not (
+            hashes["generalization_run.py"] == "fa51763aa571aedd12f3b625174e80b2fc57f4485b0898bb2d1bef225f8a8449"
+            and frozen.get("config", {}).get("gate_image_mode", "rgb") == "rgb"
+            and frozen.get("config", {}).get("gate_instructions", "legacy") in ("legacy", "region")
+        )
     ):
         raise ValueError("Original source order requires the exact current regional runner")
     if processor in {"regions", "hybrid"} and frozen.get("config", {}).get("generation_format") == "indices" and any(
@@ -600,6 +621,100 @@ def _verify_transcription_requests(
         if body != rebuilt or metadata.get("body_sha256") != sha(encoded) or metadata.get("body_bytes") != len(encoded):
             raise ValueError("Actual transcription body differs from frozen representation")
 
+
+
+def _gate_urls(value: Any) -> list[Any]:  # noqa: ANN401 - recursive JSON image parts.
+    urls = []
+    if isinstance(value, dict):
+        if value.get("type") == "image_url" and isinstance(value.get("image_url"), dict):
+            urls.append(value["image_url"].get("url"))
+        for child in value.values():
+            urls.extend(_gate_urls(child))
+    elif isinstance(value, list):
+        for child in value:
+            urls.extend(_gate_urls(child))
+    return urls
+
+def _verify_gate_instructions(directory: Path, prediction: dict[str, Any], config: dict[str, Any]) -> None:
+    """Rebuild the gate template around retained literal evidence, using frozen rubric."""
+    from bench.generalization_run import GATE_CHOICES, gate_instructions
+    from bench.pipeline_frontier import MODELS
+    from bench.pipeline_run import body as gate_body
+
+    style = config["gate_instructions"]
+    evidence = prediction.get("gate_instruction_evidence", [])
+    indexes = [entry["request_index"] for entry in evidence]
+    required = {i for i, call in enumerate(prediction.get("calls", []))
+                if call.get("kind") != "source_id_generation"}
+    if len(indexes) != len(set(indexes)) or not required <= set(indexes):
+        raise ValueError("Semantic gate evidence omits or duplicates an actual gate attempt")
+    regions = {region["id"] for region in prediction.get("region_plan", {}).get("regions", [])}
+    primary_regions: set[str] = set()
+    for entry in evidence:
+        if entry["variant"] != style or entry["region_id"] not in regions:
+            raise ValueError("Semantic gate evidence differs from frozen variant or source region")
+        model = config["gate_review_model"] if entry["region_id"] in primary_regions else config["model"]
+        primary_regions.add(entry["region_id"])
+        actual = _read(directory / f"{prediction['id']}-request-{entry['request_index']}.json")
+        if model in MODELS:
+            state = actual["messages"][2]["content"]
+            prompt = state if isinstance(state, str) else state[0]["text"]
+        else:
+            state = actual["state"]
+            prompt = state if isinstance(state, str) else state[0]
+        urls = _gate_urls(actual)
+        if not isinstance(prompt, str) or len(urls) > 1:
+            raise ValueError("Semantic gate literal evidence is malformed")
+        expected = gate_body(model, prompt, GATE_CHOICES, urls[0] if urls else None,
+                             instructions=gate_instructions(config))
+        if config.get("answer_tokens") and model in MODELS:
+            expected["max_tokens"] = config["answer_tokens"]
+        if actual != expected:
+            raise ValueError("Actual gate body differs from frozen semantic instructions")
+
+
+def _verify_gate_images(
+    directory: Path, prediction: dict[str, Any], config: dict[str, Any]) -> None:
+    """Replay encoded gate payloads from frozen source, including failed attempts."""
+    import pylopdf
+    from bench.generalization_run import region_image
+    from bench.p003_gate_image import transform
+
+    frozen = _read(directory / "frozen.json")
+    records = [r for r in frozen["records"] if r["id"] == prediction["id"]]
+    if len(records) != 1:
+        raise ValueError("Gate encoding source record identity mismatch")
+    record = records[0]
+    data = guard_path(Path(record["pdf_path"])).read_bytes()
+    if sha(data) != record["pdf_sha256"]:
+        raise ValueError("Gate encoding source PDF changed")
+    evidence = prediction.get("gate_image_evidence", [])
+    indexes = [e["request_index"] for e in evidence]
+    required = {i for i, call in enumerate(prediction.get("calls", []))
+                if call.get("kind") != "source_id_generation"}
+    if len(indexes) != len(set(indexes)) or not required <= set(indexes):
+        raise ValueError("Gate image evidence omits or duplicates an actual gate attempt")
+    regions = {r["id"]: r for r in prediction.get("region_plan", {}).get("regions", [])}
+    with pylopdf.open(stream=data) as document:
+        page = document[record["page_number"]]
+        normalize = config.get("normalize_rotation", True) and config.get("rotation_mode", "always") != "preserve"
+        if normalize and config.get("rotation_mode", "always") == "native":
+            normalize = bool(page.get_text("words"))
+        if normalize and page.rotation:
+            page.set_rotation(0)
+        if prediction.get("effective_rotation", page.rotation) != page.rotation:
+            raise ValueError("Gate source rotation differs from frozen acquisition")
+        for entry in evidence:
+            region = regions[entry["region_id"]]
+            url, metadata = region_image(page, region["bbox"], config.get("gate_image_edge", config["image_edge"]))
+            expected_url, expected_metadata = transform(url, metadata, config["gate_image_mode"])
+            if entry["image"] != expected_metadata:
+                raise ValueError("Gate encoding metadata differs from deterministic source replay")
+            body = _read(directory / f"{prediction['id']}-request-{entry['request_index']}.json")
+            urls = _gate_urls(body)
+            if urls != [expected_url]:
+                raise ValueError("Actual gate pixels differ from frozen source encoding")
+
 def verify_output(
     directory: Path, prediction: dict[str, Any], *, processor: str, source_order: str | None = None,
     config: dict[str, Any] | None = None
@@ -615,6 +730,10 @@ def verify_output(
         frozen_path = directory / "frozen.json"
         config = _read(frozen_path).get("config", {}) if frozen_path.is_file() else {}
     representation = config.get("transcription_representation", "legacy")
+    if processor == "regions" and config.get("gate_instructions", "legacy") not in ("legacy", "region"):
+        _verify_gate_instructions(directory, prediction, config)
+    if processor == "regions" and config.get("gate_image_mode", "rgb") != "rgb":
+        _verify_gate_images(directory, prediction, config)
     if processor == "hybrid":
         return _verify_hybrid_output(directory, prediction, config=config)
     if processor == "vision_regions":

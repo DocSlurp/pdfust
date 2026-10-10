@@ -45,6 +45,8 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
         "detector_residual": "retain", "detector_boundary": "retain",
         "repeat_index": args.repeat_index, "preset": args.preset,
     }
+    if args.gate_image_mode != "rgb":
+        config["gate_image_mode"] = args.gate_image_mode
     if args.transport_concurrency == P003_TRANSPORT_CONCURRENCY:
         config["transport_concurrency"] = 3
     if args.preset == "gated_ordinal":
@@ -94,7 +96,11 @@ def main() -> None:
         "--gate-packet", choices=("legacy", "fullwords", "compact", "sample64", "image_only", "lineflow"),
         default="legacy",
     )
-    parser.add_argument("--gate-instructions", choices=("legacy", "region"), default="legacy")
+    parser.add_argument(
+        "--gate-instructions",
+        choices=("legacy", "region", "visual_schema", "recall_first", "skeptical", "local_relations"), default="legacy",
+    )
+    parser.add_argument("--gate-image-mode", choices=("rgb", "grayscale8", "rgb_palette16"), default="rgb")
     parser.add_argument("--gate-image-edge", type=int, choices=(128, 256, 400, 512, 768, 1024))
     parser.add_argument(
         "--region-proposal-arm", choices=("tracks_whole", "tracks_fixed2", "yolo"), default="tracks_whole",
@@ -114,6 +120,14 @@ def main() -> None:
         parser.error("Nonlegacy transcription representations require vision_regions or hybrid")
     if args.transport_concurrency == P003_TRANSPORT_CONCURRENCY and args.gate_provider != "openrouter":
         parser.error("Transport concurrency three requires OpenRouter")
+    if args.gate_image_mode != "rgb" and (
+        args.preset != "gated_ordinal" or args.text_gate or args.gate_provider != "openrouter"
+    ):
+        parser.error("NonRGB gate encoding requires gated_ordinal OpenRouter with pixels")
+    if args.gate_instructions not in ("legacy", "region") and (
+        args.preset != "gated_ordinal" or args.gate_provider != "openrouter"
+    ):
+        parser.error("Semantic gate variants require gated_ordinal OpenRouter")
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     report = pipeline_run.run(guard_path(args.manifest), guard_path(args.output), configuration(args))
     print(json.dumps({k: v for k, v in report.items() if k != "results"}, indent=2))

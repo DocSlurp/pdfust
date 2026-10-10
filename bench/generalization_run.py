@@ -11,12 +11,13 @@ import json
 import math
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from bench import pipeline_run as baseline
 from bench.pipeline_admission import admission_packet
 from bench.pipeline_assembly import native_state, packet, propose, validate
 from bench.pipeline_column_consensus import propose as column_proposals
+from bench.pipeline_frontier import MODELS as CHAT_MODELS
 from bench.pipeline_readable_packet import packet as readable_packet
 from bench.silver import guard_path, sha, write_json
 
@@ -157,6 +158,27 @@ def vector_identity(vector: dict[str, Any]) -> str:
     )
 
 
+def gate_instructions(config: dict[str, Any]) -> str | None:
+    """Resolve the frozen semantic treatment without reading evidence."""
+    style = config.get("gate_instructions", "legacy")
+    if style == "legacy":
+        return None
+    if style == "region":
+        from bench.p003_gate_packet import GATE_INSTRUCTIONS
+
+        return GATE_INSTRUCTIONS
+    from bench.p003_prompt_variants import instructions
+
+    return instructions(style)
+
+
+GATE_CHOICES = {
+    "table": "This region has a shared record/attribute schema supporting table cells.",
+    "prose": "This region contains prose, forms, formulas or other non-table content.",
+    "unresolved": "Available source evidence cannot establish whether this region contains a table.",
+}
+
+
 def _request(
     client: DecisionClient | None,
     result: dict[str, Any],
@@ -172,8 +194,9 @@ def _request(
 ) -> dict[str, Any]:
     if client is None:
         raise ValueError("Hosted region selection requires the coordinated metered client")
+    response: dict[str, Any]
     request = baseline.body(model or config["model"], prompt, choices, url, instructions=instructions)
-    if config.get("answer_tokens") and request["model"] in baseline.CHAT_MODELS:
+    if config.get("answer_tokens") and request["model"] in CHAT_MODELS:
         request["max_tokens"] = config["answer_tokens"]
     step = len(result["calls"])
     campaign = config.get("campaign", "P002")
@@ -191,11 +214,11 @@ def _request(
                 client.stopped = True
             raise
         result["calls"].append(response)
-        return response["answer"]
+        return cast("dict[str, Any]", response["answer"])
     write_json(output / f"{result['id']}-request-{step}.json", request)
     response = baseline.call(client, request, tag)
     result["calls"].append(response)
-    return response["answer"]
+    return cast("dict[str, Any]", response["answer"])
 
 
 def generate_region(
@@ -342,14 +365,17 @@ def select_region(
     if config.get("gate_image", True) and config.get("gate_image_edge") is not None:
         gate_url, gate_metadata = region_image(page, region["bbox"], config["gate_image_edge"])
         info["gate_image_metadata"] = gate_metadata
+    if config.get("gate_image_mode", "rgb") != "rgb":
+        from bench.p003_gate_image import transform
+
+        gate_url, gate_metadata = transform(
+            gate_url, info.get("gate_image_metadata", metadata), config["gate_image_mode"],
+        )
+        info.update(gate_image_mode=config["gate_image_mode"], gate_image_metadata=gate_metadata)
     if "gate_image" in config:
         info["gate_image"] = bool(gate_url)
     viewport = "Image viewport in global page coordinates: " + json.dumps(region["bbox"]) + ".\n" if gate_url else ""
-    gate_instructions = None
-    if config.get("gate_instructions") == "region":
-        from bench.p003_gate_packet import GATE_INSTRUCTIONS
-
-        gate_instructions = GATE_INSTRUCTIONS
+    instructions = gate_instructions(config)
     if config.get("gate_packet", "legacy") != "legacy":
         from bench.p003_gate_packet import packet as gate_packet
 
@@ -362,20 +388,34 @@ def select_region(
         from bench.pipeline_row_context import context
 
         prompt += "\n" + context(snapshot)
-    choices = {
-        "table": "This region has a shared record/attribute schema supporting table cells.",
-        "prose": "This region contains prose, forms, formulas or other non-table content.",
-        "unresolved": "Available source evidence cannot establish whether this region contains a table.",
-    }
+    choices = dict(GATE_CHOICES)
+    if config.get("gate_image_mode", "rgb") != "rgb":
+        result.setdefault("gate_image_evidence", []).append({
+            "region_id": region["id"], "request_index": len(result["calls"]), "image": gate_metadata,
+        })
+    if config.get("gate_instructions", "legacy") not in ("legacy", "region"):
+        result.setdefault("gate_instruction_evidence", []).append({
+            "region_id": region["id"], "request_index": len(result["calls"]),
+            "variant": config["gate_instructions"],
+        })
     answer = _request(
-        client, result, config, output, region["id"], prompt, choices, gate_url, instructions=gate_instructions,
+        client, result, config, output, region["id"], prompt, choices, gate_url, instructions=instructions,
     )
     probabilities = sorted(answer.get("probabilities", {}).values(), reverse=True)
     if config.get("gate_review_model") and probabilities and probabilities[0] < baseline.GATE_REVIEW_SCORE:
         info["gate_primary"] = answer
+        if config.get("gate_image_mode", "rgb") != "rgb":
+            result.setdefault("gate_image_evidence", []).append({
+                "region_id": region["id"], "request_index": len(result["calls"]), "image": gate_metadata,
+            })
+        if config.get("gate_instructions", "legacy") not in ("legacy", "region"):
+            result.setdefault("gate_instruction_evidence", []).append({
+                "region_id": region["id"], "request_index": len(result["calls"]),
+                "variant": config["gate_instructions"],
+            })
         answer = _request(
             client, result, config, output, region["id"], prompt, choices, gate_url,
-            model=config["gate_review_model"], instructions=gate_instructions,
+            model=config["gate_review_model"], instructions=instructions,
         )
     info["admission"] = answer
     if answer["choice"] != "table":
@@ -584,7 +624,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--policy", choices=("native", "gated"), default="gated")
     parser.add_argument("--model", choices=baseline.MODELS, default=baseline.MODELS[0])
-    parser.add_argument("--gate-review-model", choices=baseline.CHAT_MODELS)
+    parser.add_argument("--gate-review-model", choices=CHAT_MODELS)
     parser.add_argument("--image-edge", type=int, choices=(0, 128, 256, 400, 512, 768, 1024, 1200), default=512)
     parser.add_argument("--region-words", type=int, default=256)
     parser.add_argument("--region-characters", type=int, default=8000)
@@ -602,7 +642,7 @@ def main() -> None:
     parser.add_argument("--answer-tokens", type=int, choices=(1024, 2048, 4096), default=2048)
     parser.add_argument("--packet-characters", type=int, choices=(25000, 80000, 128000), default=25000)
     parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
-    parser.add_argument("--generation-model", choices=baseline.CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
+    parser.add_argument("--generation-model", choices=CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
     parser.add_argument("--generation-format", choices=("anchors", "matrix", "indices"), default="anchors")
     parser.add_argument("--generation-evidence", choices=("objects", "arrays", "quarter"), default="objects")

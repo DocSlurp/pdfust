@@ -499,6 +499,27 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
         campaign != "P003" or workers != 1 or config.get("gate_provider", "openrouter") != "openrouter"
     ):
         raise ValueError("Transport concurrency three requires P003 OpenRouter with one local worker")
+    gate_instruction_style = config.get("gate_instructions", "legacy")
+    if gate_instruction_style not in (
+        "legacy", "region", "visual_schema", "recall_first", "skeptical", "local_relations",
+    ):
+        raise ValueError("Unknown semantic gate instruction variant")
+    if gate_instruction_style not in ("legacy", "region") and (
+        campaign != "P003" or config.get("processor") != "regions"
+        or config.get("assembly_method") != "gated_generate"
+        or config.get("gate_provider", "openrouter") != "openrouter"
+    ):
+        raise ValueError("Semantic gate variants require P003 gated regions with OpenRouter")
+    gate_image_mode = config.get("gate_image_mode", "rgb")
+    if gate_image_mode not in ("rgb", "grayscale8", "rgb_palette16"):
+        raise ValueError("Unknown gate image mode")
+    if gate_image_mode != "rgb" and (
+        campaign != "P003" or config.get("processor") != "regions"
+        or config.get("assembly_method") != "gated_generate" or config.get("gate_image", True) is not True
+        or config.get("gate_provider", "openrouter") != "openrouter"
+        or config.get("gate_image_edge", config.get("image_edge")) not in (128, 256, 400, 512, 768, 1024)
+    ):
+        raise ValueError("NonRGB gate encoding requires P003 gated regions with fixed OpenRouter pixels")
     if config.get("compact_packet") and config.get("readable_packet"):
         raise ValueError("Select only one optional packet encoding")
     if (config.get("retry_failed_index") is None) != (config.get("retry_reason") is None):
@@ -546,6 +567,8 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                     if workers == VISION_WORKERS else []
                 ),
                 *(["decision_concurrent.py"] if transport_concurrency == P003_TRANSPORT_CONCURRENCY else []),
+                *(["p003_gate_image.py"] if gate_image_mode != "rgb" else []),
+                *(["p003_prompt_variants.py"] if gate_instruction_style not in ("legacy", "region") else []),
                 "rolling_rows.py",
                 "rolling_topology.py",
                 "decision_evidence_designs.py",
