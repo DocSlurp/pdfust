@@ -86,13 +86,16 @@ def _transcribe(
         raise ValueError("Vision transcription requires the coordinated metered client")
     previous = _ledger(client)
     spent = sum(accounted_cost(row["accounted_usd"]) for row in previous if row.get("tag", "").startswith("P002/"))
-    if spent + 0.30 > baseline.WAVE_LIMIT:
+    reservation = 1.0 if body["model"] == "anthropic/claude-opus-5.5" else 0.30
+    if spent + reservation > baseline.WAVE_LIMIT:
         raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
     tag = f"P002/{config['run_id']}/{result['id']}/vision/0"
     before_indexes = {row["index"] for row in previous if "index" in row}
     began, cpu = time.perf_counter(), time.process_time()
     try:
-        response = client.request(body, tag=tag, max_body_bytes=MAX_BODY_BYTES, replay=False)
+        response = client.request(
+            body, tag=tag, max_body_bytes=MAX_BODY_BYTES, replay=False, reservation_usd=reservation
+        )
     except Exception:
         # The shared client retains charged reservations on transport failure.
         # Preserve them locally without provider error bodies or exception text.

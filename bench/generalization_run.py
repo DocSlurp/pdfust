@@ -163,11 +163,13 @@ def generate_region(
         raise ValueError("Generative assembly requires the coordinated metered client")
     ledger = json.loads(client.ledger.read_bytes())
     spent = sum(accounted_cost(e["accounted_usd"]) for e in ledger["requests"] if e.get("tag", "").startswith("P002/"))
-    if spent + 0.30 > baseline.WAVE_LIMIT:
+    generation_model = config.get("generation_model", "anthropic/claude-sonnet-5.5")
+    reservation = 1.0 if generation_model == "anthropic/claude-opus-5.5" else 0.30
+    if spent + reservation > baseline.WAVE_LIMIT:
         raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
     body = request(
         snapshot,
-        config.get("generation_model", "anthropic/claude-sonnet-5.5"),
+        generation_model,
         url=url,
         viewport=bbox,
         max_tokens=config.get("generation_tokens", 8192),
@@ -176,7 +178,11 @@ def generate_region(
     write_json(output / f"{result['id']}-request-{step}.json", body)
     began, cpu = time.perf_counter(), time.process_time()
     response = client.request(
-        body, tag=f"P002/{config['run_id']}/{result['id']}/{region_id}/{step}", max_body_bytes=750_000, replay=False
+        body,
+        tag=f"P002/{config['run_id']}/{result['id']}/{region_id}/{step}",
+        max_body_bytes=750_000,
+        replay=False,
+        reservation_usd=reservation,
     )
     result["calls"].append(
         {
