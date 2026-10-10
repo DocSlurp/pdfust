@@ -341,6 +341,15 @@ Supplementary positive-page macro exact-cell recall is 66.97% for Sonnet crops,
 52.90% for Haiku crops and 62.01% for Opus whole-page input. Thus Haiku's higher
 micro cell count does not establish a win under equal page weighting.
 
+Repeatability is a material limitation: the Sonnet hybrid run sent all 19 crop
+requests byte-for-byte identically to the standalone crop run, but recovered
+289 exact cells instead of 982. A fresh malformed response on one dense page
+caused atomic rejection of the page that previously contributed 692 exact cells.
+The detector proposals also matched on all sixteen pages. This difference is
+response variation and strict failure handling, not evidence that native/image
+composition reduces model accuracy. The single-run crop result is promising,
+but not a stable reliability estimate.
+
 These are exploratory serial runs with concurrent research workloads. Rates count
 complete emitted outputs and API charges, including failed calls; they do not
 count only correct tables. The detailed report includes topology, missing/extra
