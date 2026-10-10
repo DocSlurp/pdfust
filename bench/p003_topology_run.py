@@ -190,6 +190,7 @@ def prepare_page(
         else:
             assigned[word["id"]] = owners[0] if owners else None
     regions, states = [], {}
+    source_lookup = {w["id"]: w for w in source["words"]}
     for old in original_plan["regions"]:
         remaining = [identifier for identifier in old["source_ids"] if assigned[identifier] is None]
         tables = []
@@ -205,7 +206,7 @@ def prepare_page(
             "source_ids": remaining,
             "source": {
                 "page_size": source["page_size"],
-                "words": [w for w in source["words"] if w["id"] in set(remaining)],
+                "words": [source_lookup[identifier] for identifier in remaining],
             },
         }
         kept = {i for table in tables for cell in table["cells"] for i in cell["source_ids"]}
