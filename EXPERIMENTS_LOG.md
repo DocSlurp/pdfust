@@ -1486,7 +1486,7 @@ positive provider-reported charges, the preserved USD 0.30 interrupted reservati
 and USD 0.30 active reservation. Conservative P002 accounting is USD 5.57082344;
 reservations are not charges. No local GPU, remote GPU or rented host was used.
 
-### P002 checkpoint: 2026-10-10 05:07 UTC
+### P002 checkpoint: 2026-10-10 05:04 UTC
 
 The fixed full276 Haiku expansion now has 270 verified complete source-owned
 outputs, 166/249 complete tables, 6,329 exact text anchors and 136/172 exact

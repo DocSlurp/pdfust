@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 MAX_REQUESTS = 32
 MAX_BODY_BYTES = 750_000
-IMAGE_EDGES = (512, 1024, 1200, 2048)
+IMAGE_EDGES = (400, 512, 768, 1024, 1200, 2048)
 
 
 def image(page: Any, edge: int, quality: int = 90) -> tuple[str, dict[str, Any]]:
@@ -203,12 +203,12 @@ def main() -> None:
     parser.add_argument("--generation-model", choices=MODELS, default=MODELS[1])
     parser.add_argument("--image-edge", type=int, choices=IMAGE_EDGES, default=1200)
     parser.add_argument("--jpeg-quality", type=int, choices=(50, 70, 90), default=90)
-    parser.add_argument("--detector-crops", action="store_true", help="Fixed 1024-pixel JPEG90 table crops")
+    parser.add_argument("--detector-crops", action="store_true", help="Fixed 400/512/768/1024-pixel JPEG90 table crops")
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=16384)
     parser.add_argument("--pilot", action="store_true")
     args = parser.parse_args()
-    if args.detector_crops and (args.image_edge != 1024 or args.jpeg_quality != 90):  # noqa: PLR2004
-        parser.error("Detector crops require explicit --image-edge 1024 and --jpeg-quality 90")
+    if args.detector_crops and (args.image_edge not in (400, 512, 768, 1024) or args.jpeg_quality != 90):  # noqa: PLR2004
+        parser.error("Detector crops require --image-edge 400/512/768/1024 and --jpeg-quality 90")
     config = vars(args).copy()
     config.pop("manifest")
     config.pop("output")

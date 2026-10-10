@@ -75,16 +75,24 @@ def test_aggregate_slot_limit_is_independent_of_individual_region_admission() ->
         regions.compose(values, [0, 0, 600, 800])
 
 
-def test_crop_preserves_exact_fractional_viewport_and_fixed_jpeg_edge() -> None:
+@pytest.mark.parametrize("edge", [400, 512, 768, 1024])
+def test_crop_preserves_exact_fractional_viewport_and_fixed_jpeg_edge(edge: int) -> None:
     image = Image.new("RGB", (4096, 2048), "white")
-    url, metadata = regions._crop(image, [0, 0, 600, 300], [10.25, 20.75, 110.5, 70.125])
+    url, metadata = regions._crop(image, [0, 0, 600, 300], [10.25, 20.75, 110.5, 70.125], edge)
     assert metadata["image_viewport"] == [10.25, 20.75, 110.5, 70.125]
-    assert metadata["image_size"][0] == 1024
+    assert metadata["image_size"][0] == edge
+    assert metadata["image_edge"] == edge
     assert metadata["image_quality"] == 90
     assert metadata["body_limit_adaptation"] is False
     with Image.open(io.BytesIO(base64.b64decode(url.split(",", 1)[1]))) as decoded:
-        assert max(decoded.size) == 1024
+        assert max(decoded.size) == edge
         assert decoded.mode == "RGB"
+
+
+@pytest.mark.parametrize("edge", [True, 512.0, 0, 401, 2048])
+def test_invalid_crop_edge_refuses_before_pixels(edge: Any) -> None:
+    with pytest.raises(ValueError, match="fixed comparison"):
+        regions._crop(None, [0, 0, 600, 300], [10, 20, 100, 70], edge)
 
 
 class Detector:
