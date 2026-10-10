@@ -35,6 +35,8 @@ SETTLEMENT_FIELDS = {
     "provider",
     "generation_id",
     "provider_reported_usd",
+    "upstream_inference_usd",
+    "gateway_reported_usd",
     "accounted_usd",
     "cost_status",
     "catalog_fetched_at",
