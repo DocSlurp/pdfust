@@ -33,6 +33,7 @@ from bench.pipeline_source_order import render_source
 from bench.silver import canonical, guard_path, sha, write_json
 
 STYLES = ("legacy", "region", "visual_schema", "recall_first", "skeptical", "local_relations")
+GATEWAY_MODELS = ("liquid/d1", "convaiinnovations/laya", "convaiinnovations/laya-free")
 PACKETS = ("legacy", "fullwords", "compact", "sample64", "image_only", "lineflow")
 TRUNCATION_RISK_MODELS = ("cloudflare/clef-flash", "cloudflare/clef")
 BASELINE_CODE = (
@@ -62,6 +63,8 @@ EXTRA_CODE = (
     "research_policy.py",
     "p003_transport.py",
     "decision_gateway_vision.py",
+    "decision_oplog_run.py",
+    "decision_oplog.py",
 )
 
 
@@ -176,8 +179,24 @@ def gate_request(
     )
     if config.get("answer_tokens") and config["model"] in CHAT_MODELS:
         body["max_tokens"] = config["answer_tokens"]
+    transport_metadata = {}
+    if config.get("gate_provider", "openrouter") == "vercel":
+        from bench.decision_gateway import ENDPOINT as TYPESAFE_ENDPOINT
+        from bench.decision_gateway import request_identity
+        from bench.decision_gateway_vision import ENDPOINT as NATIVE_ENDPOINT
+        from bench.p003_transport import gateway_wire
+
+        body, native = gateway_wire(body)
+        endpoint = NATIVE_ENDPOINT if native else TYPESAFE_ENDPOINT
+        encoded = json.dumps(body, separators=(",", ":")).encode()
+        transport_metadata = {
+            "gateway": "vercel",
+            "endpoint": endpoint,
+            "request_identity_sha256": request_identity(encoded, endpoint=endpoint),
+        }
     encoded = json.dumps(body, separators=(",", ":")).encode()
     return body, {
+        **transport_metadata,
         "packet": metadata,
         "evidence_utf8_bytes": len(prompt.encode()),
         "evidence_sha256": sha(prompt.encode()),
@@ -214,6 +233,52 @@ def compose_selected(
         for region in plan["regions"]
     ]
     return state, "\n".join(text for _, text in sorted(rendered))
+
+
+def parse_gate_response(
+    body: dict[str, Any],
+    raw: dict[str, Any],
+    config: dict[str, Any],
+) -> dict[str, Any]:
+    """Replay documented raw provider envelopes without inferring alternate formats."""
+    from bench.decision_oplog_run import parse_choice
+    from bench.pipeline_frontier import parse as parse_chat
+
+    if config.get("gate_provider", "openrouter") == "vercel":
+        from bench.decision_gateway import normalize_response
+        from bench.decision_gateway_vision import normalize_answers
+
+        normalized = normalize_answers(raw, body) if body["model"] == "liquid/d1" else normalize_response(raw)
+        return parse_choice(normalized, set(regions.GATE_CHOICES))
+    if body["model"] in CHAT_MODELS:
+        return parse_chat(raw, tuple(regions.GATE_CHOICES))
+    return parse_choice(raw, set(regions.GATE_CHOICES))
+
+
+def gateway_call(client: Any, body: dict[str, Any], tag: str) -> dict[str, Any]:
+    """Make a serial root Gateway call with shared pricing, policy, and typed parsing."""
+    from bench.decision_oplog_run import parse_choice
+
+    if getattr(client, "stopped", False):
+        raise RuntimeError("P003 Gateway arm stopped after a transport/admission failure")
+    spent = sum(accounted_cost(entry["accounted_usd"]) for entry in _entries(client, "P003/"))
+    if spent + 0.30 > pipeline.WAVE_LIMIT:
+        raise RuntimeError("P003 Gateway reservation would exceed its USD50 wave cap")
+    started, cpu = time.perf_counter(), time.process_time()
+    try:
+        response = client.request(body, tag=tag, replay=False, max_body_bytes=750_000)
+        answer = parse_choice(response["result"], set(regions.GATE_CHOICES))
+    except Exception:
+        client.stopped = True
+        raise
+    return {
+        "answer": answer,
+        "entry": response["entry"],
+        "usage": response["result"].get("usage", {}),
+        "replayed": response["replayed"],
+        "client_wall_seconds": time.perf_counter() - started,
+        "client_cpu_seconds": time.process_time() - cpu,
+    }
 
 
 def process(
@@ -305,9 +370,8 @@ def process(
                         info.update(image=image, evidence=evidence, request_index=step, admission_reason="pending")
                         write_json(output / f"{identifier}-request-{step}.json", body)
                         stage = "gate"
-                        answer = pipeline.call(
-                            client, body, f"P003/{config['run_id']}/{identifier}/{region['id']}/{step}"
-                        )
+                        call = gateway_call if config.get("gate_provider", "openrouter") == "vercel" else pipeline.call
+                        answer = call(client, body, f"P003/{config['run_id']}/{identifier}/{region['id']}/{step}")
                         result["calls"].append(answer)
                         choice = answer["answer"]["choice"]
                         if choice not in regions.GATE_CHOICES:
@@ -426,7 +490,9 @@ def run(
         "run_id": _identifier(output.name),
         "baseline_source_order": original_frozen["config"].get("source_order", "legacy"),
     }
-    if config["model"] not in (*DECISION_MODELS, *CHAT_MODELS):
+    provider = config.get("gate_provider", "openrouter")
+    allowed_models = GATEWAY_MODELS if provider == "vercel" else (*DECISION_MODELS, *CHAT_MODELS)
+    if config["model"] not in allowed_models:
         raise ValueError("Unknown frozen gate model")
     if (
         config["gate_image_edge"] not in EDGES
@@ -438,9 +504,11 @@ def run(
         or type(config["gate_image"]) is not bool
         or type(config["gate_row_evidence"]) is not bool
         or (not config["gate_image"] and config["gate_image_mode"] != "rgb")
-        or config.get("gate_provider", "openrouter") != "openrouter"
+        or provider not in ("openrouter", "vercel")
+        or (provider == "vercel" and config["transport_concurrency"] != 1)
+        or (provider == "vercel" and config["model"] != "liquid/d1" and config["gate_image"])
     ):
-        raise ValueError("Invalid gate-only treatment; OpenRouter and independent bounded modes required")
+        raise ValueError("Invalid gate-only treatment; Gateway requires serial d1 or text-only Laya")
     output.mkdir(parents=True, exist_ok=False)
     copied = output / "baseline"
     copied.mkdir()
@@ -494,9 +562,31 @@ def run(
     }
     write_json(output / "frozen.json", frozen)
     if client is None:
-        from bench.p003_client import P003ConcurrentClient, P003DecisionClient
+        if provider == "vercel":
+            from bench.decision_gateway import GatewayDecisionClient
+            from bench.decision_gateway_vision import GatewayVisionDecisionClient
 
-        client = (P003ConcurrentClient if config["transport_concurrency"] == 3 else P003DecisionClient)()
+            client = (GatewayVisionDecisionClient if config["model"] == "liquid/d1" else GatewayDecisionClient)()
+        else:
+            from bench.p003_client import P003ConcurrentClient, P003DecisionClient
+
+            client = (P003ConcurrentClient if config["transport_concurrency"] == 3 else P003DecisionClient)()
+    if provider == "vercel":
+        from bench.decision_gateway import ENDPOINT as TYPESAFE_ENDPOINT
+        from bench.decision_gateway_vision import ENDPOINT as NATIVE_ENDPOINT
+
+        expected_endpoint = NATIVE_ENDPOINT if config["model"] == "liquid/d1" else TYPESAFE_ENDPOINT
+        if client.endpoint != expected_endpoint:
+            raise ValueError("Injected Gateway client endpoint differs from the authenticated model route")
+        frozen["gateway_pricing"] = {
+            "endpoint": client.endpoint,
+            "gateway": "vercel",
+            "catalog": deepcopy(client.catalog),
+            "scope": "Gateway-specific client catalog frozen before calls; positive provider charges take precedence",
+        }
+        write_json(output / "gateway-prices.json", frozen["gateway_pricing"])
+        frozen["gateway_pricing_sha256"] = sha((output / "gateway-prices.json").read_bytes())
+        write_json(output / "frozen.json", frozen)
     prefix = f"P003/{config['run_id']}/"
     if _entries(client, prefix):
         raise ValueError("Fresh gate run ID already exists in the persistent ledger")
@@ -541,7 +631,10 @@ def main() -> None:
     parser.add_argument("--trusted-code", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--run-hosted", action="store_true")
-    parser.add_argument("--model", choices=(*DECISION_MODELS, *CHAT_MODELS), required=True)
+    parser.add_argument(
+        "--model", choices=tuple(dict.fromkeys((*DECISION_MODELS, *CHAT_MODELS, *GATEWAY_MODELS))), required=True
+    )
+    parser.add_argument("--gate-provider", choices=("openrouter", "vercel"), default="openrouter")
     parser.add_argument("--gate-image-edge", choices=EDGES, type=int, default=512)
     parser.add_argument("--gate-image-mode", choices=MODES, default="rgb")
     parser.add_argument("--gate-packet", choices=PACKETS, default="compact")
@@ -556,6 +649,8 @@ def main() -> None:
         if key not in ("baseline", "trusted_code", "output", "text_gate")
     }
     config["gate_image"] = not args.text_gate
+    if config["gate_provider"] == "openrouter":
+        del config["gate_provider"]
     report = run(args.baseline, args.trusted_code, args.output, config)
     print(
         json.dumps({key: value for key, value in report.items() if key not in ("results", "baseline_report")}, indent=2)

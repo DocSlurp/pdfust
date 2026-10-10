@@ -3,8 +3,8 @@
 Prepared CPU-only on 2026-10-10. `bench.p003_gate_run` is a standalone opt-in
 runner. Root supplies the coordinated serial or three-way transport client;
 tests inject a fake client. There is no default inference and no repeated OCR,
-source extraction, detector work, or generation. OpenRouter is initially the
-only transport; Gateway compatibility is a separate follow-up.
+source extraction, detector work, or generation. OpenRouter retains its existing default transport; explicit Gateway treatment
+uses a separately frozen serial route.
 
 The authorized baseline is
 `pipeline-p003/screen-ordinal-ocr300-512-r0`; the independent root-approved code
@@ -101,9 +101,44 @@ baseline/trust-map hashes, complete output comparisons, per-page result hashes,
 and timing scope; SHA-256
 `5de1f4b0fc0ff144db415b29c0490062ed49210411b7b9a86dd7d144d96aa968`.
 
-Twelve in-process tests cover positive/negative/abstained selections, atomic
+Twenty in-process tests cover positive/negative/abstained selections, atomic
 transport failure, no repeated extraction/generation, exact c0 fallback,
 independent trust refusal, malformed complete state refusal, baseline failures,
 source-policy bypasses, no rendering for text gates, unknown/reserved cost
 separation, frozen copies, explicit opt-in, and exact response byte preservation.
 No subprocess or process-group cleanup occurs.
+
+
+## Serial Gateway follow-up
+
+`--gate-provider vercel` admits exactly `liquid/d1` or text-only
+`convaiinnovations/laya`/`convaiinnovations/laya-free`, with transport concurrency
+one. The existing authenticated `p003_transport.gateway_wire` preserves the
+same literal packet and rubric. d1 uses documented native `/v1/decisions` input
+text/image parts and question arrays. Laya uses TypeSafe
+`/typesafe/v1/systemone`, literal string state, and Boundless-only routing.
+Laya image treatments and Gateway concurrency three are rejected before output
+creation. OpenRouter's default config omits `gate_provider`, and its bodies
+retain their existing bytes.
+
+The runner constructs only the selected Gateway client when no client is
+injected; it does not construct an OpenRouter client. Gateway calls use the
+existing shared persistent ledger, serving-specific prices, deadline/budget
+policy, fresh tags, and no replay/retry. A per-arm circuit breaker stops calls
+after a transport, admission, or typed-answer failure. Exact translated wire
+bodies are archived; `evidence.request_sha256` remains the body SHA, while
+`request_identity_sha256` additionally binds the serving endpoint. Original
+provider response bytes remain preserved separately from normalized answers.
+
+`frozen.gateway_pricing` records the exact client catalog and authenticated
+endpoint before calls, and `gateway-prices.json` is bound by
+`frozen.gateway_pricing_sha256`. The existing accounting gives positive
+provider-reported charges precedence; missing or zero charges use only the
+Gateway-specific serving rates/tokens where complete, otherwise reservations
+remain unresolved. The tests use supplied fake clients/catalogs, never keys or
+network requests. The pure verifier seam
+`parse_gate_response(actual_body, raw_provider_response, config)` dispatches
+only documented OR chat/native or Gateway TypeSafe/native normalizers and
+strict existing choice parsers. Tests exercise d1/Laya wire/body identity,
+raw-envelope decoding, serial circuit breaking, refusal of unsafe combinations,
+Gateway catalog freezing, and isolation from OpenRouter transmission.

@@ -14,6 +14,7 @@ import pytest
 from bench import generalization_run as regions
 from bench import p003_gate_run as gate
 from bench import pipeline_run as pipeline
+from bench.decision_gateway_vision import ENDPOINT
 from bench.pipeline_assembly import native_state, propose
 from bench.silver import canonical, sha, write_json
 from test_pipeline_run import record
@@ -284,3 +285,143 @@ def test_fresh_response_archive_preserves_exact_failed_attempt_bytes(tmp_path: P
 def test_no_hosted_optin_never_constructs_a_client(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="opt-in"):
         gate.run(tmp_path / "missing", tmp_path / "trust", tmp_path / "output", {"model": "irrelevant"})
+
+
+@pytest.mark.parametrize("model", gate.GATEWAY_MODELS)
+def test_gateway_wire_replay_uses_actual_endpoint_and_boundless_laya(
+    tmp_path: Path,
+    model: str,
+) -> None:
+    directory, _trusted, _rec, original = baseline(tmp_path)
+    config = {
+        **settings(directory),
+        "gate_provider": "vercel",
+        "model": model,
+        "gate_image": model == "liquid/d1",
+        "gate_image_mode": "rgb",
+    }
+    region = original["region_plan"]["regions"][0]
+    url = "data:image/png;base64,AA==" if config["gate_image"] else None
+    body, evidence = gate.gate_request(region, config, url)
+    raw: dict[str, Any]
+    if model == "liquid/d1":
+        assert evidence["endpoint"].endswith("/v1/decisions")
+        assert body["input"][0]["content"][1] == {"type": "input_image", "image_url": url, "detail": "high"}
+        raw = {
+            "answers": [
+                {
+                    "name": "q0",
+                    "type": "choice",
+                    "choice": "table",
+                    "probabilities": [
+                        {"value": key, "probability": float(key == "table")} for key in ("table", "prose", "unresolved")
+                    ],
+                }
+            ]
+        }
+    else:
+        assert evidence["endpoint"].endswith("/typesafe/v1/systemone")
+        assert body["providerOptions"] == {"gateway": {"only": ["boundless"]}}
+        assert isinstance(body["state"], str)
+        raw = {
+            "answers": {
+                "q0": {"type": "choice", "choice": "table", "probabilities": {"table": 1, "prose": 0, "unresolved": 0}}
+            }
+        }
+    assert gate.parse_gate_response(body, raw, config)["choice"] == "table"
+    assert evidence["request_sha256"] == sha(json.dumps(body, separators=(",", ":")).encode())
+    assert evidence["request_identity_sha256"] != evidence["request_sha256"]
+
+
+def test_gateway_process_uses_serial_shared_client_without_openrouter_calls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    directory, _trusted, rec, original = baseline(tmp_path)
+    ledger = tmp_path / "ledger.json"
+    write_json(ledger, {"requests": []})
+    requests = []
+
+    def request(body: dict[str, Any], **kwargs: object) -> dict[str, Any]:
+        requests.append((body, kwargs))
+        return {
+            "entry": {},
+            "replayed": False,
+            "result": {
+                "answers": {
+                    "q0": {
+                        "type": "choice",
+                        "choice": "table",
+                        "probabilities": {"table": 1, "prose": 0, "unresolved": 0},
+                    }
+                }
+            },
+        }
+
+    client = SimpleNamespace(ledger=ledger, request=request)
+    monkeypatch.setattr(pipeline, "call", lambda *_a: pytest.fail("Gateway reached OpenRouter"))
+    output = tmp_path / "fresh"
+    output.mkdir()
+    config = {**settings(directory), "gate_provider": "vercel", "model": "liquid/d1"}
+    result = gate.process(rec, config, output, client)
+    assert result["status"] == "ok"
+    assert result["tables"] == original["tables"]
+    assert requests[0][0]["model"] == "liquid/d1"
+    assert requests[0][1]["replay"] is False
+    assert result["regions"][0]["image"]["image_mode"] == "L"
+
+
+def test_gateway_circuit_breaker_prevents_another_request(tmp_path: Path) -> None:
+    ledger = tmp_path / "ledger.json"
+    write_json(ledger, {"requests": []})
+    calls = []
+
+    def fail(*_args: object, **_kwargs: object) -> dict[str, Any]:
+        calls.append(True)
+        raise RuntimeError("Mocked transport failure")
+
+    client = SimpleNamespace(ledger=ledger, request=fail)
+    with pytest.raises(RuntimeError, match="Mocked"):
+        gate.gateway_call(client, {}, "P003/fresh/page/r0/0")
+    with pytest.raises(RuntimeError, match="stopped"):
+        gate.gateway_call(client, {}, "P003/fresh/other/r0/0")
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    "config_delta",
+    [
+        {"model": "liquid/d1", "transport_concurrency": 3},
+        {"model": "convaiinnovations/laya", "gate_image": True},
+    ],
+)
+def test_gateway_parallel_and_laya_images_refused_before_output_creation(
+    tmp_path: Path,
+    config_delta: dict[str, Any],
+) -> None:
+    directory, trusted, _rec, _original = baseline(tmp_path)
+    config = {**settings(directory), "run_hosted": True, "gate_provider": "vercel", **config_delta}
+    with pytest.raises(ValueError, match="Gateway requires"):
+        gate.run(directory, trusted, tmp_path / "fresh", config, object())
+    assert not (tmp_path / "fresh").exists()
+
+
+def test_gateway_run_freezes_gateway_catalog_without_openrouter_credentials(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    directory, trusted, _rec, _original = baseline(tmp_path)
+    ledger = tmp_path / "ledger.json"
+    write_json(ledger, {"requests": []})
+    catalog = {"fetched_at": "fixture", "prices": {"liquid/d1": {"input": 0.1, "output": 0.2}}}
+    client = SimpleNamespace(ledger=ledger, endpoint=ENDPOINT, catalog=catalog)
+    monkeypatch.setattr(gate, "gateway_call", lambda *_a: {"answer": {"choice": "table"}, "usage": {}})
+    monkeypatch.setattr(pipeline, "call", lambda *_a: pytest.fail("Gateway reached OpenRouter"))
+    config = {**settings(directory), "run_hosted": True, "gate_provider": "vercel", "model": "liquid/d1"}
+    output = tmp_path / "fresh"
+    result = gate.run(directory, trusted, output, config, client)
+    assert result["complete_output_pages"] == 1
+    frozen = json.loads((output / "frozen.json").read_text())
+    assert frozen["gateway_pricing"]["catalog"] == catalog
+    assert frozen["gateway_pricing"]["endpoint"] == ENDPOINT
+    assert frozen["gateway_pricing_sha256"] == sha((output / "gateway-prices.json").read_bytes())
