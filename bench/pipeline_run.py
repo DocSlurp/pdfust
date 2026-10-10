@@ -176,10 +176,16 @@ def call(
     retry_reason: str | None = None,
 ) -> dict[str, Any]:
     """Root-only serial metering, fresh transmission, separate persistent wave cap."""
+    campaign = tag.split("/", 1)[0]
+    if campaign not in {"P001", "P002"}:
+        raise ValueError("Unknown complete-pipeline campaign")
     ledger = json.loads(client.ledger.read_bytes())
-    spent = sum(accounted_cost(e["accounted_usd"]) for e in ledger["requests"] if e.get("tag", "").startswith("P001/"))
+    spent = sum(
+        accounted_cost(e["accounted_usd"]) for e in ledger["requests"] if e.get("tag", "").startswith(campaign + "/")
+    )
     if spent + 0.30 > WAVE_LIMIT:
-        raise RuntimeError("P001 reservation would exceed its USD 50 wave cap")
+        message = f"{campaign} reservation would exceed its USD 50 wave cap"
+        raise RuntimeError(message)
     retry_options: dict[str, Any] = {}
     if retry_failed_index is not None:
         prior = next((e for e in ledger["requests"] if e.get("index") == retry_failed_index), None)
@@ -246,6 +252,7 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
     import pylopdf
 
     started, cpu = time.perf_counter(), time.process_time()
+    campaign = config.get("campaign", "P001")
     result: dict[str, Any] = {"id": record["id"], "status": "error", "tables": [], "calls": [], "stages": {}}
     retry_options = {k: config[k] for k in ("retry_failed_index", "retry_reason") if config.get(k) is not None}
     try:
@@ -324,7 +331,7 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     }
                     request = body(config["model"], prompt, choices, url)
                     write_json(output / f"{record['id']}-request-0.json", request)
-                    response = call(client, request, f"P001/{config['run_id']}/{record['id']}/0", **retry_options)
+                    response = call(client, request, f"{campaign}/{config['run_id']}/{record['id']}/0", **retry_options)
                     result["calls"].append(response)
                     probabilities = response["answer"].get("probabilities", {})
                     ranked = sorted(probabilities.values(), reverse=True)
@@ -342,7 +349,9 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                         }
                         review = body(config["gate_review_model"], prompt, choices, url)
                         write_json(output / f"{record['id']}-request-1.json", review)
-                        response = call(client, review, f"P001/{config['run_id']}/{record['id']}/1", **retry_options)
+                        response = call(
+                            client, review, f"{campaign}/{config['run_id']}/{record['id']}/1", **retry_options
+                        )
                         result["calls"].append(response)
                     result["admission_choice"] = response["answer"]["choice"]
                     if response["answer"]["choice"] != "table":
@@ -368,7 +377,7 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                         request = body(config["model"], prompt, choices, url)
                         write_json(output / f"{record['id']}-request-{step}.json", request)
                         response = call(
-                            client, request, f"P001/{config['run_id']}/{record['id']}/{step}", **retry_options
+                            client, request, f"{campaign}/{config['run_id']}/{record['id']}/{step}", **retry_options
                         )
                         result["calls"].append(response)
                         choice = response["answer"]["choice"]
@@ -393,7 +402,9 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     request = body(config["model"], prompt, choices, url)
                     step = len(result["calls"])
                     write_json(output / f"{record['id']}-request-{step}.json", request)
-                    response = call(client, request, f"P001/{config['run_id']}/{record['id']}/{step}", **retry_options)
+                    response = call(
+                        client, request, f"{campaign}/{config['run_id']}/{record['id']}/{step}", **retry_options
+                    )
                     result["calls"].append(response)
                     choice = response["answer"]["choice"]
                     state = next((c for c in candidates if c["id"] == choice), candidates[0])
@@ -417,10 +428,20 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
 
 def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, Any]:
     """Freeze code/source/config before any calls; reference loading is a separate command."""
+    campaign = config.get("campaign", "P001")
+    if campaign not in {"P001", "P002"}:
+        raise ValueError("Unknown complete-pipeline campaign")
     if config.get("compact_packet") and config.get("readable_packet"):
         raise ValueError("Select only one optional packet encoding")
     if (config.get("retry_failed_index") is None) != (config.get("retry_reason") is None):
         raise ValueError("An explicit retry requires both a ledger index and an investigation reason")
+    processor = process
+    if config.get("processor") == "regions":
+        from bench.generalization_run import process as region_process
+
+        processor = region_process
+    elif config.get("processor") not in (None, "whole"):
+        raise ValueError("Unknown pipeline processor")
     manifest = json.loads(guard_path(manifest_path).read_bytes())
     if manifest.get("split") != "DEV":
         raise ValueError("Pipeline requires explicit DEV sources")
@@ -450,6 +471,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "corpus_routes.py",
                 "silver_structure.py",
                 "silver.py",
+                *(["generalization_run.py", "pipeline_regions.py"] if config.get("processor") == "regions" else []),
                 *(["pipeline_column_consensus.py"] if config.get("column_consensus") else []),
                 *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
@@ -470,7 +492,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
     with Resources() as resources:
         results = []
         for record in records:
-            results.append(process(record, config, output, client))
+            results.append(processor(record, config, output, client))
             print(
                 json.dumps(
                     {
@@ -484,7 +506,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
             )
     calls = [c for row in results for c in row["calls"]]
     ledger = json.loads((ARTIFACTS / "ledger.json").read_bytes()) if client else {"requests": []}
-    charged = [e for e in ledger["requests"] if e.get("tag", "").startswith(f"P001/{config['run_id']}/")]
+    charged = [e for e in ledger["requests"] if e.get("tag", "").startswith(f"{campaign}/{config['run_id']}/")]
     accounted = sum(e["accounted_usd"] for e in charged)
     known = all(e["cost_status"] != "reserved" for e in charged)
     good = sum(r["status"] == "ok" for r in results)
@@ -514,6 +536,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
 def main() -> None:
     """Run source-only inference independently of private scoring."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--campaign", choices=("P001", "P002"), default="P001")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--policy", choices=POLICIES, required=True)
@@ -536,6 +559,7 @@ def main() -> None:
     args = parser.parse_args()
     config = {
         "run_id": args.output.name,
+        "campaign": args.campaign,
         "policy": args.policy,
         "model": args.model,
         "image_edge": args.image_edge,
