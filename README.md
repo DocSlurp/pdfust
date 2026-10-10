@@ -327,9 +327,14 @@ Selected natural-screen comparisons (all 16 intended pages remain scored):
 | Sonnet whole-page image transcription, 1200 px | 15 | 3 | 299 | 6.51 | 106.65 |
 | Haiku whole-page image transcription, 1200 px | 13 | 2 | 245 | 6.41 | 1,527.90 |
 | Opus whole-page image transcription, 2048 px JPEG50 | 16 | 3 | 300 | 6.84 | 34.59 |
-| Sonnet whole-page image transcription, 2048 px JPEG50 | 16 | 7 | 540 | 9.70 | 63.29 |
-| Sonnet detector-crop transcription, 1024 px JPEG90 | 16 | **5** | **982** | 6.88 | 69.41 |
-| Haiku detector-crop transcription, 1024 px JPEG90 | 14 | **4** | **687** | 8.57 | **1,538.73** |
+| Sonnet whole-page image transcription, 2048 px JPEG50 | 16 | **7** | 540 | 9.70 | 63.29 |
+| Haiku whole-page image transcription, 2048 px JPEG50, serial | 14 | 2 | 208 | 12.43 | 1,190.19 |
+| Haiku whole-page image transcription, 2048 px JPEG50, four workers | 13 | 4 | 216 | **30.93** | 1,181.46 |
+| Sonnet detector-crop transcription, 1024 px JPEG90 | 16 | 5 | **982** | 6.88 | 69.41 |
+| Haiku detector-crop transcription, 400 px JPEG90 | 16 | 3 | 225 | 8.49 | 1,779.68 |
+| Haiku detector-crop transcription, 512 px JPEG90 | 16 | 2 | 290 | 9.80 | **1,979.73** |
+| Haiku detector-crop transcription, 768 px JPEG90 | 16 | 3 | 403 | 9.87 | 1,849.20 |
+| Haiku detector-crop transcription, 1024 px JPEG90 | 14 | 4 | 687 | 8.57 | 1,538.73 |
 
 Both cropped configurations beat the measured whole-page Opus configuration in
 complete tables and exact cells at lower API cost. This compares complete input
@@ -350,9 +355,17 @@ response variation and strict failure handling, not evidence that native/image
 composition reduces model accuracy. The single-run crop result is promising,
 but not a stable reliability estimate.
 
-These are exploratory serial runs with concurrent research workloads. Rates count
+The matched smaller-crop controls recover 0, 2 and 110 exact cells on the dense
+pair at 400, 512 and 768 pixels, versus 416 at 1024. Remaining-page counts are
+225, 288 and 293, versus 271 at 1024 where two strict failures discard output.
+Thus 768 pixels is a useful measured compromise, but no single image edge wins
+every criterion. These are single fresh runs, without an outcome-based size selector.
+
+These are exploratory runs with concurrent research workloads; the four-worker
+arm is explicitly separate from serial controls. Rates count
 complete emitted outputs and API charges, including failed calls; they do not
-count only correct tables. The detailed report includes topology, missing/extra
+count only correct tables. Timing covers page processing and excludes freezing
+artifacts and client setup. The detailed report includes topology, missing/extra
 tables, positive and negative pages, CPU/RAM, provider usage, and failures.
 Source-ID assembly preserves literal evidence but cannot repair missing OCR text.
 Image transcription is a separately labeled table-only comparator. No model is
@@ -371,6 +384,11 @@ The [stage profile](bench/results/pipeline-native-fastpath.md)
 attributes 62.83% of page wall time to API calls, 29.07% to source extraction
 including OCR, and 6.37% to layout detection. Parent and worker CPU/RAM are
 reported separately; GPU use is unmeasured for hosted inference.
+An [offline partial-table experiment](bench/results/p002-partial-salvage.md)
+quarantines every invalid or conflicting table and keeps isolated valid tables
+as explicitly partial evidence. It recovers 629 cells from the failed Sonnet
+hybrid page, while adding one extra table. Complete-page scores and errors stay
+unchanged; this supports reviewable partial artifacts, not automatic acceptance.
 See the [plan](bench/GENERALIZATION_PLAN.md) and [corpus provenance](bench/GENERALIZATION_CORPUS.md).
 
 The [P001 complete-pipeline study](bench/results/pipeline-p001.md) now measures
