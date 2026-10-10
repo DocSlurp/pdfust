@@ -1046,12 +1046,18 @@ def score_run(
         }
     elif processor == "p003_topology_source":
         required |= {"p003_topology_run.py", "p003_topology_ownership.py", "pipeline_regions.py"}
+    elif processor == "p003_gate":
+        required |= {"p003_gate_run.py", "p003_gate_image.py", "p003_gate_packet.py", "pipeline_regions.py"}
     elif processor != "whole":
         raise ValueError("Unsupported frozen processor")
     if not required <= code.keys():
         raise ValueError("Frozen code lacks required processor dependencies")
-    incremental = processor in {"p003_boundary_repair", "p003_candidate_choice", "p003_topology_source"}
-    if processor == "p003_topology_source":
+    incremental = processor in {"p003_boundary_repair", "p003_candidate_choice", "p003_topology_source", "p003_gate"}
+    if processor == "p003_gate":
+        from bench.p003_gate_verification import verify_gate
+
+        baseline_provenance, repair_verified = verify_gate(directory, report, frozen, incremental_trusted_code)
+    elif processor == "p003_topology_source":
         from bench.p003_incremental_verification import verify_topology
 
         baseline_provenance, repair_verified = verify_topology(
@@ -1068,6 +1074,7 @@ def score_run(
     incremental_key = {
         "p003_candidate_choice": "incremental_ranking",
         "p003_topology_source": "incremental_ownership",
+        "p003_gate": "incremental_gate",
     }.get(processor, "incremental_repair")
     artifacts = []
     operational = 0
@@ -1174,6 +1181,8 @@ def score_run(
             if processor == "p003_candidate_choice"
             else "incremental ownership conditional on frozen topology and source"
             if processor == "p003_topology_source"
+            else "incremental admission conditional on frozen generation"
+            if processor == "p003_gate"
             else "incremental repair on retained artifacts"
         )
         if incremental
@@ -1195,6 +1204,8 @@ def score_run(
             if processor == "p003_candidate_choice"
             else ("topology_calls",)
             if processor == "p003_topology_source"
+            else ("calls",)
+            if processor == "p003_gate"
             else ("repair_calls",)
             if incremental
             else ("calls",),
