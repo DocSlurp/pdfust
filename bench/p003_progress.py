@@ -66,20 +66,12 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                 if sha(raw) != run["report_sha256"]:
                     raise ValueError("Provider cache source report differs from independently verified report hash")
                 report = json.loads(raw)
-                incremental_key = (
-                    "incremental_ranking"
-                    if report["config"].get("processor") == "p003_candidate_choice"
-                    else "incremental_repair"
-                    if report["config"].get("processor") == "p003_boundary_repair"
-                    else None
-                )
-                call_key = (
-                    "ranking_calls"
-                    if incremental_key == "incremental_ranking"
-                    else "repair_calls"
-                    if incremental_key
-                    else "calls"
-                )
+                incremental_key, call_key = {
+                    "p003_candidate_choice": ("incremental_ranking", "ranking_calls"),
+                    "p003_boundary_repair": ("incremental_repair", "repair_calls"),
+                    "p003_gate": ("incremental_gate", "calls"),
+                    "p003_topology_source": ("incremental_ownership", "topology_calls"),
+                }.get(report["config"].get("processor"), (None, "calls"))
                 run["provider_cache_usage"] = cache_usage(
                     [call for page in report["results"] for call in page.get(call_key, [])],
                     (report[incremental_key] if incremental_key else report).get("ledger_attempts"),
@@ -87,6 +79,8 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                 baseline_reports = report.get("candidate_generation_reports", [])
                 if report.get("baseline_report") is not None:
                     baseline_reports = [report["baseline_report"]]
+                if report.get("source_generation_report") is not None:
+                    baseline_reports = [report["source_generation_report"], report["topology_generation_report"]]
                 run["historical_provider_cache_usage"] = [
                     cache_usage(
                         [call for page in baseline["results"] for call in page.get("calls", [])],

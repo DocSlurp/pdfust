@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from bench.p003_progress import cache_usage, load_evaluations, render
-from bench.silver import write_json
+from bench.silver import sha, write_json
 
 
 def run_record() -> dict[str, Any]:
@@ -104,3 +104,35 @@ def test_cache_source_report_requires_independently_verified_hash(tmp_path: Path
     write_json(tmp_path / "report.json", {"config": {}, "results": []})
     with pytest.raises(ValueError, match="verified report hash"):
         load_evaluations([tmp_path / "evaluation.json"])
+
+
+@pytest.mark.parametrize(
+    ("processor", "incremental", "call_key"),
+    [
+        ("p003_gate", "incremental_gate", "calls"),
+        ("p003_topology_source", "incremental_ownership", "topology_calls"),
+    ],
+)
+def test_gate_and_ownership_cache_scope_excludes_historical_usage(
+    tmp_path: Path, processor: str, incremental: str, call_key: str
+) -> None:
+    def call(index: int, tokens: int) -> dict[str, Any]:
+        return {
+            "entry": {"index": index},
+            "usage": {"prompt_tokens_details": {"cached_tokens": tokens}},
+            "replayed": False,
+        }
+
+    page = {"calls": [call(0, 999)], call_key: [call(1, 7)]}
+    report = {"config": {"processor": processor}, "results": [page], incremental: {"ledger_attempts": 1}}
+    historical = {"results": [{"calls": [call(0, 999)]}], "ledger_attempts": 1}
+    if processor == "p003_gate":
+        report["baseline_report"] = historical
+    else:
+        report.update(source_generation_report=historical, topology_generation_report=historical)
+    write_json(tmp_path / "report.json", report)
+    record = {**run_record(), "report_sha256": sha((tmp_path / "report.json").read_bytes())}
+    write_json(tmp_path / "evaluation.json", {"runs": [record]})
+    runs, _ = load_evaluations([tmp_path / "evaluation.json"])
+    assert runs[0]["provider_cache_usage"]["counters"]["cached_tokens"]["complete_counter_total"] == 7
+    assert runs[0]["historical_provider_cache_usage"][0]["counters"]["cached_tokens"]["complete_counter_total"] == 999
