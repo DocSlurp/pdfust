@@ -48,7 +48,7 @@ def observed_table(table: Any) -> dict[str, Any]:
             raise ValueError("Native continuation slot has owned text")
         owners.setdefault(anchor, []).append(index)
     spans = []
-    retained = []
+    retained: list[list[float]] = []
     tolerance = 0.01
     for anchor, indexes in sorted(owners.items()):
         row, column = divmod(anchor, columns)
