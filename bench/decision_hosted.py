@@ -344,6 +344,10 @@ class DecisionClient:
             if price_path.exists():
                 catalog = json.loads(price_path.read_text())
                 pricing = catalog.get("prices", {}).get(body["model"], {})
+                provider = body.get("provider", {})
+                only = provider.get("only", []) if isinstance(provider, dict) else []
+                if isinstance(only, list) and len(only) == 1 and provider.get("allow_fallbacks") is False:
+                    pricing = catalog.get("serving_prices", {}).get(body["model"], {}).get(only[0], pricing)
                 estimate = request_cost(entry, result.get("usage", {}), pricing)
                 if estimate["effective_usd"] is not None:
                     entry.update(

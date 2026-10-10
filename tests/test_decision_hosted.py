@@ -25,6 +25,22 @@ def body() -> dict[str, Any]:
     return {"model": hosted.JEV, "state": "source evidence", "questions": {}}
 
 
+def test_explicit_pinned_serving_price_precedes_generic_catalog(client: hosted.DecisionClient) -> None:
+    prices = client.directory / "langfuse/catalog-prices.json"
+    prices.parent.mkdir()
+    prices.write_text(json.dumps({
+        "prices": {hosted.JEV: {"input": 0.001, "output": 0.002}},
+        "serving_prices": {hosted.JEV: {"example/bf16": {"input": 0.003, "output": 0.004}}},
+    }))
+    request = {**body(), "provider": {"only": ["example/bf16"], "allow_fallbacks": False}}
+    entry = {"index": 0, "accounted_usd": 0.3, "reservation_usd": 0.3, "cost_status": "reserved"}
+    result = {"usage": {"cost": 0, "prompt_tokens": 10, "completion_tokens": 20}}
+    client._account_result(request, result, entry)  # noqa: SLF001 - isolated settlement pricing regression.
+    assert entry["accounted_usd"] == pytest.approx(0.11)
+    assert entry["provider_reported_usd"] == 0
+    assert entry["catalog_rates"] == {"input": 0.003, "output": 0.004}
+
+
 def result(*, cost: object = 0.01) -> dict[str, Any]:
     return {
         "model": "typesafe/jev-1.13-20260917",

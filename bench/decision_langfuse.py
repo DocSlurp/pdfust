@@ -340,7 +340,7 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         attributes["langfuse.observation.metadata.cost_basis"] = "provider-reported"
         attributes["langfuse.observation.metadata.effective_cost_complete"] = True
     else:
-        rate = prices.get(model, {}) if isinstance(prices, dict) else {}
+        rate = entry.get("catalog_rates") or (prices.get(model, {}) if isinstance(prices, dict) else {})
         estimated = {}
         for key in ("input", "output"):
             unit_price = _number(rate.get(key)) if isinstance(rate, dict) else None
@@ -367,7 +367,7 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
     if provided_cost is None or provided_cost == 0 or usage.get("is_byok") is True:
         from bench.reprice_model_rates import request_cost  # noqa: PLC0415 - shared pure pricing projection.
 
-        rate = prices.get(model, {}) if isinstance(prices, dict) else {}
+        rate = entry.get("catalog_rates") or (prices.get(model, {}) if isinstance(prices, dict) else {})
         quote = request_cost({**entry, "index": entry.get("index", -1)}, usage, rate)
         for key in ("cache_status", "cache_assumption", "cache_read_tokens", "cache_write_tokens"):
             if quote.get(key) is not None:
