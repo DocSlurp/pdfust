@@ -547,8 +547,13 @@ def test_reviewed_vision_runner_history_never_relaxes_adapter_identity(
         (f["run"] / "code" / name).write_bytes(data)
         frozen["code_sha256"][name] = sha(data)
     monkeypatch.setattr(module, "__file__", str(trusted / "generalization_report.py"))
+    history = deepcopy(module.TRUSTED_HISTORICAL_CODE)
+    history["generalization_vision_run.py"][frozen["code_sha256"]["generalization_vision_run.py"]] = (
+        "reviewed-test-runner"
+    )
+    monkeypatch.setattr(module, "TRUSTED_HISTORICAL_CODE", history)
     verified = verify_code(f["run"], frozen, processor="vision")
-    assert verified["trusted_historical_commits"] == {"generalization_vision_run.py": "01273f1"}
+    assert verified["trusted_historical_commits"] == {"generalization_vision_run.py": "reviewed-test-runner"}
     changed = b"raise RuntimeError('artifact Python must never execute')\n"
     (f["run"] / "code" / "generalization_vision_run.py").write_bytes(changed)
     frozen["code_sha256"]["generalization_vision_run.py"] = sha(changed)
