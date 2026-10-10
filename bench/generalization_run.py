@@ -502,10 +502,15 @@ def process(
                 states[region["id"]] = state
                 info["state"] = state
                 result["regions"].append(info)
+                render_snapshot = region["source"]
+                if config.get("source_order", "legacy") == "original":
+                    from bench.pipeline_source_order import render_source
+
+                    render_snapshot = render_source(snapshot, region)
                 rendered.append(
                     (
                         min((order[i] for i in region["source_ids"]), default=len(order)),
-                        baseline.markdown(region["source"], state),
+                        baseline.markdown(render_snapshot, state),
                     )
                 )
             state = compose(plan, states)
@@ -567,6 +572,7 @@ def main() -> None:
     parser.add_argument(
         "--detector-fusion", choices=("none", "nms", "larger_containment", "overlap_union"), default="none"
     )
+    parser.add_argument("--source-order", choices=("legacy", "original"), default="legacy")
     parser.add_argument("--rotation-mode", choices=("always", "native", "preserve"), default="native")
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
