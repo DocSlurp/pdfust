@@ -189,3 +189,38 @@ computed from display extent, preserving physical-scale invariance. The matched
 CPU experiment re-embeds identical raster pixels at half, original and double
 physical dimensions before comparing fixed DPI against fixed pixels. This tests
 encoding sensitivity; more recognized boxes alone still do not establish accuracy.
+
+### Layer 5: precision, mixed provenance and neighboring-row observations
+
+The fixed full276 Haiku expansion gains 46 complete tables over the native
+regional baseline but produces nine negative-page false positives. Preserve its
+ungated control. Predeclare a matched PPLX-gated matrix arm on all 276 pages,
+measuring missed positives as well as rejected false positives. A separate hybrid
+retains validated native grids, transcribes disjoint detector crops and accounts
+for every native/OCR word as native-owned, retained prose or explicitly superseded
+by a model table. Any child or overlap failure refuses the complete composition.
+The native and vision child artifacts remain independently reviewable.
+
+Generic row evidence is frozen before its outcome audit: median word-height
+normalization, signed horizontal gaps, start/end tracks, token lengths, lexical
+and numeric roles, and previous/following band spacing, indentation and continuity
+observations. These bands are not logical table rows. The 276-page audit has
+272 complete packets and four missing-source pages, with no feature errors;
+its median packet is 3.34 times the original complete word-array size. A bounded
+model-context projection removes duplicate words while retaining every row.
+Test it independently as generation context and semantic-gate context, with exact
+IDs or immutable ordinal indexes and no fitted rejection threshold. Admit no
+truncated context. The source-only helper consumes no family labels or references.
+
+Matched smaller crop arms use explicit 400, 512 and 768 pixel JPEG90 edges against
+1024, with identical proposals, full-page render cap, prompts and strict parser.
+Run the complete fixed natural16 screen, including failures, if the remaining
+time window permits. Do not select a different image size per page from its score.
+
+API intervals dominate the full276 profile. A separate fresh-request concurrency
+prototype must prove atomic cumulative and per-wave reservation, unique in-flight
+ownership, settlement after reloading the ledger, and failed-call retention using
+mocked races before any paid integration. The active paid queue remains serial.
+The native-only detector shortcut remains unintegrated because its measured
+eligible subset is empty. These performance hypotheses must preserve quality and
+report actual whole-run elapsed time instead of summed overlapping latency.

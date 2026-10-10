@@ -223,6 +223,15 @@ def generate_region(
     if prompt_style not in PROMPT_HINTS:
         raise ValueError("Unknown source assembly prompt style")
     body["messages"][0]["content"] += PROMPT_HINTS[prompt_style]
+    if config.get("generation_row_evidence"):
+        from bench.pipeline_row_context import context
+
+        extra = context(snapshot, ordinal=config.get("generation_format") == "indices")
+        content = body["messages"][1]["content"]
+        if isinstance(content, str):
+            body["messages"][1]["content"] = content + "\n" + extra
+        else:
+            content.append({"type": "text", "text": extra})
     step = len(result["calls"])
     write_json(output / f"{result['id']}-request-{step}.json", body)
     began, cpu = time.perf_counter(), time.process_time()
@@ -305,6 +314,10 @@ def select_region(
     info.update(metadata)
     viewport = "Image viewport in global page coordinates: " + json.dumps(region["bbox"]) + ".\n" if url else ""
     prompt = viewport + admission_packet(snapshot, premise="relational", pixels_available=bool(url))
+    if config.get("gate_row_evidence"):
+        from bench.pipeline_row_context import context
+
+        prompt += "\n" + context(snapshot)
     choices = {
         "table": "This region has a shared record/attribute schema supporting table cells.",
         "prose": "This region contains prose, forms, formulas or other non-table content.",
@@ -542,6 +555,8 @@ def main() -> None:
     parser.add_argument("--generation-format", choices=("anchors", "matrix", "indices"), default="anchors")
     parser.add_argument("--generation-evidence", choices=("objects", "arrays", "quarter"), default="objects")
     parser.add_argument("--generation-prompt", choices=tuple(PROMPT_HINTS), default="base")
+    parser.add_argument("--generation-row-evidence", action="store_true")
+    parser.add_argument("--gate-row-evidence", action="store_true")
     parser.add_argument("--raster-rules", action="store_true")
     parser.add_argument("--raster-edge", type=int, choices=(1024, 1536, 2048), default=1536)
     parser.add_argument("--layout-detector", choices=("none", "yolo"), default="none")

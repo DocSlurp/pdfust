@@ -508,6 +508,11 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
                 *(
+                    ["pipeline_row_context.py", "pipeline_row_evidence.py"]
+                    if config.get("generation_row_evidence") or config.get("gate_row_evidence")
+                    else []
+                ),
+                *(
                     ["generalization_vision_run.py", "pipeline_vision_transcription.py"]
                     if config.get("processor") in ("vision", "vision_regions", "hybrid")
                     else []

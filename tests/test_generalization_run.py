@@ -178,3 +178,68 @@ def test_detector_residual_retains_all_source_without_inference(
     assert state["unresolved_ids"] == ["w0"]
     assert state["tables"] == []
     assert info["route"] == "detector_residual_retained"
+
+
+@pytest.mark.parametrize("response_format", ["anchors", "matrix", "indices"])
+@pytest.mark.parametrize("url", [None, "data:image/png;base64,YQ=="])
+def test_row_observations_reach_generation_without_changing_literal_inventory(
+    tmp_path: Path, response_format: str, url: str | None
+) -> None:
+    source = {"page_size": [100, 100], "words": [{"id": "w7", "text": "literal", "bbox": [1, 1, 10, 10]}]}
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text('{"requests":[]}')
+    captured = []
+
+    def request(body: dict[str, Any], **_kwargs: object) -> dict[str, Any]:
+        captured.append(body)
+        return {
+            "entry": {},
+            "replayed": False,
+            "result": {
+                "choices": [{"finish_reason": "stop", "message": {"content": '{"answers":{"q0":{"tables":[]}}}'}}]
+            },
+        }
+
+    client: Any = SimpleNamespace(ledger=ledger, request=request)
+    state = runner.generate_region(
+        source,
+        [0, 0, 100, 100],
+        url,
+        {"run_id": "fixture", "generation_format": response_format, "generation_row_evidence": True},
+        tmp_path,
+        {"id": "opaque", "calls": []},
+        "r0",
+        client,
+    )
+    content = captured[0]["messages"][1]["content"]
+    text = content if isinstance(content, str) else content[-1]["text"]
+    assert "Additional source-derived observations" in text
+    assert ('"word_indexes":[0]' if response_format == "indices" else '"source_ids":["w7"]') in text
+    assert state["unresolved_ids"] == ["w7"]
+    assert state["tables"] == []
+
+
+def test_gate_receives_complete_row_context_only_when_requested(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = {"page_size": [100, 100], "words": [{"id": "w0", "text": "literal", "bbox": [1, 1, 10, 10]}]}
+    region = {"id": "r0", "boundary": "unsplit", "bbox": [0, 0, 100, 100], "source": source}
+    prompts = []
+
+    def reject(*args: object, **_kwargs: object) -> dict[str, Any]:
+        assert isinstance(args[5], str)
+        prompts.append(args[5])
+        return {"choice": "prose", "probabilities": {"prose": 1}}
+
+    monkeypatch.setattr(runner, "_request", reject)
+    for enabled in (False, True):
+        settings = {
+            **config("gated"),
+            "assembly_method": "gated_generate",
+            "image_edge": 0,
+            "gate_row_evidence": enabled,
+        }
+        state, _ = runner.select_region(region, None, settings, tmp_path, {"id": "opaque", "calls": []}, None)
+        assert state["unresolved_ids"] == ["w0"]
+    assert "Additional source-derived observations" not in prompts[0]
+    assert "Additional source-derived observations" in prompts[1]
