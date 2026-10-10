@@ -1,6 +1,6 @@
 # P003 mixed evidence comparison
 
-Snapshot: 2026-10-10T21:02:35+00:00. 57/57 declared arms independently evaluated. DEV only.
+Snapshot: 2026-10-10T21:05:24+00:00. 57/57 declared arms independently evaluated. DEV only.
 
 Low-resolution PPLX candidate decisions approach the fixed Luna/P002 Sonnet pool oracle on natural16. Adding a fresh Sonnet run to the valid-region pool raises no oracle ceiling in this frozen sample. Frozen-generation gates preserve or reduce the ordinal baseline; the broad natural64 Luna crop pipeline scores slightly more strict cells than ordinal and emits fewer extra tables. These are single-run observations under contended transport, without matched repeat confidence.
 
@@ -224,11 +224,14 @@ The source-only pools were frozen at helper commit `3a79bcc` before any quality 
 | Pool | Pages | Oracle strict | Text | Structure | Complete | Missing | Extra | Negative FP | Errors | Lowest-valid-origin strict |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | pair | 16 | 1088 | 1099 | 1267 | 5 | 26 | 3 | 0 | 0 | 784 |
-| triple | 16 | 1088 | 1099 | 1267 | 5 | 26 | 3 | 0 | 0 | 784 |
+| fresh Sonnet triple | 16 | 1088 | 1099 | 1267 | 5 | 26 | 3 | 0 | 0 | 784 |
+| Haiku triple | 16 | 1098 | 1111 | 1263 | 6 | 26 | 0 | 0 | 0 | 784 |
 
 Pair: Luna plus the entire P002 Sonnet natural16 run. Triple: those same runs plus the entire fresh Sonnet natural16 run. Both have an independent maximum-complete-table ceiling of five, and the strict-cell-maximizing composition also completes five tables. The fresh Sonnet run scores 289 strict cells/four complete tables with one original page failure. Its retained valid dense-page crop creates an admissible choice opportunity but no additional oracle quality: both pools remain at 1,088 strict cells. The best blocked dense-page composition selects the older pair and scores 794/936 strict cells, one complete table and three extra tables.
 
-The oracle uses gold to choose complete-page combinations after freeze. It is an unattainable selection ceiling, not a decision-model result, deployable policy, confidence interval or end-to-end rate. No new API calls were made. Even a near-oracle selector remains limited by crop acquisition and retained candidate quality: 26 tables are missing in the oracle, and it emits three extra tables.
+The separately frozen Haiku triple (Luna/P002 Sonnet/Haiku) raises the ceiling to 1,098 strict cells and six complete tables, with zero extra tables and the same 26 missing tables. Its complete-table ceiling is also six. Relative to the earlier whole-page-gated three-pool oracle (1,097/five), valid-region admission adds one cell and one complete table on the originally Haiku-failed page `p9f92a30432da612d1bcc`. The best combination on that page still uses Luna and P002 Sonnet, completing both tables with all 22 cells; the failed third baseline had unnecessarily blocked those valid pair choices.
+
+The oracle uses gold to choose complete-page combinations after freeze. It is an unattainable selection ceiling, not a decision-model result, deployable policy, confidence interval or end-to-end rate. No new API calls were made. Even a near-oracle selector remains limited by crop acquisition and retained candidate quality: 26 tables are missing in all three oracle pools. The pair/fresh-Sonnet pools emit three extra tables; the Haiku triple emits zero.
 
 ## Measurement limits and provenance
 
