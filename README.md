@@ -368,6 +368,10 @@ Selected natural-screen comparisons (all 16 intended pages remain scored):
 | Haiku detector-crop transcription, 512 px JPEG90 | 16 | 2 | 290 | 9.80 | **1,979.73** |
 | Haiku detector-crop transcription, 768 px JPEG90 | 16 | 3 | 403 | 9.87 | 1,849.20 |
 | Haiku detector-crop transcription, 1024 px JPEG90 | 14 | 4 | 687 | 8.57 | 1,538.73 |
+| Sonnet detector-crop transcription, 2048 px JPEG50 | 15 | 3 | 292 | 10.21 | 81.31 |
+| Haiku detector-crop transcription, 2048 px JPEG50 | 14 | 2 | 268 | 7.88 | 1,016.28 |
+| Sonnet multiscale detector + 1024 px crops | 14 | 4 | 293 | 4.15 | 48.46 |
+| Haiku multiscale detector + 1024 px crops | 15 | 2 | 581 | 5.52 | 1,135.80 |
 
 Both cropped configurations beat the measured whole-page Opus configuration in
 complete tables and exact cells at lower API cost. This compares complete input
