@@ -33,6 +33,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-yolo-fused-ocr2048-haiku-1024 | 15/16 | 1 | 2/12 | 3 | 11 | 471/2333 | 285/2333 | 14352/16640 | 14 | 1 | 2.83641 | 619.341 | 0.0242193 |
 | natural16-yolo-matrix-haiku-512-rowwrap | 15/16 | 1 | 1/12 | 2 | 12 | 349/2333 | 231/2333 | 14139/16640 | 14 | 1 | 3.21552 | 594.347 | 0.0252378 |
 | natural16-yolo-matrix-haiku-512-columns | 16/16 | 0 | 1/12 | 2 | 12 | 545/2333 | 332/2333 | 13616/16640 | 14 | 0 | 3.38242 | 584.159 | 0.0273898 |
+| natural16-yolo-indices-haiku-512 | 16/16 | 0 | 1/12 | 2 | 12 | 477/2333 | 311/2333 | 13497/16640 | 15 | 1 | 3.50996 | 645.992 | 0.0247681 |
 
 ### natural16-whole-reviewed
 
@@ -857,6 +858,40 @@ Ledger attempts 19; reported USD subtotal 0.0273898; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.60641s, CPU 5.36507s; 16 per-page measurement entries, request CPU total 14.0722s; maximum sampled request RSS 1192894464 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-yolo-indices-haiku-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 48.63%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 80 |
+| remaining_fourteen | 2/14 | 1/10 | 231 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0247681 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 12 | 477/2333 | 13497/16640 | 1/4 |
+
+Whole-run wall 273.507s; CPU 318.325s; sampled RSS 583811072 bytes; verified output pages/min 3.50996; exact positive pages/min 0.219372. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0247681; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.79578s, CPU 5.80919s; 16 per-page measurement entries, request CPU total 16.5937s; maximum sampled request RSS 1198284800 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -986,7 +1021,7 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- Additional ordinal, hybrid, gated and four-worker controls are queued; each frozen treatment remains separate
+- Additional hybrid, gated and four-worker controls are queued; each frozen treatment remains separate
 
 ## Interpretation
 
@@ -1493,3 +1528,31 @@ but zero on the dense pair. Thus the columns prompt shows a modest dense
 recovery improvement in this single frozen trial, with a smaller-page tradeoff,
 and remains well below direct crop transcription. No retry, response selection
 or reference-driven prompt adjustment contributes to these scores.
+
+## Ordinal source-index control
+
+The fixed ordinal control retains 16/16 source-conserved outputs and
+311/2333 exact cells, 477 structural cells and twelve exact topologies.
+Two complete tables occur on one exact positive page. The negative false
+positive persists; thirty-seven reference tables remain missing. Dense
+pages recover 80 cells and no complete table, while remaining fourteen
+recover 231 cells and two complete tables. All nineteen charges total
+USD 0.0247681, with 3.51 operational pages/minute and 645.99 operational
+pages/API USD. Supplementary positive-page macro recall is 48.63% exact
+cells and 12.50% complete tables. No failed outputs remain.
+
+The adapter freezes source ordering once and expands returned integer
+positions locally into original source IDs before unchanged strict matrix
+validation. It cannot transcribe missing OCR strings or invent values.
+All ordinal, matrix, evidence and frontier dependency bytes match trusted
+current sources. The reporter initially refused a locally stale evidence
+benchmark module; synchronizing its reviewed CPU/provenance diagnostics
+restored exact identity without weakening the parser gate.
+
+The control gains 53 exact cells over base512 and resolves its dense
+length failure, but recovers fewer cells than the columns prompt (311
+versus 332) and retains the negative false positive that columns avoids.
+These single frozen arms do not establish a universal preference for
+integer positions over source IDs. Neither improves complete-table or
+exact-positive-page quality, and both remain below crop transcription
+on this fixed DEV screen.
