@@ -298,3 +298,14 @@ as an offline assembly audit, with no new inference or throughput claim. Only a
 fresh run may establish end-to-end corrected performance. The single-document
 CLI should select logical orientation once it passes regression tests, and keep
 page failures, provenance and source-accounting limits in its combined output.
+
+At 06:32 UTC, the multiscale Sonnet run produces ten actual Table proposals on
+the dense page where the original whole-page detector produced none. A normally
+completed response with invalid normalized geometry still rejects the entire
+page after five submitted crop calls. Predeclare an additional offline audit
+using the existing frozen partial-salvage helper unchanged on all sixteen pages
+of both multiscale controls. Keep all original statuses and charges, distinguish
+unsent proposals from complete replies, and report secondary exact cells and
+extra tables without complete-page or throughput claims. This tests whether
+the added detector coverage contains reviewable table evidence despite atomic
+failure; it does not weaken the primary parser or select pages from their gold.
