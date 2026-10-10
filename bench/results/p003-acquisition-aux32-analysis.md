@@ -7,56 +7,56 @@ Single runs are observations, with no confidence interval or repeat estimate ava
 ## Complete generation
 
 
-| Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| acquisition-luna-yolo640-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-luna-yolo1024-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-luna-yolo1280-crop1024-r0-c3 | verified | 290 | 290 | 359 | 4 | 40 | 0 | 0 | 2 | 3 | 0.02486862 | 1.641 |
-| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-sonnet-yolo640-crop1024-r0-c3 | verified | 292 | 292 | 361 | 3 | 39 | 0 | 0 | 1 | 2 | 0.22463800 | 5.293 |
-| acquisition-sonnet-yolo1024-crop1024-r0-c3 | verified | 362 | 362 | 606 | 3 | 36 | 1 | 0 | 1 | 2 | 0.26580000 | 4.306 |
-| acquisition-sonnet-yolo1280-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-gemma31-yolo640-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-gemma31-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-ministral14-yolo640-crop1024-r0-c3 | verified | 207 | 207 | 319 | 2 | 41 | 1 | 0 | 3 | 2 | 0.00365820 | 4.773 |
-| acquisition-ministral14-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — |
+| Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| acquisition-luna-yolo640-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-luna-yolo1024-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-luna-yolo1280-crop1024-r0-c3 | verified | 290 | 290 | 359 | 4 | 40 | 0 | 0 | 2 | 3 | 0.02486862 | 1.641 | 562.958 |
+| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-sonnet-yolo640-crop1024-r0-c3 | verified | 292 | 292 | 361 | 3 | 39 | 0 | 0 | 1 | 2 | 0.22463800 | 5.293 | 66.774 |
+| acquisition-sonnet-yolo1024-crop1024-r0-c3 | verified | 362 | 362 | 606 | 3 | 36 | 1 | 0 | 1 | 2 | 0.26580000 | 4.306 | 56.433 |
+| acquisition-sonnet-yolo1280-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-gemma31-yolo640-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-gemma31-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-ministral14-yolo640-crop1024-r0-c3 | verified | 207 | 207 | 319 | 2 | 41 | 1 | 0 | 3 | 2 | 0.00365820 | 4.773 | 3553.660 |
+| acquisition-ministral14-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 
 Rate is operational usable pages/minute for complete generation, intended retained-evidence pages/minute for admission, and attempted questions/minute for diagram. Incremental rates exclude historical acquisition/generation and are not fresh pipeline throughput.
 
 ## Incremental structure admission
 
 
-| Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| admission-pplx-detector05-edge0-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| admission-pplx-detector05-edge128-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| admission-pplx-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| admission-lunadec-detector05-edge0-r0-c3 | verified | 185 | 187 | 315 | 2 | 42 | 0 | 0 | 0 | 1 | 0.00999040 | 14.089 |
-| admission-lunadec-detector05-edge128-r0-c3 | verified | 111 | 113 | 237 | 1 | 44 | 0 | 0 | 0 | 0 | 0.01006960 | 13.802 |
-| admission-lunadec-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| admission-clefomni-detector05-edge0-r0-c3 | verified | 94 | 94 | 102 | 1 | 51 | 1 | 1 | 0 | 1 | 0.02302380 | 17.165 |
-| admission-clefomni-detector05-edge128-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| admission-clefomni-detector05-edge512-r0-c3 | verified | 196 | 198 | 561 | 3 | 41 | 0 | 0 | 0 | 2 | 0.02362125 | 21.887 |
+| Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| admission-pplx-detector05-edge0-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-pplx-detector05-edge128-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-pplx-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-lunadec-detector05-edge0-r0-c3 | verified | 185 | 187 | 315 | 2 | 42 | 0 | 0 | 0 | 1 | 0.00999040 | 14.089 | 1601.537 |
+| admission-lunadec-detector05-edge128-r0-c3 | verified | 111 | 113 | 237 | 1 | 44 | 0 | 0 | 0 | 0 | 0.01006960 | 13.802 | 1588.941 |
+| admission-lunadec-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-clefomni-detector05-edge0-r0-c3 | verified | 94 | 94 | 102 | 1 | 51 | 1 | 1 | 0 | 1 | 0.02302380 | 17.165 | 694.933 |
+| admission-clefomni-detector05-edge128-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-clefomni-detector05-edge512-r0-c3 | verified | 196 | 198 | 561 | 3 | 41 | 0 | 0 | 0 | 2 | 0.02362125 | 21.887 | 677.356 |
 
 Rate is operational usable pages/minute for complete generation, intended retained-evidence pages/minute for admission, and attempted questions/minute for diagram. Incremental rates exclude historical acquisition/generation and are not fresh pipeline throughput.
 
 ## Incremental geometry diagram
 
 
-| Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| diagram-pplx-filled-128-r0-c3 | verified | 224 | 235 | 292 | 0 | 44 | 3 | 0 | 7 | 0 | 0.00066222 | 28.353 |
-| diagram-pplx-filled-512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| diagram-pplx-filled-400-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
-| diagram-pplx-outline-128-r0-c3 | verified | 908 | 919 | 1078 | 1 | 33 | 3 | 0 | 7 | 0 | 0.00066222 | 18.473 |
-| diagram-pplx-outline-400-r0-c3 | verified | 193 | 204 | 227 | 0 | 47 | 3 | 0 | 8 | 0 | 0.00066636 | 23.623 |
-| diagram-pplx-outline-512-r0-c3 | verified | 193 | 204 | 227 | 0 | 47 | 3 | 0 | 8 | 0 | 0.00067808 | 18.169 |
-| diagram-lunadec-filled-128-r0-c3 | verified | 0 | 0 | 0 | 0 | 53 | 0 | 0 | 14 | 0 | 0.00260390 | 33.121 |
-| diagram-lunadec-filled-512-r0-c3 | verified | 0 | 0 | 0 | 0 | 53 | 0 | 0 | 14 | 0 | 0.00279310 | 16.060 |
-| diagram-clefomni-filled-128-r0-c3 | verified | 108 | 119 | 130 | 0 | 50 | 3 | 0 | 12 | 0 | 0.00511740 | 30.098 |
-| diagram-clefomni-filled-512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — |
+| Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| diagram-pplx-filled-128-r0-c3 | verified | 224 | 235 | 292 | 0 | 44 | 3 | 0 | 7 | 0 | 0.00066222 | 28.353 | 24161.155 |
+| diagram-pplx-filled-512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| diagram-pplx-filled-400-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| diagram-pplx-outline-128-r0-c3 | verified | 908 | 919 | 1078 | 1 | 33 | 3 | 0 | 7 | 0 | 0.00066222 | 18.473 | 24161.155 |
+| diagram-pplx-outline-400-r0-c3 | verified | 193 | 204 | 227 | 0 | 47 | 3 | 0 | 8 | 0 | 0.00066636 | 23.623 | 24011.045 |
+| diagram-pplx-outline-512-r0-c3 | verified | 193 | 204 | 227 | 0 | 47 | 3 | 0 | 8 | 0 | 0.00067808 | 18.169 | 23596.036 |
+| diagram-lunadec-filled-128-r0-c3 | verified | 0 | 0 | 0 | 0 | 53 | 0 | 0 | 14 | 0 | 0.00260390 | 33.121 | 6144.629 |
+| diagram-lunadec-filled-512-r0-c3 | verified | 0 | 0 | 0 | 0 | 53 | 0 | 0 | 14 | 0 | 0.00279310 | 16.060 | 5728.402 |
+| diagram-clefomni-filled-128-r0-c3 | verified | 108 | 119 | 130 | 0 | 50 | 3 | 0 | 12 | 0 | 0.00511740 | 30.098 | 3126.588 |
+| diagram-clefomni-filled-512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 
 Rate is operational usable pages/minute for complete generation, intended retained-evidence pages/minute for admission, and attempted questions/minute for diagram. Incremental rates exclude historical acquisition/generation and are not fresh pipeline throughput.
 
