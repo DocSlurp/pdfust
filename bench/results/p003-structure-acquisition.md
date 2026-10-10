@@ -161,3 +161,55 @@ empty-region receipts, literal IDs, no-proposal prose cases and explicit
 rejection of overlapping capacity windows. Ruff and strict mypy pass for the
 four new modules. All completed geometry payload hashes were independently
 rechecked against their receipts; no new quality score is reported here.
+
+## Independently verified placement results
+
+Every one of the 432 predeclared source-owned placement outputs passed independent source/proposal/pixel/geometry replay before scoring. The complete denominator is 16 pages, 53 tables and 2,333 anchor cells per treatment. No original generated table fallback is credited. All models and source inventories were frozen before reference access.
+
+| Acquisition | Threshold | Placement | Strict | Text | Structure | Complete | Missing / extra | Negative FP | Errors |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | ---: |
+| fullpage | 0.3 | overlap_margin | 8 | 8 | 50 | 0 | 49 / 5 | 4/4 | 0 |
+| fullpage | 0.3 | max_overlap | 7 | 7 | 50 | 0 | 49 / 5 | 4/4 | 0 |
+| fullpage | 0.3 | center | 7 | 7 | 50 | 0 | 49 / 5 | 4/4 | 0 |
+| fullpage | 0.5 | overlap_margin | 8 | 8 | 87 | 0 | 48 / 8 | 4/4 | 0 |
+| fullpage | 0.5 | max_overlap | 7 | 7 | 87 | 0 | 48 / 8 | 4/4 | 0 |
+| fullpage | 0.5 | center | 7 | 7 | 87 | 0 | 48 / 8 | 4/4 | 0 |
+| fullpage | 0.7 | overlap_margin | 10 | 10 | 133 | 0 | 47 / 8 | 4/4 | 0 |
+| fullpage | 0.7 | max_overlap | 9 | 9 | 133 | 0 | 47 / 8 | 4/4 | 0 |
+| fullpage | 0.7 | center | 9 | 9 | 133 | 0 | 47 / 8 | 4/4 | 0 |
+| residual | 0.3 | overlap_margin | 2 | 2 | 15 | 0 | 51 / 20 | 4/4 | 0 |
+| residual | 0.3 | max_overlap | 2 | 2 | 15 | 0 | 51 / 20 | 4/4 | 0 |
+| residual | 0.3 | center | 2 | 2 | 15 | 0 | 51 / 20 | 4/4 | 0 |
+| residual | 0.5 | overlap_margin | 2 | 2 | 17 | 0 | 51 / 21 | 3/4 | 0 |
+| residual | 0.5 | max_overlap | 2 | 2 | 17 | 0 | 51 / 21 | 3/4 | 0 |
+| residual | 0.5 | center | 2 | 2 | 17 | 0 | 51 / 21 | 3/4 | 0 |
+| residual | 0.7 | overlap_margin | 2 | 2 | 17 | 0 | 51 / 17 | 3/4 | 0 |
+| residual | 0.7 | max_overlap | 2 | 2 | 17 | 0 | 51 / 17 | 3/4 | 0 |
+| residual | 0.7 | center | 2 | 2 | 17 | 0 | 51 / 17 | 3/4 | 0 |
+| density | 0.3 | overlap_margin | 0 | 0 | 96 | 0 | 49 / 11 | 1/4 | 0 |
+| density | 0.3 | max_overlap | 0 | 0 | 96 | 0 | 49 / 11 | 1/4 | 0 |
+| density | 0.3 | center | 0 | 0 | 96 | 0 | 49 / 11 | 1/4 | 0 |
+| density | 0.5 | overlap_margin | 0 | 0 | 87 | 0 | 49 / 12 | 1/4 | 0 |
+| density | 0.5 | max_overlap | 0 | 0 | 87 | 0 | 49 / 12 | 1/4 | 0 |
+| density | 0.5 | center | 0 | 0 | 87 | 0 | 49 / 12 | 1/4 | 0 |
+| density | 0.7 | overlap_margin | 0 | 0 | 84 | 0 | 50 / 11 | 1/4 | 0 |
+| density | 0.7 | max_overlap | 0 | 0 | 84 | 0 | 50 / 11 | 1/4 | 0 |
+| density | 0.7 | center | 0 | 0 | 84 | 0 | 50 / 11 | 1/4 | 0 |
+
+Full-page acquisition covers all 10,778 source IDs in 16 crops. Residual acquisition owns exactly the original residual IDs (8,573) in 32 crops; pixel padding is context only and never acquires ownership. Density uses only residual source geometry: 17 retained crops own 2,948 IDs, with all raw proposal/order/overlap/cap omissions replayed and 12 pages having no retained candidate. Source IDs and strings remain conserved outside tables or unresolved.
+
+Expanded crop opportunity does not establish table presence or correct structure. These source-owned outputs have no complete tables; density has no exact cells. Full-page negatives all produce false tables, while residual negatives have three or four FP pages and density has one. The original bounded ordinal-crop structure controls scored up to 204 strict cells, also with three negative FP pages. These losses support separating semantic admission, table acquisition and structure placement rather than using a structure-head score as table correctness.
+
+The pinned checkpoint is named `table-transformer-structure-recognition-v1.1-all`. On the original 20 ordinal crops it predicts a table-class object on every crop with raw softmax scores 0.9813–0.999985, median 0.999452, unchanged across the three thresholds. Foreground projection at .3 includes 49/501 objects whose no-object probability is larger; .5/.7 include none. This foreground projection detail does not explain the original table false positives: all table-class scores exceed .98. No cutoff has been tuned to the labels.
+
+Admission proposal: freeze each valid geometry/source-owned table candidate and its complete local ownership inventory, then ask one native retain/reject/unresolved question with explicitly bounded literal evidence and exact 128/512 crop pixels (plus a text control). PPLX, Luna and Clef run separately on identical frozen inventories. Rejection, abstention and failure contribute no predicted table; there is no generated replacement or other-model fallback. Preserve all source strings outside/unresolved and retain the full 16-page denominator. All three existing geometry thresholds are separately declared, without selecting a winning threshold from these scores. No admission experiment has been run by this scorer.
+
+Independent verification requires current trusted helper bytes and actual archived bytes. Two historical helper exceptions are narrowly root-reviewed and Git-anchored at `b11d896`: the frozen vision helper differs only in unused transcription/process branches; the density proposal helper differs only in unused union logic and its exact added imports. Every used function and constant must retain equal AST, and no archived Python is executed. The review exceptions are recorded in detailed evaluation provenance.
+
+| Placement arm (all nine treatments) | Wall seconds | CPU seconds | Sampled RSS / measurement |
+| --- | ---: | ---: | --- |
+| fullpage | 15.813 | 15.561 | 91.09 MiB; one process, 100 ms psutil sampling |
+| residual | 4.740 | 4.669 | 92.37 MiB; one process, 100 ms psutil sampling |
+| density | 4.048 | 4.032 | 95.72 MiB; one process, 100 ms psutil sampling |
+
+Resources above measure source placement only. Original OCR/detection/generation and CPU structure inference remain separately retained, with no new API charge or full-pipeline throughput claim. Each geometry arm uses one frozen CPU forward per crop; all thresholds reuse it, so these are alternatives rather than independent inference repeats. Detailed per-page errors, scores, hashes and review exceptions remain in ignored evaluation artifacts.

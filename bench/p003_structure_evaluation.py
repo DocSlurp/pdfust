@@ -60,15 +60,18 @@ def verify_placements(
             raise ValueError("Frozen placement helper differs from trusted working source")
     source_path = geometry_directory / "source/manifest.json"
     geometry_path = geometry_directory / "geometry/report.json"
-    if (
-        sha(source_path.read_bytes()) != SOURCE_MANIFEST_SHA256
-        or sha(geometry_path.read_bytes()) != GEOMETRY_REPORT_SHA256
-    ):
+    source_digest, geometry_digest = SOURCE_MANIFEST_SHA256, GEOMETRY_REPORT_SHA256
+    acquisition_reviews = []
+    preliminary = read(source_path)
+    if preliminary.get("acquisition_arm") is not None:
+        from bench.p003_structure_acquisition_verification import verify_acquisition
+
+        source_digest, geometry_digest, acquisition_reviews = verify_acquisition(
+            geometry_directory, baseline_trusted_code
+        )
+    if sha(source_path.read_bytes()) != source_digest or sha(geometry_path.read_bytes()) != geometry_digest:
         raise ValueError("Independently announced source geometry freeze changed")
-    if (
-        frozen["source_manifest_sha256"] != SOURCE_MANIFEST_SHA256
-        or frozen["geometry_report_sha256"] != GEOMETRY_REPORT_SHA256
-    ):
+    if frozen["source_manifest_sha256"] != source_digest or frozen["geometry_report_sha256"] != geometry_digest:
         raise ValueError("Placement names different source geometry evidence")
     manifest, raw_report = read(source_path), read(geometry_path)
     baseline = guard_path(Path(manifest["baseline"]))
@@ -130,7 +133,7 @@ def verify_placements(
                 treatments[f"t{threshold}-{policy}"].append(
                     {"id": page["id"], "status": "ok", "tables": actual["state"]["tables"]}
                 )
-    return report, dict(treatments)
+    return {**report, "acquisition_reviews": acquisition_reviews}, dict(treatments)
 
 
 def analyze(directory: Path, geometry_directory: Path, corpus: Path, trusted_code: dict[str, str]) -> dict[str, Any]:
@@ -141,13 +144,14 @@ def analyze(directory: Path, geometry_directory: Path, corpus: Path, trusted_cod
     if any({page["id"] for page in pages} != intended for pages in predictions.values()):
         raise ValueError("Scoring corpus differs from complete source-frozen cohort")
     return {
-        "scope": "Source-only CPU geometry placements, conditional on frozen ordinal detector crops",
+        "scope": "Source-only CPU geometry placements, conditional on the explicitly frozen acquisition crop inventory",
+        "acquisition_reviews": report.get("acquisition_reviews", []),
         "new_api_calls": 0,
         "generated_fallback_tables": 0,
         "original_ocr_detection_and_generation_cost": "retained separately; excluded from placement resources",
         "report_sha256": sha((directory / "report.json").read_bytes()),
-        "source_manifest_sha256": SOURCE_MANIFEST_SHA256,
-        "geometry_report_sha256": GEOMETRY_REPORT_SHA256,
+        "source_manifest_sha256": sha((geometry_directory / "source/manifest.json").read_bytes()),
+        "geometry_report_sha256": sha((geometry_directory / "geometry/report.json").read_bytes()),
         "resources": report["resources"],
         "treatments": {name: strict_scores(targets["pages"], pages) for name, pages in predictions.items()},
     }
