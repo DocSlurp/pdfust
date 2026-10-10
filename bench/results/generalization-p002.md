@@ -919,3 +919,22 @@ a heldout-silver test or an independently selected deployment claim.
 |---|---:|---:|---:|---:|---:|
 | Earlier screen16 | 16 | 2/53 | 258/2333 | 1 | 1 |
 | Additional DEV48 | 48 | 9/40 | 1041/1514 | 0 | 0 |
+
+## Hybrid reporting contract
+
+The separate hybrid processor retains native and crop-vision children plus a
+complete parent composition. Verification replays native vector quarantine and
+its warnings, original native table boxes, and the exact raw-to-filtered detector
+exclusion policy. Both nested children must equal their retained results and
+pass the existing complete source / strict crop-response verifiers. The trusted
+hybrid helper then rebuilds tables, original-word ledger, superseded words, all
+accounting flags, and exact complete Markdown. Parent composition, every copied
+field, and retained structure must match that replay. Accepted transcribed text
+has empty original source IDs and explicit model provenance; conserved-page
+counts use the actual helper flag, which remains true only when no model tables
+are accepted. Failed parents retain child evidence but contribute no successful
+prefix tables. Requests and actual model usage are audited in the fixed vision
+child directory, and detector worker measurements remain separate from parent
+CPU/RSS. Gallery labels preserve the mixed provenance and original rotation.
+These checks prepare future hybrid runs; they do not assert quality before
+those runs complete.

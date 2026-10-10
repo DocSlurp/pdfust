@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 from copy import deepcopy
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from bench import generalization_hybrid_run, generalization_vision_run
 from bench import generalization_report as module
 from bench.generalization_report import (
     _bounds,
@@ -29,6 +31,8 @@ from bench.pipeline_report import _render_markdown
 from bench.pipeline_vision_transcription import markdown as vision_markdown
 from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, sha
+
+import pylopdf
 
 
 def write(path: Path, data: dict[str, Any]) -> None:
@@ -359,7 +363,7 @@ def test_progress_groups_reject_mixed_dataset_identities(fixture: dict[str, Any]
 
 def vision_prediction(directory: Path) -> dict[str, Any]:
     response = {"choices": [{"finish_reason": "stop", "message": {"content": '{"answers":{"q0":{"tables":[]}}}'}}]}
-    viewport = [0, 0, 100, 100]
+    viewport: list[float] = [0, 0, 100, 100]
     state = vision_parse(response, viewport)
     prediction = {
         "id": "negative",
@@ -677,7 +681,6 @@ def test_index_generation_requires_exact_trusted_expansion_and_matrix_parser(fix
         verify_code(f["run"], frozen, processor="regions")
 
 
-
 def test_fusion_configuration_requires_exact_trusted_selection_module(fixture: dict[str, Any]) -> None:
     f = fixture
     frozen = deepcopy(f["frozen"])
@@ -694,3 +697,158 @@ def test_fusion_configuration_requires_exact_trusted_selection_module(fixture: d
     frozen["code_sha256"][name] = sha(altered)
     with pytest.raises(ValueError, match="source-only detector fusion"):
         verify_code(f["run"], frozen, processor="whole")
+
+
+def hybrid_prediction(directory: Path, monkeypatch: pytest.MonkeyPatch, *, model_table: bool = False) -> dict[str, Any]:
+    with pylopdf.Document() as document:
+        page = document.new_page(width=600, height=800)
+        page.insert_text((20, 40), "Literal source prose")
+        content = document.tobytes()
+    pdf = directory / "input.pdf"
+    pdf.write_bytes(content)
+    boxes = [{"label": "Table", "confidence": 0.9, "bbox": [100, 100, 300, 300]}] if model_table else []
+    detector = SimpleNamespace(
+        detect=lambda _image, *, viewport: {"type": "result", "device": "cpu", "viewport": viewport, "boxes": boxes}
+    )
+    raw = {
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "message": {
+                    "content": json.dumps(
+                        {
+                            "answers": {
+                                "q0": {
+                                    "tables": [
+                                        {"bbox": [0, 0, 1000, 1000], "matrix": [["MODEL literal"]], "mergedspans": []}
+                                    ],
+                                }
+                            }
+                        }
+                    )
+                },
+            }
+        ]
+    }
+
+    def transcribe(
+        _client: object, _body: object, _config: object, result: dict[str, Any], _output: object, **_kwargs: object
+    ) -> dict:
+        result["request"] = {"test_stub": True}
+        return raw
+
+    monkeypatch.setattr(generalization_vision_run, "_transcribe", transcribe)
+    result = generalization_hybrid_run.process(
+        {"id": "negative", "pdf_path": str(pdf), "pdf_sha256": sha(content), "page_number": 0},
+        {
+            "campaign": "P002",
+            "policy": "gated",
+            "layout_detector": "yolo",
+            "_layout_detector": detector,
+            "generation_model": "anthropic/claude-sonnet-5.5",
+        },
+        directory,
+        None,
+    )
+    assert result["status"] == "ok", result
+    return result
+
+
+@pytest.mark.parametrize("model_table", [False, True])
+def test_hybrid_replay_counts_actual_conservation_and_explicit_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, model_table: bool
+) -> None:
+    prediction = hybrid_prediction(tmp_path, monkeypatch, model_table=model_table)
+    assert verify_output(tmp_path, prediction, processor="hybrid") == {
+        "operational": True,
+        "conserved": not model_table,
+    }
+    if model_table:
+        assert prediction["tables"][0]["text_provenance"] == "model-transcribed"
+        assert prediction["tables"][0]["cells"][0]["source_ids"] == []
+
+
+@pytest.mark.parametrize("field", ["child", "filter", "exclude", "native_boxes", "ledger", "composition", "markdown"])
+def test_hybrid_replay_rejects_tampered_nested_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, field: str
+) -> None:
+    prediction = hybrid_prediction(tmp_path, monkeypatch)
+    if field == "child":
+        prediction["native_result"]["unresolved_ids"] = []
+    elif field == "filter":
+        prediction["filtered_layout_detection"]["boxes"] = [{"invented": True}]
+    elif field == "exclude":
+        prediction["excluded_native_proposals"] = [{"invented": True}]
+    elif field == "native_boxes":
+        prediction["native_boxes"] = [[0, 0, 500, 500]]
+    elif field == "ledger":
+        prediction["source_ledger"] = []
+    elif field == "composition":
+        prediction["composition"]["markdown"] = "Invented output"
+    else:
+        (tmp_path / "negative.md").write_text("Invented output")
+    write(tmp_path / "negative-result.json", prediction)
+    with pytest.raises(ValueError, match=r"Hybrid|Per-page"):
+        verify_output(tmp_path, prediction, processor="hybrid")
+
+
+def test_failed_hybrid_retains_verified_children_without_scoring_partial_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prediction = hybrid_prediction(tmp_path, monkeypatch, model_table=True)
+    prediction.update(status="error", tables=[])
+    write(tmp_path / "negative-result.json", prediction)
+    (tmp_path / "negative.md").unlink()
+    (tmp_path / "negative-structure.json").unlink()
+    assert verify_output(tmp_path, prediction, processor="hybrid") == {"operational": False, "conserved": False}
+    prediction["vision_result"]["tables"] = []
+    write(tmp_path / "negative-result.json", prediction)
+    with pytest.raises(ValueError, match="retained result differs"):
+        verify_output(tmp_path, prediction, processor="hybrid")
+
+
+@pytest.mark.parametrize("model_table", [False, True])
+def test_hybrid_score_replays_dependencies_and_keeps_all_targets(
+    fixture: dict[str, Any], monkeypatch: pytest.MonkeyPatch, *, model_table: bool
+) -> None:
+    f = fixture
+    prediction = hybrid_prediction(f["run"], monkeypatch, model_table=model_table)
+    frozen = deepcopy(f["frozen"])
+    frozen["config"].update(processor="hybrid", policy="gated")
+    local = Path(module.__file__).parent
+    for name in (
+        "generalization_hybrid_run.py",
+        "pipeline_hybrid_composition.py",
+        "generalization_run.py",
+        "pipeline_regions.py",
+        "generalization_vision_run.py",
+        "generalization_vision_regions.py",
+        "pipeline_vision_transcription.py",
+        "pipeline_frontier.py",
+    ):
+        data = (local / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    report = deepcopy(f["report"])
+    report.update(config=frozen["config"], results=[prediction])
+    write(f["run"] / "frozen.json", frozen)
+    write(f["run"] / "report.json", report)
+    result = score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
+    assert result["intended_pages"] == 3
+    assert result["operational_pages"] == 1
+    assert result["conserved_pages"] == int(not model_table)
+    assert result["all_errors"] == 2
+    assert result["positive"]["missing_tables"] == 1
+    assert result["text_provenance"] == "mixed native-source/model-transcribed"
+    altered = b"# Unreviewed hybrid source exclusion.\n"
+    (f["run"] / "code" / "pipeline_hybrid_composition.py").write_bytes(altered)
+    frozen["code_sha256"]["pipeline_hybrid_composition.py"] = sha(altered)
+    with pytest.raises(ValueError, match="hybrid composition"):
+        verify_code(f["run"], frozen, processor="hybrid")
+
+
+def test_hybrid_model_breakdown_maps_nested_vision_request_paths() -> None:
+    predictions = [{"id": "page", "route": "hybrid", "calls": [{"entry": {"requested_model": "model"}}]}]
+    result = _model_breakdown(predictions, [{"path": "vision/page-request-0.json", "model": "model"}])
+    assert result["models"]["model"]["returned_calls"] == 1
+    assert result["request_entry_model_discrepancies"] == []

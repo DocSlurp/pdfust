@@ -13,6 +13,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from bench import pipeline_hybrid_composition as hybrid
+from bench.generalization_run import sanitize_vectors
 from bench.generalization_scoring import audit_model_body, normalize_text, score_dataset, score_page
 from bench.generalization_vision_regions import compose as vision_regions_compose
 from bench.generalization_vision_regions import proposals as vision_region_proposals
@@ -147,6 +149,17 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     )
     if processor == "vision_regions":
         required.add("generalization_vision_regions.py")
+    if processor == "hybrid":
+        required |= {
+            "generalization_hybrid_run.py",
+            "pipeline_hybrid_composition.py",
+            "generalization_run.py",
+            "pipeline_regions.py",
+            "generalization_vision_run.py",
+            "generalization_vision_regions.py",
+            "pipeline_vision_transcription.py",
+            "pipeline_frontier.py",
+        }
     if processor == "regions":
         required |= {"pipeline_regions.py", "generalization_run.py"}
         if frozen.get("config", {}).get("assembly_method") in {"generate", "gated_generate"}:
@@ -207,11 +220,22 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             "renderer": "identical trusted vision transcription adapter",
             "region_validator_ast_compatible": False,
         }
+    if processor == "hybrid":
+        exact = required - {
+            "pipeline_run.py",
+            "generalization_run.py",
+            "generalization_vision_run.py",
+            "pipeline_regions.py",
+        }
+        if any(comparison[name] != "identical" for name in exact):
+            raise ValueError("Trusted hybrid composition or child parser differs from frozen code")
     # Whole-run renderer compatibility is established through its approved AST.
     renderer = _verify_markdown_renderer(directory, frozen)
     validation_modules = {"pipeline_assembly.py"}
-    if processor == "regions":
+    if processor in {"regions", "hybrid"}:
         validation_modules |= {"pipeline_regions.py", "generalization_run.py"}
+    if processor == "hybrid":
+        validation_modules.add("generalization_vision_run.py")
     trusted_history = {}
     for name in validation_modules:
         if comparison[name] != "identical":
@@ -219,7 +243,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             if reviewed is None:
                 raise ValueError("Trusted local ownership validator differs from unreviewed frozen code")
             trusted_history[name] = reviewed
-    if processor == "regions":
+    if processor in {"regions", "hybrid"}:
         archived = (directory / "code" / "pipeline_regions.py").read_bytes()
         if _region_validation_ast(archived) != _region_validation_ast((local / "pipeline_regions.py").read_bytes()):
             raise ValueError("Historical region composition validators differ from trusted local AST")
@@ -245,6 +269,62 @@ def _bounds(source: dict[str, Any], state: dict[str, Any]) -> None:
             ]
 
 
+def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[str, Any]:
+    """Replay child artifacts, source-only detector exclusion and mixed composition."""
+    ident = prediction["id"]
+    children = {}
+    for name, processor in (("native", "regions"), ("vision", "vision_regions")):
+        child = prediction.get(name + "_result")
+        if child is not None:
+            if not isinstance(child, dict) or child.get("id") != ident:
+                raise ValueError("Hybrid child identity differs from parent")
+            children[name] = verify_output(directory / name, child, processor=processor)
+    native = prediction.get("native_result") or {}
+    vision = prediction.get("vision_result") or {}
+    if native.get("calls", []) != [] or prediction.get("calls", []) != vision.get("calls", []):
+        raise ValueError("Hybrid calls differ from complete native and vision child accounting")
+    if prediction.get("status") != "ok":
+        if prediction.get("tables") != []:
+            raise ValueError("Atomic failed hybrid output must have no admitted tables")
+        return {"operational": False, "conserved": False}
+    if (
+        prediction.get("route") != "hybrid"
+        or prediction.get("output_atomic") is not True
+        or prediction.get("child_artifacts") != {"native": "native", "vision": "vision"}
+        or set(children) != {"native", "vision"}
+        or any(not child["operational"] for child in children.values())
+    ):
+        raise ValueError("Hybrid success requires both complete children and fixed artifact paths")
+    native_clean, native_warnings = sanitize_vectors(native["source"])
+    source = hybrid.sanitize_vectors(native_clean)
+    if prediction.get("native_warnings") != native_warnings:
+        raise ValueError("Hybrid native warnings differ from trusted source quarantine")
+    native_state = _read(directory / "native" / f"{ident}-structure.json")
+    native_boxes = hybrid.native_boxes(source, native_state)
+    if source != prediction.get("source") or native_state != prediction.get("native_state"):
+        raise ValueError("Hybrid source or native state differs from trusted native child")
+    filtered, excluded = hybrid.exclude_native_proposals(prediction["raw_layout_detection"], native_boxes)
+    if (
+        prediction.get("native_boxes") != native_boxes
+        or prediction.get("filtered_layout_detection") != filtered
+        or prediction.get("excluded_native_proposals") != excluded
+        or vision.get("layout_detection") != filtered
+    ):
+        raise ValueError("Hybrid detector exclusion differs from trusted native geometry replay")
+    transcription = _read(directory / "vision" / f"{ident}-structure.json")
+    rebuilt = hybrid.compose(source, native_state, transcription)
+    if rebuilt.get("status") != "ok" or rebuilt != prediction.get("composition"):
+        raise ValueError("Hybrid composition differs from trusted complete replay")
+    if _read(directory / f"{ident}-structure.json") != rebuilt:
+        raise ValueError("Hybrid retained structure differs from trusted complete replay")
+    for key in rebuilt.keys() - {"markdown", "status", "route"}:
+        if prediction.get(key) != rebuilt[key]:
+            raise ValueError("Hybrid parent accounting or tables differs from complete composition")
+    if guard_path(directory / f"{ident}.md").read_bytes() != hybrid.markdown(rebuilt).encode():
+        raise ValueError("Hybrid Markdown differs from trusted complete composition")
+    return {"operational": True, "conserved": rebuilt["source_conserved"]}
+
+
 def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str) -> dict[str, Any]:
     """Revalidate source ownership and exact retained Markdown for successful pages."""
     ident = prediction["id"]
@@ -253,6 +333,8 @@ def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str
     retained = _read(directory / f"{ident}-result.json")
     if retained != prediction:
         raise ValueError("Per-page retained result differs from report")
+    if processor == "hybrid":
+        return _verify_hybrid_output(directory, prediction)
     if prediction.get("status") != "ok":
         return {"operational": False, "conserved": False}
     state = _read(directory / f"{ident}-structure.json")
@@ -426,7 +508,8 @@ def _model_breakdown(predictions: list[dict[str, Any]], audits: list[dict[str, A
     discrepancies = []
     for prediction in predictions:
         for step, call in enumerate(prediction.get("calls", [])):
-            body_model = requests.get(f"{prediction['id']}-request-{step}.json", "unknown")
+            prefix = "vision/" if prediction.get("route") == "hybrid" else ""
+            body_model = requests.get(f"{prefix}{prediction['id']}-request-{step}.json", "unknown")
             entry_model = call.get("entry", {}).get("requested_model")
             if entry_model is not None and entry_model != body_model:
                 discrepancies.append({"page": prediction["id"], "step": step, "body": body_model, "entry": entry_model})
@@ -469,11 +552,12 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
         if prediction.get("status") == "ok":
             continue
         error = str(prediction.get("error", "unclassified failure"))
-        responses = []
-        direct = prediction.get("transcription_response")
+        responses: list[dict[str, Any]] = []
+        raw_prediction = prediction.get("vision_result") or prediction
+        direct = raw_prediction.get("transcription_response")
         if isinstance(direct, dict):
             responses.append({"source": "transcription_response", "payload": direct})
-        for region in prediction.get("transcription_regions", []):
+        for region in raw_prediction.get("transcription_regions", []):
             raw = region.get("transcription_response")
             if isinstance(raw, dict):
                 responses.append({"source": f"transcription_region_{region.get('index')}", "payload": raw})
@@ -500,7 +584,12 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
         finish = observations[-1].get("finish_reason") if observations else None
         if not isinstance(finish, str):
             finish = None
-        lower = error.lower()
+        child_errors = [
+            str(prediction[key].get("error", ""))
+            for key in ("native_result", "vision_result")
+            if isinstance(prediction.get(key), dict)
+        ]
+        lower = " ".join([error, *child_errors]).lower()
         if finish == "content_filter":
             category = "provider_content_filter"
         elif finish in {"length", "max_tokens"}:
@@ -571,7 +660,7 @@ def score_run(
     if actual != expected or len(actual) != len(frozen["records"]):
         raise ValueError("Frozen records differ from complete intended manifest cohort")
     processor = config.get("processor", "whole")
-    if processor not in {"whole", "regions", "vision", "vision_regions"}:
+    if processor not in {"whole", "regions", "vision", "vision_regions", "hybrid"}:
         raise ValueError("Unsupported processor")
     code = verify_code(directory, frozen, processor=processor)
     predictions = report["results"]
@@ -602,11 +691,14 @@ def score_run(
         authored, [p for p in predictions if p["id"] in {t["id"] for t in authored}]
     )
     request_audits = []
+    request_prefix = "vision/" if processor == "hybrid" else ""
     expected_requests = {
-        f"{p['id']}-request-{step}.json" for p in predictions for step, _call in enumerate(p.get("calls", []))
+        f"{request_prefix}{p['id']}-request-{step}.json"
+        for p in predictions
+        for step, _call in enumerate(p.get("calls", []))
     }
-    request_paths = sorted(guard_path(directory).glob("*-request-*.json"))
-    if not expected_requests <= {p.name for p in request_paths}:
+    request_paths = sorted(guard_path(directory / request_prefix).glob("*-request-*.json"))
+    if not expected_requests <= {str(p.relative_to(directory)) for p in request_paths}:
         raise ValueError("Successful call lacks a retained request body")
     for body_path in request_paths:
         owner = body_path.name.rsplit("-request-", 1)[0]
@@ -618,7 +710,7 @@ def score_run(
             raise ValueError("Explicit reference fields in retained model body")
         request_audits.append(
             {
-                "path": body_path.name,
+                "path": str(body_path.relative_to(directory)),
                 "sha256": sha(body_path.read_bytes()),
                 "model": body.get("model", "unknown"),
                 **audit,
@@ -638,6 +730,13 @@ def score_run(
                 for p in predictions
                 for key in ("layout_detector", "layout_detection")
                 if isinstance(p.get(key), dict) and "metrics" in p[key]
+            ]
+            + [
+                p["vision_result"]["layout_detection"]["metrics"]
+                for p in predictions
+                if isinstance(p.get("vision_result"), dict)
+                and isinstance(p["vision_result"].get("layout_detection"), dict)
+                and "metrics" in p["vision_result"]["layout_detection"]
             ],
             "scope": "Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. "
             "Parent elapsed time includes initialization and requests; RSS peaks are not summed.",
@@ -672,9 +771,17 @@ def score_run(
         "output_scope": (
             "table-only image transcription comparator"
             if processor in {"vision", "vision_regions"}
-            else "complete source assembly"
+            else (
+                "complete retained-source assembly with explicit mixed text provenance"
+                if processor == "hybrid"
+                else "complete source assembly"
+            )
         ),
-        "text_provenance": ("model-transcribed" if processor in {"vision", "vision_regions"} else "source-owned"),
+        "text_provenance": (
+            "mixed native-source/model-transcribed"
+            if processor == "hybrid"
+            else ("model-transcribed" if processor in {"vision", "vision_regions"} else "source-owned")
+        ),
         "source_candidate_ceilings": [{"id": t["id"], **_ceiling(t, by_id.get(t["id"], {}))} for t in private],
         "costs": costs,
         "resources": metrics,
@@ -728,7 +835,12 @@ def score_run(
                 "Vision is a table-only model transcription comparator; it neither conserves OCR source "
                 "nor produces complete page prose. Every intended table target remains scored."
                 if processor in {"vision", "vision_regions"}
-                else "Source ownership conservation verifies retained words, not raster OCR completeness."
+                else (
+                    "Hybrid accounts every original source word, with superseded words retained in its ledger; "
+                    "accepted transcription has no original source ownership and makes source_conserved false."
+                    if processor == "hybrid"
+                    else "Source ownership conservation verifies retained words, not raster OCR completeness."
+                )
             ),
             "Legacy predicted bboxes derive from owned text extents; annotation boxes may include borders or padding.",
         ],

@@ -10,6 +10,7 @@ import pytest
 from bench import generalization_demo as demo
 from bench import generalization_run, pipeline_run
 from bench import pipeline_vision_transcription as vision
+from test_generalization_report import hybrid_prediction
 from test_pipeline_run import config, record
 
 import pylopdf
@@ -234,3 +235,35 @@ def test_vision_gallery_preserves_original_rotation_despite_assembly_flags(
     assert result["pages"][0]["original_rotation"] == 90
     assert result["pages"][0]["display_viewport"] == [0, 0, 300, 340]
     assert result["pages"][0]["provenance"] == "model-transcribed; no source ownership"
+
+
+def test_hybrid_gallery_keeps_mixed_provenance_and_atomic_parent_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run = tmp_path / "run"
+    run.mkdir()
+    prediction = hybrid_prediction(run, monkeypatch, model_table=True)
+    pdf = run / "input.pdf"
+    records = [{"id": "negative", "pdf_path": str(pdf), "pdf_sha256": demo.sha(pdf.read_bytes()), "page_number": 0}]
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps({"split": "DEV", "pages": records}))
+    config = {"processor": "hybrid", "normalize_rotation": False, "run_id": "hybrid-test"}
+    (run / "frozen.json").write_text(
+        json.dumps(
+            {
+                "config": config,
+                "records": records,
+                "manifest_sha256": demo.sha(manifest.read_bytes()),
+            }
+        )
+    )
+    (run / "report.json").write_text(
+        json.dumps({"config": config, "results": [prediction], "complete_output_pages": 1})
+    )
+    artifacts = tmp_path / "artifacts"
+    monkeypatch.setattr(demo, "ARTIFACT_ROOT", artifacts)
+    monkeypatch.setattr(demo, "verify_code", lambda *_args, **_kwargs: {"archive_hashes_verified": True})
+    result = demo.build(manifest, run, artifacts / "gallery", image_edge=512)
+    assert result["pages"][0]["complete_output_verified"]
+    assert result["pages"][0]["provenance"] == "mixed native-source/model-transcribed; original words accounted"
+    assert "MODEL literal" in (artifacts / "gallery/index.html").read_text()
