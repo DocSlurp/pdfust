@@ -226,7 +226,13 @@ def prepare_page(
         local = {"page_size": source["page_size"], "words": words}
         try:
             frozen = ownership.freeze(local, crop["topology_response"], crop["viewport"], crop["url"])
-            row_bodies = ownership.batches(frozen, config["model"], crop["url"], max_questions=config["max_questions"])
+            row_bodies = ownership.batches(
+                frozen,
+                config["model"],
+                crop["url"],
+                max_questions=config["max_questions"],
+                image=config.get("image", True),
+            )
             if any(
                 len(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()) > MAX_BODY_BYTES
                 for body in row_bodies
@@ -354,7 +360,12 @@ def process_page(
             rows = ownership.collect(crop["snapshot"], crop["row_bodies"], responses)
             write_json(output / f"{stem}-row-receipt.json", rows)
             cell_bodies = ownership.batches(
-                crop["snapshot"], config["model"], crop["url"], rows=rows, max_questions=config["max_questions"]
+                crop["snapshot"],
+                config["model"],
+                crop["url"],
+                rows=rows,
+                max_questions=config["max_questions"],
+                image=config.get("image", True),
             )
             stage = f"{crop['id']}/cells"
             cell_responses = []
@@ -490,7 +501,10 @@ def run(
     if config.get("boundary_words", "strict") not in {"strict", "residual"}:
         raise ValueError("Unknown boundary word treatment")
     transport = config.get("transport_concurrency", 1)
-    if type(transport) is not int or transport not in (1, 3) or config.get("model") not in candidate.IMAGE_MODELS:
+    if type(config.get("image", True)) is not bool:
+        raise ValueError("Ownership image flag must be boolean")
+    admitted_models = candidate.IMAGE_MODELS if config.get("image", True) else ownership.DECISION_MODELS
+    if type(transport) is not int or transport not in (1, 3) or config.get("model") not in admitted_models:
         raise ValueError("Unknown admitted image decision model or transport concurrency")
     if type(config.get("max_questions", 16)) is not int or not 1 <= config.get("max_questions", 16) <= 16:
         raise ValueError("Native ownership batches require 1-16 questions")
@@ -639,7 +653,8 @@ def main() -> None:
     parser.add_argument("--source-trusted-code", type=Path, required=True)
     parser.add_argument("--topology-trusted-code", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--model", choices=candidate.IMAGE_MODELS, required=True)
+    parser.add_argument("--model", choices=ownership.DECISION_MODELS, required=True)
+    parser.add_argument("--text-only", action="store_true")
     parser.add_argument("--boundary-words", choices=("strict", "residual"), default="strict")
     parser.add_argument("--max-questions", type=int, choices=range(1, 17), default=16)
     parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
@@ -652,6 +667,8 @@ def main() -> None:
     config = {
         k: getattr(args, k) for k in ("model", "max_questions", "run_hosted", "prepare_only", "reviewed_parser_sha256")
     }
+    if args.text_only:
+        config["image"] = False
     if args.geometry_only:
         config["geometry_only"] = True
     if args.boundary_words == "residual":

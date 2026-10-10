@@ -259,9 +259,16 @@ def _rows(plan: Plan, receipt: dict[str, Any], packet: dict[str, Any]) -> dict[s
 
 
 def _body(
-    plan: Plan, packet: dict[str, Any], indexes: list[int], model: str, url: str, rows: dict[str, Any] | None
+    plan: Plan,
+    packet: dict[str, Any],
+    indexes: list[int],
+    model: str,
+    url: str | None,
+    rows: dict[str, Any] | None,
+    *,
+    image: bool = True,
 ) -> dict[str, Any]:
-    if model not in DECISION_MODELS or _image(url) != packet["image_sha256"]:
+    if model not in DECISION_MODELS or (image and _image(url) != packet["image_sha256"]):
         raise ValueError("Decision model or frozen crop differs")
     evidence = {
         "snapshot_sha256": plan.sha256,
@@ -282,25 +289,37 @@ def _body(
         "questions": {
             f"w{i}": {
                 "type": "choice",
-                "instructions": f"Consider ONLY words.w{i}. " + INSTRUCTIONS,
+                "instructions": f"Consider ONLY words.w{i}. "
+                + (
+                    INSTRUCTIONS
+                    if image
+                    else (
+                        "Text-only control: source pixels are unavailable; do not infer visual confirmation. "
+                        + INSTRUCTIONS.replace(
+                            "the attached image covers viewport", "viewport records withheld crop pixels"
+                        ).replace("pixels and source evidence", "source geometry and literal strings")
+                    )
+                ),
                 "criteria": _row_options(packet) if rows is None else _anchors(packet, rows[f"w{i}"]["choice"]),
             }
             for i in indexes
         },
     }
+    if not image:
+        body["state"] = text
     if len(_dump({k: body[k] for k in ("model", "questions")}).encode()) + len(text.encode()) > MAX_PACKET_BYTES:
         raise ValueError("Complete ownership menu exceeds byte admission")
     return body
 
 
 def batches(
-    plan: Plan, model: str, url: str, *, rows: dict[str, Any] | None = None, max_questions: int = 16
+    plan: Plan, model: str, url: str, *, rows: dict[str, Any] | None = None, max_questions: int = 16, image: bool = True
 ) -> list[dict[str, Any]]:
     """Build bounded native batches; cell stage follows complete row receipt admission."""
     if type(max_questions) is not int or not 1 <= max_questions <= 16:
         raise ValueError("Ownership requires 1-16 questions per batch")
     packet = _packet(plan)
-    if model not in DECISION_MODELS or _image(url) != packet["image_sha256"]:
+    if type(image) is not bool or model not in DECISION_MODELS or _image(url) != packet["image_sha256"]:
         raise ValueError("Decision model or frozen crop differs")
     decisions = _rows(plan, rows, packet) if rows is not None else None
     indexes = [
@@ -311,7 +330,7 @@ def batches(
     if math.ceil(len(indexes) / max_questions) > MAX_BATCHES:
         raise ValueError("Ownership stage exceeds 16 batches; no silent partial inventory")
     return [
-        _body(plan, packet, indexes[start : start + max_questions], model, url, decisions)
+        _body(plan, packet, indexes[start : start + max_questions], model, url, decisions, image=image)
         for start in range(0, len(indexes), max_questions)
     ]
 
@@ -335,7 +354,16 @@ def collect(
         if not 1 <= len(keys) <= 16 or any(key not in expected or key in output for key in keys):
             raise ValueError("Unknown, duplicate or over-limit ownership question")
         indexes = [int(key[1:]) for key in keys]
-        canonical = _body(plan, packet, indexes, body["model"], body["state"][1]["image_url"]["url"], decisions)
+        has_image = isinstance(body["state"], list)
+        canonical = _body(
+            plan,
+            packet,
+            indexes,
+            body["model"],
+            body["state"][1]["image_url"]["url"] if has_image else None,
+            decisions,
+            image=has_image,
+        )
         if body != canonical:
             raise ValueError("Ownership body changed frozen evidence or criteria")
         answers = result.get("answers") if isinstance(result, dict) else None

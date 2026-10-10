@@ -479,3 +479,17 @@ def test_residual_boundary_preserves_entire_word_and_single_global_owner(tmp_pat
     assert [w for r in work["plan"]["regions"] for w in r["source"]["words"] if w["id"] == "edge"] == [word]
     assert work["states"]["r0"]["unresolved_ids"] == ["edge"]
     assert "edge" not in [w["id"] for w in json.loads(work["crops"][0]["snapshot"].packet_json)["source"]["words"]]
+
+
+def test_text_only_prepare_admits_text_decision_models_without_pixels(tmp_path: Path) -> None:
+    original, topology = fixtures(tmp_path / "source", tmp_path / "topology")
+    work = runner.prepare_page(
+        original,
+        topology,
+        tmp_path / "topology",
+        {"generation_provider": "anthropic"},
+        config(model="typesafe/jev-1.13", image=False),
+    )
+    body = work["crops"][0]["row_bodies"][0]
+    assert isinstance(body["state"], str)
+    assert "image_url" not in json.dumps(body)

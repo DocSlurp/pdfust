@@ -183,3 +183,43 @@ def test_image_topology_request_and_rounding_provenance() -> None:
     rr[0]["answers"]["w0"]["probabilities"]["unresolved"] = 0.9
     with pytest.raises(ValueError, match="rounding"):
         own.collect(plan, rb, rr)
+
+
+def test_text_only_native_body_all_declared_models_and_strict_replay() -> None:
+    """Withheld pixels are explicit and the entire source choice remains replayable."""
+    # Existing helper fixture is intentionally source-only and offline.
+    source = {"page_size": [100, 100], "words": [{"id": "literal", "text": "whole", "bbox": [10, 10, 20, 20]}]}
+    payload = {
+        "answers": {"q0": {"tables": [{"bbox": [0, 0, 1000, 1000], "row_count": 1, "col_count": 1, "mergedspans": []}]}}
+    }
+    response = {"choices": [{"finish_reason": "stop", "message": {"content": json.dumps(payload)}}]}
+    frozen = own.freeze(source, response, [0, 0, 100, 100], IMAGE)
+    for model in own.DECISION_MODELS:
+        bodies = own.batches(frozen, model, IMAGE, image=False)
+        assert isinstance(bodies[0]["state"], str)
+        assert "image_url" not in json.dumps(bodies)
+        assert "Text-only control" in bodies[0]["questions"]["w0"]["instructions"]
+        options = bodies[0]["questions"]["w0"]["criteria"]
+        result = {
+            "answers": {
+                "w0": {
+                    "type": "choice",
+                    "choice": "t0r0",
+                    "probabilities": {k: 1 if k == "t0r0" else 0 for k in options},
+                }
+            }
+        }
+        receipt = own.collect(frozen, bodies, [result])
+        cells = own.batches(frozen, model, IMAGE, rows=receipt, image=False)
+        options = cells[0]["questions"]["w0"]["criteria"]
+        cell_result = {
+            "answers": {
+                "w0": {
+                    "type": "choice",
+                    "choice": "t0r0c0",
+                    "probabilities": {k: 1 if k == "t0r0c0" else 0 for k in options},
+                }
+            }
+        }
+        audit = own.assemble(frozen, bodies, [result], cells, [cell_result])
+        assert audit["state"]["tables"][0]["cells"][0]["source_ids"] == ["literal"]
