@@ -204,6 +204,26 @@ def verify_cost_reconciliation(directory: Path, sidecar_path: Path, ledger_path:
     }
 
 
+ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER = "a22e4b5a5b88da313946f2c91a845f67207399d9c71464e5590b10c2c9b7765d"
+
+
+def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
+    """Allow one root-reviewed unchanged full-evidence runner; strict difference helpers stay current."""
+    mode = frozen["config"].get("evidence_mode", "whole")
+    if mode not in {"whole", "differences"}:
+        raise ValueError("Unknown frozen candidate evidence mode")
+    names = ["p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py"]
+    if mode == "differences":
+        names.append("p003_candidate_diff.py")
+    for name in names:
+        digest = frozen["code_sha256"].get(name)
+        if digest == sha((Path(__file__).parent / name).read_bytes()):
+            continue
+        if name == "p003_candidate_run.py" and mode == "whole" and digest == ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER:
+            continue
+        raise ValueError("Unsupported frozen candidate replay helper version: " + name)
+
+
 def verify_treatment_helpers(frozen: dict[str, Any]) -> None:
     """Require exact current strict replay helpers for newly declared nonlegacy treatments."""
     config = frozen["config"]
@@ -483,9 +503,7 @@ def verify_candidate_run(
     names = [f"baseline-{i}" for i in range(len(inventories))]
     if not 2 <= len(inventories) <= 4 or trusted_inputs is None or set(trusted_inputs) != set(names):
         raise ValueError("Candidate verification requires independent trust maps for every declared baseline")
-    for name in ("p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py"):
-        if frozen["code_sha256"].get(name) != sha((Path(__file__).parent / name).read_bytes()):
-            raise ValueError("Unsupported frozen candidate replay helper version")
+    verify_candidate_helpers(frozen)
     baseline_reports, directories = [], []
     for name, inventory in zip(names, inventories, strict=True):
         if inventory["copied_directory"] != name:
@@ -646,7 +664,30 @@ def verify_candidate_run(
                 )
             if info["selector_image"] != metadata:
                 raise ValueError("Selector image differs from independently rendered declared crop")
-            body = runner._body(pool, config["model"], url, config["image_edge"])
+            mode = config.get("evidence_mode", "whole")
+            if mode == "differences":
+                from bench import p003_candidate_diff as differences
+
+                projection = differences.comparison(pool, max_bytes=config.get("evidence_max_bytes", 4096))
+                if _read(directory / f"{ident}-selector-{index}-evidence.json") != projection:
+                    raise ValueError("Candidate difference projection differs from complete frozen pool")
+                expected_evidence = {
+                    "mode": "differences",
+                    "max_bytes": config.get("evidence_max_bytes", 4096),
+                    "bytes": len(chooser.canonical_json(projection)),
+                    "sha256": sha(chooser.canonical_json(projection)),
+                    "differing_slots": len(projection["differing_slots"]),
+                }
+                if info.get("evidence") != expected_evidence:
+                    raise ValueError("Candidate difference evidence metadata changed")
+            body = runner._body(
+                pool,
+                config["model"],
+                url,
+                config["image_edge"],
+                evidence_mode=mode,
+                evidence_max_bytes=config.get("evidence_max_bytes", 4096),
+            )
             retained_body = _read(directory / f"{ident}-selector-{index}-request.json")
             response = _read(directory / f"{ident}-selector-{index}-response.json")
             calls = [c for c in prediction["ranking_calls"] if c["crop_index"] == index]

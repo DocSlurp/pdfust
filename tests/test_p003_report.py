@@ -719,6 +719,25 @@ def test_simple_transcription_wire_requires_current_helper_and_explicit_scope(
         p003_report.verify_treatment_helpers(frozen)
 
 
+def test_reviewed_candidate_runner_is_allowed_only_for_unchanged_whole_mode() -> None:
+    from bench import p003_report
+
+    names = ("p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py")
+    hashes = {name: sha((Path(p003_report.__file__).parent / name).read_bytes()) for name in names}
+    frozen = {"config": {}, "code_sha256": hashes}
+    hashes["p003_candidate_run.py"] = p003_report.ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER
+    p003_report.verify_candidate_helpers(frozen)
+    frozen["config"]["evidence_mode"] = "whole"
+    p003_report.verify_candidate_helpers(frozen)
+    frozen["config"]["evidence_mode"] = "differences"
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)
+    frozen["config"]["evidence_mode"] = "whole"
+    hashes["p003_candidate_run.py"] = "arbitrary-old-version"
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)
+
+
 def test_transport_failures_preserve_http_errors_without_duplicate_attempt_counts() -> None:
     from bench.p003_report import transport_failures
 
