@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 import pytest
+from bench import p003_header_decision_run as header
 from bench import p003_parallel as parallel
 from bench import p003_run
 
@@ -131,7 +132,8 @@ def test_mixed_kinds_fixed_commands_and_separate_rate_scopes(tmp_path):
                                "decision_status": "evaluated", "selection_status": "selected"}],
                   "incremental_ranking": {"returned_calls": 1}, "incremental_repair": {"returned_calls": 2},
                   "incremental_gate": {"returned_calls": 3}, "incremental_ownership": {"returned_calls": 4},
-                  "incremental_admission": {"returned_calls": 5}, "incremental_selection": {"returned_calls": 6}}
+                  "incremental_admission": {"returned_calls": 5}, "incremental_selection": {"returned_calls": 6},
+                  "incremental_header_selection": {"returned_calls": 7}}
         parallel.report_counts(status, report)
         assert ("contended_pages_per_minute" in status) is (kind == "pipeline")
         statuses.append(status)
@@ -228,6 +230,7 @@ def test_micro_relationship_metrics_never_become_page_rates():
 
 @pytest.mark.parametrize("flag", [
     "--input", "--pool", "--pool-trusted-code", "--selector-trusted-code", "--input-trusted-code",
+    "--header-trusted-code", "--generation-trusted-code",
 ])
 def test_auxiliary_paths_guarded_before_admission(tmp_path, monkeypatch, flag):
     seen = []
@@ -245,3 +248,107 @@ def test_auxiliary_replay_obeys_cpu_capacity():
     active = [{"kind": "admission"}, {"kind": "diagram"}, {"kind": "candidate"}]
     ordered = [{"kind": "diagram"}, {"kind": "admission"}, {"kind": "micro"}]
     assert parallel.next_launch_index(ordered, active, 6) == 2
+
+
+def test_header_command_matches_actual_cli_without_hosted_execution(tmp_path, monkeypatch):
+    arguments = [
+        "--pool", "pool", "--pool-trusted-code", "pool.json",
+        "--header-trusted-code", "header.json", "--generation-trusted-code", "generation.json",
+        "--model", header.MODELS[-1], "--evidence-mode", "local_header", "--image-edge", "0",
+    ]
+    arm = parallel.validate_plan([{"name": "header", "kind": "header", "arguments": arguments}], 1)[0]
+    command = parallel.command_for(arm, None, tmp_path / "output")
+    seen = []
+    monkeypatch.setattr(sys, "argv", [command[2], *command[3:]])
+    monkeypatch.setattr(header, "prepare", lambda *args, **kwargs: seen.append((args, kwargs)) or {})
+    monkeypatch.setattr(header, "execute", lambda *args: seen.append(args))
+    header.main()
+    assert len(seen) == 2
+    assert seen[0][0][2]["transport_concurrency"] == 3
+    assert seen[0][1]["header_trust"].is_absolute()
+    assert seen[0][1]["generation_trust"].is_absolute()
+    active = [{"kind": "pipeline"}, {"kind": "header"}, {"kind": "diagram"}]
+    assert parallel.next_launch_index([{"kind": "header"}, {"kind": "micro"}], active, 6) == 1
+
+
+def test_header_partial_output_accounting_stays_incremental():
+    accounting = {"charges": {"effective_usd": None}, "denominator": 16}
+    status = {"kind": "header", "wall_seconds": 10}
+    parallel.report_counts(status, {
+        "results": [{"status": "error", "selection_status": "selected_partial_headers"}],
+        "incremental_header_selection": accounting,
+    })
+    assert status["incremental_status_counts"] == {"selected_partial_headers": 1}
+    assert status["incremental_accounting"] == accounting
+    assert status["completed_pages"] == 0
+    assert "contended_pages_per_minute" not in status
+
+
+def coordination_fixture():
+    policy = json.loads(json.dumps(parallel.POLICY))
+    primary = {"policy": policy, "arms": [{
+        "kind": "pipeline", "status": "running",
+        "command": [sys.executable, "-m", "bench.p003_run", "--transport-concurrency", "3"],
+    }]}
+    ledger = {"concurrent_policy": policy["concurrent_policy"], "requests": [{
+        "tag": "P003/primary/page", "concurrent_state": "in_flight", "cost_status": "reserved",
+        "gateway": "openrouter", "reservation_uuid": "fixture",
+    }]}
+    return [{"kind": "micro", "arguments": ["--provider", "openrouter"]}], primary, ledger
+
+
+def test_explicit_coordinated_micro_sharing_preserves_inputs():
+    plan, primary, ledger = coordination_fixture()
+    before = json.dumps([plan, primary, ledger])
+    parallel.validate_coordination(plan, 3, primary, ledger)
+    assert json.dumps([plan, primary, ledger]) == before
+
+
+@pytest.mark.parametrize("scenario", [
+    "heavy", "six_hosts", "primary_capacity", "ledger_capacity", "serial_primary",
+    "unknown_module", "gateway", "no_active", "blocked", "non_p003", "serial_reserved", "over_capacity",
+])
+def test_coordinated_sharing_refuses_unsafe_contract(scenario):  # noqa: C901 - independent contract fixtures.
+    plan, primary, ledger = coordination_fixture()
+    max_arms = 3
+    if scenario == "heavy":
+        plan[0]["kind"] = "header"
+    elif scenario == "six_hosts":
+        max_arms = 6
+    elif scenario == "primary_capacity":
+        primary["policy"]["transport_concurrency"] = 6
+    elif scenario == "ledger_capacity":
+        ledger["concurrent_policy"]["max_inflight"] = 6
+    elif scenario == "serial_primary":
+        primary["arms"][0]["command"][-1] = "1"
+    elif scenario == "unknown_module":
+        primary["arms"][0]["command"][2] = "bench.other"
+    elif scenario == "gateway":
+        primary["arms"][0]["command"].extend(["--gate-provider", "vercel"])
+    elif scenario == "no_active":
+        primary["arms"][0]["status"] = "completed"
+    elif scenario == "blocked":
+        ledger["concurrent_spend_blocked"] = {"reason": "fixture"}
+    elif scenario == "non_p003":
+        ledger["requests"][0]["tag"] = "P002/other/page"
+    elif scenario == "serial_reserved":
+        ledger["requests"].append({"tag": "P003/serial", "cost_status": "reserved"})
+    elif scenario == "over_capacity":
+        ledger["requests"] *= 4
+    with pytest.raises(ValueError, match=r"."):
+        parallel.validate_coordination(plan, max_arms, primary, ledger)
+
+
+def test_coordinated_receipt_reads_only_synthetic_ledger(tmp_path):
+    plan, primary, ledger = coordination_fixture()
+    status = tmp_path / "primary-status.json"
+    status.write_text(json.dumps(primary))
+    directory = tmp_path / "bench/results/pdf-master-artifacts/decisions"
+    directory.mkdir(parents=True)
+    ledger_path = directory / "ledger.json"
+    original = json.dumps(ledger).encode()
+    ledger_path.write_bytes(original)
+    receipt = parallel.coordinated_receipt(plan, 3, status, tmp_path)
+    assert receipt["policy_mutated"] is False
+    assert ledger_path.read_bytes() == original
+    assert receipt["primary_status_path"] == str(status)

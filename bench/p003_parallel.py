@@ -28,6 +28,7 @@ MODULES = {
     "gate": "bench.p003_gate_run", "topology": "bench.p003_topology_run",
     "admission": "bench.p003_structure_admission_run", "micro": "bench.p003_micro_relations_run",
     "diagram": "bench.p003_geometry_diagram_run",
+    "header": "bench.p003_header_decision_run",
 }
 INCREMENTAL_FIELDS = {
     "candidate": ("ranking_status", "incremental_ranking"),
@@ -36,6 +37,7 @@ INCREMENTAL_FIELDS = {
     "topology": ("topology_status", "incremental_ownership"),
     "admission": ("decision_status", "incremental_admission"),
     "diagram": ("selection_status", "incremental_selection"),
+    "header": ("selection_status", "incremental_header_selection"),
 }
 MAX_ARMS = 64
 MAX_CONCURRENT = 3
@@ -103,6 +105,7 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
                 "--baseline", "--trusted-code", "--source-baseline", "--topology-baseline",
                 "--source-trusted-code", "--topology-trusted-code",
                 "--input", "--pool", "--pool-trusted-code", "--selector-trusted-code", "--input-trusted-code",
+                "--header-trusted-code", "--generation-trusted-code",
             }:
                 path = value.split("=", 1)[1] if "=" in value else (
                     arguments[i + 1] if i + 1 < len(arguments) else ""
@@ -284,15 +287,89 @@ def next_launch_index(ordered: list[dict[str, Any]], active: list[dict[str, Any]
     """Overlap lightweight arms while retaining the three-heavy-worker CPU bound."""
     if len(active) >= limit:
         return None
-    heavy = {"pipeline", "candidate", "admission", "diagram"}
+    heavy = {"pipeline", "candidate", "admission", "diagram", "header"}
     heavy_count = sum(arm.get("kind", "pipeline") in heavy for arm in active)
     return next((i for i, arm in enumerate(ordered)
                  if heavy_count < MAX_CONCURRENT or arm.get("kind", "pipeline") not in heavy), None)
 
 
+def validate_coordination(plan: list[dict[str, Any]], max_arms: int,  # noqa: C901, PLR0912 - fail-closed sharing checks.
+                          primary: dict[str, Any], ledger: dict[str, Any]) -> None:
+    """Validate root's explicit auxiliary micro-only sharing against immutable snapshots."""
+    if max_arms != MAX_CONCURRENT or not plan or any(arm.get("kind", "pipeline") != "micro" for arm in plan):
+        message = "Coordinated sharing permits at most three MICRO-only hosts"
+        raise ValueError(message)
+    for arm in plan:
+        arguments = arm.get("arguments", [])
+        providers = [value.split("=", 1)[1] if "=" in value else arguments[i + 1:i + 2][0]
+                     for i, value in enumerate(arguments)
+                     if value.split("=", 1)[0] == "--provider" and ("=" in value or i + 1 < len(arguments))]
+        if providers != ["openrouter"]:
+            message = "Coordinated micro arms require one explicit OpenRouter provider"
+            raise ValueError(message)
+    expected = POLICY["concurrent_policy"]
+    policy = primary.get("policy", {})
+    if policy.get("transport_concurrency") != MAX_CONCURRENT or policy.get("concurrent_policy") != expected:
+        message = "Primary queue must declare the same P003 three-slot policy"
+        raise ValueError(message)
+    active = [arm for arm in primary.get("arms", []) if arm.get("status") in {"running", "starting"}]
+    if not active or primary.get("interrupted"):
+        message = "Root coordination requires an active uninterrupted primary queue"
+        raise ValueError(message)
+    for arm in active:
+        command = arm.get("command", [])
+        if (arm.get("kind", "pipeline") != "pipeline" or len(command) < MAX_CONCURRENT
+                or command[1:3] != ["-m", "bench.p003_run"]
+                or command.count("--transport-concurrency") != 1
+                or any(arg.startswith("--transport-concurrency=") for arg in command)
+                or command[command.index("--transport-concurrency") + 1:][:1] != ["3"]
+                or any("gateway" in arg.lower() or "vercel" in arg.lower() for arg in command)):
+            message = "Every active primary arm must use the known pipeline transport3 command"
+            raise ValueError(message)
+    if ledger.get("concurrent_policy") != expected or ledger.get("concurrent_spend_blocked"):
+        message = "Shared ledger policy must already be reconciled and unblocked"
+        raise ValueError(message)
+    entries = ledger.get("requests")
+    if not isinstance(entries, list):
+        message = "Complete shared ledger request inventory required"
+        raise TypeError(message)
+    inflight = [entry for entry in entries if entry.get("concurrent_state") == "in_flight"]
+    if len(inflight) > MAX_CONCURRENT:
+        message = "Shared ledger exceeds the admitted three-request capacity"
+        raise ValueError(message)
+    for entry in entries:
+        if entry.get("concurrent_state") == "in_flight":
+            if (not str(entry.get("tag", "")).startswith("P003/")
+                    or entry.get("gateway") != "openrouter" or not entry.get("reservation_uuid")):
+                message = "In-flight non-P003 or nonconcurrent OpenRouter work forbids coordinated sharing"
+                raise ValueError(message)
+        elif entry.get("cost_status") == "reserved" and not entry.get("response_file") and not entry.get("error"):
+            message = "Unresolved serial transport admission forbids coordinated sharing"
+            raise ValueError(message)
+
+
+def coordinated_receipt(plan: list[dict[str, Any]], max_arms: int, status: Path, root: Path) -> dict[str, Any]:
+    """Root-only read-only policy inspection; no client, credentials or ledger mutation."""
+    from bench.decision_hosted import exclusive_lock  # noqa: PLC0415 - no transport construction.
+
+    status = guard_path(status)
+    primary_bytes = status.read_bytes()
+    directory = guard_path(root / "bench/results/pdf-master-artifacts/decisions")
+    with exclusive_lock(directory / "ledger.lock"):
+        ledger_bytes = (directory / "ledger.json").read_bytes()
+        validate_coordination(plan, max_arms, json.loads(primary_bytes), json.loads(ledger_bytes))
+    return {"primary_status_path": str(status.resolve()),
+            "primary_status_sha256": hashlib.sha256(primary_bytes).hexdigest(),
+            "shared_ledger_sha256_at_admission": hashlib.sha256(ledger_bytes).hexdigest(),
+            "shared_concurrent_policy": POLICY["concurrent_policy"],
+            "scope": "Explicit root-coordinated MICRO-only auxiliary queue; separate resources, shared transport3",
+            "no_other_paid_jobs_root_attested": True, "policy_mutated": False}
+
+
 def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit cleanup.
     plan: list[dict[str, Any]], manifest: Path | None, directory: Path, *, seed: int,
-              cutoff: float = P003_PAID_CUTOFF, root: Path = ROOT, max_parallel_arms: int = 3) -> dict[str, Any]:
+              cutoff: float = P003_PAID_CUTOFF, root: Path = ROOT, max_parallel_arms: int = 3,
+              coordinated_concurrent_queue: Path | None = None) -> dict[str, Any]:
     """Run only fresh arms, with per-arm snapshots and atomic status checkpoints."""
     directory = guard_path(directory)
     manifest = guard_path(manifest) if manifest is not None else None
@@ -300,6 +377,9 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
     if type(max_parallel_arms) is not int or max_parallel_arms not in (3, 6):
         message = "Queue admits exactly three or six concurrent arms"
         raise ValueError(message)
+    coordination = None
+    if coordinated_concurrent_queue is not None:
+        coordination = coordinated_receipt(ordered, max_parallel_arms, coordinated_concurrent_queue, root)
     for arm in ordered:
         command_for(arm, manifest, directory / arm["name"])
     directory.mkdir(parents=True, exist_ok=False)
@@ -316,11 +396,18 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
               "max_cpu_heavy_arms": 3, "transport_slot_wait": max_parallel_arms > MAX_CONCURRENT,
               "heartbeat_seconds": HEARTBEAT_SECONDS,
               "declared_arm_duration_overrides": True,
-              "scheduler": "first eligible in frozen order; pipeline/candidate/admission/diagram are CPU-heavy"}
+              "scheduler": "first eligible in frozen order; pipeline/candidate/admission/diagram/header are CPU-heavy"}
+    if coordination is not None:
+        policy.update(exclusive_paid_work_required=False, root_coordinated_micro_only=True)
     record = {"policy": policy, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,
               "manifest": str(manifest.resolve()) if manifest is not None else None, "arms": statuses,
               "rates_label": "contended per-arm rates separated by experiment kind",
               "aggregate_rates": None, "max_observed_concurrent_arms": 0}
+    if coordination is not None:
+        record["coordination"] = coordination
+        record["resource_scope"] = (
+            "This auxiliary queue and its children only; primary queue resources excluded; shared transport contention"
+        )
 
     last_checkpoint = started
 
@@ -358,7 +445,7 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                 try:
                     environment = os.environ.copy()
                     environment.pop("JEV_P003_TRANSPORT_SLOTS", None)
-                    if max_parallel_arms > MAX_CONCURRENT:
+                    if max_parallel_arms > MAX_CONCURRENT or coordination is not None:
                         environment["JEV_P003_TRANSPORT_SLOTS"] = "3"
                     process = subprocess.Popen(  # noqa: S603 - fixed module and literal validated arguments.
                         command, cwd=root, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
@@ -424,12 +511,13 @@ def main() -> None:
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=3)
     parser.add_argument("--max-parallel-arms", type=int, choices=(3, 6), default=3)
-    parser.add_argument("--exclusive-paid-work", action="store_true")
+    acknowledgment = parser.add_mutually_exclusive_group(required=True)
+    acknowledgment.add_argument("--exclusive-paid-work", action="store_true")
+    acknowledgment.add_argument("--coordinated-concurrent-queue", type=Path)
     args = parser.parse_args()
-    if not args.exclusive_paid_work:
-        parser.error("Root must stop all serial/other paid work and reconcile policy offline before acknowledgment")
     run_queue(json.loads(guard_path(args.plan).read_bytes()), guard_path(args.manifest) if args.manifest else None,
-              guard_path(args.directory), seed=args.seed, max_parallel_arms=args.max_parallel_arms)
+              guard_path(args.directory), seed=args.seed, max_parallel_arms=args.max_parallel_arms,
+              coordinated_concurrent_queue=args.coordinated_concurrent_queue)
 
 
 if __name__ == "__main__":
