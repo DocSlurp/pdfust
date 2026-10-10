@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from bench import p003_micro_relations as micro
-from bench.p003_micro_verification import QUESTIONS, cost, verify_results
+from bench.p003_micro_verification import QUESTIONS, cost, resolved_entries, verify_results
 from bench.silver import write_json
 
 
@@ -71,3 +71,12 @@ def test_returned_replay_is_not_fresh_native_evidence(tmp_path: Path) -> None:
 def test_unknown_accounting_cannot_become_free(value: object) -> None:
     with pytest.raises(ValueError, match="accounting"):
         cost(value)
+
+
+def test_unknown_status_cannot_become_fully_priced() -> None:
+    entries = [{"cost_status": status, "accounted_usd": 0.3} for status in
+               ("unknown", "unknown: missing usage or catalog price", "reserved", None)]
+    assert resolved_entries(entries) == []
+    reported = {"cost_status": "provider-reported USD", "accounted_usd": 0.001}
+    estimate = {"cost_status": "catalog estimate", "accounted_usd": 0.002}
+    assert resolved_entries([*entries, reported, estimate]) == [reported, estimate]

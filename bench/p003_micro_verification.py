@@ -34,6 +34,12 @@ def cost(value: Any) -> float:
     return value
 
 
+def resolved_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Only explicit reported charges and labeled estimates resolve an attempt."""
+    bases = {"provider-reported USD", "catalog estimate", "provider-reported BYOK upstream plus gateway USD"}
+    return [entry for entry in entries if entry.get("cost_status") in bases]
+
+
 def verify_results(
     directory: Path, config: dict[str, Any], plans: dict[str, Any], selected: list[dict[str, Any]],
     requests: list[dict[str, Any]], report: dict[str, Any],
@@ -205,7 +211,7 @@ def verify(directory: Path, trusted_code: dict[str, str], source_trusted_code: d
         returned = report["results"][index].get("entry")
         if returned is not None and returned != entry:
             raise ValueError("Micro charge entry differs from fresh response provenance")
-    resolved = [e for e in entries if e.get("cost_status") != "reserved"]
+    resolved = resolved_entries(entries)
     effective = sum(cost(e["accounted_usd"]) for e in resolved) if len(resolved) == len(entries) else None
     reported = [cost(e["provider_reported_usd"]) for e in entries if "provider_reported_usd" in e]
     expected_charges = {
