@@ -492,6 +492,34 @@ def _evaluate(targets: list[dict[str, Any]], predictions: list[dict[str, Any]]) 
     return result
 
 
+def _positive_macro(page_scores: list[dict[str, Any]]) -> dict[str, Any]:
+    """Average exact recalls over all scored positive pages, including failures."""
+    pages = [p for p in page_scores if p.get("structural_scored") and p.get("positive_page")]
+    cells = sum(0.0 if p.get("error") else p["correct_text_cells"] / p["expected_cells"] for p in pages)
+    tables = sum(0.0 if p.get("error") else p["complete_tables"] / p["expected_tables"] for p in pages)
+    return {
+        "positive_pages": len(pages),
+        "exact_cell_recall": cells / len(pages) if pages else None,
+        "complete_table_recall": tables / len(pages) if pages else None,
+        "scope": "Supplementary arithmetic mean of per-positive-page recalls. Every scored positive page "
+        "has equal weight; failed/missing pages contribute zero. Negative and unscored diagnostic pages "
+        "are excluded here and remain in their existing metrics. Primary micro denominators are unchanged. "
+        "These recalls do not penalize extra tables; existing false-positive metrics remain required.",
+    }
+
+
+def _macro_line(macro: dict[str, Any]) -> str:
+    cells, tables = macro["exact_cell_recall"], macro["complete_table_recall"]
+    cell_label = "undefined" if cells is None else f"{cells:.2%}"
+    table_label = "undefined" if tables is None else f"{tables:.2%}"
+    return (
+        f"Supplementary positive-page macro recall ({macro['positive_pages']} pages): "
+        f"exact cells {cell_label}; complete tables {table_label}. "
+        "Equal page weights; failures contribute zero; negatives remain separately scored. "
+        "Primary cell/table totals and false-positive metrics remain unchanged."
+    )
+
+
 def _costs(report: dict[str, Any]) -> dict[str, Any]:
     bases = report.get("cost_bases", {})
     effective = report.get("effective_usd")
@@ -809,6 +837,7 @@ def score_run(
         "intended_pages": len(expected),
         "scores": scored["totals"],
         "positive": positive,
+        "positive_macro": _positive_macro(scored["pages"]),
         "negative": negative,
         "page_scores": scored["pages"],
         "groups": groups,
@@ -987,6 +1016,7 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             ),
             "",
         ]
+        lines += [_macro_line(run["positive_macro"]), ""]
         legacy = run["authored_legacy_exact"]
         lines += [
             (
@@ -1059,6 +1089,7 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
                 "Failure categories: `" + json.dumps(r["failure_taxonomy"]["counts"], sort_keys=True) + "`.",
                 "",
             ]
+            lines += [_macro_line(r["positive_macro"]), ""]
             density = r["posthoc_density"]
             if density is not None:
                 lines += [

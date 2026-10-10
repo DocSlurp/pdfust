@@ -17,6 +17,7 @@ from bench.generalization_report import (
     _evaluate,
     _failure_taxonomy,
     _model_breakdown,
+    _positive_macro,
     _posthoc_density,
     _ratio,
     load_corpus,
@@ -922,3 +923,37 @@ def test_row_evidence_requires_complete_exact_dependencies(fixture: dict[str, An
     frozen["code_sha256"][changed] = sha(altered)
     with pytest.raises(ValueError, match="source-derived row evidence"):
         verify_code(f["run"], frozen, processor="whole")
+
+
+def test_positive_macro_equal_page_weights_failures_and_negative_exclusion() -> None:
+    dense = {"row_count": 1, "col_count": 100, "values": [[str(i) for i in range(100)]], "spans": []}
+    small = {"row_count": 1, "col_count": 1, "values": [["A"]], "spans": []}
+    targets: list[dict[str, Any]] = [
+        {"id": "dense", "tables": [dense]},
+        {"id": "small", "tables": [small]},
+        {"id": "failed", "tables": [small]},
+        {"id": "negative", "tables": []},
+        {"id": "diagnostic", "structural_scored": False},
+    ]
+    predictions: list[dict[str, Any]] = [
+        {"id": "dense", "status": "ok", "tables": []},
+        {"id": "small", "status": "ok", "tables": [small]},
+        {"id": "failed", "status": "error", "tables": [small]},
+        {"id": "negative", "status": "ok", "tables": []},
+    ]
+    result = _evaluate(targets, predictions)
+    macro = _positive_macro(result["pages"])
+    assert macro["positive_pages"] == 3
+    assert macro["exact_cell_recall"] == pytest.approx(1 / 3)
+    assert macro["complete_table_recall"] == pytest.approx(1 / 3)
+    assert result["totals"]["correct_text_cells"] == 1
+    assert result["totals"]["expected_cells"] == 102
+    assert result["totals"]["negative_page"] == 1
+    assert _positive_macro([])["exact_cell_recall"] is None
+
+
+def test_positive_macro_missing_page_contributes_zero() -> None:
+    small = {"row_count": 1, "col_count": 1, "values": [["A"]], "spans": []}
+    result = _evaluate([{"id": "missing", "tables": [small]}], [])
+    assert _positive_macro(result["pages"])["exact_cell_recall"] == 0
+    assert _positive_macro(result["pages"])["complete_table_recall"] == 0
