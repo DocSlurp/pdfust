@@ -254,6 +254,11 @@ def test_hybrid_gallery_keeps_mixed_provenance_and_atomic_parent_output(
                 "config": config,
                 "records": records,
                 "manifest_sha256": demo.sha(manifest.read_bytes()),
+                "code_sha256": {
+                    "pipeline_hybrid_composition.py": demo.sha(
+                        (Path(__file__).parents[1] / "bench/pipeline_hybrid_composition.py").read_bytes()
+                    )
+                },
             }
         )
     )

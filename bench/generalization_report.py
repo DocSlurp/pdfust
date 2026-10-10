@@ -31,6 +31,7 @@ from bench.silver import canonical, guard_path, sha
 LOCALIZATION_IOU = 0.5
 NATURAL_SCREEN_PAGES = 16
 CONCURRENT_VISION_WORKERS = 4
+HYBRID_LEGACY_RENDERER_SHA256 = "6e1edda5cd94b675611e30cef8c228f87968c3b9ffdf8f9b7b135d544e18ae68"
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 
@@ -67,6 +68,9 @@ TRUSTED_HISTORICAL_CODE = {
         "a47235e0aad3c1789d460c924f273865cb911fb75fec4fb36a0f5eb39ad5d802": "3abf651",
         "a4dbfc283488edd60ee3877e5acb74de1e9263626d567ef5d73a719810339325": "fc49724",
         "d6a481f585c8baf09eca6d724b1f0311c1a02ce8c1fe9e3371dd16a99ea4154a": "be05820",
+    },
+    "pipeline_hybrid_composition.py": {
+        HYBRID_LEGACY_RENDERER_SHA256: "c821fa3",
     },
     "pipeline_regions.py": {
         "66c6ec07d91753ec9a8885124e18a3d0a64f929be5f29682e1050ea826894d2a": "83bd9a6",
@@ -261,6 +265,12 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         ) != _vision_region_validation_ast((local / helper_name).read_bytes()):
             raise ValueError("Unreviewed or incompatible historical vision region composition")
         historical_helpers[helper_name] = reviewed
+    if processor == "hybrid" and comparison["pipeline_hybrid_composition.py"] != "identical":
+        digest = hashes["pipeline_hybrid_composition.py"]
+        reviewed = TRUSTED_HISTORICAL_CODE["pipeline_hybrid_composition.py"].get(digest)
+        if digest != HYBRID_LEGACY_RENDERER_SHA256 or reviewed is None:
+            raise ValueError("Unreviewed historical hybrid composition or renderer")
+        historical_helpers["pipeline_hybrid_composition.py"] = reviewed
     if "pipeline_layout_fusion.py" in required and comparison["pipeline_layout_fusion.py"] != "identical":
         raise ValueError("Trusted source-only detector fusion differs from frozen code")
     if row_evidence and any(
@@ -332,6 +342,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         "local_comparison": comparison,
         "trusted_historical_commits": trusted_history,
         "renderer": renderer,
+        "hybrid_renderer_version": _hybrid_render_version(directory, frozen) if processor == "hybrid" else None,
         "region_validator_ast_compatible": processor in {"regions", "hybrid"},
         "vision_region_validator_ast_compatible": helper_name in required,
     }
@@ -348,6 +359,24 @@ def _bounds(source: dict[str, Any], state: dict[str, Any]) -> None:
                 max(b[2] for b in boxes),
                 max(b[3] for b in boxes),
             ]
+
+
+def _hybrid_render_version(directory: Path, frozen: dict[str, Any] | None = None) -> int:
+    """Select legacy markup solely from exact reviewed frozen helper bytes."""
+    if frozen is None:
+        frozen_path = directory / "frozen.json"
+        if not frozen_path.is_file():
+            return 2
+        frozen = _read(frozen_path)
+    digest = frozen["code_sha256"].get("pipeline_hybrid_composition.py")
+    if digest == HYBRID_LEGACY_RENDERER_SHA256:
+        if sha(guard_path(directory / "code" / "pipeline_hybrid_composition.py").read_bytes()) != digest:
+            raise ValueError("Legacy hybrid renderer archive hash mismatch")
+        return 1
+    current = sha((Path(__file__).parent / "pipeline_hybrid_composition.py").read_bytes())
+    if digest != current:
+        raise ValueError("Unreviewed hybrid renderer hash")
+    return 2
 
 
 def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[str, Any]:
@@ -393,7 +422,7 @@ def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[s
     ):
         raise ValueError("Hybrid detector exclusion differs from trusted native geometry replay")
     transcription = _read(directory / "vision" / f"{ident}-structure.json")
-    rebuilt = hybrid.compose(source, native_state, transcription)
+    rebuilt = hybrid.compose(source, native_state, transcription, render_version=_hybrid_render_version(directory))
     if rebuilt.get("status") != "ok" or rebuilt != prediction.get("composition"):
         raise ValueError("Hybrid composition differs from trusted complete replay")
     if _read(directory / f"{ident}-structure.json") != rebuilt:
@@ -899,6 +928,11 @@ def score_run(
             "scope": "Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. "
             "Parent elapsed time includes initialization and requests; RSS peaks are not summed.",
         }
+    metrics["run_interval_scope"] = (
+        "Page-processing run interval, excluding freeze/client setup and command startup. "
+        "Includes page PDF processing and retained outputs; use parent process CPU/RSS/wall. "
+        "Concurrent per-page process CPU intervals overlap and must not be summed."
+    )
     for field in ("wall_seconds", "cpu_seconds", "cpu_utilization_percent", "peak_sampled_rss_bytes", "measurement"):
         metrics.setdefault(field, None)
     if report.get("page_count", len(predictions)) != len(predictions):
@@ -1018,6 +1052,7 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
         "",
         "All intended pages, including missing and failed outputs, remain in denominators.",
         "OCR text recall is unmeasured without aligned OCR references. JSON null means unmeasured or undefined.",
+        "Timing/throughput cover the page-processing interval, excluding freeze/client setup and command startup.",
         "",
     ]
     lines += [
@@ -1120,7 +1155,9 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
         (
             "Frozen runs with independently verified successful states, exact Markdown "
             "and explicit text provenance appear below. Missing/error pages remain in every scored denominator. "
-            "Protocol groups use different frozen datasets and must not be pooled into one quality score."
+            "Protocol groups use different frozen datasets and must not be pooled into one quality score. "
+            "Timing/throughput cover page processing, excluding freeze/client setup and command startup; "
+            "overlapping concurrent per-page CPU intervals are not additive."
         ),
         "",
     ]
@@ -1244,7 +1281,8 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
             lines += [
                 "",
                 (
-                    f"Whole-run wall {_fmt(m.get('wall_seconds'))}s; CPU {_fmt(m.get('cpu_seconds'))}s; "
+                    "Page-processing run wall (excludes freeze/client setup) "
+                    f"{_fmt(m.get('wall_seconds'))}s; CPU {_fmt(m.get('cpu_seconds'))}s; "
                     f"sampled RSS {_fmt(m.get('peak_sampled_rss_bytes'))} bytes; "
                     f"verified output pages/min {_fmt(r['pages_per_minute'])}; "
                     f"exact positive pages/min {_fmt(r['exact_positive_pages_per_minute'])}. "

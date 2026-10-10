@@ -18,6 +18,7 @@ from bench.generalization_report import (
     _costs,
     _evaluate,
     _failure_taxonomy,
+    _hybrid_render_version,
     _model_breakdown,
     _positive_macro,
     _posthoc_density,
@@ -1094,3 +1095,53 @@ def test_concurrent_vision_rejects_inconsistent_frozen_concurrency(fixture: dict
     frozen["concurrency"] = 1
     with pytest.raises(ValueError, match="four-worker whole-page vision"):
         verify_code(fixture["run"], frozen, processor="vision")
+
+
+def test_hybrid_legacy_renderer_requires_exact_reviewed_archive(
+    fixture: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    names = [
+        "pipeline_run.py",
+        "pipeline_assembly.py",
+        "generalization_hybrid_run.py",
+        "pipeline_hybrid_composition.py",
+        "generalization_run.py",
+        "pipeline_regions.py",
+        "generalization_vision_run.py",
+        "generalization_vision_regions.py",
+        "pipeline_vision_transcription.py",
+        "pipeline_frontier.py",
+    ]
+    for name in names:
+        data = (Path(module.__file__).parent / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    legacy = b"# Reviewed legacy helper fixture; never executed.\n"
+    digest = sha(legacy)
+    monkeypatch.setattr(module, "HYBRID_LEGACY_RENDERER_SHA256", digest)
+    history = deepcopy(module.TRUSTED_HISTORICAL_CODE)
+    history["pipeline_hybrid_composition.py"][digest] = "reviewed-legacy-fixture"
+    monkeypatch.setattr(module, "TRUSTED_HISTORICAL_CODE", history)
+    (f["run"] / "code" / "pipeline_hybrid_composition.py").write_bytes(legacy)
+    frozen["code_sha256"]["pipeline_hybrid_composition.py"] = digest
+    frozen["config"]["render_version"] = 2
+    verified = verify_code(f["run"], frozen, processor="hybrid")
+    assert verified["hybrid_renderer_version"] == 1
+    assert verified["trusted_historical_commits"]["pipeline_hybrid_composition.py"] == "reviewed-legacy-fixture"
+    (f["run"] / "code" / "pipeline_hybrid_composition.py").write_bytes(legacy + b"# Changed\n")
+    with pytest.raises(ValueError, match="archive hash mismatch"):
+        _hybrid_render_version(f["run"], frozen)
+    frozen["code_sha256"]["pipeline_hybrid_composition.py"] = sha(legacy + b"# Changed\n")
+    with pytest.raises(ValueError, match="Unreviewed historical hybrid"):
+        verify_code(f["run"], frozen, processor="hybrid")
+
+
+def test_hybrid_current_renderer_ignores_data_requested_legacy_version(fixture: dict[str, Any]) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    data = (Path(module.__file__).parent / "pipeline_hybrid_composition.py").read_bytes()
+    frozen["code_sha256"]["pipeline_hybrid_composition.py"] = sha(data)
+    frozen["config"]["render_version"] = 1
+    assert _hybrid_render_version(f["run"], frozen) == 2
