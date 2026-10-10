@@ -255,7 +255,7 @@ under a cross-process lock; perform HTTP and Langfuse outside it. Run this only
 after the legacy serial queue drains. Start no paid experiment after 07:00 UTC;
 skip queued arms whose fixed allowance no longer fits the campaign window.
 
-At 05:45 UTC, add one combined source-owned hypothesis if time permits: whitespace
+At 05:43 UTC, add one combined source-owned hypothesis if time permits: whitespace
 OCR300, compact array evidence, ordinal output indexes, static column-track
 instructions and a 512-pixel image. The earlier controls separately improved the
 available literal vocabulary, output admission or dense-page placement. Their
