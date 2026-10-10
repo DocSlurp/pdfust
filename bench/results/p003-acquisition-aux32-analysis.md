@@ -1,6 +1,6 @@
 # Acquisition and auxiliary32 DEV comparison
 
-Checkpoint: 20/32 independently verified arms. The frozen plan contains 13 complete generation, 9 structure-admission and 10 geometry-diagram arms. Pending arms remain visible below. All quality counts use 16 pages, 53 tables, 2333 reference cells and 4 negative pages. This is the established DEV screen, separate from fresh confirmation 48.
+Checkpoint: 25/32 independently verified arms. The frozen plan contains 13 complete generation, 9 structure-admission and 10 geometry-diagram arms. Pending arms remain visible below. All quality counts use 16 pages, 53 tables, 2333 reference cells and 4 negative pages. This is the established DEV screen, separate from fresh confirmation 48.
 Generation arms include acquisition and transcription. Admission arms retain only model-admitted source-owned TATR tables; rejected, unresolved or failed pages receive no historical table credit. Diagram arms count independently selected complete disjoint crops, including valid partial predictions on operational error pages. Duplicate, unresolved and failed crops receive zero credit; conflicting positive crops are all refused. No cross-model fallback or retry is credited.
 Single runs are observations, with no confidence interval or repeat estimate available for these arms. Diagram instructions explicitly identify artificial geometry-only pixels, so comparison against source pixels changes evidence framing as well as pixels. Large cell-count differences can be concentrated in dense pages. No fresh confirmation result selected these configurations.
 
@@ -9,15 +9,15 @@ Single runs are observations, with no confidence interval or repeat estimate ava
 
 | Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| acquisition-luna-yolo640-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-luna-yolo1024-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-luna-yolo640-crop1024-r0-c3 | verified | 290 | 290 | 361 | 3 | 39 | 0 | 0 | 1 | 2 | 0.01290183 | 3.374 | 1162.626 |
+| acquisition-luna-yolo1024-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | verified | 290 | 290 | 359 | 4 | 40 | 0 | 0 | 2 | 3 | 0.02486862 | 1.641 | 562.958 |
 | acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
-| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | verified | 295 | 295 | 359 | 2 | 40 | 0 | 0 | 2 | 2 | 0.02436380 | 2.558 | 574.623 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | verified | 292 | 292 | 361 | 3 | 39 | 0 | 0 | 1 | 2 | 0.22463800 | 5.293 | 66.774 |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | verified | 362 | 362 | 606 | 3 | 36 | 1 | 0 | 1 | 2 | 0.26580000 | 4.306 | 56.433 |
-| acquisition-sonnet-yolo1280-crop1024-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-sonnet-yolo1280-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | verified | 262 | 262 | 314 | 3 | 42 | 0 | 0 | 4 | 2 | 0.00795502 | 0.832 | 1508.481 |
 | acquisition-gemma31-yolo1280-crop1024-r0-c3 | verified | 269 | 270 | 332 | 3 | 42 | 0 | 0 | 3 | 2 | 0.00312786 | 2.313 | 4156.196 |
 | acquisition-ministral14-yolo640-crop1024-r0-c3 | verified | 207 | 207 | 319 | 2 | 41 | 1 | 0 | 3 | 2 | 0.00365820 | 4.773 | 3553.660 |
@@ -31,13 +31,13 @@ Rate is operational usable pages/minute for complete generation, intended retain
 | Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | admission-pplx-detector05-edge0-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
-| admission-pplx-detector05-edge128-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-pplx-detector05-edge128-r0-c3 | verified | 204 | 206 | 352 | 3 | 39 | 0 | 0 | 0 | 2 | 0.00368338 | 17.244 | 4343.836 |
 | admission-pplx-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
 | admission-lunadec-detector05-edge0-r0-c3 | verified | 185 | 187 | 315 | 2 | 42 | 0 | 0 | 0 | 1 | 0.00999040 | 14.089 | 1601.537 |
 | admission-lunadec-detector05-edge128-r0-c3 | verified | 111 | 113 | 237 | 1 | 44 | 0 | 0 | 0 | 0 | 0.01006960 | 13.802 | 1588.941 |
-| admission-lunadec-detector05-edge512-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-lunadec-detector05-edge512-r0-c3 | verified | 204 | 206 | 350 | 3 | 40 | 0 | 0 | 0 | 2 | 0.01027840 | 20.013 | 1556.663 |
 | admission-clefomni-detector05-edge0-r0-c3 | verified | 94 | 94 | 102 | 1 | 51 | 1 | 1 | 0 | 1 | 0.02302380 | 17.165 | 694.933 |
-| admission-clefomni-detector05-edge128-r0-c3 | not_started; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-clefomni-detector05-edge128-r0-c3 | verified | 183 | 183 | 439 | 3 | 46 | 0 | 0 | 0 | 2 | 0.02350710 | 17.494 | 680.645 |
 | admission-clefomni-detector05-edge512-r0-c3 | verified | 196 | 198 | 561 | 3 | 41 | 0 | 0 | 0 | 2 | 0.02362125 | 21.887 | 677.356 |
 
 Rate is operational usable pages/minute for complete generation, intended retained-evidence pages/minute for admission, and attempted questions/minute for diagram. Incremental rates exclude historical acquisition/generation and are not fresh pipeline throughput.
@@ -65,6 +65,7 @@ Rate is operational usable pages/minute for complete generation, intended retain
 
 | Run | Native outcome counts | Attempted questions | Operational failed pages | Complete crop pages | Partial crop pages | USD basis | Scope rate per APIUSD |
 |---|---|---:|---:|---:|---:|---|---:|
+| admission-pplx-detector05-edge128-r0-c3 | reject=2, retain=16, unresolved=1 | 19 | 0 | — | — | provider-reported USD | 4343.836 |
 | diagram-pplx-filled-128-r0-c3 | not_applicable_duplicates=3, selected=9, unresolved=7 | 16 | 9 | 7 | 2 | provider-reported USD | 24161.155 |
 | diagram-pplx-filled-512-r0-c3 | not_applicable_duplicates=3, selected=7, unresolved=9 | 16 | 11 | 5 | 3 | provider-reported USD | 23596.036 |
 | diagram-pplx-outline-128-r0-c3 | not_applicable_duplicates=3, selected=9, unresolved=7 | 16 | 9 | 7 | 2 | provider-reported USD | 24161.155 |
@@ -72,9 +73,11 @@ Rate is operational usable pages/minute for complete generation, intended retain
 | diagram-pplx-outline-512-r0-c3 | not_applicable_duplicates=3, selected=6, unresolved=10 | 16 | 12 | 4 | 4 | provider-reported USD | 23596.036 |
 | admission-lunadec-detector05-edge0-r0-c3 | reject=4, retain=13, unresolved=2 | 19 | 0 | — | — | catalog estimate | 1601.537 |
 | admission-lunadec-detector05-edge128-r0-c3 | reject=7, retain=11, unresolved=1 | 19 | 0 | — | — | catalog estimate | 1588.941 |
+| admission-lunadec-detector05-edge512-r0-c3 | reject=4, retain=15 | 19 | 0 | — | — | catalog estimate | 1556.663 |
 | diagram-lunadec-filled-128-r0-c3 | not_applicable_duplicates=3, unresolved=16 | 16 | 14 | 2 | 0 | catalog estimate | 6144.629 |
 | diagram-lunadec-filled-512-r0-c3 | not_applicable_duplicates=3, unresolved=16 | 16 | 14 | 2 | 0 | catalog estimate | 5728.402 |
 | admission-clefomni-detector05-edge0-r0-c3 | reject=15, retain=3, unresolved=1 | 19 | 0 | — | — | provider-reported USD | 694.933 |
+| admission-clefomni-detector05-edge128-r0-c3 | reject=11, retain=7, unresolved=1 | 19 | 0 | — | — | provider-reported USD | 680.645 |
 | admission-clefomni-detector05-edge512-r0-c3 | reject=7, retain=12 | 19 | 0 | — | — | provider-reported USD | 677.356 |
 | diagram-clefomni-filled-128-r0-c3 | not_applicable_duplicates=3, selected=3, unresolved=13 | 16 | 13 | 3 | 1 | provider-reported USD | 3126.588 |
 | diagram-clefomni-filled-512-r0-c3 | not_applicable_duplicates=3, selected=2, unresolved=14 | 16 | 14 | 2 | 2 | provider-reported USD | 3055.564 |
@@ -85,6 +88,7 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 
 | Run | Dense2 strict /1972 | Other14 strict /361 | Positive macro strict recall |
 |---|---:|---:|---:|
+| admission-pplx-detector05-edge128-r0-c3 | 0 | 204 | 0.420 |
 | diagram-pplx-filled-128-r0-c3 | 103 | 121 | 0.213 |
 | diagram-pplx-filled-512-r0-c3 | 691 | 91 | 0.213 |
 | diagram-pplx-outline-128-r0-c3 | 794 | 114 | 0.248 |
@@ -92,13 +96,17 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 | diagram-pplx-outline-512-r0-c3 | 103 | 90 | 0.139 |
 | admission-lunadec-detector05-edge0-r0-c3 | 0 | 185 | 0.280 |
 | admission-lunadec-detector05-edge128-r0-c3 | 0 | 111 | 0.224 |
+| admission-lunadec-detector05-edge512-r0-c3 | 0 | 204 | 0.420 |
 | diagram-lunadec-filled-128-r0-c3 | 0 | 0 | 0.000 |
 | diagram-lunadec-filled-512-r0-c3 | 0 | 0 | 0.000 |
 | admission-clefomni-detector05-edge0-r0-c3 | 0 | 94 | 0.133 |
+| admission-clefomni-detector05-edge128-r0-c3 | 0 | 183 | 0.367 |
 | admission-clefomni-detector05-edge512-r0-c3 | 0 | 196 | 0.391 |
 | diagram-clefomni-filled-128-r0-c3 | 103 | 5 | 0.028 |
 | diagram-clefomni-filled-512-r0-c3 | 103 | 3 | 0.021 |
+| acquisition-luna-yolo640-crop1024-r0-c3 | 0 | 290 | 0.570 |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 0 | 290 | 0.570 |
+| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | 0 | 295 | 0.589 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 0 | 292 | 0.616 |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | 71 | 291 | 0.580 |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | 0 | 262 | 0.472 |
@@ -111,6 +119,7 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 
 | Run | Effective APIUSD | Original reported subtotal USD | Missing reported attempts | Retained basis |
 |---|---:|---:|---:|---|
+| admission-pplx-detector05-edge128-r0-c3 | 0.00368338 | 0.00368338 | 0 | provider-reported USD |
 | diagram-pplx-filled-128-r0-c3 | 0.00066222 | 0.00066222 | 0 | provider-reported USD |
 | diagram-pplx-filled-512-r0-c3 | 0.00067808 | 0.00067808 | 0 | provider-reported USD |
 | diagram-pplx-outline-128-r0-c3 | 0.00066222 | 0.00066222 | 0 | provider-reported USD |
@@ -118,13 +127,17 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 | diagram-pplx-outline-512-r0-c3 | 0.00067808 | 0.00067808 | 0 | provider-reported USD |
 | admission-lunadec-detector05-edge0-r0-c3 | 0.00999040 | 0.00000000 | 0 | catalog estimate |
 | admission-lunadec-detector05-edge128-r0-c3 | 0.01006960 | 0.00000000 | 0 | catalog estimate |
+| admission-lunadec-detector05-edge512-r0-c3 | 0.01027840 | 0.00000000 | 0 | catalog estimate |
 | diagram-lunadec-filled-128-r0-c3 | 0.00260390 | 0.00000000 | 0 | catalog estimate |
 | diagram-lunadec-filled-512-r0-c3 | 0.00279310 | 0.00000000 | 0 | catalog estimate |
 | admission-clefomni-detector05-edge0-r0-c3 | 0.02302380 | 0.02302380 | 0 | provider-reported USD |
+| admission-clefomni-detector05-edge128-r0-c3 | 0.02350710 | 0.02350710 | 0 | provider-reported USD |
 | admission-clefomni-detector05-edge512-r0-c3 | 0.02362125 | 0.02362125 | 0 | provider-reported USD |
 | diagram-clefomni-filled-128-r0-c3 | 0.00511740 | 0.00511740 | 0 | provider-reported USD |
 | diagram-clefomni-filled-512-r0-c3 | 0.00523635 | 0.00523635 | 0 | provider-reported USD |
+| acquisition-luna-yolo640-crop1024-r0-c3 | 0.01290183 | 0.00000000 | 0 | provider-reported BYOK upstream plus gateway USD |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 0.02486862 | 0.00000000 | 0 | provider-reported BYOK upstream plus gateway USD |
+| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | 0.02436380 | 0.02436380 | 0 | provider-reported USD |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 0.22463800 | 0.22463800 | 0 | provider-reported USD |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | 0.26580000 | 0.26580000 | 0 | provider-reported USD |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | 0.00795502 | 0.00795502 | 0 | provider-reported USD |
@@ -141,6 +154,7 @@ All arms are contended, with per-arm transport cap 3 and a shared paid-request c
 
 | Run | Execution wall s | Parent CPU s | Parent RSS MiB | Prepare CPU s | Detector worker CPU s | Worker peak MiB | Report SHA prefix |
 |---|---:|---:|---:|---:|---:|---:|---|
+| admission-pplx-detector05-edge128-r0-c3 | 55.672 | 27.511 | 218.703 | 31.121 | unmeasured | unmeasured | def871f53c25 |
 | diagram-pplx-filled-128-r0-c3 | 33.859 | 22.500 | 173.551 | unmeasured | unmeasured | unmeasured | adc011aba823 |
 | diagram-pplx-filled-512-r0-c3 | 39.445 | 24.184 | 152.602 | unmeasured | unmeasured | unmeasured | 9927f2b87c66 |
 | diagram-pplx-outline-128-r0-c3 | 51.969 | 21.779 | 173.234 | unmeasured | unmeasured | unmeasured | f39703b9c4df |
@@ -148,13 +162,17 @@ All arms are contended, with per-arm transport cap 3 and a shared paid-request c
 | diagram-pplx-outline-512-r0-c3 | 52.838 | 22.023 | 172.203 | unmeasured | unmeasured | unmeasured | d156378e0cae |
 | admission-lunadec-detector05-edge0-r0-c3 | 68.139 | 24.492 | 216.098 | 31.737 | unmeasured | unmeasured | ff3e14b45b78 |
 | admission-lunadec-detector05-edge128-r0-c3 | 69.557 | 24.836 | 216.570 | 31.828 | unmeasured | unmeasured | 8365c18e7367 |
+| admission-lunadec-detector05-edge512-r0-c3 | 47.969 | 28.228 | 220.898 | 33.649 | unmeasured | unmeasured | 02f49f73313d |
 | diagram-lunadec-filled-128-r0-c3 | 28.985 | 21.805 | 172.957 | unmeasured | unmeasured | unmeasured | d7c2865c4828 |
 | diagram-lunadec-filled-512-r0-c3 | 59.775 | 20.282 | 173.438 | unmeasured | unmeasured | unmeasured | e9f9f7e5890e |
 | admission-clefomni-detector05-edge0-r0-c3 | 55.929 | 26.918 | 192.371 | 30.622 | unmeasured | unmeasured | f098ed6fda71 |
+| admission-clefomni-detector05-edge128-r0-c3 | 54.875 | 30.667 | 195.461 | 32.735 | unmeasured | unmeasured | 5b35b8989664 |
 | admission-clefomni-detector05-edge512-r0-c3 | 43.862 | 26.946 | 219.457 | 31.973 | unmeasured | unmeasured | db858f1f159f |
 | diagram-clefomni-filled-128-r0-c3 | 31.896 | 22.433 | 149.449 | unmeasured | unmeasured | unmeasured | cdc70bc25435 |
 | diagram-clefomni-filled-512-r0-c3 | 36.194 | 22.956 | 174.559 | unmeasured | unmeasured | unmeasured | c099e1e5bb88 |
+| acquisition-luna-yolo640-crop1024-r0-c3 | 266.754 | 42.731 | 402.766 | unmeasured | 38.295 | 1124.793 | aec8ead7a643 |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 511.804 | 67.823 | 389.703 | unmeasured | 85.763 | 1376.164 | a737190c53c6 |
+| acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | 328.331 | 73.614 | 385.176 | unmeasured | 100.058 | 1411.090 | 26c4f8ee1063 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 170.031 | 37.908 | 390.012 | unmeasured | 24.566 | 1122.324 | 5fb427c1fb00 |
 | acquisition-sonnet-yolo1024-crop1024-r0-c3 | 209.030 | 41.430 | 389.371 | unmeasured | 52.200 | 1275.758 | 28b33f4c44bd |
 | acquisition-gemma31-yolo640-crop1024-r0-c3 | 865.341 | 36.174 | 400.684 | unmeasured | 24.120 | 1110.707 | 076e8cf38034 |
