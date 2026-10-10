@@ -1,0 +1,389 @@
+"""Render immutable, offline DEV diagnostics from independently verified evaluations."""
+
+# Artifact schemas are heterogeneous and diagnostic drawing uses explicit pixel bounds.
+# ruff: noqa: EM101, TRY003, PLR2004, C901, PLC0415
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import resource
+import textwrap
+import time
+import unicodedata
+from pathlib import Path
+from typing import Any
+
+from PIL import Image, ImageDraw, ImageFont
+
+from bench.generalization_scoring import _cells, score_page
+from bench.silver import guard_path
+
+COLORS = {"success": (28, 145, 74), "failure": (205, 46, 48), "unscored": (192, 133, 24)}
+DEFAULT_IDS = (
+    "p1bfa52a41a5e15015698",  # Dense newspaper, 26 annotated tables.
+    "p6ef5d3c5c2edb1c109c4",  # Academic two-table page.
+    "p1e230b0fd05df7dd5e23",  # Small table.
+    "pe87ca2d41151f28dc44c",  # Larger single table.
+    "p27ec5aaca0dd08c90360",  # Negative page.
+)
+FONT = Path("/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc")
+
+
+def digest(data: bytes) -> str:
+    """Hash an explicit diagnostic dependency."""
+    return hashlib.sha256(data).hexdigest()
+
+
+def read(path: Path, receipts: dict[str, str]) -> dict[str, Any]:
+    """Read an explicit guarded artifact and retain its content hash."""
+    path = guard_path(path.resolve())
+    data = path.read_bytes()
+    receipts[str(path)] = digest(data)
+    return json.loads(data)
+
+
+def font(size: int, value: str = "") -> ImageFont.FreeTypeFont:
+    """Use a Unicode font suitable for the retained English or CJK text."""
+    path = FONT if any(ord(c) >= 0x2E80 for c in value) else Path("/usr/share/fonts/noto/NotoSans-Regular.ttf")
+    return ImageFont.truetype(str(path), size)
+
+
+def verdicts(target: dict[str, Any], tables: list[dict[str, Any]], score: dict[str, Any]) -> dict[str, Any]:
+    """Use retained one-to-one matches and exact normalized topology/text identities."""
+    gold = [_cells(table) for table in target["tables"]]
+    actual = [_cells(table) for table in tables]
+    inputs = dict.fromkeys(range(len(gold)), "failure")
+    outputs: dict[int, dict[tuple[int, int, int, int], str]] = {
+        i: dict.fromkeys(cells, "failure") for i, cells in enumerate(actual)
+    }
+    for pair in score.get("matches", []):
+        i, j = pair["target"], pair["prediction"]
+        inputs[i] = "success" if gold[i] == actual[j] else "failure"
+        outputs[j] = {
+            key: "success" if key in gold[i] and gold[i][key] == value else "failure"
+            for key, value in actual[j].items()
+        }
+    return {"input_tables": inputs, "output_cells": outputs}
+
+
+def lines(draw: ImageDraw.ImageDraw, xy: tuple[int, int], value: str, width: int, size: int = 18) -> int:
+    """Draw complete text with measured wrapping."""
+    x, y = xy
+    face = font(size, value)
+    # Wrap by measured width, retaining every character without fabricated content.
+    for paragraph in value.split("\n"):
+        pending = ""
+        for character in paragraph:
+            if pending and draw.textlength(pending + character, font=face) > width:
+                draw.text((x, y), pending, font=face, fill="#15202b")
+                y += size + 6
+                pending = ""
+            pending += character
+        draw.text((x, y), pending, font=face, fill="#15202b")
+        y += size + 6
+    return y
+
+
+def output_grid(tables: list[dict[str, Any]], marks: dict[str, Any], width: int = 940) -> Image.Image:
+    """Draw the actual extracted values and merged spans; these are schematic boxes."""
+    face = font(18)
+    layouts = []
+    total_height = 90
+    for index, table in enumerate(tables):
+        cells = _cells(table)
+        col_width = (width - 30) / table["col_count"]
+        heights = [34] * table["row_count"]
+        wrapped = {}
+        for key in cells:
+            r, c, rs, cs = key
+            value = table["values"][r][c]
+            max_chars = max(1, int((col_width * cs - 14) / 18))
+            chunks = textwrap.wrap(value, width=max_chars, replace_whitespace=False) or [""]
+            wrapped[key] = chunks
+            heights[r] = max(heights[r], (len(chunks) * 24 + 12 + rs - 1) // rs)
+        layouts.append((index, table, col_width, heights, wrapped))
+        total_height += sum(heights) + 75
+    if total_height > 12000:
+        raise ValueError("Extracted table grid exceeds bounded diagnostic canvas")
+    image = Image.new("RGB", (width, total_height), "white")
+    draw = ImageDraw.Draw(image)
+    lines(draw, (15, 10), "Actual extracted tables | schematic cells, not physical page boxes", width - 30)
+    y = 70
+    if not tables:
+        lines(draw, (15, y), "No extracted tables. No inferred or invented output.", width - 30)
+    for index, table, cw, heights, wrapped in layouts:
+        draw.text(
+            (15, y),
+            f"Prediction T{index}: {table['row_count']} rows x {table['col_count']} columns",
+            font=face,
+            fill="#15202b",
+        )
+        y += 34
+        offsets = [y]
+        for height in heights:
+            offsets.append(offsets[-1] + height)
+        for key, chunks in wrapped.items():
+            r, c, rs, cs = key
+            box = (15 + c * cw, offsets[r], 15 + (c + cs) * cw, offsets[r + rs])
+            state = marks["output_cells"][index][key]
+            color = COLORS[state]
+            pale = tuple(round(v * 0.15 + 255 * 0.85) for v in color)
+            draw.rectangle(box, fill=pale, outline=color, width=2)
+            for row_index, chunk in enumerate(chunks):
+                draw.text((box[0] + 5, box[1] + 4 + row_index * 24), chunk, font=font(18, chunk), fill="#15202b")
+        y = offsets[-1] + 40
+    return image
+
+
+def differences(target: dict[str, Any], tables: list[dict[str, Any]], score: dict[str, Any]) -> list[dict[str, Any]]:
+    """Describe strict mismatches without declaring their semantic importance."""
+    result = []
+    paired = {pair["target"]: pair["prediction"] for pair in score.get("matches", [])}
+    for i, table in enumerate(target["tables"]):
+        expected = _cells(table)
+        actual = _cells(tables[paired[i]]) if i in paired else {}
+        for key in sorted(expected.keys() | actual.keys()):
+            a, b = expected.get(key), actual.get(key)
+            if a == b:
+                continue
+            if a is None or b is None:
+                reason = "missing table/cell or different span topology"
+            elif "".join(a.split()) == "".join(b.split()):
+                reason = "whitespace-only strict mismatch"
+            elif ("$" in a or "\\text" in a) and not ("$" in b or "\\text" in b):
+                reason = "reference math markup versus literal output"
+            elif a.translate(str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")) == b.translate(
+                str.maketrans("₀₁₂₃₄₅₆₇₈₉", "0123456789")
+            ):
+                reason = "subscript-versus-baseline digit"
+            elif "".join(c for c in a if not unicodedata.category(c).startswith("P")) == "".join(
+                c for c in b if not unicodedata.category(c).startswith("P")
+            ):
+                reason = "punctuation-only strict mismatch"
+            else:
+                reason = "other exact text mismatch"
+            result.append(
+                {
+                    "target_table": i,
+                    "prediction_table": paired.get(i),
+                    "anchor": key,
+                    "expected": a,
+                    "actual": b,
+                    "reason": reason,
+                }
+            )
+    return result
+
+
+def difference_image(rows: list[dict[str, Any]]) -> Image.Image:
+    """Show a bounded exact-difference preview; complete details remain in JSON."""
+    image = Image.new("RGB", (1500, 130 + min(len(rows), 12) * 140), "white")
+    draw = ImageDraw.Draw(image)
+    lines(draw, (20, 12), f"Strict mismatch details: {len(rows)} total; first {min(len(rows), 12)} shown", 1460, 24)
+    lines(draw, (20, 54), "Red means exact reference mismatch. These reasons do not measure semantic severity.", 1460)
+    for i, row in enumerate(rows[:12]):
+        y = 130 + i * 140
+        lines(draw, (20, y), f"Gold T{row['target_table']} anchor {row['anchor']} | {row['reason']}", 1460)
+        lines(draw, (20, y + 32), f"Expected: {row['expected']!r}", 1460)
+        lines(draw, (20, y + 66), f"Actual:   {row['actual']!r}", 1460)
+    return image
+
+
+def render_page(record: dict[str, Any], target: dict[str, Any], marks: dict[str, Any], directory: Path) -> Image.Image:
+    """Retain the real full-page raster and translucent gold table overlays."""
+    import pylopdf
+
+    with pylopdf.Document(record["pdf_path"]) as document:
+        page = document[record["page_number"]]
+        rect = page.rect
+        pixmap = page.get_pixmap(scale=1600 / rect.width)
+        original = Image.frombytes("RGBA", (pixmap.width, pixmap.height), pixmap.samples).convert("RGB")
+        original.save(directory / "original.png")
+        overlay = Image.new("RGBA", original.size)
+        draw = ImageDraw.Draw(overlay)
+        for i, table in enumerate(target["tables"]):
+            box = table.get("bbox")
+            if box is None:
+                continue
+            scaled = tuple(v * original.width / rect.width for v in box)
+            color = COLORS[marks["input_tables"][i]]
+            draw.rectangle(scaled, fill=(*color, 30), outline=(*color, 240), width=3)
+            draw.text((scaled[0], scaled[1]), f"Gold T{i}", font=font(20), fill=(*color, 255))
+            # Regional views preserve real page pixels with exactly the same table mask.
+            if i < 3:
+                crop = original.crop(tuple(round(v) for v in scaled))
+                crop.save(directory / f"source-table-{i}.png")
+        marked = Image.alpha_composite(original.convert("RGBA"), overlay).convert("RGB")
+        marked.save(directory / "input-overlay.png")
+        return marked
+
+
+def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Path:
+    """Refresh a completed verified cohort once; identical provenance skips rendering."""
+    if corpus.name != "natural16":
+        raise ValueError("Initial diagnostics are restricted to the DEV natural16 cohort")
+    started, cpu = time.monotonic(), time.process_time()
+    receipts: dict[str, str] = {}
+    evaluation = read(run_dir / "evaluation.json", receipts)
+    evaluated = next(row for row in evaluation["runs"] if row["name"] == run_dir.name)
+    if evaluated.get("evaluation_scope") != "complete pipeline":
+        raise ValueError("Initial visual workflow requires independently verified complete pipeline scope")
+    report_path = guard_path((run_dir / "report.json").resolve())
+    if digest(report_path.read_bytes()) != evaluated["report_sha256"]:
+        raise ValueError("Verified report changed; wait for independent re-evaluation")
+    receipts[str(report_path)] = evaluated["report_sha256"]
+    frozen = read(run_dir / "frozen.json", receipts)
+    read(corpus / "manifest.json", receipts)
+    targets = read(corpus / "private-targets.json", receipts)
+    if (
+        evaluated["dataset_sha256"] != targets["dataset_sha256"]
+        or evaluated["manifest_sha256"] != receipts[str((corpus / "manifest.json").resolve())]
+    ):
+        raise ValueError("Evaluation corpus differs from exact supplied DEV corpus")
+    if len(identifiers) > 6 or not identifiers or len(set(identifiers)) != len(identifiers):
+        raise ValueError("Choose one through six DEV pages")
+    records = {row["id"]: row for row in frozen["records"]}
+    references = {row["id"]: row for row in targets["pages"]}
+    scores = {row["id"]: row for row in evaluated["page_scores"]}
+    pages = []
+    for identifier in identifiers:
+        result = read(run_dir / f"{identifier}-result.json", receipts)
+        record, target, retained = records[identifier], references[identifier], scores[identifier]
+        pdf = guard_path(Path(record["pdf_path"]).resolve())
+        if digest(pdf.read_bytes()) != record["pdf_sha256"]:
+            raise ValueError("Input PDF differs from frozen input")
+        receipts[str(pdf)] = record["pdf_sha256"]
+        tables = result.get("tables", []) if not retained["error"] else []
+        replay = score_page(target, tables, status=result["status"])
+        if any(replay[key] != value for key, value in retained.items() if key in replay):
+            raise ValueError("Retained score differs from exact offline replay")
+        pages.append((identifier, record, target, tables, retained, verdicts(target, tables, retained)))
+    identity = digest(
+        json.dumps(
+            {"receipts": receipts, "ids": identifiers, "renderer": digest(Path(__file__).read_bytes())}, sort_keys=True
+        ).encode()
+    )
+    batch = guard_path(output.resolve()) / identity[:20]
+    if (batch / "provenance.json").exists():
+        return batch
+    batch.mkdir(parents=True, exist_ok=False)
+    panels = []
+    findings = []
+    for identifier, record, target, tables, score, marks in pages:
+        directory = batch / identifier
+        directory.mkdir()
+        source = render_page(record, target, marks, directory)
+        grid = output_grid(tables, marks)
+        grid.save(directory / "extracted-tables.png")
+        diffs = differences(target, tables, score)
+        (directory / "differences.json").write_text(json.dumps(diffs, indent=2) + "\n")
+        difference_image(diffs).save(directory / "strict-differences.png")
+        panel_width = 1800
+        source.thumbnail((780, 1450))
+        grid.thumbnail((970, 1450))
+        height = max(source.height, grid.height) + 155
+        panel = Image.new("RGB", (panel_width, height), "#f5f7fa")
+        draw = ImageDraw.Draw(panel)
+        caption = (
+            f"DEV {identifier} | exact cells {score['strict_exact_cells']}/{score['expected_cells']}"
+            f" | complete tables {score['complete_tables']}/{score['expected_tables']}"
+            f" | missed {score['missing_tables']} | extra {score['false_positive_tables']}"
+        )
+        lines(draw, (20, 8), caption, panel_width - 40, 22)
+        source_ids = [
+            identity for table in tables for cell in table.get("cells", []) for identity in cell.get("source_ids", [])
+        ]
+        id_label = "Source IDs absent: model-transcribed cells" if not source_ids else f"Source IDs: {source_ids[:8]}"
+        lines(draw, (20, 102), id_label, panel_width - 40, 16)
+        lines(
+            draw,
+            (20, 50),
+            "INPUT: table-level gold masks | OUTPUT: exact topology + NFC text cell verdicts | "
+            "Green success; red miss/error; amber unscored",
+            panel_width - 40,
+            18,
+        )
+        if not target["tables"]:
+            lines(
+                draw,
+                (20, 104),
+                f"Negative page: exact empty-output verdict = {score['exact_page']}. No physical mask exists.",
+                panel_width - 40,
+            )
+        panel.paste(source, (20, 145))
+        panel.paste(grid, (810, 145))
+        panel.save(directory / "comparison.png")
+        panels.append(panel)
+        findings.append(
+            {
+                "id": identifier,
+                "score": score,
+                "masks": marks["input_tables"],
+                "source_ids": [cell.get("source_ids", []) for table in tables for cell in table.get("cells", [])],
+            }
+        )
+    sheet = Image.new("RGB", (1800, sum(panel.height for panel in panels) + 170), "white")
+    draw = ImageDraw.Draw(sheet)
+    lines(draw, (20, 12), f"P003 verified DEV diagnostic | {run_dir.name}", 1760, 26)
+    lines(
+        draw,
+        (20, 58),
+        f"Model {frozen['config'].get('generation_model')} | "
+        f"detector edge {frozen['config'].get('detector_edge')} | "
+        f"crop edge {frozen['config'].get('image_edge')} | complete pipeline, diagnostic only",
+        1760,
+        20,
+    )
+    lines(
+        draw,
+        (20, 110),
+        "Full originals, regional source zooms and full extracted grids retained beside each panel. "
+        "No cell boxes invented on source pages.",
+        1760,
+        18,
+    )
+    y = 170
+    for panel in panels:
+        sheet.paste(panel, (0, y))
+        y += panel.height
+    sheet.save(batch / "contact-sheet.png")
+    resources = {
+        "wall_seconds": time.monotonic() - started,
+        "cpu_seconds": time.process_time() - cpu,
+        "peak_rss_bytes": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024,
+        "tool": "time.monotonic/process_time; resource.getrusage RUSAGE_SELF Linux peak",
+        "sampling_interval": "process-lifetime high-water mark; no sampled utilization",
+        "process_scope": "single CPU-only renderer, no subprocesses",
+        "logical_cpus": os.cpu_count(),
+        "concurrency": 1,
+    }
+    provenance = {
+        "batch_sha256": identity,
+        "inputs": receipts,
+        "run": str(run_dir.resolve()),
+        "corpus": str(corpus.resolve()),
+        "quality_scope": (
+            "complete pipeline; source masks table-level, output schematic cells strict topology and NFC text"
+        ),
+        "resources": resources,
+        "pages": findings,
+    }
+    (batch / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
+    return batch
+
+
+def main() -> None:
+    """Run one bounded immutable DEV refresh, without a background daemon."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--run", required=True, type=Path)
+    parser.add_argument("--corpus", required=True, type=Path)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--ids", nargs="+", default=list(DEFAULT_IDS))
+    args = parser.parse_args()
+    print(run(args.run, args.corpus, args.output, args.ids))
+
+
+if __name__ == "__main__":
+    main()
