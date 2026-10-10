@@ -94,6 +94,7 @@ def test_overlapping_detector_proposals_assign_every_word_once_and_preserve_resi
     diagnostic = plan["detector_diagnostics"]
     assert diagnostic["overlapping_word_candidates"] == 2
     assert diagnostic["empty_table_proposals"] == 1
+    assert diagnostic["native_regions_preserved"] == 0
     ids = [i for r in plan["regions"] for i in r["source_ids"]]
     assert sorted(ids) == ["w0", "w1", "w2"]
     proposed = next(r for r in plan["regions"] if r["kind"] == "detector_proposal")
@@ -141,6 +142,7 @@ def test_native_grid_has_priority_over_covering_detector_box() -> None:
     ]
     plan = detector_regions(page, [{"label": "Table", "confidence": 0.99, "bbox": [0, 0, 100, 100]}])
     assert [r["kind"] for r in plan["regions"]] == ["native", "detector_proposal"]
+    assert plan["detector_diagnostics"]["native_regions_preserved"] == 1
     assert plan["regions"][0]["source_ids"] == ["w0", "w1"]
     assert plan["regions"][1]["source_ids"] == ["w2"]
     states = {

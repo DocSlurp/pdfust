@@ -403,7 +403,7 @@ def detector_regions(
             owned[max(candidates)[-1]].append(word)
         else:
             outside.append(word)
-    regions = native
+    regions = list(native)
     empty = 0
     for index, bbox, confidence in proposals:
         words = owned[index]
