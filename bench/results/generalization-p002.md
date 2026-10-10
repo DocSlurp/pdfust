@@ -17,6 +17,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-matrix-sonnet-512 | 14/16 | 2 | 1/12 | 2 | 9 | 327/2333 | 227/2333 | 15229/16640 | 13 | 9 | 2.7044 | 14.4924 | 0.966024 |
 | natural16-matrix-haiku-512 | 16/16 | 0 | 1/12 | 2 | 10 | 406/2333 | 240/2333 | 14902/16640 | 14 | 3 | 1.98919 | 225.443 | 0.0709715 |
 | natural16-yolo-matrix-sonnet-512 | 15/16 | 1 | 1/12 | 2 | 12 | 437/2333 | 341/2333 | 13543/16640 | 15 | 3 | 3.88937 | 52.2889 | 0.286868 |
+| natural16-yolo-tiles2-matrix-sonnet-512 | 15/16 | 1 | 1/12 | 2 | 10 | 431/2333 | 250/2333 | 14446/16640 | 14 | 1 | 2.32983 | 33.3856 | 0.449296 |
 | natural16-vision-sonnet-1200 | 15/16 | 1 | 2/12 | 3 | 14 | 408/2333 | 299/2333 | 12984/16640 | 14 | 0 | 6.50775 | 106.649 | 0.140648 |
 | natural16-vision-haiku-1200 | 13/16 | 3 | 2/12 | 2 | 8 | 358/2333 | 245/2333 | 14802/16640 | 9 | 3 | 6.40679 | 1527.9 | 0.0085084 |
 
@@ -294,6 +295,38 @@ Whole-run wall 231.4s; CPU 304.83s; sampled RSS 612708352 bytes; verified output
 Ledger attempts 19; reported USD subtotal 0.286868; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
 Separate CPU detector worker: initialization wall 2.56802s, CPU 5.28494s; 16 measured requests, request CPU total 14.4786s; maximum sampled request RSS 1189687296 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-yolo-tiles2-matrix-sonnet-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
+
+Failure categories: `{"provider_content_filter": 1}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 8 |
+| remaining_fourteen | 2/14 | 1/10 | 242 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 29 | 29 | 0.449296 | 0 / 29 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 10 | 431/2333 | 14446/16640 | 0/4 |
+
+Whole-run wall 386.294s; CPU 317.07s; sampled RSS 603447296 bytes; verified output pages/min 2.32983; exact positive pages/min 0.155322. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 29; reported USD subtotal 0.449296; missing reported charges 0; cost bases `{"provider-reported USD": 29}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.61685s, CPU 5.46881s; 16 measured requests, request CPU total 69.3252s; maximum sampled request RSS 1206677504 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 
 ### natural16-vision-sonnet-1200
@@ -603,6 +636,24 @@ content. These results motivate matched-resolution and retained-ROI controls,
 not a claim that all OCR ceilings have been solved. Table-only operational
 throughput is not full page-conversion throughput. All sixteen primary pages,
 53 official tables, failed responses, and positive API charges remain retained.
+
+## Detector 2×2 tiles with matrix Sonnet 512
+
+The tiled arm retains 15/16 operational outputs and the same two complete
+tables on one exact positive page (1/12). It has ten exact topologies,
+431/2333 structural cells, 250/2333 exact text cells, fourteen localized tables,
+and one extra table. Twenty-nine positive provider charges total USD 0.449296;
+verified throughput is 2.33 pages/min and 33.39 pages/API USD. A retained
+`content_filter` response fails dense page `p98d10ef50dee4b24506a`; no retry
+or successful-prefix salvage is applied.
+
+Compared with untiled YOLO, exact text cells fall from 341 to 250 and API cost
+rises from USD 0.286868 to USD 0.449296, while extras fall from three to one.
+The two dense pages have 108 structural and eight text cells, with no complete
+table; remaining-fourteen text agreement is 242/361. Geometric proposal
+improvements did not yield broad table recovery in the composed output.
+All primary pages, charged attempts, and the dense failure remain scored;
+changed detector/packet settings do not isolate a causal tiling effect.
 
 ## Native regional full-corpus confirmation
 
