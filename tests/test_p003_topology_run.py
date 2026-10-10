@@ -457,3 +457,25 @@ def test_all_crops_preflight_before_first_paid_request(tmp_path: Path) -> None:
     assert result["topology_status"] == "unsupported_retained_baseline"
     assert result["topology_errors"][0]["reason"] == "ownership_inventory_or_menu_capacity"
     assert client.bodies == []
+
+
+def test_residual_boundary_preserves_entire_word_and_single_global_owner(tmp_path: Path) -> None:
+    original, topology = fixtures(tmp_path / "source", tmp_path / "topology")
+    word = {"id": "edge", "text": "whole literal edge", "bbox": [5, 99, 15, 101]}
+    original["source"]["words"].append(word)
+    original["region_plan"]["regions"][0]["source_ids"].append("edge")
+    original["region_plan"]["regions"][0]["source"]["words"].append(word)
+    original["regions"][0]["state"]["unresolved_ids"].append("edge")
+    with pytest.raises(runner.UnsupportedError, match="straddling"):
+        runner.prepare_page(original, topology, tmp_path / "topology", {"generation_provider": "anthropic"}, config())
+    work = runner.prepare_page(
+        original,
+        topology,
+        tmp_path / "topology",
+        {"generation_provider": "anthropic"},
+        config(boundary_words="residual"),
+    )
+    assert work["plan"]["boundary_words"]["retained_original_region_ids"] == ["edge"]
+    assert [w for r in work["plan"]["regions"] for w in r["source"]["words"] if w["id"] == "edge"] == [word]
+    assert work["states"]["r0"]["unresolved_ids"] == ["edge"]
+    assert "edge" not in [w["id"] for w in json.loads(work["crops"][0]["snapshot"].packet_json)["source"]["words"]]

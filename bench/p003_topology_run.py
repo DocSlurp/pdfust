@@ -173,13 +173,22 @@ def prepare_page(
         if any(_overlap(native["bbox"], crop["viewport"]) for crop in crops):
             raise UnsupportedError("native_grid_overlap")
     assigned: dict[str, str | None] = {}
+    boundary_ids = []
+    boundary_mode = config.get("boundary_words", "strict")
+    if boundary_mode not in {"strict", "residual"}:
+        raise ValueError("Unknown boundary word treatment")
     for word in source["words"]:
         owners = [crop["id"] for crop in crops if _inside(word["bbox"], crop["viewport"])]
-        if len(owners) > 1 or any(
+        partial = any(
             _overlap(word["bbox"], crop["viewport"]) and not _inside(word["bbox"], crop["viewport"]) for crop in crops
-        ):
-            raise UnsupportedError("ambiguous_or_straddling_source_word")
-        assigned[word["id"]] = owners[0] if owners else None
+        )
+        if len(owners) > 1 or partial:
+            if boundary_mode == "strict":
+                raise UnsupportedError("ambiguous_or_straddling_source_word")
+            boundary_ids.append(word["id"])
+            assigned[word["id"]] = None
+        else:
+            assigned[word["id"]] = owners[0] if owners else None
     regions, states = [], {}
     for old in original_plan["regions"]:
         remaining = [identifier for identifier in old["source_ids"] if assigned[identifier] is None]
@@ -234,7 +243,22 @@ def prepare_page(
             }
         )
     return {
-        "plan": {**source, "regions": regions, "coordinate_space": "display_global"},
+        "plan": {
+            **source,
+            "regions": regions,
+            "coordinate_space": "display_global",
+            **(
+                {
+                    "boundary_words": {
+                        "mode": "residual",
+                        "retained_original_region_ids": boundary_ids,
+                        "boxes_and_strings": "Original complete words retained; never clipped",
+                    }
+                }
+                if boundary_mode == "residual"
+                else {}
+            ),
+        },
         "states": states,
         "crops": crops,
     }
@@ -448,6 +472,8 @@ def run(
     """Authenticate exact retained sources and freeze provenance before root opt-in calls."""
     if bool(config.get("run_hosted")) == bool(config.get("prepare_only")):
         raise ValueError("Choose exactly one explicit run_hosted or prepare_only mode")
+    if config.get("boundary_words", "strict") not in {"strict", "residual"}:
+        raise ValueError("Unknown boundary word treatment")
     transport = config.get("transport_concurrency", 1)
     if type(transport) is not int or transport not in (1, 3) or config.get("model") not in candidate.IMAGE_MODELS:
         raise ValueError("Unknown admitted image decision model or transport concurrency")
@@ -590,6 +616,7 @@ def main() -> None:
     parser.add_argument("--topology-trusted-code", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", choices=candidate.IMAGE_MODELS, required=True)
+    parser.add_argument("--boundary-words", choices=("strict", "residual"), default="strict")
     parser.add_argument("--max-questions", type=int, choices=range(1, 17), default=16)
     parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
     parser.add_argument("--reviewed-parser-sha256", action="append", default=[])
@@ -600,6 +627,8 @@ def main() -> None:
     config = {
         k: getattr(args, k) for k in ("model", "max_questions", "run_hosted", "prepare_only", "reviewed_parser_sha256")
     }
+    if args.boundary_words == "residual":
+        config["boundary_words"] = "residual"
     if args.transport_concurrency == 3:
         config["transport_concurrency"] = 3
     report = run(
