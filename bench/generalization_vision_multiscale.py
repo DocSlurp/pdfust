@@ -259,7 +259,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--generation-model", "--model", choices=vision.MODELS, default=vision.MODELS[1])
     parser.add_argument(
-        "--generation-tokens", "--tokens", type=int, choices=(4096, 8192, 16384, 32768, 65536), default=16384
+        "--generation-tokens", "--tokens", type=int, choices=(4096, 8192, 16384), default=16384
     )
     parser.add_argument("--pilot", action="store_true")
     args = parser.parse_args()
