@@ -17,6 +17,7 @@ import random
 import threading
 import time
 from collections import Counter
+from contextlib import ExitStack
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Self
@@ -27,8 +28,8 @@ from bench.pipeline_assembly import native_state, packet, propose, validate
 from bench.pipeline_frontier import MODELS as CHAT_MODELS
 from bench.pipeline_frontier import parse as parse_chat
 from bench.pipeline_frontier import translate
+from bench.pipeline_native_tables import observed_table
 from bench.silver import guard_path, sha, write_json
-from bench.silver_structure import observed_table
 
 MODELS = ("perplexity/pplx-decider-v1.1-27b", "cloudflare/clef-flash", "openai/gpt-6-luna-decisions", *CHAT_MODELS)
 POLICIES = ("native", "native_text", "assembly", "cascade", "repair", "adaptive", "gated")
@@ -459,6 +460,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
             name: sha((ROOT / "bench" / name).read_bytes())
             for name in (
                 "pipeline_run.py",
+                "pipeline_native_tables.py",
                 "pipeline_assembly.py",
                 "pipeline_repair.py",
                 "pipeline_routing.py",
@@ -479,6 +481,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                         "pipeline_matrix_generation.py",
                         "pipeline_dense_candidates.py",
                         "pipeline_ocr_sources.py",
+                        "pipeline_layout_detector.py",
                     ]
                     if config.get("processor") == "regions"
                     else []
@@ -500,10 +503,18 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
     for name in frozen["code_sha256"]:
         (output / "code" / name).write_bytes((ROOT / "bench" / name).read_bytes())
     client = DecisionClient() if config["policy"] not in {"native", "native_text"} else None
-    with Resources() as resources:
+    detector_initialization = None
+    with Resources() as resources, ExitStack() as stack:
+        process_config = config
+        if config.get("layout_detector") == "yolo":
+            from bench.pipeline_layout_detector import LayoutDetector
+
+            detector = stack.enter_context(LayoutDetector())
+            detector_initialization = detector.initialization
+            process_config = {**config, "_layout_detector": detector}
         results = []
         for record in records:
-            results.append(processor(record, config, output, client))
+            results.append(processor(record, process_config, output, client))
             print(
                 json.dumps(
                     {
@@ -538,6 +549,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
         "cost_scope": "API calls only; local CPU electricity/amortization unpriced. "
         "Reservations are not actual charges.",
         "results": results,
+        "layout_detector_initialization": detector_initialization,
     }
     write_json(output / "resources.json", resources.samples)
     write_json(output / "report.json", report)

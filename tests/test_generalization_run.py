@@ -138,3 +138,21 @@ def test_raster_grid_requires_semantic_admission(tmp_path: Path, monkeypatch: py
     assert len(state["unresolved_ids"]) == len(source["words"])
     assert info["route"] == "gated_out"
     assert any(c["mechanism"] == "raster_rules" for c in info["candidates"])
+
+
+def test_detector_residual_retains_all_source_without_inference(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = {"page_size": [100, 100], "words": [{"id": "w0", "text": "prose", "bbox": [1, 1, 10, 10]}]}
+    region = {"id": "r0", "kind": "residual", "boundary": "unsplit", "bbox": [0, 0, 100, 100], "source": source}
+    monkeypatch.setattr(runner, "generate_region", lambda *_a, **_k: pytest.fail("Residual triggered inference"))
+    settings = {
+        **config("gated"),
+        "assembly_method": "generate",
+        "layout_detector": "yolo",
+        "detector_residual": "retain",
+    }
+    state, info = runner.select_region(region, None, settings, tmp_path, {"id": "opaque", "calls": []}, None)
+    assert state["unresolved_ids"] == ["w0"]
+    assert state["tables"] == []
+    assert info["route"] == "detector_residual_retained"

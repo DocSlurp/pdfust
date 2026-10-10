@@ -31,6 +31,9 @@ TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
         "a5bc281951becd59633a78d00bdeae125405789e09b3368617ff85ecbd191b26": "7395782",
         "3945a5efaace0c02d80866460e32f67d7f2acb1c9c35500376a32edf0f151f38": "6afe326",
+        "a6127f74c8054db3ec9483a6e46d70a9dd18eb0f3b892941cc47dbbf5f1deaad": "efaddcc",
+        "10639663e5dc17bd5628baba232fbc5321209d7132a6f66f6deab33742a41a5d": "082ea9a",
+        "8a87e312643ffc97e63448b8ef9c7b2fbaa169c28431eb177417c34f64ab5386": "b0775e2",
     },
     "pipeline_regions.py": {
         "66c6ec07d91753ec9a8885124e18a3d0a64f929be5f29682e1050ea826894d2a": "83bd9a6",
@@ -124,6 +127,12 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         required |= {"pipeline_regions.py", "generalization_run.py"}
         if frozen.get("config", {}).get("assembly_method") in {"generate", "gated_generate"}:
             required.add("pipeline_generation.py")
+            if frozen["config"].get("generation_format") == "matrix":
+                required.add("pipeline_matrix_generation.py")
+        if frozen.get("config", {}).get("raster_rules"):
+            required.add("pipeline_dense_candidates.py")
+        if frozen.get("config", {}).get("ocr_source", "legacy") != "legacy":
+            required.add("pipeline_ocr_sources.py")
     if not required <= hashes.keys():
         raise ValueError("Frozen code lacks required verifier dependencies")
     for name, digest in hashes.items():
@@ -425,6 +434,13 @@ def score_run(
     negative = _evaluate(negative_targets, [by_id[t["id"]] for t in negative_targets if t["id"] in by_id])["totals"]
     costs = _costs(report)
     metrics = dict(report.get("metrics", {}))
+    if report.get("layout_detector_initialization") is not None:
+        metrics["layout_detector_worker"] = {
+            "initialization": report["layout_detector_initialization"],
+            "requests": [p["layout_detector"]["metrics"] for p in predictions if "layout_detector" in p],
+            "scope": "Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. "
+            "Parent elapsed time includes initialization and requests; RSS peaks are not summed.",
+        }
     for field in ("wall_seconds", "cpu_seconds", "cpu_utilization_percent", "peak_sampled_rss_bytes", "measurement"):
         metrics.setdefault(field, None)
     if report.get("page_count", len(predictions)) != len(predictions):
@@ -603,7 +619,7 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
         "# P002 natural-PDF generalization progress",
         "",
         (
-            "Only completed runs with verified frozen sources, complete retained states, exact Markdown "
+            "Frozen runs with independently verified successful states, exact Markdown "
             "and source ownership appear below. Missing/error pages remain in every scored denominator. "
             "Protocol groups use different frozen datasets and must not be pooled into one quality score."
         ),
@@ -618,9 +634,9 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
             (
                 "| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | "
                 "Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | "
-                "Extra tables | Effective API USD |"
+                "Extra tables | Pages/min | Pages/API USD | Effective API USD |"
             ),
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
         for r in runs:
             s, positive = r["scores"], r["positive"]
@@ -638,6 +654,8 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
                 edits,
                 s.get("localized_tables_iou_ge_0_5", 0),
                 s.get("false_positive_tables", 0),
+                r["pages_per_minute"],
+                r["pages_per_dollar"],
                 r["costs"]["effective_usd"],
             ]
             lines.append("| " + " | ".join(_fmt(v) for v in values) + " |")

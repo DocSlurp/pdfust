@@ -1,7 +1,7 @@
 """Source-only region pipeline for P002; scoring references are never loaded."""
 
 # Explicit retained experiment dictionaries are heterogeneous.
-# ruff: noqa: ANN401, EM101, TRY003, PLC0415, TRY301, PLR0913, PLR0917, C901
+# ruff: noqa: ANN401, EM101, TRY003, PLC0415, TRY301, PLR0911, PLR0912, PLR0913, PLR0917, C901
 from __future__ import annotations
 
 import argparse
@@ -204,6 +204,13 @@ def select_region(
     native = native_state(snapshot)
     info: dict[str, Any] = {"id": region["id"], "boundary": region["boundary"], "bbox": region["bbox"]}
     raster = native if region.get("kind") == "raster" else None
+    if (
+        config.get("layout_detector") == "yolo"
+        and config.get("detector_residual", "retain") == "retain"
+        and region.get("kind") == "residual"
+    ):
+        info["route"] = "detector_residual_retained"
+        return native, info
     if (native["tables"] and raster is None) or config["policy"] == "native":
         info["route"] = "native"
         return native, info
@@ -351,11 +358,26 @@ def process(
                 snapshot, raster_keys, result["raster_rules"] = raster_sources(
                     page, snapshot, config.get("raster_edge", 1536)
                 )
-            plan = split(
-                snapshot,
-                max_words=config.get("region_words", 256),
-                max_characters=config.get("region_characters", 8000),
-            )
+            region_options = {
+                "max_words": config.get("region_words", 256),
+                "max_characters": config.get("region_characters", 8000),
+            }
+            if config.get("layout_detector") == "yolo":
+                from bench.pipeline_layout_detector import detector_regions
+
+                began, detector_cpu = time.perf_counter(), time.process_time()
+                detector_scale = config.get("detector_edge", 1536) / max(page.rect.width, page.rect.height)
+                raster = page.render(scale=detector_scale, background=(255, 255, 255))
+                detection = config["_layout_detector"].detect(raster, viewport=list(page.rect))
+                result["layout_detector"] = {
+                    **detection,
+                    "image_sha256": sha(raster),
+                    "parent_wall_seconds": time.perf_counter() - began,
+                    "parent_cpu_seconds": time.process_time() - detector_cpu,
+                }
+                plan = detector_regions(snapshot, detection["boxes"], **region_options)
+            else:
+                plan = split(snapshot, **region_options)
             for region in plan["regions"]:
                 if any(vector_identity(v) in raster_keys for v in region["source"]["vector_candidates"]):
                     region["kind"] = "raster"
@@ -412,6 +434,9 @@ def main() -> None:
     parser.add_argument("--generation-format", choices=("anchors", "matrix"), default="anchors")
     parser.add_argument("--raster-rules", action="store_true")
     parser.add_argument("--raster-edge", type=int, choices=(1024, 1536, 2048), default=1536)
+    parser.add_argument("--layout-detector", choices=("none", "yolo"), default="none")
+    parser.add_argument("--detector-edge", type=int, choices=(1024, 1536, 2000), default=1536)
+    parser.add_argument("--detector-residual", choices=("retain", "analyze"), default="retain")
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
     parser.add_argument("--pilot", action="store_true")
