@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import json
 import resource
 import time
 from collections import Counter
@@ -16,6 +17,9 @@ from PIL import Image
 from bench import p003_synthetic_relations as relations
 from bench.silver import guard_path, sha, write_json
 
+TWIN_COUNT = 2
+UNDERDETERMINED_FAMILY = 2
+
 CODE = (
     "p003_synthetic_relations.py",
     "p003_synthetic_relations_prepare.py",
@@ -24,6 +28,71 @@ CODE = (
     "pipeline_regions.py",
     "silver.py",
 )
+
+
+def counterfactuals(output: Path, records: list[dict[str, Any]]) -> list[dict[str, Any]]:  # noqa: C901 - all exact equivalence checks predate source freeze.
+    """Assert exact source twins before source freezing, without consulting the gold sidecar."""
+    families: dict[tuple[str, int], list[str]] = {}
+    for plan in relations.plans():
+        families.setdefault((plan["kind"], plan["family"]), []).append(plan["id"])
+    by_id = {r["id"]: r for r in records}
+    receipts = []
+    for (kind, family), identities in sorted(families.items()):
+        if len(identities) != TWIN_COUNT:
+            raise ValueError("Exactly two counterfactual cases per family required")
+        a, b = [json_record(output, by_id[i]["path"]) for i in identities]
+        if a["status"] != "ready" or b["status"] != "ready":
+            receipts.append(
+                {
+                    "case_ids": sorted(identities),
+                    "kind": kind,
+                    "status": "extraction_refused",
+                    "no_equivalence_claim": True,
+                }
+            )
+            continue
+        if relations.dump(a["source"]) != relations.dump(b["source"]):
+            raise ValueError("Counterfactual literal source words/IDs/boxes differ")
+        for pixels in (False, True):
+            if relations.dump(relations.packet(a, pixels_available=pixels)) != relations.dump(
+                relations.packet(b, pixels_available=pixels)
+            ):
+                raise ValueError("Counterfactual text geometry bytes differ")
+        rules_equal = relations.dump(a["drawings"]) == relations.dump(b["drawings"])
+        if rules_equal != (family == UNDERDETERMINED_FAMILY):
+            raise ValueError("Observed rule visibility differs from predeclared counterfactual construction")
+        equality = []
+        for ia, ib in zip(a["images"], b["images"], strict=True):
+            if (ia["scope"], ia["edge"], ia["viewport"], ia["dimensions"]) != (
+                ib["scope"],
+                ib["edge"],
+                ib["viewport"],
+                ib["dimensions"],
+            ):
+                raise ValueError("Counterfactual image framing differs")
+            equal = (output / ia["path"]).read_bytes() == (output / ib["path"]).read_bytes()
+            if equal != (family == UNDERDETERMINED_FAMILY):
+                raise ValueError("Counterfactual source pixels do not match declared observable-rule difference")
+            equality.append({"scope": ia["scope"], "edge": ia["edge"], "byte_identical": equal})
+        receipts.append(
+            {
+                "case_ids": sorted(identities),
+                "kind": kind,
+                "status": "ready",
+                "source_byte_identical": True,
+                "text_geometry_byte_identical": True,
+                "observed_drawings_byte_identical": rules_equal,
+                "images": equality,
+                "source_sha256": sha(relations.dump(a["source"]).encode()),
+                "text_geometry_sha256": sha(relations.dump(relations.packet(a)).encode()),
+            }
+        )
+    return receipts
+
+
+def json_record(output: Path, relative: str) -> dict[str, Any]:
+    """Read a declared source record, never labels or an enumerated directory."""
+    return json.loads((output / relative).read_bytes())
 
 
 def prepare(output: Path) -> dict[str, Any]:
@@ -134,6 +203,7 @@ def prepare(output: Path) -> dict[str, Any]:
         for p in sorted(output.rglob("*"))
         if p.is_file() and "code" not in p.relative_to(output).parts
     }
+    twins = counterfactuals(output, records)
     frozen = {
         "schema": 1,
         "seed": relations.SEED,
@@ -149,6 +219,7 @@ def prepare(output: Path) -> dict[str, Any]:
         },
         "no_model_requests": True,
         "pair_policy": "Generator-predeclared pair; unique literal-to-extracted-ID matching only; missing/duplicate/merged extraction refuses; no model or natural corpus selection",
+        "counterfactual_twins": twins,
     }
     write_json(output / "frozen.json", frozen)
     source_freeze_sha = sha((output / "frozen.json").read_bytes())
@@ -167,6 +238,9 @@ def prepare(output: Path) -> dict[str, Any]:
         "statuses": dict(Counter(r["status"] for r in records)),
         "construction_balance": dict(Counter(f"{g['kind']}:{g['expected_choice']}" for g in gold)),
         "deliberately_underdetermined_cases": sum(g["evidence_limitation"] for g in gold),
+        "counterfactual_pair_count": len(twins),
+        "identical_text_geometry_pairs": sum(t.get("text_geometry_byte_identical", False) for t in twins),
+        "identical_all_pixel_pairs": sum(t.get("observed_drawings_byte_identical", False) for t in twins),
         "resources": {
             "wall_seconds": time.perf_counter() - began,
             "cpu_seconds": time.process_time() - cpu,

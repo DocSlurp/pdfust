@@ -1,5 +1,10 @@
 # P003 synthetic relation hosted runner
 
+The source/preflight hashes below describe historical v1, with no hosted calls.
+Root caught its typed-text image state before inference. Current helpers emit
+native plain string image parts and require the new exact-counterfactual v2
+authority in `p003-synthetic-relations-v2.md`. V1 is intentionally not admitted.
+
 `bench/p003_synthetic_relations_run.py` is opt-in and makes no request while
 preparing. Root alone coordinates hosted arms and the shared ledger. Native
 OpenRouter choice requests support all 14 registered decision models for text;

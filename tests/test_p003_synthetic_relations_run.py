@@ -55,7 +55,9 @@ def test_preflight_without_gold_replays_all_evidence(pool: tuple[Path, Path], tm
         body = row["canonical"]
         assert body == row["wire"]
         assert sha(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()) == row["wire_encoded_sha256"]
-        state = json.loads(body["state"][0]["text"])
+        assert isinstance(body["state"][0], str)
+        assert body["state"][1]["type"] == "image_url"
+        state = json.loads(body["state"][0])
         assert state["word_count"] == 8
         assert state["omitted_word_count"] == 0
         assert state["pixel_scope"]["scope"] == "crop"

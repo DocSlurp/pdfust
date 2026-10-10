@@ -216,7 +216,7 @@ def rebuild_request(
     body = evidence.request(record, config["model"], mode=config["mode"], image_url=url)
     if receipt is not None:
         # Declared framing is part of this treatment, never hidden crop/full-page equivalence.
-        packet = json.loads(body["state"][0]["text"])
+        packet = json.loads(body["state"][0])
         packet["pixel_scope"] = {
             "scope": receipt["scope"],
             "viewport": receipt["viewport"],
@@ -225,7 +225,7 @@ def rebuild_request(
             "coordinate_mapping": receipt["coordinate_mapping"],
             "peripheral_rules_may_be_clipped": receipt["scope"] == "crop",
         }
-        body["state"][0]["text"] = evidence.dump(packet)
+        body["state"][0] = evidence.dump(packet)
     return body, receipt
 
 

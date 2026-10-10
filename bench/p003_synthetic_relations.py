@@ -15,7 +15,7 @@ import pylopdf
 from bench.feature_cases import page_pdf, text_op
 from bench.pipeline_row_evidence import build
 
-SEED = "p003-synthetic-relations-20261010-v1"
+SEED = "p003-synthetic-relations-20261010-v2"
 KINDS = ("cell", "row", "wrap")
 MODES = ("text_geometry", "rows_rules")
 EDGES = (128, 512)
@@ -56,9 +56,10 @@ def plans() -> list[dict[str, Any]]:
         for family in range(4):
             for same in (False, True):
                 key = sha256(f"{SEED}/{kind}/{family}/{same}".encode()).hexdigest()
+                literal_seed = sha256(f"{SEED}/{kind}/{family}/literals".encode()).hexdigest()
                 # Opaque letters have no target/category prefix, stable length and no duplicate identities.
                 literals = [
-                    "".join(chr(97 + int(c, 16)) for c in sha256(f"{key}/{i}".encode()).hexdigest()[:7])
+                    "".join(chr(97 + int(c, 16)) for c in sha256(f"{literal_seed}/{i}".encode()).hexdigest()[:7])
                     for i in range(8)
                 ]
                 result.append(
@@ -199,9 +200,9 @@ def request(
 ) -> dict[str, Any]:
     """Build native choice input; image is an explicitly independent evidence factor."""
     state = dump(packet(record, mode=mode, pixels_available=image_url is not None))
-    evidence: str | list[dict[str, Any]] = state
+    evidence: str | list[Any] = state
     if image_url is not None:
-        evidence = [{"type": "text", "text": state}, {"type": "image_url", "image_url": {"url": image_url}}]
+        evidence = [state, {"type": "image_url", "image_url": {"url": image_url}}]
     return {
         "model": model,
         "state": evidence,

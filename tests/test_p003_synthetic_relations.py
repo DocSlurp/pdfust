@@ -32,7 +32,7 @@ def test_balanced_designs_unique_unlabeled_literals_and_membership() -> None:
             equal = equal and a["cell"] == b["cell"]
         assert equal == plan["same"]
         assert all(len(t) == 7 and t.isalpha() and t.islower() for t in plan["literals"])
-    assert len(hashes) == 24
+    assert len(hashes) == 21
 
 
 def test_actual_extraction_identity_and_full_evidence_no_gold() -> None:
@@ -60,6 +60,42 @@ def test_actual_extraction_identity_and_full_evidence_no_gold() -> None:
             assert "family" not in body["state"]
             assert set(body["questions"]["q0"]["criteria"]) == {"same", "separate", "unresolved"}
             assert ("observed_drawings" in packet) == (mode == "rows_rules")
+        image_body = cases.request(record, "explicit/model", image_url="data:image/png;base64,aGVsbG8=")
+        assert isinstance(image_body["state"][0], str)
+        assert image_body["state"][1] == {"type": "image_url", "image_url": {"url": "data:image/png;base64,aGVsbG8="}}
+
+
+def test_counterfactual_twins_exact_source_text_and_pixel_visibility() -> None:
+    grouped = {}
+    for plan in cases.plans():
+        grouped.setdefault((plan["kind"], plan["family"]), []).append(plan)
+    assert len(grouped) == 12
+    for (kind, family), twins in grouped.items():
+        assert {t["same"] for t in twins} == {True, False}
+        assert twins[0]["id"] != twins[1]["id"]
+        assert twins[0]["literals"] == twins[1]["literals"]
+        pdfs, records = [], []
+        for plan in twins:
+            pdf, _gold = cases.authored(plan)
+            source, pair, drawings = cases.extract(pdf, plan["literals"])
+            records.append(
+                {"status": "ready", "kind": kind, "source": source, "pair_source_ids": pair, "drawings": drawings}
+            )
+            pdfs.append(pdf)
+        assert cases.dump(records[0]["source"]) == cases.dump(records[1]["source"])
+        assert cases.dump(cases.packet(records[0])) == cases.dump(cases.packet(records[1]))
+        assert cases.dump(cases.request(records[0], "explicit/model")) == cases.dump(
+            cases.request(records[1], "explicit/model")
+        )
+        enriched_equal = cases.dump(cases.packet(records[0], mode="rows_rules")) == cases.dump(
+            cases.packet(records[1], mode="rows_rules")
+        )
+        assert enriched_equal == (family == 2)
+        for bounds in (None, [55, 80, 470, 320]):
+            for edge in cases.EDGES:
+                assert (
+                    cases.image(pdfs[0], edge=edge, viewport=bounds) == cases.image(pdfs[1], edge=edge, viewport=bounds)
+                ) == (family == 2)
 
 
 def test_duplicate_or_missing_extraction_refuses() -> None:
@@ -93,6 +129,9 @@ def test_complete_pool_freezes_before_gold_and_refuses_reuse(tmp_path: Path) -> 
     gold = json.loads((output / "private-gold.json").read_bytes())
     assert report["statuses"] == {"ready": 24}
     assert report["deliberately_underdetermined_cases"] == 6
+    assert report["counterfactual_pair_count"] == 12
+    assert report["identical_text_geometry_pairs"] == 12
+    assert report["identical_all_pixel_pairs"] == 3
     assert len(gold["cases"]) == len(frozen["records"]) == 24
     assert "private-gold.json" not in frozen["artifact_sha256"]
     assert gold["source_frozen_sha256"] == sha((output / "frozen.json").read_bytes())

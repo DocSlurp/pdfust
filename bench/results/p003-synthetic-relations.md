@@ -1,5 +1,8 @@
 # P003 source-frozen synthetic relationship quality set
 
+Historical v1 source receipt, with no hosted calls. Current helpers require the
+new exact-counterfactual v2 authority; see `p003-synthetic-relations-v2.md`.
+
 2026-10-10. New repository-authored PDFs only; no existing corpus, labels,
 model responses, references, credentials, hosted calls or GPU work are used.
 Seed: `p003-synthetic-relations-20261010-v1`.
