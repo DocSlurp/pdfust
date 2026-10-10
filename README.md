@@ -374,6 +374,7 @@ Selected natural-screen comparisons (all 16 intended pages remain scored):
 | Haiku multiscale detector + 1024 px crops | 15 | 2 | 581 | 5.52 | 1,135.80 |
 | YOLO + Haiku source-ID matrix, generation row context, 512 px | 15 | 2 | 225 | 3.13 | 416.14 |
 | YOLO + gated Haiku ordinal cells, gate row context, 512 px | 16 | 2 | 336 | 3.33 | 558.89 |
+| YOLO + Haiku, OCR300 + arrays + ordinal cells + column instructions, 512 px | 16 | 3 | 395 | 2.55 | 846.06 |
 
 Both cropped configurations beat the measured whole-page Opus configuration in
 complete tables and exact cells at lower API cost. This compares complete input

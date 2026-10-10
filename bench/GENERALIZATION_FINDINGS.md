@@ -89,6 +89,13 @@ for review without relabeling failed pages as complete.
   row context directly to matrix generation instead loses 33 cells and costs
   about 53% more. The place where evidence enters the pipeline matters; these
   are single fresh comparisons, not a universal benefit from more context.
+- **Combining compatible evidence changes earns a follow-up.** OCR300, compact
+  arrays, ordinal output cells and column-track instructions recover 395 exact
+  cells and three complete tables, with all sixteen outputs and no extra tables.
+  This improves on the 311-cell ordinal and 332-cell column-prompt controls, but
+  changes several factors together. The next controlled source-owned comparison
+  should add the successful gate-only row context to this combination, keeping
+  all pages and negative examples. It has not yet been run.
 - **Concurrency improves throughput only within its measured scope.** A fresh
   four-worker whole-page Haiku control reaches 30.93 output pages/minute versus
   12.43 serial, with different fresh-response outcomes. Atomic reservations and
