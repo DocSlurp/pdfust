@@ -347,8 +347,19 @@ def test_invalid_other_baseline_is_provenance_not_partial_rescue(tmp_path: Path)
     assert client.bodies == []
 
 
-@pytest.mark.parametrize("image_mode", ["rgb_png", "grayscale8", "rgb_palette16"])
-def test_image_encoding_reaches_request_and_retains_original_provenance(tmp_path: Path, image_mode: str) -> None:
+@pytest.mark.parametrize(
+    ("image_mode", "visibility"),
+    [
+        ("rgb_png", "source"),
+        ("grayscale8", "source"),
+        ("rgb_palette16", "source"),
+        ("rgb_png", "blank"),
+        ("rgb_palette16", "blur"),
+    ],
+)
+def test_image_encoding_reaches_request_and_retains_original_provenance(
+    tmp_path: Path, image_mode: str, visibility: str
+) -> None:
     first, second = tmp_path / "first", tmp_path / "second"
     _, _, a = baseline(first, "first")
     _, _, b = baseline(second, "second")
@@ -375,7 +386,7 @@ def test_image_encoding_reaches_request_and_retains_original_provenance(tmp_path
         [first, second],
         [a, b],
         output,
-        config(image_edge=512, image_mode=image_mode, model="cloudflare/clef-omni"),
+        config(image_edge=512, image_mode=image_mode, image_visibility=visibility, model="cloudflare/clef-omni"),
         client,
         image_factory=image_factory,
     )
@@ -387,6 +398,10 @@ def test_image_encoding_reaches_request_and_retains_original_provenance(tmp_path
     assert metadata["selector_image_mode"] == image_mode
     assert metadata["source_image_codec"] == "JPEG"
     assert "p003_selector_image.py" in json.loads((output / "frozen.json").read_bytes())["code_sha256"]
+    if visibility != "source":
+        assert metadata["image_visibility"] == visibility
+        assert metadata["visibility_source_sha256"]
+        assert "p003_selector_visibility.py" in json.loads((output / "frozen.json").read_bytes())["code_sha256"]
 
 
 def test_later_crop_selector_failure_rolls_back_whole_page(tmp_path: Path) -> None:

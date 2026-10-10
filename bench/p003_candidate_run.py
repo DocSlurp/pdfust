@@ -22,6 +22,7 @@ from bench import generalization_vision_regions as regions
 from bench import p003_candidate_choice as chooser
 from bench import p003_candidate_diff as differences
 from bench import p003_selector_image as selector_image
+from bench import p003_selector_visibility as selector_visibility
 from bench import pipeline_run
 from bench import pipeline_vision_transcription as transcription
 from bench.decision_hosted import DECISION_MODELS
@@ -39,7 +40,7 @@ IMAGE_MODELS = (
     "cloudflare/clef",
     "cloudflare/clef-omni",
 )
-EDGES = (0, 128, 256, 400, 512, 768, 1024, 1200)
+EDGES = (0, 128, 256, 400, 500, 512, 768, 1024, 1200)
 ROOT_REVIEWED_PARSER_SHA256 = frozenset(
     {
         "8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e",
@@ -329,6 +330,7 @@ def process(
                 ):
                     raise ValueError("Selector pixels do not match declared same-crop image provenance")
                 url = actual_url
+                url, metadata = selector_visibility.transform(url, metadata, config.get("image_visibility", "source"))
                 url, metadata = selector_image.transform(url, metadata, config.get("image_mode", "rgb"))
             info["selector_image"] = metadata
             stage = f"crop/{index}/evidence"
@@ -443,6 +445,9 @@ def run(
     if not config.get("run_hosted") or not 2 <= len(inputs) <= 4 or len(inputs) != len(trusted_code):
         raise ValueError("Ranking needs 2-4 explicit baseline/trust-map pairs and run_hosted opt-in")
     image_mode = config.get("image_mode", "rgb")
+    visibility = config.get("image_visibility", "source")
+    if visibility not in selector_visibility.CONTROLS or (visibility != "source" and not config.get("image_edge")):
+        raise ValueError("Selector visibility control requires an image")
     if image_mode not in selector_image.MODES or (image_mode != "rgb" and not config.get("image_edge")):
         raise ValueError("Selector image encoding requires an admitted mode and nonzero image edge")
     mode = config.get("evidence_mode", "whole")
@@ -544,6 +549,8 @@ def run(
     available_code = CODE_FILES + (("p003_candidate_diff.py",) if mode == "differences" else ())
     if image_mode != "rgb":
         available_code += ("p003_selector_image.py",)
+    if visibility != "source":
+        available_code += ("p003_selector_visibility.py",)
     (output / "code").mkdir()
     code = {}
     for name in available_code:
@@ -628,11 +635,14 @@ def main() -> None:
     parser.add_argument("--evidence-mode", choices=("whole", "differences"), default="whole")
     parser.add_argument("--evidence-max-bytes", type=int)
     parser.add_argument("--image-mode", choices=selector_image.MODES, default="rgb")
+    parser.add_argument("--image-visibility", choices=selector_visibility.CONTROLS, default="source")
     parser.add_argument("--run-hosted", action="store_true")
     args = parser.parse_args()
     config = {"model": args.model, "image_edge": args.image_edge, "seed": args.seed, "run_hosted": args.run_hosted}
     if args.image_mode != "rgb":
         config["image_mode"] = args.image_mode
+    if args.image_visibility != "source":
+        config["image_visibility"] = args.image_visibility
     if args.evidence_mode == "differences":
         config["evidence_mode"] = "differences"
         if args.evidence_max_bytes is not None:
