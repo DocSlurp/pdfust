@@ -46,6 +46,9 @@ TRUSTED_HISTORICAL_CODE = {
         "8a87e312643ffc97e63448b8ef9c7b2fbaa169c28431eb177417c34f64ab5386": "b0775e2",
     },
     "generalization_vision_run.py": {
+        "5d39813c50ece7844659081af76ee87c34e75d7c6a6bd3b949e900865755b106": "4bf4dc6",
+        "132239db5e40a247e0044b2c0df7fc1d7208725bf092e5beb6f04919ff314896": "53aa05b",
+        "7308db108bd043d6542c1dc7e767c9247ce6553bf50efb46c4172ced657f45a9": "30aa87b",
         "6043f2e9590d8caeb0262223b6fd0a48a737b75685c11b0f346cd9ec140f4ac4": "01273f1",
     },
     "pipeline_regions.py": {
