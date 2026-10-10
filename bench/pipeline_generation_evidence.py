@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import resource
+import time
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +61,7 @@ def benchmark(
     from bench.pipeline_regions import split
     from bench.silver import guard_path, sha, write_json
 
+    began, cpu = time.perf_counter(), time.process_time()
     manifest = json.loads(guard_path(manifest_path).read_bytes())
     if manifest.get("split") != "DEV":
         raise ValueError("Evidence benchmark requires explicit DEV sources")
@@ -82,6 +85,7 @@ def benchmark(
         cached = json.loads(guard_path(sources_directory / f"{record['id']}-result.json").read_bytes())
         if cached["id"] != record["id"]:
             raise ValueError("Cached source ID does not match frozen page")
+        original_hash = sha(json.dumps(cached["source"], sort_keys=True, ensure_ascii=False).encode())
         for budget in (256, 1024):
             plan = split(cached["source"], max_words=budget, max_characters=16_000)
             for region in plan["regions"]:
@@ -98,6 +102,7 @@ def benchmark(
                     rows.append(
                         {
                             "page_id": record["id"],
+                            "original_cached_source_sha256": original_hash,
                             "region_id": region["id"],
                             "region_word_budget": budget,
                             "source_words": len(region["source"]["words"]),
@@ -117,6 +122,13 @@ def benchmark(
         "tokenizer": tokenizer_metadata,
         "rows": rows,
         "scope": "Serialization only; no inference, quality claim, truncation, or parser-coordinate replacement",
+        "resources": {
+            "wall_seconds": time.perf_counter() - began,
+            "cpu_seconds": time.process_time() - cpu,
+            "lifetime_peak_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+            "measurement": "Own-process process_time CPU and Linux getrusage lifetime peak RSS; no RSS sampling",
+            "scope": "Source reading, validation, splitting and all encodings; excludes original OCR/extraction",
+        },
     }
     write_json(guard_path(output), report)
     return report
