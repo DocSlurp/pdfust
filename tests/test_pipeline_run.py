@@ -12,6 +12,7 @@ from copy import deepcopy
 from html.parser import HTMLParser
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import Any, cast
 
 import pytest
 from bench import pipeline_column_consensus, pipeline_repair, pipeline_routing
@@ -77,13 +78,18 @@ def test_source_projection_cannot_include_page_metadata(monkeypatch: pytest.Monk
     }
     monkeypatch.setattr(runner, "observed_table", lambda observed: native if observed is table else None)
     calls = []
+
+    def find_tables(**kwargs: object) -> SimpleNamespace:
+        calls.append(kwargs)
+        return SimpleNamespace(tables=[table])
+
     page = SimpleNamespace(
         rect=[0, 0, 100, 100],
         family="SECRET",
         gold="SECRET",
         filename="SECRET",
         get_text=lambda _mode: [(1, 2, 3, 4, "literal", 8, 9, "SECRET")],
-        find_tables=lambda **kwargs: calls.append(kwargs) or SimpleNamespace(tables=[table]),
+        find_tables=find_tables,
     )
     projected = runner.source(page)
     assert set(projected) == {"page_size", "words", "vector_candidates"}
@@ -123,7 +129,7 @@ class VisibleText(HTMLParser):
 
 
 def test_markdown_preserves_spans_visible_literals_and_outside_words() -> None:
-    page = {
+    page: dict[str, Any] = {
         "page_size": [100, 100],
         "words": [
             {"id": "w0", "text": "A<&", "bbox": [5, 5, 15, 15]},
@@ -166,7 +172,7 @@ def test_native_and_vector_cascade_make_no_hosted_calls(
     monkeypatch.setattr(runner, "call", unexpected)
     monkeypatch.setattr(runner, "propose", unexpected)
     monkeypatch.setattr(runner, "image", unexpected)
-    result = runner.process(record(tmp_path), config(policy), tmp_path, object())
+    result = runner.process(record(tmp_path), config(policy), tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["route"] == "native"
     assert result["calls"] == []
@@ -205,7 +211,7 @@ def test_stubbed_assembly_response_abstains_without_losing_source(tmp_path: Path
             "replayed": False,
         }
 
-    client = SimpleNamespace(ledger=ledger, request=request)
+    client: Any = SimpleNamespace(ledger=ledger, request=request)
     settings = config("assembly")
     settings["image_edge"] = 0
     row = record(tmp_path)
@@ -265,11 +271,11 @@ def test_process_normalizes_rotation_before_extraction_and_render(
     original_source, original_image = runner.source, runner.image
     observed_rotations = []
 
-    def source(page: object, **kwargs: object) -> dict:
+    def source(page: pylopdf.Page, **kwargs: object) -> dict:
         observed_rotations.append(("source", page.rotation))
-        return original_source(page, **kwargs)
+        return original_source(page, **cast("Any", kwargs))
 
-    def image(page: object, edge: int) -> tuple:
+    def image(page: pylopdf.Page, edge: int) -> tuple:
         observed_rotations.append(("image", page.rotation))
         return original_image(page, edge)
 
@@ -285,7 +291,7 @@ def test_process_normalizes_rotation_before_extraction_and_render(
         output.mkdir()
         settings = config("assembly")
         settings["normalize_rotation"] = normalize
-        outputs.append(runner.process(row, settings, output, object()))
+        outputs.append(runner.process(row, settings, output, cast("Any", object())))
     assert all(result["status"] == "ok" for result in outputs)
     assert observed_rotations == [("source", rotation), ("image", rotation), ("source", 0), ("image", 0)]
     assert outputs[0]["original_rotation"] == rotation
@@ -312,7 +318,7 @@ def test_gated_out_skips_assembly_and_preserves_all_words(
 
     monkeypatch.setattr(runner, "call", decision)
     monkeypatch.setattr(runner, "packet", unexpected)
-    result = runner.process(record(tmp_path, bordered=False), config("gated"), tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), config("gated"), tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["route"] == "gated_out"
     assert result["admission_choice"] == gate_choice
@@ -332,7 +338,7 @@ def test_gated_table_writes_two_distinct_requests(tmp_path: Path, monkeypatch: p
         return {"answer": {"choice": "table" if len(calls) == 1 else "unresolved"}}
 
     monkeypatch.setattr(runner, "call", decision)
-    result = runner.process(record(tmp_path, bordered=False), config("gated"), tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), config("gated"), tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert len(calls) == 2
     assert calls[0][1].endswith("/0")
@@ -346,7 +352,7 @@ def test_gated_table_writes_two_distinct_requests(tmp_path: Path, monkeypatch: p
 
 
 def test_adaptive_uses_source_route_image_and_repair_context(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    observed = {}
+    observed: dict[str, Any] = {}
 
     def route(page: dict, seed: dict, candidates: list) -> dict:
         assert set(page) == {"words", "page_size", "vector_candidates"}
@@ -370,7 +376,7 @@ def test_adaptive_uses_source_route_image_and_repair_context(tmp_path: Path, mon
     monkeypatch.setattr(pipeline_repair, "packet", repair_packet)
     monkeypatch.setattr(runner, "image", image)
     monkeypatch.setattr(runner, "call", decision)
-    result = runner.process(record(tmp_path, bordered=False), config("adaptive"), tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), config("adaptive"), tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["route"] == "repair"
     assert observed == {"routing": True, "edge": 512, "context": {"context_rows": 3, "availability_legend": True}}
@@ -397,7 +403,7 @@ def test_adaptive_respects_source_only_action(tmp_path: Path, monkeypatch: pytes
 
     monkeypatch.setattr(runner, "image", image)
     monkeypatch.setattr(runner, "call", decision)
-    result = runner.process(record(tmp_path, bordered=False), config("adaptive"), tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), config("adaptive"), tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["source_conserved"]
     if action == "keep_native":
@@ -430,7 +436,12 @@ def test_ocr_only_attempts_empty_pages_when_enabled(
     page.apply_ocr = apply_ocr
     monkeypatch.setattr(pylopdf, "open", lambda **_kwargs: nullcontext([page]))
     engine_calls = []
-    monkeypatch.setattr(runner, "ocr_engine", lambda: engine_calls.append(True) or engine)
+
+    def load_engine() -> object:
+        engine_calls.append(True)
+        return engine
+
+    monkeypatch.setattr(runner, "ocr_engine", load_engine)
     settings = config("native")
     settings["ocr_empty"] = enabled
     result = runner.process(record(tmp_path), settings, tmp_path, None)
@@ -493,7 +504,7 @@ def test_single_candidate_skips_hosted_decisions_without_fabricating_tables(
 
     monkeypatch.setattr(runner, "call", unexpected)
     monkeypatch.setattr(runner, "image", unexpected)
-    result = runner.process(record(tmp_path, bordered=False), config(policy), tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), config(policy), tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["route"] == "no_alternative"
     assert result["calls"] == []
@@ -530,7 +541,7 @@ def test_uncertain_gate_review_is_independent_and_uses_distinct_requests(
     settings.update(image_edge=0, gate_review_model="anthropic/claude-sonnet-5.5")
     row = record(tmp_path, bordered=False)
     row.update(family="REFERENCE_ONLY_SECRET", expected="REFERENCE_ONLY_SECRET")
-    result = runner.process(row, settings, tmp_path, object())
+    result = runner.process(row, settings, tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["gate_review"]["primary_answer"] == primary
     assert result["admission_choice"] == review_choice
@@ -578,7 +589,7 @@ def test_strong_gate_score_skips_review(tmp_path: Path, monkeypatch: pytest.Monk
     monkeypatch.setattr(runner, "call", decision)
     settings = config("gated")
     settings.update(image_edge=0, gate_review_model="anthropic/claude-sonnet-5.5")
-    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert len(requests) == 2
     assert all(request["model"] == settings["model"] for request, _tag in requests)
@@ -591,7 +602,7 @@ def test_strong_gate_score_skips_review(tmp_path: Path, monkeypatch: pytest.Monk
 @pytest.fixture
 def compact_module(monkeypatch: pytest.MonkeyPatch) -> list:
     calls = []
-    module = ModuleType("bench.pipeline_compact_packet")
+    module: Any = ModuleType("bench.pipeline_compact_packet")
 
     def packet(page: dict, candidates: list) -> str:
         calls.append((deepcopy(page), deepcopy(candidates)))
@@ -605,7 +616,7 @@ def compact_module(monkeypatch: pytest.MonkeyPatch) -> list:
 def test_optional_consensus_preserves_existing_prefix_and_raw_source(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, compact_module: list
 ) -> None:
-    captured = {}
+    captured: dict[str, Any] = {}
     original = pipeline_column_consensus.propose
 
     def consensus(page: dict, existing: list) -> list:
@@ -628,7 +639,7 @@ def test_optional_consensus_preserves_existing_prefix_and_raw_source(
     row.update(expected="REFERENCE_SECRET", family="REFERENCE_SECRET")
     settings = config("assembly")
     settings.update(column_consensus=True, compact_packet=True, image_edge=0)
-    result = runner.process(row, settings, tmp_path, object())
+    result = runner.process(row, settings, tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert result["candidates"][: len(captured["existing"])] == captured["existing"]
     assert len(result["candidates"]) >= len(captured["existing"])
@@ -657,7 +668,7 @@ def test_optional_flags_preserve_native_fast_path(
     monkeypatch.setattr(runner, "call", unexpected)
     settings = config(policy)
     settings.update(column_consensus=True, compact_packet=True)
-    result = runner.process(record(tmp_path), settings, tmp_path, object())
+    result = runner.process(record(tmp_path), settings, tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert compact_module == []
     assert result["calls"] == []
@@ -680,7 +691,7 @@ def test_compact_packet_skipped_for_admission_rejection_and_local_repair(
     monkeypatch.setattr(pipeline_repair, "packet", lambda *_args, **_kwargs: "SOURCE_REPAIR_PACKET")
     settings = config(policy)
     settings.update(compact_packet=True, image_edge=0)
-    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert compact_module == []
     assert len(requests) == 1
@@ -703,7 +714,7 @@ def test_optional_flags_disabled_use_original_packet_and_proposals(
     monkeypatch.setattr(runner, "call", decision)
     settings = config("assembly")
     settings.update(column_consensus=False, compact_packet=False, image_edge=0)
-    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, object())
+    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, cast("Any", object()))
     assert result["status"] == "ok"
     assert compact_module == []
     assert "Choose one complete page assembly" in requests[0]["state"]
