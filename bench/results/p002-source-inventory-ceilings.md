@@ -8,7 +8,7 @@ All sixteen retained page inventories are available in each measured arm. The
 300-dpi arm also retains all sixteen inventories, including its failed output page.
 
 | Cached source arm | Literal-join feasible anchors / 2333 | Tables with all anchors feasible / 53 | Whitespace-free feasible anchors / 2333 | Whitespace-free table bound / 53 |
-|---|---:|---:|---:|---:|---:|
+|---|---:|---:|---:|---:|
 | Legacy150 (`natural16-generate-sonnet`) | 1194 | 6 | 1451 | 14 |
 | Whitespace150 (`natural16-generate-whitespace`) | 1238 | 6 | 1449 | 14 |
 | Whitespace300 (`natural16-yolo-ocr300-matrix-haiku-1024`) | 1880 | 9 | 2110 | 23 |
