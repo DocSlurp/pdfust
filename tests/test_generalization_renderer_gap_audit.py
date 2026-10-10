@@ -1,8 +1,10 @@
 """Pixel differences are diagnostics and record dimension normalization explicitly."""
 
 import io
+from pathlib import Path
 
-from bench.generalization_renderer_gap_audit import compare_images
+import pytest
+from bench.generalization_renderer_gap_audit import audit, compare_images
 from PIL import Image
 
 
@@ -25,3 +27,9 @@ def test_full_difference_and_size_adjustment_remain_explicit() -> None:
     assert result["different_pixel_fraction"] == 1
     assert result["second_nearest_resized_for_metric"] is True
     assert result["dimensions"] == [[10, 10], [11, 11]]
+
+
+@pytest.mark.parametrize("dpi", [True, 0, 200, 300.0])
+def test_renderer_dpi_refused_before_manifest_access(tmp_path: Path, dpi: object) -> None:
+    with pytest.raises(ValueError, match="fixed 150 or 300 DPI"):
+        audit(tmp_path / "missing.json", tmp_path / "output", dpi=dpi)  # type: ignore[arg-type]

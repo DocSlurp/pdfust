@@ -1,7 +1,7 @@
 """Isolated CPU renderer and OCR availability audit on explicit missing-text IDs."""
 
 # Retained experiment JSON carries heterogeneous per-renderer diagnostics.
-# ruff: noqa: ANN401, EM101, TRY003, PLC0415, PLR2004, C901
+# ruff: noqa: ANN401, EM101, TRY003, PLC0415, PLR2004, C901, PLR0912
 from __future__ import annotations
 
 import argparse
@@ -17,7 +17,7 @@ from typing import Any
 from bench.silver import guard_path, sha, write_json
 
 IDS = ("p3537ba59f34ed944966f", "pd1a2dc76a3752f9861ee", "pfb20031e973ad29c7e43", "peb29c108f12d92347139")
-DPI = 150
+DEFAULT_DPI = 150
 
 
 def compare_images(first: bytes, second: bytes) -> dict[str, Any]:
@@ -48,8 +48,12 @@ def _png(image: Any) -> bytes:
     return stream.getvalue()
 
 
-def audit(manifest_path: Path, output: Path, *, ocr: bool = False) -> dict[str, Any]:
+def audit(
+    manifest_path: Path, output: Path, *, ocr: bool = False, dpi: int = DEFAULT_DPI
+) -> dict[str, Any]:
     """Render only the four named diagnostics; never inspect scoring references."""
+    if type(dpi) is not int or dpi not in (150, 300):
+        raise ValueError("Renderer audit permits only fixed 150 or 300 DPI")
     import fitz  # type: ignore[import-untyped]
     import numpy as np
     import pypdfium2 as pdfium  # type: ignore[import-untyped]
@@ -95,14 +99,14 @@ def audit(manifest_path: Path, output: Path, *, ocr: bool = False) -> dict[str, 
                             page = document[record["page_number"]]
                             viewport = list(page.rect)
                             text = page.get_text()
-                            raster = page.render(scale=DPI / 72, background=(255, 255, 255))
+                            raster = page.render(scale=dpi / 72, background=(255, 255, 255))
                             original_rotation = page.rotation
                     elif name == "pymupdf":
                         with fitz.open(stream=source, filetype="pdf") as document:
                             page = document[record["page_number"]]
                             viewport = list(page.rect)
                             text = page.get_text()
-                            raster = page.get_pixmap(matrix=fitz.Matrix(DPI / 72, DPI / 72), alpha=False).tobytes("png")
+                            raster = page.get_pixmap(matrix=fitz.Matrix(dpi / 72, dpi / 72), alpha=False).tobytes("png")
                             original_rotation = page.rotation
                     else:
                         with pdfium.PdfDocument(source) as document:
@@ -111,7 +115,7 @@ def audit(manifest_path: Path, output: Path, *, ocr: bool = False) -> dict[str, 
                             textpage = page.get_textpage()
                             text = textpage.get_text_range()
                             textpage.close()
-                            bitmap = page.render(scale=DPI / 72, fill_color=(255, 255, 255, 255))
+                            bitmap = page.render(scale=dpi / 72, fill_color=(255, 255, 255, 255))
                             raster = _png(bitmap.to_pil())
                             bitmap.close()
                             original_rotation = page.get_rotation()
@@ -136,9 +140,9 @@ def audit(manifest_path: Path, output: Path, *, ocr: bool = False) -> dict[str, 
                     ocr_started, ocr_cpu = time.perf_counter(), time.process_time()
                     # All three inputs take the same image-only surrogate route; original PDFs remain untouched.
                     with Image.open(io.BytesIO(raster)) as image, pylopdf.Document() as surrogate:
-                        page = surrogate.new_page(width=image.width * 72 / DPI, height=image.height * 72 / DPI)
+                        page = surrogate.new_page(width=image.width * 72 / dpi, height=image.height * 72 / dpi)
                         page.insert_image(page.rect, stream=raster)
-                        words = page.get_text_ocr(dpi=DPI, engine=engine)
+                        words = page.get_text_ocr(dpi=dpi, engine=engine)
                     recognized = [
                         {"text": word["text"], "bbox": list(word["bbox"]), "confidence": word["confidence"]}
                         for word in words
@@ -150,7 +154,7 @@ def audit(manifest_path: Path, output: Path, *, ocr: bool = False) -> dict[str, 
                         "mean_confidence": sum(word["confidence"] for word in words) / len(words) if words else None,
                         "wall_seconds": time.perf_counter() - ocr_started,
                         "cpu_seconds": time.process_time() - ocr_cpu,
-                        "scope": "Matched image-only surrogate re-rendered by hayro at 150 DPI; "
+                        "scope": f"Matched image-only surrogate re-rendered by hayro at {dpi} DPI; "
                         "not original native source ownership",
                     }
             except Exception as error:
@@ -168,7 +172,7 @@ def audit(manifest_path: Path, output: Path, *, ocr: bool = False) -> dict[str, 
         pages.append(row)
     result = {
         "ids": list(IDS),
-        "dpi": DPI,
+        "dpi": dpi,
         "pages": pages,
         "ocr_initialization": initialization,
         "versions": {name: version(name) for name in ("PyMuPDF", "pypdfium2", "jev-pdf")},
@@ -190,8 +194,9 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--ocr", action="store_true")
+    parser.add_argument("--dpi", type=int, choices=(150, 300), default=DEFAULT_DPI)
     args = parser.parse_args()
-    result = audit(args.manifest, args.output, ocr=args.ocr)
+    result = audit(args.manifest, args.output, ocr=args.ocr, dpi=args.dpi)
     print(json.dumps(result, indent=2))
 
 
