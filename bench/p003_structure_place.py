@@ -12,10 +12,10 @@ from typing import Any
 
 from bench import p003_structure_geometry as geometry
 from bench.p003_gate_run import authenticate
-from bench.pipeline_assembly import _clean_table, validate
-from bench.pipeline_repair import _sources
+from bench.pipeline_assembly import _clean_table
+from bench.pipeline_repair import _sources, validate
 from bench.pipeline_run import Resources
-from bench.silver import guard_path, sha, write_json
+from bench.silver import canonical, guard_path, sha, write_json
 
 POLICIES = ("overlap_margin", "max_overlap", "center")
 
@@ -29,8 +29,12 @@ def place(source: dict[str, Any], candidates: list[dict[str, Any]], policy: str)
     """Use only exact source words and declared detector ownership; no model fallback."""
     if policy not in POLICIES:
         raise ValueError("Unknown frozen placement policy")
+    if len(canonical(source)) > 2 * 1024 * 1024:
+        raise ValueError("Complete source exceeds two MiB admission")
     lookup = _sources(source)
-    tables, anchors, refusals = [], [], []
+    tables: list[dict[str, Any]] = []
+    anchors: list[tuple[int, int, list[float], set[str]]] = []
+    refusals: list[dict[str, Any]] = []
     seen: set[str] = set()
     for candidate in candidates:
         ids = candidate["source_ids"]
@@ -119,7 +123,8 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         "geometry_report_sha256": sha(report_path.read_bytes()),
         "thresholds": list(geometry.THRESHOLDS), "policies": list(POLICIES), "references_read": False,
         "code_sha256": {name: sha(Path(__file__).with_name(name).read_bytes()) for name in
-                        ("p003_structure_place.py", "p003_structure_geometry.py", "pipeline_assembly.py")},
+                        ("p003_structure_place.py", "p003_structure_geometry.py", "pipeline_assembly.py",
+                         "pipeline_repair.py")},
         "output_scope": "Source placement conditional on frozen detector crops; no generated fallback text",
     })
     rows = []
@@ -132,7 +137,7 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
             original_raw = (baseline / (page["id"] + "-result.json")).read_bytes()
             if sha(original_raw) != page["baseline_result_sha256"] or json.loads(original_raw)["source"] != source:
                 raise ValueError("Source differs from independently authenticated extraction")
-            candidates = {threshold: [] for threshold in geometry.THRESHOLDS}
+            candidates: dict[float, list[dict[str, Any]]] = {threshold: [] for threshold in geometry.THRESHOLDS}
             if len(page["crops"]) != len(measured["crops"]):
                 raise ValueError("Geometry crop inventory differs")
             for crop, receipt in zip(page["crops"], measured["crops"], strict=True):
