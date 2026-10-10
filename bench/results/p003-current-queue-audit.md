@@ -54,3 +54,26 @@ The next independently verified checkpoint adds the following results; all retai
 | Haiku atomic-cell transcription | Complete pipeline output | 358 / 2 | 40 / 0 | 2 | 358 / 2 | 0.0186637 / reported |
 
 Neither the 500-pixel result nor differences among unmatched representations establish a causal optimum. Detailed statuses, evidence, resources and operational rates are retained in the updated progress tables.
+
+The following checkpoint preserves the complete natural64 denominator (64 pages, 93 tables, 3,847 cells and 24 negatives):
+
+| Generation arm | Strict | Complete | Missing / extra | Negative FP | Errors | API USD / basis |
+| --- | ---: | ---: | --- | ---: | ---: | --- |
+| Ordinal OCR edge2048 | 1125 | 10 | 46 / 11 | 1 / 24 | 1 | 0.0599038 / reported |
+| Haiku matrix-strict | 1333 | 12 | 50 / 0 | 0 / 24 | 6 | 0.0260132 / reported |
+| Sonnet legacy, earlier checkpoint | 1839 | 14 | 34 / 4 | 1 / 24 | 0 | 0.455752 / reported |
+
+These runs differ in generation/model/representation and share contended transport, so the table records observed complete-denominator results rather than a causal representation comparison. Successful-page-only scoring would hide Haiku's six failures.
+
+Additional natural16 candidate controls use primary selected-only quality:
+
+| Candidate arm | Primary strict / complete | Missing / extra | Legacy strict / complete | API USD / reported |
+| --- | ---: | --- | ---: | ---: |
+| PPLX400 RGB seed7 | 980 / 5 | 27 / 0 | 1083 / 5 | 0.00060236 |
+| PPLX128 palette seed19 | 1078 / 3 | 27 / 3 | 1082 / 4 | 0.00059822 |
+| PPLX128 palette blank | 11 / 0 | 51 / 0 | 784 / 3 | 0.00059822 |
+| PPLX128 palette blur | 98 / 0 | 46 / 0 | 784 / 3 | 0.00059822 |
+
+At fixed 400 RGB, seed19 previously scored 1,081/five with three extras, whereas seed7 scores 980/five with none. At fixed 128 palette, seed7 previously scored 979/three with no extras versus seed19's 1,078/three with three extras. This permutation sensitivity does not identify an optimal seed or image size. No control is changed based on fresh-confirmation outcomes.
+
+ClefOmni direct bands score 209/two after failure filtering (legacy311/two), with one failed composition. Luna gate composes372/two and PPLX128 palette gate384/three on frozen generation. Their costs and resource scopes are in the progress tables; baseline retention remains excluded from successful ownership quality.
