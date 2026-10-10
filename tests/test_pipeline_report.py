@@ -156,7 +156,7 @@ def test_native_display_hides_unused_model_settings_preserving_raw_config(tmp_pa
     write_json(pipeline / "report.json", report)
     result = run(tmp_path, tmp_path / "summary.md")
     text = (tmp_path / "summary.md").read_text()
-    assert "| native | CPU only | — | — | — | True | False | — |" in text
+    assert "| native | CPU only | — | — | — | — | True | False | — |" in text
     assert result["runs"][0]["config"]["model"] == "test-model"
     assert result["runs"][0]["config"]["image_edge"] == 512
     assert "<summary>Complete per-family structure scores</summary>" in text
@@ -184,7 +184,7 @@ def test_incomplete_frozen_runs_are_visible_without_scoring_partial_outputs(tmp_
         }
     ]
     text = (tmp_path / "summary.md").read_text()
-    assert "| unfinished | adaptive | test-model | 3 | 1 | True |" in text
+    assert "| unfinished | adaptive | test-model | — | 3 | 1 | True |" in text
     assert "wall/CPU and RSS remain unknown" in text
 
 
@@ -197,7 +197,7 @@ def test_ocr_setting_visible_and_unused_gate_premise_hidden(tmp_path: Path) -> N
     write_json(pipeline / "report.json", report)
     result = run(tmp_path, tmp_path / "summary.md")
     text = (tmp_path / "summary.md").read_text()
-    assert "| assembly | test-model | 512 | 1 | True | False | True | — |" in text
+    assert "| assembly | test-model | — | 512 | 1 | True | False | True | — |" in text
     assert result["runs"][0]["config"]["gate_premise"] == "relational"
     report["config"]["policy"] = "gated"
     frozen["config"] = report["config"]
@@ -205,5 +205,48 @@ def test_ocr_setting_visible_and_unused_gate_premise_hidden(tmp_path: Path) -> N
     write_json(pipeline / "report.json", report)
     run(tmp_path, tmp_path / "summary.md")
     assert (
-        "| gated | test-model | 512 | 1 | True | False | True | relational |" in (tmp_path / "summary.md").read_text()
+        "| gated | test-model | — | 512 | 1 | True | False | True | relational |"
+        in (tmp_path / "summary.md").read_text()
     )
+
+
+def test_review_model_and_successful_call_costs_visible_without_changing_artifacts(tmp_path: Path) -> None:
+    pipeline, report = _fixture(tmp_path)
+    report["config"].update(policy="gated", gate_review_model="anthropic/claude-sonnet-5.5")
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["config"] = report["config"]
+    write_json(pipeline / "frozen.json", frozen)
+    report["results"][0]["calls"] = [
+        {
+            "entry": {
+                "requested_model": "test-model",
+                "accounted_usd": 0.01,
+                "provider_reported_usd": 0.01,
+                "cost_status": "provider-reported USD",
+            }
+        },
+        {
+            "entry": {
+                "requested_model": "anthropic/claude-sonnet-5.5",
+                "accounted_usd": 0.02,
+                "provider_reported_usd": 0,
+                "cost_status": "catalog estimate",
+            }
+        },
+        {"entry": {"requested_model": "unsettled-model", "accounted_usd": 0.3, "cost_status": "reserved"}},
+    ]
+    write_json(pipeline / "report.json", report)
+    original = (pipeline / "report.json").read_bytes()
+    result = run(tmp_path, tmp_path / "summary.md")["runs"][0]
+    assert (pipeline / "report.json").read_bytes() == original
+    groups = result["successful_call_models"]
+    assert groups["test-model"]["calls"] == 1
+    assert groups["test-model"]["effective_usd"] == 0.01
+    assert groups["anthropic/claude-sonnet-5.5"]["provider_reported_subtotal_usd"] == 0
+    assert groups["anthropic/claude-sonnet-5.5"]["effective_usd"] == 0.02
+    assert groups["unsettled-model"]["effective_usd"] is None
+    assert groups["unsettled-model"]["missing_provider_charge_count"] == 1
+    text = (tmp_path / "summary.md").read_text()
+    assert "| gated | test-model | anthropic/claude-sonnet-5.5 |" in text
+    assert "Failed or parse-rejected attempts" in text
+    assert result["config"]["gate_review_model"] == "anthropic/claude-sonnet-5.5"

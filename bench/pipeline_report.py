@@ -7,9 +7,9 @@ from __future__ import annotations
 import argparse
 import json
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 from bench.pipeline_scoring import conservation, score_dataset, score_page
 from bench.silver import canonical, guard_path, sha
@@ -33,6 +33,40 @@ def _positive_number(value: object) -> float | None:
 def _measure(count: int, denominator: object, factor: float = 1) -> float | None:
     number = _positive_number(denominator)
     return count / number * factor if number is not None else None
+
+
+def _successful_call_models(predictions: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Group retained admitted calls only; failed ledger attempts are not present."""
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for prediction in predictions:
+        for call in prediction.get("calls", []):
+            entry = call.get("entry", {})
+            requested = entry.get("requested_model")
+            model = requested if isinstance(requested, str) and requested else "unknown"
+            groups[model].append(entry)
+    result = {}
+    for model, entries in groups.items():
+        reported = [entry.get("provider_reported_usd") for entry in entries]
+        accounted = [entry.get("accounted_usd") for entry in entries]
+        valid_reported = [value for value in reported if _nonnegative_number(value)]
+        valid_accounted = [value for value in accounted if _nonnegative_number(value)]
+        complete_accounted = len(valid_accounted) == len(accounted)
+        bases = dict(Counter(entry.get("cost_status", "unknown") for entry in entries))
+        total = sum(valid_accounted) if complete_accounted else None
+        settled = complete_accounted and not any(base in {"reserved", "unknown"} for base in bases)
+        result[model] = {
+            "calls": len(entries),
+            "provider_reported_subtotal_usd": sum(valid_reported),
+            "missing_provider_charge_count": len(entries) - len(valid_reported),
+            "accounted_usd": total,
+            "effective_usd": total if settled else None,
+            "cost_bases": bases,
+        }
+    return result
+
+
+def _nonnegative_number(value: object) -> TypeGuard[float]:
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and value >= 0
 
 
 def _source_contract(directory: Path) -> tuple[dict[str, Any], dict[str, Any], str]:
@@ -150,6 +184,7 @@ def _score_run(path: Path, manifest: dict[str, Any], targets: dict[str, Any], ma
         "effective_usd": effective,
         "cost_bases": bases,
         "calls": report.get("calls"),
+        "successful_call_models": _successful_call_models(predictions),
         "ledger_attempts": report.get("ledger_attempts"),
         "pages_per_minute": _measure(operational, metrics.get("wall_seconds"), 60),
         "pages_per_dollar": _measure(operational, effective),
@@ -182,7 +217,7 @@ def _label(value: object) -> str:
     return str(value).replace("|", "\\|").replace("\n", " ")
 
 
-def run(directory: Path, output: Path) -> dict[str, Any]:
+def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - complete retained report sections.
     """Score finished runs only, preserving every run artifact and writing one summary."""
     directory, output = guard_path(directory), guard_path(output)
     manifest, targets, manifest_hash = _source_contract(directory)
@@ -225,20 +260,21 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         "The fixed pilot is selected by frozen manifest membership; absent results remain failures. "
         "Full and pilot cohorts have distinct denominators.",
         "",
-        "| Run | Cohort | Policy | Model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
-        "|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|",
+        "| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
+        "|---|---|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|",
     ]
     for item in runs:
         config, pos, neg = item["config"], item["positive"], item["negative"]
         native = config["policy"] in {"native", "native_text"}
         model = "CPU only" if native else config.get("model", "unknown")
+        review_model = config.get("gate_review_model") or "—"
         image_edge = "—" if native else config.get("image_edge", "unknown")
         context_rows = "—" if native else config.get("context_rows", "unknown")
         legend = "—" if native else config.get("legend", "unknown")
         premise = config.get("gate_premise", "unknown") if config["policy"] == "gated" else "—"
         lines.append(
             f"| {_label(item['name'])} | {'pilot' if config['pilot'] else 'full'} | {_label(config['policy'])} | "
-            f"{_label(model)} | {image_edge} | {context_rows} | {legend} | "
+            f"{_label(model)} | {_label(review_model)} | {image_edge} | {context_rows} | {legend} | "
             f"{config.get('normalize_rotation', False)} | {config.get('ocr_empty', False)} | {_label(premise)} | "
             f"{item['operational_pages']}/{item['scores']['pages']} | {pos['exact_page']}/{pos['scored_pages']} | "
             f"{neg['false_positive_page']}/{neg['scored_pages']} | {item['all_errors']}/{item['scores']['error']} |"
@@ -280,6 +316,35 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
             + " | ".join(values)
             + f" | {_label(json.dumps(item['cost_bases'], sort_keys=True))} |"
         )
+    lines += [
+        "",
+        "Successful retained calls by requested model:",
+        "",
+        "Primary and optional review models form one experimental policy; both charges enter the run total. "
+        "This breakdown covers only calls retained in completed page results. Failed or parse-rejected attempts "
+        "may be absent, so the complete-run ledger-attempt cost totals above remain authoritative. "
+        "Reported USD is a known-value subtotal with missing counts, not a complete total when values are missing.",
+        "",
+        "| Run | Requested model | Successful calls | Reported USD subtotal | Missing reported charges | Effective USD for listed calls | Accounted USD for listed calls | Cost bases |",
+        "|---|---|---:|---:|---:|---:|---:|---|",
+    ]
+    for item in runs:
+        for model, group in sorted(item["successful_call_models"].items()):
+            values = [
+                _fmt(group[key])
+                for key in (
+                    "calls",
+                    "provider_reported_subtotal_usd",
+                    "missing_provider_charge_count",
+                    "effective_usd",
+                    "accounted_usd",
+                )
+            ]
+            lines.append(
+                f"| {_label(item['name'])} | {_label(model)} | "
+                + " | ".join(values)
+                + f" | {_label(json.dumps(group['cost_bases'], sort_keys=True))} |"
+            )
     lines += [
         "",
         "Candidate oracle coverage uses private references to choose an already-retained complete candidate. "
@@ -333,18 +398,19 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         "Result-file counts are progress evidence only. Accuracy, charges, wall/CPU and RSS remain unknown. "
         "Jobs not yet frozen by the runner are outside this observed inventory.",
         "",
-        "| Run | Policy | Model | Planned pages | Result files | Source contract matches |",
-        "|---|---|---|---:|---:|---|",
+        "| Run | Policy | Model | Gate review model | Planned pages | Result files | Source contract matches |",
+        "|---|---|---|---|---:|---:|---|",
     ]
     for item in incomplete:
         config = item["config"]
         model = "CPU only" if config.get("policy") in {"native", "native_text"} else config.get("model", "unknown")
         lines.append(
             f"| {_label(item['name'])} | {_label(config.get('policy', 'unknown'))} | "
-            f"{_label(model)} | {item['planned_pages']} | {item['result_files']} | {item['source_contract_matches']} |"
+            f"{_label(model)} | {_label(config.get('gate_review_model') or '—')} | "
+            f"{item['planned_pages']} | {item['result_files']} | {item['source_contract_matches']} |"
         )
     if not incomplete:
-        lines.append("| None observed | — | — | — | — | — |")
+        lines.append("| None observed | — | — | — | — | — | — |")
     lines += ["", "Measurement and frozen provenance:", ""]
     for item in runs:
         lines.append(
