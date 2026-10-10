@@ -826,3 +826,37 @@ def test_candidate_visibility_requires_exact_helper_and_rejects_historical_sourc
     frozen["config"]["image_edge"] = 500
     with pytest.raises(ValueError, match="candidate replay helper"):
         p003_report.verify_candidate_helpers(frozen)
+
+
+def test_historical_pending_duplicate_label_requires_exact_reviewed_runner() -> None:
+    from bench import p003_report
+
+    prediction = {"ranking_regions": [{"ranking_status": "not_applicable_duplicates", "pool": {"candidates": [1, 2]}}]}
+    frozen = {"code_sha256": {"p003_candidate_run.py": p003_report.ROOT_REVIEWED_PENDING_CANDIDATE_RUNNER}}
+    p003_report.verify_candidate_failure_labels(prediction, frozen)
+    frozen["code_sha256"]["p003_candidate_run.py"] = sha(
+        (Path(p003_report.__file__).parent / "p003_candidate_run.py").read_bytes()
+    )
+    with pytest.raises(ValueError, match="Distinct failed candidate pool"):
+        p003_report.verify_candidate_failure_labels(prediction, frozen)
+    prediction["ranking_regions"][0]["ranking_status"] = "failed_retained_first"
+    p003_report.verify_candidate_failure_labels(prediction, frozen)
+    prediction["ranking_regions"][0]["ranking_status"] = "pending"
+    with pytest.raises(ValueError, match="unfinished pending"):
+        p003_report.verify_candidate_failure_labels(prediction, frozen)
+
+
+def test_reviewed_pre_status_fix_runner_rejects_undeclared_future_controls() -> None:
+    from bench import p003_report
+
+    names = ("p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py")
+    hashes = {name: sha((Path(p003_report.__file__).parent / name).read_bytes()) for name in names}
+    hashes["p003_candidate_run.py"] = p003_report.ROOT_REVIEWED_PENDING_CANDIDATE_RUNNER
+    frozen = {
+        "config": {"campaign": "P003", "processor": "p003_candidate_choice", "image_edge": 500},
+        "code_sha256": hashes,
+    }
+    p003_report.verify_candidate_helpers(frozen)
+    frozen["config"]["new_treatment"] = True
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)

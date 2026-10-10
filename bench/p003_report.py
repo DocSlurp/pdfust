@@ -206,6 +206,16 @@ def verify_cost_reconciliation(directory: Path, sidecar_path: Path, ledger_path:
 
 ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER = "a22e4b5a5b88da313946f2c91a845f67207399d9c71464e5590b10c2c9b7765d"
 ROOT_REVIEWED_DIFF_CANDIDATE_RUNNER = "eb5156fff571f7d784b28f5f68a366cf83a507ed7e6ace296d2c0cb451b15ba6"
+ROOT_REVIEWED_PENDING_CANDIDATE_RUNNER = "cdace7057c5ef2a516687f5ed374bcb0b81371612fb08d2f0716fce3789e9c5a"
+LEGACY_PENDING_CANDIDATE_RUNNERS = frozenset(
+    {
+        ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER,
+        ROOT_REVIEWED_DIFF_CANDIDATE_RUNNER,
+        ROOT_REVIEWED_PENDING_CANDIDATE_RUNNER,
+        "a154f4b4b10d8f597fd73af8ee31a834f6d73c38cee65bda5c33d7792c6a472f",
+        "c4d1875b65fd67099eb4d2c3b4089b7492eac4576377ba91d6a7cdbf2ab5aec8",
+    }
+)
 
 
 def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
@@ -234,6 +244,32 @@ def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
         digest = frozen["code_sha256"].get(name)
         if digest == sha((Path(__file__).parent / name).read_bytes()):
             continue
+        if (
+            name == "p003_candidate_run.py"
+            and digest == ROOT_REVIEWED_PENDING_CANDIDATE_RUNNER
+            and frozen["config"].get("campaign") == "P003"
+            and frozen["config"].get("processor") == "p003_candidate_choice"
+            and frozen["config"].get("image_edge", 512) in {0, 128, 256, 400, 500, 512, 768, 1024, 1200}
+            and set(frozen["config"])
+            <= {
+                "campaign",
+                "processor",
+                "model",
+                "run_id",
+                "run_hosted",
+                "seed",
+                "fallback",
+                "scope",
+                "image_edge",
+                "image_mode",
+                "image_visibility",
+                "evidence_mode",
+                "evidence_max_bytes",
+                "reviewed_parser_sha256",
+                "transport_concurrency",
+            }
+        ):
+            continue  # Same literal bodies and selections; historical pending distinct pools had a duplicate label.
         if (
             name == "p003_candidate_run.py"
             and visibility == "source"
@@ -515,6 +551,17 @@ def verify_incremental_run(
     }, verified
 
 
+def verify_candidate_failure_labels(prediction: dict[str, Any], frozen: dict[str, Any]) -> None:
+    """Recognize the exact historical initializer bug without accepting it from corrected runners."""
+    legacy = frozen["code_sha256"].get("p003_candidate_run.py") in LEGACY_PENDING_CANDIDATE_RUNNERS
+    for region in prediction.get("ranking_regions", []):
+        status = region["ranking_status"]
+        if status == "pending":
+            raise ValueError("Candidate failure retains an unfinished pending status")
+        if status == "not_applicable_duplicates" and len(region["pool"]["candidates"]) > 1 and not legacy:
+            raise ValueError("Distinct failed candidate pool incorrectly labeled duplicate-only")
+
+
 def verify_candidate_run(
     directory: Path,
     report: dict[str, Any],
@@ -618,6 +665,7 @@ def verify_candidate_run(
         if fallback:
             if status == "failed_retained_first" and not prediction["ranking_errors"]:
                 raise ValueError("Candidate atomic failure lacks explicit errors")
+            verify_candidate_failure_labels(prediction, frozen)
             for key in ("tables", "transcription_regions", "status", "source_conserved", "text_provenance"):
                 if prediction.get(key) != first.get(key):
                     raise ValueError("Candidate atomic fallback differs from predeclared first baseline")

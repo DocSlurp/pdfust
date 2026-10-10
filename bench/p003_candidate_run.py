@@ -306,11 +306,12 @@ def process(
                 "viewport": original["viewport"],
                 "original_crop_sha256": image_hashes[0],
                 "pool": chooser.pool_record(pool),
-                "ranking_status": "not_applicable_duplicates",
+                "ranking_status": "pending",
             }
             result["ranking_regions"].append(info)
             write_json(output / f"{identifier}-pool-{index}.json", info["pool"])
             if len(pool.candidates) < 2:
+                info["ranking_status"] = "not_applicable_duplicates"
                 continue
             stage = f"crop/{index}/image"
             url, metadata = (
@@ -421,6 +422,8 @@ def process(
         for info in result["ranking_regions"]:
             if info["ranking_status"] in {"staged", "selected"}:
                 info["ranking_status"] = "discarded_atomic_failure"
+            elif info["ranking_status"] == "pending":
+                info["ranking_status"] = "failed_retained_first"
     finally:
         result["incremental_ranking"] = {
             "scope": "ranking retained frozen candidates only",

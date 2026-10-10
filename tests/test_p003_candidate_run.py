@@ -262,6 +262,7 @@ def test_abstention_and_malformed_selector_keep_original_output(
     if malformed:
         assert report["incremental_ranking"]["ledger_attempts"] == 1
         assert report["results"][0]["ranking_errors"]
+        assert report["results"][0]["ranking_regions"][0]["ranking_status"] == "failed_retained_first"
 
 
 def test_mismatched_actual_crop_and_duplicate_pool_never_call_selector(tmp_path: Path) -> None:
@@ -438,6 +439,7 @@ def test_later_crop_selector_failure_rolls_back_whole_page(tmp_path: Path) -> No
     page = report["results"][0]
     assert page["ranking_status"] == "failed_retained_first"
     assert page["ranking_regions"][0]["ranking_status"] == "discarded_atomic_failure"
+    assert page["ranking_regions"][1]["ranking_status"] == "failed_retained_first"
     assert report["incremental_ranking"]["ledger_attempts"] == 2
     assert (output / "p0-structure.json").read_bytes() == (paths[0] / "p0-structure.json").read_bytes()
     assert (output / "p0.md").read_bytes() == (paths[0] / "p0.md").read_bytes()
@@ -534,3 +536,24 @@ def test_difference_treatment_exact_request_and_atomic_capacity(tmp_path: Path) 
     assert page["ranking_regions"][0]["ranking_status"] == "evidence_capacity_retained_first"
     assert page["calls"] == original["calls"]
     assert (output / "p0-structure.json").read_bytes() == (first / "p0-structure.json").read_bytes()
+
+
+def test_precall_admission_failure_is_not_labeled_duplicate_pool(tmp_path: Path) -> None:
+    class RefusingClient(Client):
+        def request(self, body: dict[str, Any], **options: Any) -> dict[str, Any]:  # noqa: ANN401
+            assert set(body["questions"]) == {"q0"}
+            assert options["replay"] is False
+            msg = "Request exceeds frozen model/input admission"
+            raise ValueError(msg)
+
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, a = baseline(first, "first")
+    _, _, b = baseline(second, "second")
+    output = tmp_path / "refused"
+    report = runner.run([first, second], [a, b], output, config(), RefusingClient(tmp_path))
+    page = report["results"][0]
+    assert page["ranking_status"] == "failed_retained_first"
+    assert page["ranking_regions"][0]["ranking_status"] == "failed_retained_first"
+    assert len(page["ranking_regions"][0]["pool"]["candidates"]) == 2
+    assert report["incremental_ranking"]["ledger_attempts"] == 0
+    assert (output / "p0.md").read_bytes() == (first / "p0.md").read_bytes()
