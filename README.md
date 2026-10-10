@@ -407,7 +407,36 @@ controlled image-size improvement. [Detailed comparison tables](bench/results/p0
 retain all measured scores, failed compositions, costs, CPU/RAM and provider
 cache coverage. A [fresh 48-page source-frozen sample](bench/results/p003-confirmation-corpus.md)
 contains 32 additional natural pages from distinct known document parents and
-16 new synthetic layouts. Its confirmation results are pending.
+16 new synthetic layouts. The [fresh confirmation baselines](bench/results/p003-confirmation-analysis.md)
+now retain all 48 pages (66 tables, 4,203 cells):
+
+| Configuration | Strict cells / 4,203 | Complete tables / 66 | Usable / 48 | Pages/min | Pages/API USD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Haiku 5.5, explicit matrix | **2,664** | **27** | 47 | 6.44 | 1,337.74 |
+| GPT-6 Luna, standard format | 2,467 | 25 | 47 | 5.01 | 1,605.26 |
+| Sonnet 5.5, standard format | 1,891 | **27** | 45 | 6.36 | 89.87 |
+| Haiku source-ID assembly, OCR300 | 2,080 | 23 | 44 | 2.70 | 684.29 |
+
+Haiku matrix beats Sonnet's standard configuration in strict cells and API cost,
+with the same complete-table count on this sample. Representation differs, so
+this is not an isolated model effect or a stable general ranking. On the 32
+natural pages alone, these runs recover 2,327 / 2,130 / 1,554 / 1,743 strict cells
+respectively, out of 3,866. All recover the 337 authored cells. The frozen PPLX selector controls recover 1,515 / 1,605 / 1,793 selected-only
+cells at text-only / 128 / 512 px, with 23 / 16 / 25 complete tables. Natural-only
+strict cells are 1,222 / 1,481 / 1,480. These incremental decisions cost
+USD 0.00098172 / 0.00107728 / 0.00111316, excluding both candidate generations;
+abstentions and pages with no fresh choice receive no selected-only quality
+credit. Confirmation results do not tune these settings.
+
+The [complete 276-page runs](bench/results/p003-complete276-analysis.md) include
+220 structurally scored pages and 56 diagnostic pages. Luna recovers 6,902 of
+8,897 scored cells and 166 of 249 tables; ordinal source-ID assembly recovers
+6,232 cells and 165 tables. Whole-run rates are 4.86 / 5.33 usable pages/minute
+and 3,177.15 / 2,232.19 pages/API USD respectively. Easy authored layouts dominate
+those aggregates. Natural64-only scores are 1,953 cells / 14 tables for Luna and
+1,182 / 9 for ordinal. Luna's dedicated natural64 run above obtained 1,348 / 12:
+all 56 paired request and image hashes match, establishing substantial repeated-run
+variation. The higher repeat must not be advertised as a stable frontier win.
 
 CPU acquisition studies isolate another bottleneck: original detector regions
 exclude enough literal characters to make 1,066 of 2,333 reference cells
@@ -432,6 +461,10 @@ separate. Larger input also loses some smaller-size proposals.
 [All IoU thresholds and source coverage](bench/results/p003-yolo-resolution-analysis.md)
 are reported. The follow-on CPU structure study freezes all 80 proposals and
 432 full-page placement outputs before reference scoring.
+[Independent structure scoring](bench/results/p003-yolo-structure-analysis.md)
+finds 438 strict cells at 1280 px versus 204 at 640 px with matched threshold
+0.5 and maximum-overlap placement. Both complete three tables. All 27 treatment
+scores, including losses and unresolved overlaps, remain published.
 
 
 Source-owned geometry remains substantially weaker: the best tested CPU table
