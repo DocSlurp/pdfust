@@ -196,7 +196,7 @@ def test_incomplete_frozen_runs_are_visible_without_scoring_partial_outputs(tmp_
         }
     ]
     text = (tmp_path / "summary.md").read_text()
-    assert "| unfinished | adaptive | test-model | — | False | False | 3 | 1 | True |" in text
+    assert "| unfinished | adaptive | test-model | — | False | False | False | 3 | 1 | True |" in text
     assert "wall/CPU and RSS remain unknown" in text
 
 
@@ -359,7 +359,10 @@ def test_every_emitted_table_has_matching_header_separator_and_data_columns(tmp_
         assert set(rows[1]) <= set("|:- ")
 
 
-def test_optional_packet_and_column_flags_visible_for_completed_and_incomplete_runs(tmp_path: Path) -> None:
+@pytest.mark.parametrize("packet_flag", ["compact_packet", "readable_packet"])
+def test_optional_packet_and_column_flags_visible_for_completed_and_incomplete_runs(
+    tmp_path: Path, packet_flag: str
+) -> None:
     pipeline, report = _fixture(tmp_path)
     frozen = json.loads((pipeline / "frozen.json").read_text())
     incomplete = tmp_path / "unfinished"
@@ -369,16 +372,22 @@ def test_optional_packet_and_column_flags_visible_for_completed_and_incomplete_r
     run(tmp_path, tmp_path / "summary.md")
     text = (tmp_path / "summary.md").read_text()
     assert text.count("| column_consensus | compact_packet |") == 2
-    assert "| False | False | 1/3 |" in text
-    assert "| unfinished | assembly | test-model | — | False | False | 3 |" in text
-    report["config"].update(column_consensus=True, compact_packet=True)
+    assert "| False | False | False | 1/3 |" in text
+    assert "| unfinished | assembly | test-model | — | False | False | False | 3 |" in text
+    flags = {
+        "column_consensus": True,
+        "compact_packet": packet_flag == "compact_packet",
+        "readable_packet": packet_flag == "readable_packet",
+    }
+    report["config"].update(flags)
     completed = json.loads((pipeline / "frozen.json").read_text())
     completed["config"] = report["config"]
     write_json(pipeline / "frozen.json", completed)
     write_json(pipeline / "report.json", report)
-    frozen["config"].update(column_consensus=True, compact_packet=True)
+    frozen["config"].update(flags)
     write_json(incomplete / "frozen.json", frozen)
     run(tmp_path, tmp_path / "summary.md")
     text = (tmp_path / "summary.md").read_text()
-    assert "| True | True | 1/3 |" in text
-    assert "| unfinished | assembly | test-model | — | True | True | 3 |" in text
+    expected = f"True | {flags['compact_packet']} | {flags['readable_packet']}"
+    assert f"| {expected} | 1/3 |" in text
+    assert f"| unfinished | assembly | test-model | — | {expected} | 3 |" in text

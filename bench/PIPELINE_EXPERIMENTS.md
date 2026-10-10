@@ -252,6 +252,15 @@ runs remain unchanged and are reported alongside these DEV-selected derivatives.
 
 ## Follow-up priorities beyond this finite wave
 
+One additional derivative is declared after the completed compact-packet result:
+the lossless dictionary/index format reduced PPLX exact positives from 34/35 to
+31/35 with four false-positive pages unchanged. A **readable deduplication** arm
+will retain explicit literal words and exact coordinates, removing only repeated
+candidate text/topology. It must preserve all alternatives, source ownership and
+the 25,000-character complete-packet boundary. Compare column consensus plus the
+same gate and Sonnet review using this new format against the original and compact
+formats. No references or specific failed-cell strings enter the new prompt.
+
 Keep the older mechanisms available; poor performance of a whole-page policy does
 not establish that its component is useless in a narrower role. In particular:
 

@@ -359,7 +359,11 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     choices["unresolved"] = (
                         "No complete candidate faithfully represents the page; retain all source words outside tables."
                     )
-                    if config.get("compact_packet"):
+                    if config.get("readable_packet"):
+                        from bench.pipeline_readable_packet import packet as readable_packet
+
+                        prompt = readable_packet(snapshot, candidates)
+                    elif config.get("compact_packet"):
                         from bench.pipeline_compact_packet import packet as compact_packet
 
                         prompt = compact_packet(snapshot, candidates)
@@ -392,6 +396,8 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
 
 def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, Any]:
     """Freeze code/source/config before any calls; reference loading is a separate command."""
+    if config.get("compact_packet") and config.get("readable_packet"):
+        raise ValueError("Select only one optional packet encoding")
     manifest = json.loads(guard_path(manifest_path).read_bytes())
     if manifest.get("split") != "DEV":
         raise ValueError("Pipeline requires explicit DEV sources")
@@ -422,6 +428,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "silver.py",
                 *(["pipeline_column_consensus.py"] if config.get("column_consensus") else []),
                 *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
+                *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
             )
         },
         "runtime": runtime_fingerprints(),
@@ -495,7 +502,9 @@ def main() -> None:
     parser.add_argument("--gate-premise", choices=("minimal", "relational", "reading_order"), default="relational")
     parser.add_argument("--gate-review-model", choices=CHAT_MODELS)
     parser.add_argument("--column-consensus", action="store_true")
-    parser.add_argument("--compact-packet", action="store_true")
+    packet_options = parser.add_mutually_exclusive_group()
+    packet_options.add_argument("--compact-packet", action="store_true")
+    packet_options.add_argument("--readable-packet", action="store_true")
     parser.add_argument("--pilot", action="store_true")
     parser.add_argument("--order-seed", type=int, default=20261009)
     args = parser.parse_args()
@@ -514,6 +523,7 @@ def main() -> None:
         "gate_review_model": args.gate_review_model,
         "column_consensus": args.column_consensus,
         "compact_packet": args.compact_packet,
+        "readable_packet": args.readable_packet,
     }
     result = run(args.manifest, args.output, config)
     print(json.dumps({k: v for k, v in result.items() if k != "results"}, indent=2))

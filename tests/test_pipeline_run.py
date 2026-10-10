@@ -719,3 +719,58 @@ def test_optional_flags_disabled_use_original_packet_and_proposals(
     assert compact_module == []
     assert "Choose one complete page assembly" in requests[0]["state"]
     assert result["source_conserved"]
+
+
+@pytest.mark.parametrize(("policy", "bordered", "expected_calls"), [("assembly", False, 1), ("gated", True, 0)])
+def test_readable_packet_is_optional_and_keeps_native_fast_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, policy: str, *, bordered: bool, expected_calls: int
+) -> None:
+    packets: list[dict[str, Any]] = []
+    requests: list[dict[str, Any]] = []
+    module: Any = ModuleType("bench.pipeline_readable_packet")
+
+    def readable(page: dict[str, Any], candidates: list[dict[str, Any]]) -> str:
+        packets.append({"source": deepcopy(page), "candidates": deepcopy(candidates)})
+        return "READABLE_COMPLETE_EVIDENCE"
+
+    def decision(_client: object, request: dict[str, Any], _tag: str) -> dict[str, Any]:
+        requests.append(request)
+        return {"answer": {"choice": "unresolved"}}
+
+    module.packet = readable
+    monkeypatch.setitem(sys.modules, "bench.pipeline_readable_packet", module)
+    monkeypatch.setattr(runner, "call", decision)
+    settings = config(policy)
+    settings.update(readable_packet=True, image_edge=0)
+    row = record(tmp_path, bordered=bordered, third_row=True)
+    row.update(expected="REFERENCE_SECRET", family="REFERENCE_SECRET")
+    result = runner.process(row, settings, tmp_path, cast("Any", object()))
+    assert result["status"] == "ok"
+    assert result["source_conserved"]
+    assert len(packets) == len(requests) == expected_calls
+    if expected_calls:
+        assert packets[0]["source"] == result["source"]
+        assert packets[0]["candidates"] == result["candidates"]
+        assert requests[0]["state"] == "READABLE_COMPLETE_EVIDENCE"
+        assert "REFERENCE_SECRET" not in repr(packets)
+
+
+def test_packet_encodings_are_mutually_exclusive_before_source_loading(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="only one optional packet"):
+        runner.run(tmp_path / "missing.json", tmp_path / "output", {"compact_packet": True, "readable_packet": True})
+    assert not (tmp_path / "output").exists()
+
+
+def test_cli_rejects_multiple_packet_encodings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "pipeline_run", "--manifest", str(tmp_path / "missing.json"), "--output", str(tmp_path / "output"),
+            "--policy", "assembly", "--compact-packet", "--readable-packet",
+        ],
+    )
+    with pytest.raises(SystemExit) as error:
+        runner.main()
+    assert error.value.code == 2
+    assert not (tmp_path / "output").exists()
