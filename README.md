@@ -313,8 +313,26 @@ empty negative pages, and does not imply correct extraction. Qwen 3.5 9B and
 Gemini 3.5 Flash Lite had provider-route failures; their failed attempts and
 unresolved reservations are included in the [full P003 report](bench/results/decision-p003.md).
 Luna costs include independently verified BYOK upstream charges. The earlier
-matched Sonnet run recovered 982 strict cells and five complete tables; the
-new screens have not surpassed it.
+matched Sonnet run recovered 982 strict cells and five complete tables; identical-request repeats and a new P003 run fall near 289 when dense-page outputs overlap. The best run is not a stable baseline.
+
+A separate [29-arm decision-role screen](bench/results/p003-incremental-screen.md)
+uses frozen Luna/Sonnet candidates. Rates below measure only candidate selection,
+including artifact processing; both original extractions are excluded. All
+quality scores retain the same sixteen-page denominator.
+
+| Selector | Strict cells / 2,333 | Complete tables / 53 | Incremental pages/min | Incremental pages/API USD |
+| --- | ---: | ---: | ---: | ---: |
+| Frozen Luna fallback, no selector | 784 | 3 | Not measured | No new calls |
+| PPLX, text only | 784 | 3 | 25.39 | 29,625 |
+| PPLX, 512 px source crop | **981** | **5** | 20.24 | 26,055 |
+| Luna Decisions, 512 px source crop | 682 | 3 | 21.34 | 6,470 |
+
+PPLX image selection costs USD 0.00061408 in additional provider-reported charges.
+It improves the Luna fallback while remaining just below the existing Sonnet
+candidate; this does not establish a cheaper complete pipeline. None of fifteen
+bounded row-boundary repair arms improves its 384-cell source-ID baseline.
+Model/role combinations, failures, CPU/RAM, provider cache counters, and full
+quality scores remain visible in the linked report.
 
 The [P002 generalization study](bench/results/generalization-p002.md)
 expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
