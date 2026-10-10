@@ -103,8 +103,10 @@ def test_mixed_kinds_fixed_commands_and_separate_rate_scopes(tmp_path):
     statuses = []
     for kind in parallel.MODULES:
         status = {"kind": kind, "wall_seconds": 10}
-        report = {"results": [{"status": "ok", "ranking_status": "not_applicable", "repair_status": "completed"}],
-                  "incremental_ranking": {"returned_calls": 1}, "incremental_repair": {"returned_calls": 2}}
+        report = {"results": [{"status": "ok", "ranking_status": "not_applicable", "repair_status": "completed",
+                               "gate_status": "complete", "topology_status": "completed"}],
+                  "incremental_ranking": {"returned_calls": 1}, "incremental_repair": {"returned_calls": 2},
+                  "incremental_gate": {"returned_calls": 3}, "incremental_ownership": {"returned_calls": 4}}
         parallel.report_counts(status, report)
         assert ("contended_pages_per_minute" in status) is (kind == "pipeline")
         statuses.append(status)

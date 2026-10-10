@@ -23,7 +23,16 @@ from bench.decision_hosted import ROOT
 from bench.research_policy import P003_PAID_CUTOFF
 from bench.silver import guard_path, write_json
 
-MODULES = {"pipeline": "bench.p003_run", "candidate": "bench.p003_candidate_run", "boundary": "bench.p003_boundary_run"}
+MODULES = {
+    "pipeline": "bench.p003_run", "candidate": "bench.p003_candidate_run", "boundary": "bench.p003_boundary_run",
+    "gate": "bench.p003_gate_run", "topology": "bench.p003_topology_run",
+}
+INCREMENTAL_FIELDS = {
+    "candidate": ("ranking_status", "incremental_ranking"),
+    "boundary": ("repair_status", "incremental_repair"),
+    "gate": ("gate_status", "incremental_gate"),
+    "topology": ("topology_status", "incremental_ownership"),
+}
 MAX_ARMS = 64
 MAX_CONCURRENT = 3
 MAX_WALL = 2400
@@ -57,7 +66,7 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
             message = "Each arm must be an object"
             raise TypeError(message)
         if arm.get("kind", "pipeline") not in MODULES:
-            message = "Experiment kind must be pipeline, candidate or boundary"
+            message = "Experiment kind must be pipeline, candidate, boundary, gate or topology"
             raise ValueError(message)
         name, arguments = arm.get("name"), arm.get("arguments")
         if (not isinstance(name, str) or not name or name in names
@@ -72,7 +81,10 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
             message = "Queue owns output, manifest, workers, transport and gate-provider controls"
             raise ValueError(message)
         for i, value in enumerate(arguments):
-            if value.split("=", 1)[0] in {"--baseline", "--trusted-code"}:
+            if value.split("=", 1)[0] in {
+                "--baseline", "--trusted-code", "--source-baseline", "--topology-baseline",
+                "--source-trusted-code", "--topology-trusted-code",
+            }:
                 path = value.split("=", 1)[1] if "=" in value else (
                     arguments[i + 1] if i + 1 < len(arguments) else ""
                 )
@@ -129,9 +141,9 @@ def report_counts(status: dict[str, Any], arm_report: dict[str, Any]) -> None:
         status["contended_pages_per_minute"] = rate
     else:
         status["incremental_artifact_pages_per_minute"] = rate
-        stage = "ranking_status" if status["kind"] == "candidate" else "repair_status"
+        stage, accounting_field = INCREMENTAL_FIELDS[status["kind"]]
         status["incremental_status_counts"] = dict(Counter(row.get(stage, "missing") for row in rows))
-        accounting = arm_report["incremental_ranking" if status["kind"] == "candidate" else "incremental_repair"]
+        accounting = arm_report[accounting_field]
         status["incremental_accounting"] = accounting
         status["rate_scope"] = "retained artifacts including authentication/copying; original pipeline excluded"
 
