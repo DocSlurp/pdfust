@@ -567,6 +567,10 @@ def run(
             ),
             "attempts": attempts,
             **_charges(attempts),
+            "cost_scope": (
+                "Incremental topology ownership API attempts only; historical source/topology generation "
+                "costs retained separately. Unresolved reservations remain separate from charges and estimates."
+            ),
         },
         "results": results,
         "pages_per_minute": None,

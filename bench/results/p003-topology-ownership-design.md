@@ -175,3 +175,20 @@ fallback after a later crop fails, all-crop preflight, native protection, rotati
 and word-boundary refusal, preserved baseline errors, separate historical/new
 cost intervals and strict complete-page replay. No source PDF, reference, API,
 credential or GPU was accessed during implementation or tests.
+
+## Real baseline eligibility diagnostic
+
+CPU preparation of the independently trusted ordinal OCR300 source baseline and Luna pinned1024 topology baseline completed on natural16 without a model client: seven pages prepared, five had no positive topology, and four refused source-word/crop partition boundaries. Preparation alone does not verify quality. All four refusals were `ambiguous_or_straddling_source_word`, with no multiply contained word among these cases:
+
+| Page ID | Original source words | Positive crops | Straddling words | Fraction of each word box inside its one intersecting crop |
+|---|---:|---:|---:|---|
+| p6ef5d3c5c2edb1c109c4 | 544 | 2 | 6 | 0.862 each |
+| p98d10ef50dee4b24506a | 2700 | 2 | 7 | 0.834–0.994 |
+| p656361df32bd7d69a39e | 77 | 2 | 1 | 0.754 |
+| pf012d6adb9592dab9a13 | 88 | 1 | 2 | 0.722–0.736 |
+
+These are retained source bounding-box/crop measurements, not image visibility or quality judgments. The existing all-word partition refuses even one partial intersection and therefore blocks an entire page; a fraction such as 0.994 is not a calibrated ownership probability.
+
+A minimal source-safe alternative is an explicit boundary treatment retaining each entire straddling word in the original residual source region, exposing an excluded-boundary-ID audit and unchanged box/string rather than clipping or silently dropping it. This may make smaller pages eligible while preventing those words from entering repaired cells; a later existing-table partition or inventory cap may still refuse. A richer explicit treatment admits the complete word to its sole intersecting crop, preserves its original global box, marks partial image support, and offers outside/unresolved choices. It must refuse multi-crop ambiguity and preserve each ID once; image pixels outside the crop remain unavailable, so this cannot establish missing evidence. Neither treatment is active by default. Large inventories such as the 2700-word page may hit subsequent 256-word per-crop admission even after boundary handling.
+
+A useful independent geometry control would rank fixed physical anchors by normalized overlap and center distance, enforce one global owner per source ID, and abstain on ties, small margin, crop boundary uncertainty, or inconsistent merged spans. Its scores would be deterministic geometry heuristics, not probabilities. It cannot fix absent source text and should use the same frozen source/topology plan, page atomic composition and literal-string assembly as the decision treatment.
