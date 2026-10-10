@@ -240,6 +240,10 @@ def generate_region(
         max_tokens=config.get("generation_tokens", 8192),
         evidence_format=config.get("generation_evidence", "objects"),
     )
+    if config.get("generation_provider"):
+        body["provider"] = {
+            "only": [config["generation_provider"]], "allow_fallbacks": False, "require_parameters": True,
+        }
     prompt_style = config.get("generation_prompt", "base")
     if prompt_style not in PROMPT_HINTS:
         raise ValueError("Unknown source assembly prompt style")

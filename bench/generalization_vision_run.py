@@ -64,7 +64,7 @@ def _ledger(client: DecisionClient | ConcurrentDecisionClient) -> list[dict[str,
     return json.loads(client.ledger.read_bytes())["requests"] if client.ledger.exists() else []
 
 
-def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default behavior
+def _transcribe(  # noqa: PLR0913, C901 - indexed retained transport preserves default behavior
     client: DecisionClient | ConcurrentDecisionClient | None,
     body: dict[str, Any],
     config: dict[str, Any],
@@ -78,6 +78,12 @@ def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default
 
     if type(request_index) is not int or not 0 <= request_index < MAX_REQUESTS:
         raise ValueError("Vision request index exceeds admission")
+    if config.get("generation_provider"):
+        body = {
+            **body, "provider": {
+                "only": [config["generation_provider"]], "allow_fallbacks": False, "require_parameters": True,
+            },
+        }
     write_json(output / f"{result['id']}-request-{request_index}.json", body)
     encoded = json.dumps(body, separators=(",", ":")).encode()
     result["request"] = {

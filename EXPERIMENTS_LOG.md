@@ -1781,3 +1781,49 @@ partial-review artifacts are documented in the usage guide and final report.
 The full276 gated expansion and combined OCR300/ordinal/column-prompt plus
 gate-row-context hypothesis remain explicitly unrun. This completes the bounded
 research campaign, not a claim of reliable extraction for every PDF family.
+
+### P003 authorization and first layer, 2026-10-10 18:50 UTC
+
+The user authorized an additional USD 50 and eight hours for decision-model
+research. P003 starts at 18:27 UTC, stops new paid admissions at 02:12 UTC and
+finishes reporting by 02:27 UTC on October 11. The cumulative cap is USD 200;
+the independent P003 cap is USD 50. Shared ledger admission checks enforce its
+deadline and include unresolved reservations across OpenRouter and Gateway.
+An arm stops paid admission after its first transport failure. Existing history
+and the USD 44.9319455668 conservative starting balance remain unchanged.
+
+The predeclared contract is `bench/DECISION_RESEARCH_P003.md`. Three disjoint
+CPU-only agents implement bounded local row decisions, generic OCR/raster region
+proposals, and independent scoring. Public catalogs were refreshed and exact
+model IDs, modality, provider-route and price evidence retained. New candidates
+include Clef Omni, Microsoft Decision-1, Drex and seven economical multimodal
+chat models. No GPU rental or local GPU is used. All source tuning remains DEV.
+
+The first fresh OCR300/compact-array/ordinal/column-prompt control produces all
+sixteen operational pages, 3/53 complete tables, 397/2333 exact text anchors and
+384 span-aware exact anchors. It has no negative-page false positives and one
+extra table. Parent elapsed time is 390.9945 seconds, CPU 777.3788 seconds and
+100-ms sampled peak RSS 748,339,200 bytes; detector subprocess measurements remain
+separate. All eighteen calls report positive charges totaling USD 0.0203311:
+2.4553 operational pages/minute and 786.97 pages/API USD. This is a single DEV
+screen, not evidence of an improvement over the preceding similar control.
+
+The fixed source-template compatibility probe succeeds on thirteen of fourteen
+text decision routes. Span again returns HTTP 404, preserving a USD 0.30
+reservation; no automatic retry is made. All five advertised OpenRouter image
+decision routes pass the same typed-answer parser. These probes do not measure
+extraction quality or page throughput. Full-corpus gate comparisons follow.
+
+Langfuse prices are refreshed for every admitted exact model ID. The deployment
+rejects duplicate names with new start dates, so Clef Flash's changed price uses
+the telemetry-only alias `cloudflare/clef-flash@2026-10-10`, with the original
+requested ID retained as metadata. Its historical definition stays unchanged.
+Reported positive charges still take precedence; zero/missing charges use
+labeled catalog estimates with original reported values preserved.
+
+The next layers compare the deferred OCR300 bundle plus gate-only row context,
+multiple typed decision routes, native split/join/unresolved boundary decisions,
+additional source-only region proposals, and fixed-provider crop transcription.
+Candidate reranking against identical pixels is a separate hypothesis targeting
+the large response variability observed in P002. Generated candidate costs and
+incremental selector costs must remain separate from end-to-end performance.

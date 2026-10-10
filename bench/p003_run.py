@@ -22,6 +22,7 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
         "campaign": "P003", "run_id": args.output.name, "pilot": False,
         "order_seed": args.order_seed, "policy": "gated", "workers": 1,
         "model": args.model, "generation_model": args.generation_model,
+        "generation_provider": args.generation_provider,
         "generation_tokens": 8192, "image_edge": args.image_edge,
         "layout_detector": "yolo", "ocr_empty": True, "ocr_dpi": args.ocr_dpi,
         "ocr_edge": 0, "ocr_mode": "empty", "ocr_orientation": "fixed",
@@ -62,6 +63,9 @@ def main() -> None:
         default="perplexity/pplx-decider-v1.1-27b",
     )
     parser.add_argument("--generation-model", choices=pipeline_run.CHAT_MODELS, default="anthropic/claude-haiku-5.5")
+    parser.add_argument(
+        "--generation-provider", help="Exact serving provider; disable fallbacks and require schema support",
+    )
     parser.add_argument("--image-edge", type=int, choices=(0, 128, 256, 400, 512, 768, 1024, 1200), default=512)
     parser.add_argument("--ocr-dpi", type=int, choices=(150, 300), default=300)
     parser.add_argument("--gate-row-evidence", action="store_true")
