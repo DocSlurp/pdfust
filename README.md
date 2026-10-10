@@ -307,6 +307,7 @@ configuration was selected before running the additional natural pages.
 | Native regional extraction + CPU OCR | 272 | 120 | 4,258 | 96 | 0 | 36.78 | No API calls |
 | Native grids + YOLO + Haiku source-ID matrix, 512 px | 270 | 166 | 6,329 | 136 | 9 | 12.64 | 2,116.13 |
 | Native grids + Haiku image crops, 1024 px, physical-order control | 268 | 157 | 6,604 | 129 | 1 | 18.33 | 6,743.87 |
+| Native grids + Sonnet image crops, 1024 px, physical-order control | 271 | 157 | 6,119 | 128 | 16 | 16.73 | 323.13 |
 
 The Haiku run costs USD 0.1275912 in reported API charges. It recovers 155/156
 authored tables and 11/93 natural tables, with eight authored and one natural
@@ -320,6 +321,12 @@ also exposes a native-table rotation bug: all twelve authored rotated tables
 lose logical cell ordering. Every other authored family is exact. These raw
 scores retain that regression; a separately labeled correction must verify
 reading direction without changing the model's evidence or inventing cell text.
+
+The matched full Sonnet hybrid costs USD 0.838664. It produces more operational
+outputs but fewer exact cells and more negative-page false positives than Haiku
+in this fresh run. Higher model price does not establish a better pipeline.
+See the [design findings and pipeline diagram](bench/GENERALIZATION_FINDINGS.md)
+for the resulting priorities and remaining limitations.
 
 To process a document with retained Markdown, structured output, page failures
 and provenance, use the [experimental document CLI](bench/GENERALIZATION_USAGE.md):
