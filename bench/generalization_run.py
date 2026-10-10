@@ -198,6 +198,11 @@ def generate_region(
     if config.get("generation_format") == "matrix":
         from bench.pipeline_matrix_generation import parse, request
 
+    generation_source: Any = snapshot
+    if config.get("generation_format") == "indices":
+        from bench.pipeline_index_matrix_generation import freeze, parse, request
+
+        generation_source = freeze(snapshot)
     if client is None:
         raise ValueError("Generative assembly requires the coordinated metered client")
     ledger = json.loads(client.ledger.read_bytes())
@@ -207,7 +212,7 @@ def generate_region(
     if spent + reservation > baseline.WAVE_LIMIT:
         raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
     body = request(
-        snapshot,
+        generation_source,
         generation_model,
         url=url,
         viewport=bbox,
@@ -239,7 +244,7 @@ def generate_region(
             "client_cpu_seconds": time.process_time() - cpu,
         }
     )
-    return parse(snapshot, response["result"])
+    return parse(generation_source, response["result"])
 
 
 def select_region(
@@ -534,7 +539,7 @@ def main() -> None:
     parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
     parser.add_argument("--generation-model", choices=baseline.CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
-    parser.add_argument("--generation-format", choices=("anchors", "matrix"), default="anchors")
+    parser.add_argument("--generation-format", choices=("anchors", "matrix", "indices"), default="anchors")
     parser.add_argument("--generation-evidence", choices=("objects", "arrays", "quarter"), default="objects")
     parser.add_argument("--generation-prompt", choices=tuple(PROMPT_HINTS), default="base")
     parser.add_argument("--raster-rules", action="store_true")
