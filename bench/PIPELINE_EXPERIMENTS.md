@@ -137,6 +137,33 @@ Additional declared controls before execution:
 
 ## Reproduce the complete path
 
+The measured gated pipeline uses source evidence at each stage:
+
+```mermaid
+flowchart TD
+    PDF[PDF page] --> SOURCE[Normalize rotation; extract words and vector rules]
+    SOURCE --> OCR[CPU OCR if extracted text is empty]
+    OCR --> NATIVE{Valid native grid?}
+    NATIVE -- Yes --> VALIDATE[Validate complete source ownership and table spans]
+    NATIVE -- No --> PROPOSE[Generate physical, rolling and optional column candidates]
+    PROPOSE --> OPTIONS{More than the empty candidate?}
+    OPTIONS -- No --> PROSE[Retain source words without a table]
+    OPTIONS -- Yes --> GATE[Independent table admission from text, geometry and optional image]
+    GATE --> REVIEW[Conditional review of ambiguous admission]
+    REVIEW -- Table --> SELECT[Model selects a source-derived assembly]
+    REVIEW -- Prose or unresolved --> PROSE
+    SELECT --> VALIDATE
+    PROSE --> VALIDATE
+    VALIDATE --> OUTPUT[Write structured JSON and Markdown]
+```
+
+Any resource refusal, invalid structure or malformed model response remains an
+explicit page failure. Successful source conservation covers extracted words;
+it does not establish OCR accuracy or semantic reading order. The current scored
+positives each contain one reference table. Mixed pages with both a valid vector
+grid and an additional borderless table need a separate test of the native fast
+path, which currently accepts retained vector grids before model admission.
+
 Build DEV sources and separate construction references:
 
 ```bash
@@ -222,3 +249,29 @@ they may replace repeated cell text with source-ID references, but cannot trunca
 evidence or round coordinates. Record remaining admission refusals. Each run
 freezes these optional settings and implementation hashes. Original full-corpus
 runs remain unchanged and are reported alongside these DEV-selected derivatives.
+
+## Follow-up priorities beyond this finite wave
+
+Keep the older mechanisms available; poor performance of a whole-page policy does
+not establish that its component is useless in a narrower role. In particular:
+
+1. Test coordinate edits and rolling-row state **inside an independently admitted
+   table**, where prose false positives no longer dominate. Compare complete-row
+   replacement with smaller merge/split edits and require literal ownership after
+   every operation.
+2. Add separately frozen mixed-table pages, multiple tables, sparse records and
+   multi-page continuations. The native fast path must account for borderless
+   content outside accepted vector grids instead of silently ending discovery.
+3. Distinguish missing source evidence from missing placement alternatives. Probe
+   PDF accessibility mappings/font metadata before another OCR route when words
+   are absent; use source geometry and bounded crops when strings already exist.
+4. Test a bounded larger-answer retry only for provider truncation, retaining both
+   attempts and charges. One Sonnet control used all 1,024 completion tokens on
+   reported reasoning and emitted no valid choice. This is a transport/answer
+   budget failure, not evidence of a wrong semantic decision.
+5. After choosing a configuration using DEV only, obtain custodian-run independent
+   confirmation on genuinely different documents. Do not turn these correlated
+   silver scores into a general extraction accuracy claim.
+
+These are documented next experiments, not completed results or implied spending
+commitments. No protected confirmation data was used to create them.

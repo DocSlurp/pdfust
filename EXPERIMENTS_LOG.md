@@ -1222,3 +1222,36 @@ encoding roundtrips all 180 admitted source/candidate snapshots exactly; its
 effect on model selection remains an experiment, not an assumed improvement.
 Validation at this checkpoint: 258 targeted tests pass, repository-wide Ruff
 passes, `mypy src tests` passes for 187 files and all 12 pipeline modules pass.
+
+P001 full frontier controls are complete. Opus reaches 167/168 exact scored
+pages, 34/35 exact positives and zero negative false positives, at 13.02 output
+pages/minute and 56.32 pages/USD (USD 3.107012). It abstains on the OCR table
+whose exact assembly is absent. All 175 retained request bodies across Opus,
+Sonnet and Haiku match after removing only the model field; source inventories,
+candidate menus and image hashes match as well. The frontier transport uses a
+1,024-token answer ceiling, with all reported reasoning tokens charged.
+
+The vector-first PPLX cascade retains 34/35 positives but still makes 27 false
+tables, matching direct assembly's 140/168 exact scored pages. Native grids alone
+do not solve prose admission. The separate column-consensus gated arm now selects
+35/35 exact tables and 437/437 cell slots, with the same four negative false
+positives as its baseline gate. This is actual selected quality, not the earlier
+candidate oracle. It emits 178/181 outputs at 114.12 pages/minute and 25,915.71
+pages/USD, costing USD 0.00686842.
+
+Combining column consensus with the original-format independent gate and selective
+Sonnet review reaches 168/168 exact scored pages: 35/35 tables, 437/437 cells,
+35/35 span structures and zero negative false positives. It emits 178/181 outputs
+at 72.36 pages/minute and 1,725.88 pages/USD. Total provider-reported cost is
+USD 0.10313574: 79 PPLX calls cost USD 0.00650174 and 12 Sonnet reviews cost
+USD 0.096634. The two empty OCR sources and invalid native grid remain explicit
+diagnostic failures. This DEV-selected combined pipeline improves on the original
+frontier pipelines with different candidates/routing; it is not evidence that PPLX
+alone is a stronger model. Compact evidence and cheaper review controls continue.
+
+Standalone wrapped-table and OCR-table demos were generated from complete full
+runs and visually checked in the collaborative browser. The OCR example now places
+the recovered strings in their correct columns, preserving its intentionally empty
+last cell. Raw demos remain local ignored artifacts. The plan documents mixed
+vector/borderless pages and narrower uses of rolling-row edits as next experiments;
+those additional coverage claims are not implied by this single-table DEV cohort.

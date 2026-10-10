@@ -302,7 +302,8 @@ The experimental path normalizes page rotation, extracts positioned words and
 vector rules, applies CPU OCR when no text is available, and keeps validated
 native grids. On remaining pages it asks whether a table exists before selecting
 a complete source-derived assembly. Optional independent review checks uncertain
-admission decisions. Every accepted output validates cell spans and assigns each
+admission decisions. Column-consensus alternatives retain sparse columns and
+tolerate OCR placement drift. Every accepted output validates cell spans and assigns each
 extracted word exactly once to a cell or remaining prose. Merged spans are emitted
 as HTML tables inside Markdown. The [reproduction commands and offline demo](bench/PIPELINE_EXPERIMENTS.md#reproduce-the-complete-path)
 show PDF input through final Markdown and JSON; no hosted model is enabled by default.
@@ -314,13 +315,17 @@ scored non-table pages and 13 diagnostics):
 |---|---:|---:|---:|---:|---:|---:|
 | Native vector grids + CPU OCR | 178 | 16 | 0 | 149 | 1,524.9 | Unpriced CPU |
 | PPLX assembly, 256 px | 175 | 34 | 27 | 140 | 53.0 | 10,170 |
+| PPLX vector-first cascade, 256 px | 177 | 34 | 27 | 140 | 58.7 | 10,893 |
 | PPLX independent gate, 256 px | 178 | 34 | 4 | 163 | 117.9 | 28,641 |
 | PPLX gate + Sonnet review, 256 px | 178 | 34 | 0 | 167 | 72.4 | 1,659 |
+| PPLX column consensus + gate, 256 px | 178 | 35 | 4 | 164 | 114.1 | 25,916 |
+| PPLX column consensus + gate + Sonnet review, 256 px | 178 | 35 | 0 | 168 | 72.4 | 1,726 |
 | PPLX adaptive row edits | 178 | 28 | 30 | 131 | 151.6 | 69,429 |
 | Luna gate, 1024 px | 178 | 34 | 6 | 161 | 105.8 | 6,321 (estimate) |
 | Clef Flash gate, 512 px | 178 | 22 | 5 | 150 | 58.5 | 10,958 |
 | Haiku 5.5 assembly, 512 px | 175 | 34 | 18 | 149 | 22.0 | 2,093 |
 | Sonnet 5.5 assembly, 512 px | 174 | 34 | 0 | 166 | 15.9 | 108 |
+| Opus 5.5 assembly, 512 px | 175 | 34 | 0 | 167 | 13.0 | 56 |
 
 These are single serial runs on authored DEV silver, with different routing and
 image settings. Rates count complete emitted outputs, include all pipeline
