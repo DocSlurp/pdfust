@@ -509,3 +509,19 @@ def test_posthoc_density_preserves_all_targets_and_positive_denominators() -> No
     assert groups["remaining_fourteen"]["exact_page"] == 14
     assert sum(g["expected_tables"] for g in groups.values()) == 12
     assert _posthoc_density([{"id": "other"}], targets, predictions) is None
+
+
+def test_progress_keeps_separate_detector_worker_cpu_and_rss_scope(fixture: dict[str, Any]) -> None:
+    f = fixture
+    raw = deepcopy(f["report"])
+    raw["layout_detector_initialization"] = {"initialization": {"wall_seconds": 2, "cpu_seconds": 4}}
+    raw["results"][0]["layout_detector"] = {"metrics": {"cpu_seconds": 3, "peak_sampled_rss_bytes": 2000}}
+    write(f["run"] / "report.json", raw)
+    write(f["run"] / "negative-result.json", raw["results"][0])
+    result = score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
+    text = module.protocol_report({"CPU detector treatment": [result]})
+    assert "Separate CPU detector worker" in text
+    assert "request CPU total 3s" in text
+    assert "2000 bytes" in text
+    assert "parent CPU/RSS excludes this worker" in text
+    assert "RSS peaks are not summed" in text

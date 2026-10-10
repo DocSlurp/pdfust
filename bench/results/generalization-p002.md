@@ -16,6 +16,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-generate-whitespace | 15/16 | 1 | 1/12 | 2 | 7 | 447/2333 | 236 | 16144/16640 | 13 | 7 | 2.15636 | 12.0499 | 1.24482 |
 | natural16-matrix-sonnet-512 | 14/16 | 2 | 1/12 | 2 | 9 | 327/2333 | 227 | 15229/16640 | 13 | 9 | 2.7044 | 14.4924 | 0.966024 |
 | natural16-matrix-haiku-512 | 16/16 | 0 | 1/12 | 2 | 10 | 406/2333 | 240 | 14902/16640 | 14 | 3 | 1.98919 | 225.443 | 0.0709715 |
+| natural16-yolo-matrix-sonnet-512 | 15/16 | 1 | 1/12 | 2 | 12 | 437/2333 | 341 | 13543/16640 | 15 | 3 | 3.88937 | 52.2889 | 0.286868 |
 
 ### natural16-whole-reviewed
 
@@ -260,6 +261,38 @@ Whole-run wall 482.609s; CPU 393.46s; sampled RSS 639729664 bytes; verified outp
 
 Ledger attempts 47; reported USD subtotal 0.0709715; missing reported charges 0; cost bases `{"provider-reported USD": 47}`. Reservation amount 0; estimate amount 0.
 
+
+### natural16-yolo-matrix-sonnet-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
+
+Failure categories: `{"provider_content_filter": 1}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 104 |
+| remaining_fourteen | 2/14 | 1/10 | 237 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 19 | 19 | 0.286868 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 12 | 437/2333 | 13543/16640 | 0/4 |
+
+Whole-run wall 231.4s; CPU 304.83s; sampled RSS 612708352 bytes; verified output pages/min 3.88937; exact positive pages/min 0.259291. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.286868; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.56802s, CPU 5.28494s; 16 measured requests, request CPU total 14.4786s; maximum sampled request RSS 1189687296 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -444,6 +477,27 @@ structural and 168 text cells there. A correspondence is not detection recall
 or a complete table. The cheaper arm is promising for this easier subset, but
 its dense-page losses forbid extrapolating the cost advantage into broadly
 accurate PDF extraction. Full sixteen-page scores remain primary.
+
+## YOLO region proposals with matrix Sonnet 512
+
+The completed detector-routed arm retains 15/16 operational outputs, two
+complete tables on one exact positive page (1/12), twelve exact topologies,
+437 structural cells, 341 exact text cells, fifteen localized tables, and three
+extra tables. All four negatives remain empty. One failed positive page has an
+independently confirmed `content_filter` finish. Nineteen positively charged
+calls total USD 0.286868. Relative to the earlier matrix Sonnet screen, partial
+text/topology coverage improves and API call count decreases; complete-table
+recovery remains two, and neither dense newspaper obtains a complete table.
+The dense pair has 129 structural and 104 text cells, versus 121/59 without
+this detector treatment. These are partial gains, not broad table recovery.
+
+The report preserves separate CPU worker measurements. Parent wall includes
+initialization and requests, while parent CPU and RSS exclude the detector
+worker. Its startup consumes 5.28 CPU seconds and has approximately 1.09 GB
+sampled RSS; request CPU totals and maximum sampled request RSS appear above.
+Parent and worker RSS peaks are not summed. Configuration changes and background
+CPU load prevent treating elapsed-time differences as an isolated detector
+speedup. No GPU or additional report-time inference is used.
 
 ## Native regional full-corpus confirmation
 

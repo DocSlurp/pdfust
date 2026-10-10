@@ -32,6 +32,10 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "b65ce79aef238bceed439bca6998dd003130bb190b4b2c85feb1eaf67eb04456": (
+            "reviewed root source snapshot: evidence/orientation flag plumbing after 01273f1"
+        ),
+        "4c02938d7abea98dbc070944aa0b962f85ef5069e2b07c9f801a80c308b40b80": "01273f1",
         "4a88118faa12c6dfd92ce692daf04e215c3ff848335f66ddd57b073ffda87d0b": "ac1f842",
         "e9cfae5504773e6ee5e2e0265fcaa447ce4786e2bc015ead37c548593419180f": "119a9ca",
         "a5bc281951becd59633a78d00bdeae125405789e09b3368617ff85ecbd191b26": "7395782",
@@ -909,6 +913,23 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
                 ),
                 "",
             ]
+            worker = m.get("layout_detector_worker")
+            if worker is not None:
+                initialization = worker["initialization"]["initialization"]
+                requests = worker["requests"]
+                cpu = _numeric_observations([request.get("cpu_seconds") for request in requests])["complete_total"]
+                peaks = [request.get("peak_sampled_rss_bytes") for request in requests]
+                valid_peaks = [v for v in peaks if isinstance(v, (int, float)) and not isinstance(v, bool)]
+                lines += [
+                    (
+                        "Separate CPU detector worker: initialization wall "
+                        f"{_fmt(initialization.get('wall_seconds'))}s, "
+                        f"CPU {_fmt(initialization.get('cpu_seconds'))}s; {len(requests)} measured requests, "
+                        f"request CPU total {_fmt(cpu)}s; maximum sampled request RSS "
+                        f"{_fmt(max(valid_peaks) if valid_peaks else None)} bytes. " + worker["scope"]
+                    ),
+                    "",
+                ]
     if pending:
         lines += ["## Pending completed reports", "", *["- " + name for name in pending], ""]
     lines += [
