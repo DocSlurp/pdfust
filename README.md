@@ -360,6 +360,8 @@ cells; includes the original 16 pages) narrow the quality gap:
 | Haiku source IDs, OCR300 | 62 | 11 | 1,309 | 11 | 2.69 | 1,013.32 |
 | GPT-6 Luna, 1024 px crops | 63 | 12 | 1,348 | 0 | 5.54 | 1,985.15 |
 | Sonnet 5.5, 1024 px crops | 64 | 14 | 1,839 | 4 | 3.20 | 140.43 |
+| Haiku 5.5, 1024 px crops, explicit matrix | 58 | 12 | 1,333 | 0 | 3.65 | 2,229.64 |
+| Haiku source IDs, fixed OCR edge 2048 px | 63 | 10 | 1,125 | 11 | 2.35 | 1,051.69 |
 
 All retain 64 pages in quality denominators. Ordinal and Luna produce no table
 false positives on the 24 negative pages; Sonnet produces one. Sonnet recovers
@@ -367,6 +369,9 @@ more cells and complete tables, at substantially higher API cost. The ordinal ru
 failures; Luna has one invalid rectangular-matrix response. Rates count usable
 outputs under concurrent load, with full generation costs and unpriced local
 compute. This broader DEV sample is not held-out confirmation.
+The explicit-matrix Haiku run has six failed pages; the fixed-edge OCR run
+has one failed page and one negative-page false positive. Changing acquisition
+resolution improves admission in this comparison but reduces cell quality.
 
 The completed [57-arm image and decision screen](bench/results/p003-mixed-evidence.md)
 finds 1,087 strict cells / 5 complete tables at 128 px RGB, versus 981 / 5 at
