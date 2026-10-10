@@ -84,6 +84,126 @@ def costs(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def verify_cost_reconciliation(directory: Path, sidecar_path: Path, ledger_path: Path) -> dict[str, Any]:
+    """Verify an immutable accounting overlay against archived bodies and exact run attempts."""
+    sidecar = _read(sidecar_path)
+    report = _read(directory / "report.json")
+    report_hash = sha(guard_path(directory / "report.json").read_bytes())
+    prefix = f"P003/{report['config']['run_id']}/"
+    if sidecar.get("schema") != 1 or sidecar.get("original_report_sha256") != report_hash:
+        raise ValueError("Cost overlay is not bound to this immutable report")
+    if sidecar.get("run_tag_prefix") != prefix:
+        raise ValueError("Cost overlay run tag differs")
+    ledger = _read(ledger_path)
+    attempts = [e for e in ledger["requests"] if e.get("tag", "").startswith(prefix)]
+    rows = sidecar["entries"]
+    by_index = {e["index"]: e for e in attempts}
+    overlays = {r["ledger_index"]: r for r in rows}
+    if len(by_index) != len(attempts) or len(overlays) != len(rows) or set(by_index) != set(overlays):
+        raise ValueError("Cost overlay must include exactly every run-attributed ledger attempt")
+    if report.get("ledger_attempts") != len(rows):
+        raise ValueError("Original report attempt count differs from ledger inventory")
+    fields = ("accounted_usd", "cost_status", "provider_reported_usd")
+
+    def accounting(entry: dict[str, Any]) -> dict[str, Any]:
+        return {k: entry[k] for k in fields if k in entry}
+
+    def amount(value: object) -> bool:
+        return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and value >= 0
+
+    def close(left: object, right: object) -> bool:
+        return amount(left) and amount(right) and math.isclose(left, right, rel_tol=1e-12, abs_tol=1e-12)
+
+    returned = {c["entry"]["index"]: c["entry"] for page in report.get("results", []) for c in page.get("calls", [])}
+    original_rows, reconciled_rows, evidence = [], [], []
+    for row in rows:
+        entry = by_index[row["ledger_index"]]
+        original, reconciled = row["original_accounting"], row["reconciled_accounting"]
+        if not amount(original.get("accounted_usd")) or not amount(reconciled.get("accounted_usd")):
+            raise ValueError("Invalid overlay accounting amount")
+        if any(k in original and not amount(original[k]) for k in ("provider_reported_usd",)):
+            raise ValueError("Invalid original provider charge")
+        if entry["request_sha256"] != row["request_sha256"] or accounting(entry) != accounting(reconciled):
+            raise ValueError("Overlay request identity or reconciled ledger accounting differs")
+        request_path = guard_path(sidecar_path.parent / row["request_path"])
+        if sha(request_path.read_bytes()) != row["request_sha256"]:
+            raise ValueError("Archived exact request bytes changed")
+        if entry["index"] in returned and accounting(returned[entry["index"]]) != accounting(original):
+            raise ValueError("Original returned-call accounting differs from immutable report")
+        if row.get("response_path") is None:
+            if entry.get("response_file") or row.get("response_sha256") is not None or reconciled != original:
+                raise ValueError("Missing response cannot support changed accounting")
+            response_hash = None
+        else:
+            response_path = guard_path(sidecar_path.parent / row["response_path"])
+            response_hash = sha(response_path.read_bytes())
+            if response_hash != row["response_sha256"] or response_path.name != entry.get("response_file"):
+                raise ValueError("Retained provider response hash or ledger filename differs")
+            response = _read(response_path)
+            for name, ledger_name in (("id", "generation_id"), ("model", "served_model"), ("provider", "provider")):
+                if entry.get(ledger_name) is not None and response.get(name) != entry[ledger_name]:
+                    raise ValueError("Retained provider response attribution differs")
+            if reconciled != original and not any(
+                revision.get("original") == original
+                and revision.get("reconciled") == reconciled
+                and revision.get("response_sha256") == response_hash
+                for revision in entry.get("accounting_revisions", [])
+            ):
+                raise ValueError("Changed accounting lacks preserved ledger revision history")
+            usage = response.get("usage", {})
+            gateway = usage.get("cost")
+            if amount(gateway) and not close(original.get("provider_reported_usd"), gateway):
+                raise ValueError("Original raw provider gateway charge differs from retained accounting")
+            upstream = usage.get("cost_details", {}).get("upstream_inference_cost")
+            byok = usage.get("is_byok") is True and amount(gateway) and amount(upstream) and upstream > 0
+            if byok:
+                total = gateway + upstream
+                if (
+                    reconciled.get("cost_status") != "provider-reported BYOK upstream plus gateway USD"
+                    or not close(reconciled.get("provider_reported_usd"), gateway)
+                    or not close(reconciled.get("gateway_reported_usd"), gateway)
+                    or not close(reconciled.get("upstream_reported_usd"), upstream)
+                    or not close(reconciled.get("accounted_usd"), total)
+                    or not close(reconciled.get("effective_usd"), total)
+                    or original.get("provider_reported_usd") != gateway
+                ):
+                    raise ValueError("BYOK overlay must preserve gateway charge and sum exact reported upstream")
+            elif reconciled != original:
+                raise ValueError("Only retained explicit BYOK upstream charges may change in this overlay")
+        original_rows.append(original)
+        reconciled_rows.append(reconciled)
+        evidence.append(
+            {"index": entry["index"], "request_sha256": row["request_sha256"], "response_sha256": response_hash}
+        )
+    if (
+        not close(sum(e["accounted_usd"] for e in original_rows), report.get("accounted_usd"))
+        or dict(Counter(e["cost_status"] for e in original_rows)) != report.get("cost_bases")
+        or not close(sum(e.get("provider_reported_usd", 0) for e in original_rows), report.get("provider_reported_usd"))
+        or sum("provider_reported_usd" not in e for e in original_rows) != report.get("missing_provider_charge_count")
+    ):
+        raise ValueError("Original per-attempt accounting does not reproduce immutable report totals")
+    complete = all(e["cost_status"] not in {"reserved", "unknown"} for e in reconciled_rows)
+    total = sum(e["accounted_usd"] for e in reconciled_rows)
+    return {
+        "original_report_sha256": report_hash,
+        "sidecar_sha256": sha(guard_path(sidecar_path).read_bytes()),
+        "ledger_sha256_at_verification": sha(guard_path(ledger_path).read_bytes()),
+        "original": costs(report),
+        "reconciled": {
+            "effective_api_usd": total if complete else None,
+            "known_partial_effective_api_usd": sum(
+                e["accounted_usd"] for e in reconciled_rows if e["cost_status"] not in {"reserved", "unknown"}
+            ),
+            "accounted_usd_including_reservations": total,
+            "provider_reported_gateway_subtotal_usd": sum(e.get("provider_reported_usd", 0) for e in reconciled_rows),
+            "cost_bases": dict(Counter(e["cost_status"] for e in reconciled_rows)),
+            "ledger_attempts": len(rows),
+            "scope": "Exact run attempts; BYOK provider-reported upstream plus gateway, not an invoice total",
+        },
+        "evidence": evidence,
+    }
+
+
 def verify_archive(directory: Path, frozen: dict[str, Any], trusted: dict[str, str] | None = None) -> dict[str, str]:
     """Require each archive hash to match a separately trusted local source digest."""
     hashes = frozen["code_sha256"]
@@ -884,6 +1004,15 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             "All-attempt API accounting: `" + json.dumps(run["costs"], sort_keys=True) + "`.",
         ]
     for run in runs:
+        if run.get("cost_reconciliation") is not None:
+            lines += [
+                "",
+                "Verified immutable accounting overlay: `"
+                + json.dumps(run["cost_reconciliation"], sort_keys=True)
+                + "`.",
+                "",
+                "Reconciled pages/APIUSD: " + fmt(run.get("reconciled_pages_per_api_usd")) + ".",
+            ]
         if run.get("baseline_provenance") is not None:
             lines += [
                 "",
@@ -921,6 +1050,10 @@ def main() -> None:
         action="append",
         help="Authenticated historical baseline snapshot; one shared or one per --run",
     )
+    parser.add_argument(
+        "--cost-reconciliation", type=Path, action="append", help="Immutable cost overlay; exactly one per --run"
+    )
+    parser.add_argument("--cost-ledger", type=Path, help="Explicit shared ledger JSON for cost overlay verification")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown", type=Path)
     parser.add_argument(
@@ -953,6 +1086,19 @@ def main() -> None:
         )
         for p, code, baseline_code in zip(args.run, trusted, baseline_trusted, strict=True)
     ]
+    if args.cost_reconciliation:
+        if args.cost_ledger is None or len(args.cost_reconciliation) != len(args.run):
+            parser.error("Cost reconciliation requires an explicit ledger and exactly one sidecar per --run")
+        for run, directory, sidecar in zip(runs, args.run, args.cost_reconciliation, strict=True):
+            overlay = verify_cost_reconciliation(directory, sidecar, args.cost_ledger)
+            run["cost_reconciliation"] = overlay
+            run["reconciled_pages_per_api_usd"] = (
+                _rate(run["operational_pages"], overlay["reconciled"]["effective_api_usd"])
+                if run["evaluation_scope"] == "complete pipeline"
+                else None
+            )
+    elif args.cost_ledger:
+        parser.error("--cost-ledger requires --cost-reconciliation")
     comparison = None
     if args.paired:
         if len(runs) != 2:

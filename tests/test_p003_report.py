@@ -432,3 +432,138 @@ def test_region_verifier_replays_source_prerequisite_raster_and_empty_yolo(
     write_json(tmp_path / "p0-result.json", malformed)
     with pytest.raises(ValueError, match="independently rendered"):
         verify_regions_output(tmp_path, malformed, frozen, source_record)
+
+
+def reconciliation_fixture(tmp_path: Path, *, reserved: bool = False) -> tuple[Path, Path, Path]:
+    """Retain gateway-zero BYOK evidence alongside a standard positive charge."""
+    import json
+
+    from bench.silver import write_json
+
+    run, artifacts = tmp_path / "run", tmp_path / "costs"
+    run.mkdir()
+    artifacts.mkdir()
+    original = {"accounted_usd": 0.3, "cost_status": "reserved", "provider_reported_usd": 0}
+    reconciled = {
+        "accounted_usd": 0.012,
+        "cost_status": "provider-reported BYOK upstream plus gateway USD",
+        "provider_reported_usd": 0,
+        "effective_usd": 0.012,
+        "gateway_reported_usd": 0,
+        "upstream_reported_usd": 0.012,
+    }
+    standard = {"accounted_usd": 0.02, "cost_status": "provider-reported USD", "provider_reported_usd": 0.02}
+    rows, ledger_entries = [], []
+    for index, old, new, usage in (
+        (0, original, reconciled, {"is_byok": True, "cost": 0, "cost_details": {"upstream_inference_cost": 0.012}}),
+        (1, standard, standard, {"is_byok": False, "cost": 0.02, "cost_details": {"upstream_inference_cost": 7}}),
+    ):
+        request = json.dumps({"model": "example", "prompt": str(index)}).encode()
+        request_name, response_name = f"request-{index:03d}.json", f"response-{index:03d}.json"
+        (artifacts / request_name).write_bytes(request)
+        write_json(artifacts / response_name, {"usage": usage})
+        response_hash = sha((artifacts / response_name).read_bytes())
+        row = {
+            "ledger_index": index,
+            "request_sha256": sha(request),
+            "request_path": request_name,
+            "response_path": response_name,
+            "response_sha256": response_hash,
+            "original_accounting": old,
+            "reconciled_accounting": new,
+        }
+        rows.append(row)
+        ledger_entries.append(
+            {
+                "index": index,
+                "tag": f"P003/run/stage/{index}",
+                "request_sha256": sha(request),
+                "response_file": response_name,
+                **new,
+                "accounting_revisions": [{"original": old, "reconciled": new, "response_sha256": response_hash}],
+            }
+        )
+    report = {
+        "config": {"run_id": "run"},
+        "ledger_attempts": 2,
+        "accounted_usd": 0.32,
+        "provider_reported_usd": 0.02,
+        "missing_provider_charge_count": 0,
+        "cost_bases": {"reserved": 1, "provider-reported USD": 1},
+        "effective_usd": None,
+        "results": [{"calls": [{"entry": {"index": 0, **original}}, {"entry": {"index": 1, **standard}}]}],
+    }
+    if reserved:
+        old = {"accounted_usd": 0.5, "cost_status": "reserved"}
+        (artifacts / "request-002.json").write_bytes(b"{}")
+        rows.append(
+            {
+                "ledger_index": 2,
+                "request_sha256": sha(b"{}"),
+                "request_path": "request-002.json",
+                "response_path": None,
+                "response_sha256": None,
+                "original_accounting": old,
+                "reconciled_accounting": old,
+            }
+        )
+        ledger_entries.append({"index": 2, "tag": "P003/run/failed", "request_sha256": sha(b"{}"), **old})
+        report.update(ledger_attempts=3, accounted_usd=0.82, missing_provider_charge_count=1)
+        report["cost_bases"]["reserved"] = 2
+    write_json(run / "report.json", report)
+    write_json(
+        artifacts / "costs.json",
+        {
+            "schema": 1,
+            "original_report_sha256": sha((run / "report.json").read_bytes()),
+            "run_tag_prefix": "P003/run/",
+            "entries": rows,
+        },
+    )
+    write_json(tmp_path / "ledger.json", {"requests": ledger_entries})
+    return run, artifacts / "costs.json", tmp_path / "ledger.json"
+
+
+def test_cost_overlay_preserves_gateway_zero_without_nonbyok_double_count(tmp_path: Path) -> None:
+    from bench.p003_report import verify_cost_reconciliation
+
+    run, sidecar, ledger = reconciliation_fixture(tmp_path)
+    result = verify_cost_reconciliation(run, sidecar, ledger)
+    assert result["original"]["effective_api_usd"] is None
+    assert result["reconciled"]["effective_api_usd"] == pytest.approx(0.032)
+    assert result["reconciled"]["provider_reported_gateway_subtotal_usd"] == 0.02
+
+
+def test_cost_overlay_retains_failed_reservation_as_unknown(tmp_path: Path) -> None:
+    from bench.p003_report import verify_cost_reconciliation
+
+    run, sidecar, ledger = reconciliation_fixture(tmp_path, reserved=True)
+    result = verify_cost_reconciliation(run, sidecar, ledger)
+    assert result["reconciled"]["effective_api_usd"] is None
+    assert result["reconciled"]["known_partial_effective_api_usd"] == pytest.approx(0.032)
+
+
+@pytest.mark.parametrize("mutation", ["missing_attempt", "response", "request", "history", "gateway"])
+def test_cost_overlay_rejects_incomplete_or_changed_evidence(tmp_path: Path, mutation: str) -> None:
+    import json
+
+    from bench.p003_report import verify_cost_reconciliation
+    from bench.silver import write_json
+
+    run, sidecar, ledger = reconciliation_fixture(tmp_path)
+    data = json.loads(sidecar.read_bytes())
+    if mutation == "missing_attempt":
+        data["entries"].pop()
+    elif mutation == "response":
+        (sidecar.parent / "response-000.json").write_text("{}")
+    elif mutation == "request":
+        (sidecar.parent / "request-000.json").write_text("{}")
+    elif mutation == "history":
+        value = json.loads(ledger.read_bytes())
+        value["requests"][0]["accounting_revisions"] = []
+        write_json(ledger, value)
+    else:
+        data["entries"][0]["reconciled_accounting"]["gateway_reported_usd"] = 0.1
+    write_json(sidecar, data)
+    with pytest.raises(ValueError, match=r"overlay|bytes|response|accounting"):
+        verify_cost_reconciliation(run, sidecar, ledger)

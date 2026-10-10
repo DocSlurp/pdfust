@@ -272,3 +272,21 @@ child plus real frozen PDF raster test verifies the entire empty-YOLO path and
 rejects altered proposal image hashes. The retained source fixture is synthetic
 input; that test does not claim correspondence with visible text in the blank
 PDF raster.
+
+Optional accounting reconciliation preserves the original frozen report and
+quality. Invoke the reporter with `--cost-reconciliation <costs.json>` (exactly
+one per run) and `--cost-ledger <explicit ledger.json>`. The sidecar binds the
+original report hash and exact `P003/<run_id>/` attempt inventory, including
+failed and reserved attempts. Every exact archived request body must match its
+ledger SHA; retained provider responses must match their sidecar hashes,
+ledger filenames and provider attribution. Original per-attempt accounting
+must reproduce the immutable report totals and returned-call entries. Changed
+entries also require matching preserved ledger accounting revision history.
+
+The only permitted correction adds a finite positive provider-reported BYOK
+upstream inference amount to a finite nonnegative gateway charge when the raw
+response explicitly declares BYOK. The original gateway zero remains visible;
+non-BYOK nested amounts are never added. Unchanged estimates retain their prior
+basis, and unresolved reservations keep the reconciled total unknown. Original
+and reconciled API costs and pages/APIUSD are separate outputs. The overlay
+makes no invoice-total claim and never edits the report or shared ledger.
