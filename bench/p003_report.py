@@ -763,6 +763,16 @@ def verify_candidate_run(
     }, verified
 
 
+def _detector_request_order(detection: dict[str, Any]) -> dict[str, Any]:
+    """Restore the authenticated detector's literal nested prompt key order."""
+    detection = deepcopy(detection)
+    keys = ("label", "confidence", "pixel_bbox", "normalized_bbox", "bbox")
+    if any(set(box) != set(keys) for box in detection["boxes"]):
+        raise ValueError("Unsupported detector box inventory for literal gate replay")
+    detection["boxes"] = [{key: box[key] for key in keys} for box in detection["boxes"]]
+    return detection
+
+
 def verify_regions_output(
     directory: Path, prediction: dict[str, Any], frozen: dict[str, Any], record: dict[str, Any]
 ) -> dict[str, Any]:
@@ -839,7 +849,11 @@ def verify_regions_output(
         if prediction["proposal_image"] != expected_image:
             raise ValueError("Proposal image differs from independently rendered frozen PDF")
         if settings["arm"] in ("yolo", "yolo_fixed2"):
-            plan = processor._yolo(prediction["layout_detection"], viewport, source)
+            # The detector constructs these keys in this order before adding
+            # display geometry. Archived JSON sorts keys, while the nested box
+            # is serialized literally inside the gate's source prompt.
+            detection = _detector_request_order(prediction["layout_detection"])
+            plan = processor._yolo(detection, viewport, source)
             if settings["arm"] == "yolo_fixed2":
                 fixed2 = candidates.propose(
                     source, image=image, max_candidates=settings["candidate_cap"], raster_grid=2
@@ -943,6 +957,12 @@ def verify_regions_output(
                 region["viewport"],
                 max_tokens=config.get("generation_tokens", 16384),
             )
+            if config.get("generation_provider"):
+                body["provider"] = {
+                    "only": [config["generation_provider"]],
+                    "allow_fallbacks": False,
+                    "require_parameters": True,
+                }
             if _read(directory / f"{ident}-request-{index}.json") != body:
                 raise ValueError("Transcription request differs from selected image evidence")
             encoded = json.dumps(body, separators=(",", ":")).encode()

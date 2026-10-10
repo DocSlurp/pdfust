@@ -744,3 +744,30 @@ def test_transport_failures_preserve_http_errors_without_duplicate_attempt_count
     call = {"entry": {"index": 7, "error": "HTTP 429"}}
     pages = [{"calls": [call, deepcopy(call)], "ranking_calls": [{"entry": {"index": 8, "error": "HTTP 400"}}]}]
     assert transport_failures(pages) == {"HTTP 429": 1, "HTTP 400": 1}
+
+
+def test_literal_detector_prompt_replay_restores_runtime_order() -> None:
+    import json
+
+    from bench.p003_regions_run import gate_request
+    from bench.p003_report import _detector_request_order
+
+    box = {
+        "label": "Table",
+        "confidence": 0.9,
+        "pixel_bbox": [1, 2, 3, 4],
+        "normalized_bbox": [0.1, 0.2, 0.3, 0.4],
+        "bbox": [10, 20, 30, 40],
+    }
+    restored = _detector_request_order(json.loads(json.dumps({"boxes": [box]}, sort_keys=True)))
+    proposal = {
+        "id": "r000", "bbox": box["bbox"], "mechanisms": ["yolo_table"],
+        "evidence_records": [{"mechanism": "yolo_table", "detector_box": box}],
+        "warnings": [], "capacity_window": False, "packet": {},
+    }
+    expected = gate_request("model", proposal, None)
+    proposal["evidence_records"][0]["detector_box"] = restored["boxes"][0]
+    assert gate_request("model", proposal, None) == expected
+    restored["boxes"][0]["unknown"] = True
+    with pytest.raises(ValueError, match="Unsupported detector box"):
+        _detector_request_order(restored)
