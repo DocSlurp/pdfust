@@ -19,6 +19,64 @@ def _read(path: Path) -> dict[str, Any]:
     return value
 
 
+def _response_identity(body: dict[str, Any], response: dict[str, Any]) -> None:
+    digest = sha(json.dumps(body, separators=(",", ":"), allow_nan=False).encode())
+    if response.get("entry", {}).get("request_sha256") != digest:
+        raise ValueError("Ownership response attribution differs from exact serialized request")
+
+
+def _transcript_origin(
+    directory: Path, report: dict[str, Any], frozen: dict[str, Any], trusted: dict[str, str]
+) -> Path:
+    from bench.p003_report import verify_archive
+    from bench.p003_topology_replay import authenticate
+
+    origin = frozen["transcript_origin"]
+    if report.get("transcript_origin") != origin or origin["copied_directory"] != "original-ownership-run":
+        raise ValueError("Transcript original provenance differs from frozen record")
+    if origin["new_api_calls"] != 0 or origin["original_failures_preserved"] is not True:
+        raise ValueError("Transcript provenance does not preserve original failures and zero new calls")
+    copied = directory / origin["copied_directory"]
+    for name, digest in origin["file_sha256"].items():
+        parts = Path(name).parts
+        if not (len(parts) == 1 or (len(parts) == 2 and parts[0] == "code")) or ".." in parts:
+            raise ValueError("Unsafe transcript evidence path")
+        if sha(guard_path(copied / name).read_bytes()) != digest:
+            raise ValueError("Retained original transcript bytes changed")
+    original_frozen, original = authenticate(copied, trusted)
+    verify_archive(copied, original_frozen, trusted)
+    if original != origin["original_report"] or original_frozen["records"] != frozen["records"]:
+        raise ValueError("Transcript original report or source inventory changed")
+    for key in ("source_baseline", "topology_baseline"):
+        if original_frozen[key]["file_sha256"] != frozen[key]["file_sha256"]:
+            raise ValueError("Transcript imported generation evidence differs from original")
+    required = {"report.json", "frozen.json", *("code/" + n for n in original_frozen["code_sha256"])}
+    required.update(f"{r['id']}-result.json" for r in original["results"])
+    for retained in origin["retained_responses"]:
+        stem = retained["stem"]
+        if Path(stem).name != stem:
+            raise ValueError("Unsafe retained transcript request stem")
+        required.update({f"{stem}-request.json", f"{stem}-response.json"})
+    if not required <= set(origin["file_sha256"]):
+        raise ValueError("Transcript origin omits required original artifacts")
+    return copied
+
+
+def _retained_response(
+    directory: Path, original: Path, stem: str, body: dict[str, Any], response: dict[str, Any]
+) -> dict[str, Any]:
+    if _read(original / f"{stem}-request.json") != body:
+        raise ValueError("Transcript reused request differs from original question")
+    if (directory / f"{stem}-response.json").read_bytes() != (original / f"{stem}-response.json").read_bytes():
+        raise ValueError("Transcript reused response differs from immutable original bytes")
+    return {
+        "stem": stem,
+        "body_sha256": sha(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()),
+        "response_sha256": sha((original / f"{stem}-response.json").read_bytes()),
+        "original_entry": response["entry"],
+    }
+
+
 def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
     historical_config_keys = {
         "baseline_source_order",
@@ -38,6 +96,32 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
     }
     for name in names:
         digest = frozen["code_sha256"].get(name)
+        uniform_config = frozen["config"]
+        if (
+            name == "p003_topology_run.py"
+            and digest == "83ee9fb21074606db7d8020daae3c1fc5046712e97736b6139edf5a060998edf"
+            and uniform_config.get("transcript_replay") is True
+            and uniform_config.get("image", True) is True
+            and uniform_config.get("boundary_words", "strict") == "strict"
+            and uniform_config.get("band_mode", "uniform") == "uniform"
+            and set(uniform_config) <= historical_config_keys | {"transcript_replay", "band_mode"}
+        ):
+            continue  # Root reviewed exact-body replay default semantics before source-band controls.
+        if (
+            name in {"p003_topology_run.py", "p003_topology_geometry.py", "p003_topology_ownership.py"}
+            and uniform_config.get("geometry_only") is True
+            and uniform_config.get("image", True) is True
+            and uniform_config.get("band_mode", "uniform") == "uniform"
+            and uniform_config.get("boundary_words") == "residual"
+            and set(uniform_config) <= historical_config_keys | {"geometry_only", "band_mode"}
+            and digest
+            == {
+                "p003_topology_run.py": "dcad1cc35f0a9d2b756e00e3bb9d5c2866829871bb2b770aee55a797988159b5",
+                "p003_topology_geometry.py": "1b84661255194470c0067badd293c928a79f72e547ba7633e18d87d92a451fee",
+                "p003_topology_ownership.py": "9f5211f1051d6b39e43f0b4d8fcd0be06a52caee613b1c0b9fa80e39a3271ef8",
+            }.get(name)
+        ):
+            continue  # Root reviewed these exact default-uniform/residual control snapshots.
         if (
             name == "p003_topology_ownership.py"
             and frozen["config"].get("image", True) is True
@@ -133,7 +217,10 @@ def verify_topology(
     from bench.pipeline_regions import compose
     from bench.pipeline_source_order import render_source
 
+    config = frozen["config"]
     names = {"source-baseline", "topology-baseline"}
+    if config.get("transcript_replay"):
+        names.add("original-ownership-run")
     if trusted is None or set(trusted) != names:
         raise ValueError("Topology replay requires independent source and topology baseline trust maps")
     _helpers(
@@ -149,7 +236,14 @@ def verify_topology(
             "p003_transcription_design.py",
         ),
     )
-    config = frozen["config"]
+    if config.get("geometry_only"):
+        _helpers(frozen, ("p003_topology_geometry.py",))
+        if config.get("band_mode", "uniform") not in {"uniform", "source"}:
+            raise ValueError("Unsupported geometry band treatment")
+        if config.get("band_mode") == "source":
+            _helpers(frozen, ("p003_spatial_bands.py",))
+    if config.get("transcript_replay"):
+        _helpers(frozen, ("p003_topology_replay.py",))
     reviewed = config.get("reviewed_parser_sha256", [])
     if not set(reviewed) <= set(reviewed_parser_sha256) or any(
         digest not in candidate.ROOT_REVIEWED_PARSER_SHA256 for digest in reviewed
@@ -169,6 +263,19 @@ def verify_topology(
         raise ValueError("Topology changed historical source rendering order")
     originals = {p["id"]: p for p in source_report["results"]}
     topologies = {p["id"]: p for p in topo_report["results"]}
+    transcript = None
+    if config.get("transcript_replay"):
+        transcript = _transcript_origin(directory, report, frozen, trusted["original-ownership-run"])
+    if config.get("geometry_only") or transcript is not None:
+        incremental = report["incremental_ownership"]
+        if (
+            incremental["attempts"]
+            or incremental["returned_calls"]
+            or report.get("pages_per_minute") is not None
+            or report.get("pages_per_dollar") is not None
+        ):
+            raise ValueError("Offline ownership control contains new API calls or full-pipeline rates")
+    retained = []
     verified = {}
     for page in report["results"]:
         ident = page["id"]
@@ -188,6 +295,10 @@ def verify_topology(
                 raise ValueError("Topology completion lacks eligible frozen evidence")
             if _read(directory / f"{ident}-ownership-plan.json") != work["plan"]:
                 raise ValueError("Topology source ownership partition changed")
+            if transcript is not None:
+                from bench.p003_topology_replay import _check_partition
+
+                _check_partition(_read(transcript / f"{ident}-ownership-plan.json"), work["plan"])
             states, calls = deepcopy(work["states"]), []
             if len(page["topology_regions"]) != len(work["crops"]):
                 raise ValueError("Topology crop inventory changed")
@@ -203,36 +314,65 @@ def verify_topology(
                     directory / info["snapshot_file"]
                 ) != json.loads(crop["snapshot"].packet_json):
                     raise ValueError("Topology immutable source snapshot changed")
-                responses = []
-                if info["rows"] != [f"{stem}-row-{i}" for i in range(len(crop["row_bodies"]))]:
-                    raise ValueError("Topology row request inventory changed")
-                for request_stem, body in zip(info["rows"], crop["row_bodies"], strict=True):
-                    if _read(directory / f"{request_stem}-request.json") != body:
-                        raise ValueError("Topology row question changed")
-                    response = _read(directory / f"{request_stem}-response.json")
-                    calls.append(response)
-                    responses.append(response["result"])
-                rows = ownership.collect(crop["snapshot"], crop["row_bodies"], responses)
-                if _read(directory / f"{stem}-row-receipt.json") != rows:
-                    raise ValueError("Topology row receipt changed")
-                bodies = ownership.batches(
-                    crop["snapshot"], config["model"], crop["url"], rows=rows, max_questions=config["max_questions"]
-                )
-                if info["cells"] != [f"{stem}-cell-{i}" for i in range(len(bodies))]:
-                    raise ValueError("Topology anchor request inventory changed")
-                results = []
-                for request_stem, body in zip(info["cells"], bodies, strict=True):
-                    if _read(directory / f"{request_stem}-request.json") != body:
-                        raise ValueError("Topology anchor question changed")
-                    response = _read(directory / f"{request_stem}-response.json")
-                    calls.append(response)
-                    results.append(response["result"])
-                audit = ownership.assemble(crop["snapshot"], crop["row_bodies"], responses, bodies, results)
-                if (
-                    _read(directory / f"{stem}-audit.json") != audit
-                    or _read(directory / f"{stem}-updated-state.json") != audit["state"]
-                ):
-                    raise ValueError("Topology ownership assembly changed")
+                if config.get("geometry_only"):
+                    from bench import p003_topology_geometry as geometry
+
+                    audit = geometry.place(crop["snapshot"], band_mode=config.get("band_mode", "uniform"))
+                    mechanism = "source_band_geometry" if config.get("band_mode") == "source" else "uniform_geometry"
+                    if (
+                        info["rows"]
+                        or info["cells"]
+                        or info["maximum_new_ownership_calls"]
+                        or info["placement_mechanism"] != mechanism
+                    ):
+                        raise ValueError("Geometry control contains model questions or changed placement policy")
+                    if (
+                        _read(directory / f"{stem}-geometry-audit.json") != audit
+                        or _read(directory / f"{stem}-updated-state.json") != audit["state"]
+                    ):
+                        raise ValueError("Geometry source placement audit differs from replay")
+                else:
+                    responses = []
+                    if info["rows"] != [f"{stem}-row-{i}" for i in range(len(crop["row_bodies"]))]:
+                        raise ValueError("Topology row request inventory changed")
+                    for request_stem, body in zip(info["rows"], crop["row_bodies"], strict=True):
+                        if _read(directory / f"{request_stem}-request.json") != body:
+                            raise ValueError("Topology row question changed")
+                        response = _read(directory / f"{request_stem}-response.json")
+                        _response_identity(body, response)
+                        if transcript is not None:
+                            retained.append(_retained_response(directory, transcript, request_stem, body, response))
+                        calls.append(response)
+                        responses.append(response["result"])
+                    rows = ownership.collect(crop["snapshot"], crop["row_bodies"], responses)
+                    if _read(directory / f"{stem}-row-receipt.json") != rows:
+                        raise ValueError("Topology row receipt changed")
+                    bodies = ownership.batches(
+                        crop["snapshot"],
+                        config["model"],
+                        crop["url"],
+                        rows=rows,
+                        max_questions=config["max_questions"],
+                        image=config.get("image", True),
+                    )
+                    if info["cells"] != [f"{stem}-cell-{i}" for i in range(len(bodies))]:
+                        raise ValueError("Topology anchor request inventory changed")
+                    results = []
+                    for request_stem, body in zip(info["cells"], bodies, strict=True):
+                        if _read(directory / f"{request_stem}-request.json") != body:
+                            raise ValueError("Topology anchor question changed")
+                        response = _read(directory / f"{request_stem}-response.json")
+                        _response_identity(body, response)
+                        if transcript is not None:
+                            retained.append(_retained_response(directory, transcript, request_stem, body, response))
+                        calls.append(response)
+                        results.append(response["result"])
+                    audit = ownership.assemble(crop["snapshot"], crop["row_bodies"], responses, bodies, results)
+                    if (
+                        _read(directory / f"{stem}-audit.json") != audit
+                        or _read(directory / f"{stem}-updated-state.json") != audit["state"]
+                    ):
+                        raise ValueError("Topology ownership assembly changed")
                 states[crop["id"]] = audit["state"]
             composed = compose(work["plan"], states)
             _table_bounds(original["source"], composed)
@@ -313,6 +453,8 @@ def verify_topology(
             if status in {"unsupported_retained_baseline", "failed_retained_baseline"} and not page["topology_errors"]:
                 raise ValueError("Topology failure omits its retained error")
         verified[ident] = {"operational": page["status"] == "ok", "scope": "incremental frozen topology ownership"}
+    if transcript is not None and retained != frozen["transcript_origin"]["retained_responses"]:
+        raise ValueError("Transcript retained-response inventory differs from exact replay")
     return {
         "source_report_sha256": sha((source_dir / "report.json").read_bytes()),
         "topology_report_sha256": sha((topo_dir / "report.json").read_bytes()),
