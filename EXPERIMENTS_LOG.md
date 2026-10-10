@@ -1316,3 +1316,58 @@ Wrapped-table and corrected OCR-table offline demos were visually checked. The
 heldout set was untouched. Single-table authored DEV results do not establish
 natural-document, semantic, multipage or mixed-table generalization. Next tests
 are documented; no additional paid run is started by this completion checkpoint.
+
+
+## P002: broad generalization wave — 2026-10-10
+
+User authorized up to five hours and up to four parallel workers; runtime capacity
+allows three worker agents alongside root. Work starts at 02:19 UTC, with final
+reporting due by 07:19 UTC. This wave has a USD 50 ceiling within the existing
+USD 150 cumulative authorization. Starting conservative accounting is
+USD 36.6672001068. Plan: `bench/GENERALIZATION_PLAN.md`.
+
+Frozen new DEV corpus: 276 pages, comprising 156 authored stress pages, 64 fresh
+metadata-stratified OmniDocBench raster carriers and 56 licensed native diagnostic
+pages. The official source annotations remain separate from model evidence.
+Revision r2 corrects 12 authored RGBA carriers accidentally flattened onto black;
+all page IDs and references remain stable and the first snapshot is preserved.
+A separate metadata-selected natural16 screen has 12 positive and four negative
+pages, with 53 reference tables. No official annotations are edited to fit output.
+
+The old whole-page reviewed pipeline emits nine of 16 natural-page outputs;
+seven fail source/packet admission. It recovers no complete reference tables and
+only one geometrically matched table. Independent region processing alone still
+emits nine outputs with seven oversized packets. Raising only the bounded readable
+packet admission to 80,000 characters produces 16/16 outputs but still no complete
+reference tables. It recovers one exact topology and 320/2,333 correct structure
+cells, but only four exact text cells. Thus removing a runtime blocker does not
+establish extraction quality. The live PPLX catalog advertises 262,144 context
+tokens; the new limit retains complete evidence and preserves the old default.
+
+Geometry-only candidate audits found zero exact natural tables in the original
+menu. The source-only generative alternative therefore asks a bounded chat model
+to assign existing IDs to rows, columns and spans; values are rebuilt locally and
+all unused words remain in prose. Invented IDs, overlap, duplicate ownership and
+truncated answers fail validation. Direct Sonnet generation is running as a
+separate measured control; it cannot repair missing OCR characters.
+
+The raster-rule prototype independently recovers three exact natural topologies,
+106 exact text cells and 143 structure cells from pixels plus OCR source words.
+One 9x9 table has 79/81 exact cells. These are candidate diagnostics, not accepted
+end-to-end extraction. The full pipeline will require semantic admission before
+accepting pixel grids. A Cambridge source/reference disagreement (visible/OCR
+German eszett versus annotated Greek beta) is retained as suspected annotation
+noise, not normalized away or claimed correct against official gold.
+
+Corrected native-r2 baseline: 270/276 complete outputs, six failures. Natural images
+have no native vector tables; authored tables account for 120 exact tables. CPU
+OCR and source limits remain explicit. All raw data, frozen requests, outputs,
+resources and reports live under ignored `pipeline-p002/`; only code and aggregate
+summaries are committed. A procedural discovery incident listed two protected
+filenames; no protected contents or scores were read and further discovery uses
+explicit DEV paths. See the plan for the retained audit note.
+
+At the first integration checkpoint 291 targeted CPU tests and Ruff pass. Source
+and report paths retain complete output ownership, literal cell values, exact
+Markdown reproduction, all-attempt costs, and separate positive/negative scores.
+Private main checkpoint 3ef1e4a was pushed; no public remote or package publication.

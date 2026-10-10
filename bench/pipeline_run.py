@@ -472,7 +472,12 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "silver_structure.py",
                 "silver.py",
                 *(
-                    ["generalization_run.py", "pipeline_regions.py", "pipeline_generation.py"]
+                    [
+                        "generalization_run.py",
+                        "pipeline_regions.py",
+                        "pipeline_generation.py",
+                        "pipeline_dense_candidates.py",
+                    ]
                     if config.get("processor") == "regions"
                     else []
                 ),

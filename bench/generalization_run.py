@@ -1,7 +1,7 @@
 """Source-only region pipeline for P002; scoring references are never loaded."""
 
 # Explicit retained experiment dictionaries are heterogeneous.
-# ruff: noqa: ANN401, EM101, TRY003, PLC0415, TRY301, PLR0913, PLR0917
+# ruff: noqa: ANN401, EM101, TRY003, PLC0415, TRY301, PLR0913, PLR0917, C901
 from __future__ import annotations
 
 import argparse
@@ -66,6 +66,56 @@ def region_image(page: Any, bbox: list[float], edge: int) -> tuple[str | None, d
             "render_scale": scale,
             "full_page_raster_edge_cap": MAX_RASTER_EDGE,
         }
+
+
+def raster_sources(
+    page: Any, snapshot: dict[str, Any], edge: int = 1536
+) -> tuple[dict[str, Any], set[str], dict[str, Any]]:
+    """Propose pixel-derived physical grids without treating them as admitted tables."""
+    from PIL import Image
+
+    from bench.pipeline_dense_candidates import raster_vectors
+
+    began, cpu = time.perf_counter(), time.process_time()
+    scale = edge / max(page.rect.width, page.rect.height)
+    data = page.render(scale=scale, background=(255, 255, 255))
+    with Image.open(io.BytesIO(data)) as image:
+        vectors = raster_vectors(image, list(page.rect))
+    existing = snapshot.get("vector_candidates", [])
+
+    def bounds(vector: dict[str, Any]) -> list[float]:
+        cells = [b for b in vector["cells"] if b is not None]
+        return [min(b[0] for b in cells), min(b[1] for b in cells), max(b[2] for b in cells), max(b[3] for b in cells)]
+
+    additions = []
+    for vector in vectors:
+        box = bounds(vector)
+        if not any(
+            min(box[2], bounds(v)[2]) > max(box[0], bounds(v)[0])
+            and min(box[3], bounds(v)[3]) > max(box[1], bounds(v)[1])
+            for v in existing
+        ):
+            additions.append(vector)
+    keys = {vector_identity(v) for v in additions}
+    return (
+        {**snapshot, "vector_candidates": [*existing, *additions]},
+        keys,
+        {
+            "edge": edge,
+            "image_sha256": sha(data),
+            "proposed_grids": len(additions),
+            "wall_seconds": time.perf_counter() - began,
+            "cpu_seconds": time.process_time() - cpu,
+            "acceptance": "independent semantic gate and candidate selection required",
+        },
+    )
+
+
+def vector_identity(vector: dict[str, Any]) -> str:
+    """Preserve raster provenance after the region splitter strips extra fields."""
+    return sha(
+        json.dumps({k: vector[k] for k in ("row_count", "col_count", "cells", "spans")}, sort_keys=True).encode()
+    )
 
 
 def _request(
@@ -150,9 +200,12 @@ def select_region(
     snapshot = region["source"]
     native = native_state(snapshot)
     info: dict[str, Any] = {"id": region["id"], "boundary": region["boundary"], "bbox": region["bbox"]}
-    if native["tables"] or config["policy"] == "native":
+    raster = native if region.get("kind") == "raster" else None
+    if (native["tables"] and raster is None) or config["policy"] == "native":
         info["route"] = "native"
         return native, info
+    if raster is not None:
+        snapshot = {**snapshot, "vector_candidates": []}
     method = config.get("assembly_method", "select")
     if method == "generate":
         url, metadata = region_image(page, region["bbox"], config["image_edge"])
@@ -163,6 +216,14 @@ def select_region(
     candidates = propose(snapshot)
     if config.get("column_consensus", True):
         candidates = column_proposals(snapshot, candidates)
+    if raster is not None:
+        raster = {
+            **raster,
+            "id": f"c{len(candidates)}",
+            "mechanism": "raster_rules",
+            "description": "Preserve complete physical cells bounded by visible raster rules.",
+        }
+        candidates.append(raster)
     info["candidates"] = candidates
     if len(candidates) == 1 and method != "gated_generate":
         info["route"] = "no_alternative"
@@ -261,11 +322,19 @@ def process(
             result["source"] = snapshot
             snapshot, result["native_warnings"] = sanitize_vectors(snapshot)
             result["stages"]["source_seconds"] = time.perf_counter() - started
+            raster_keys: set[str] = set()
+            if config.get("raster_rules") and config["policy"] != "native":
+                snapshot, raster_keys, result["raster_rules"] = raster_sources(
+                    page, snapshot, config.get("raster_edge", 1536)
+                )
             plan = split(
                 snapshot,
                 max_words=config.get("region_words", 256),
                 max_characters=config.get("region_characters", 8000),
             )
+            for region in plan["regions"]:
+                if any(vector_identity(v) in raster_keys for v in region["source"]["vector_candidates"]):
+                    region["kind"] = "raster"
             result["region_plan"] = {k: v for k, v in plan.items() if k != "words"}
             states, rendered = {}, []
             order = {word["id"]: n for n, word in enumerate(snapshot["words"])}
@@ -314,6 +383,8 @@ def main() -> None:
     parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
     parser.add_argument("--generation-model", choices=baseline.CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
+    parser.add_argument("--raster-rules", action="store_true")
+    parser.add_argument("--raster-edge", type=int, choices=(1024, 1536, 2048), default=1536)
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
     parser.add_argument("--pilot", action="store_true")

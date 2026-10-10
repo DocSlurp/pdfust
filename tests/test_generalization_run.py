@@ -116,3 +116,25 @@ def test_generation_can_construct_without_a_geometry_alternative(
     assert len(calls) == 1
     assert state["unresolved_ids"] == ["w0"]
     assert "generated" in info["route"]
+
+
+def test_raster_grid_requires_semantic_admission(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    with pylopdf.open(stream=pdf_bytes()) as doc:
+        source = baseline.source(doc[0])
+    region = split(source)["regions"][0]
+    region["kind"] = "raster"
+    calls = []
+
+    def reject(*args: object, **_kwargs: object) -> dict[str, Any]:
+        calls.append(args)
+        return {"choice": "prose", "probabilities": {"prose": 1}}
+
+    monkeypatch.setattr(runner, "_request", reject)
+    state, info = runner.select_region(
+        region, None, {**config("gated"), "image_edge": 0}, tmp_path, {"id": "opaque", "calls": []}, None
+    )
+    assert len(calls) == 1
+    assert state["tables"] == []
+    assert len(state["unresolved_ids"]) == len(source["words"])
+    assert info["route"] == "gated_out"
+    assert any(c["mechanism"] == "raster_rules" for c in info["candidates"])
