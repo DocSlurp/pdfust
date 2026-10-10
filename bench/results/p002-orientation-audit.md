@@ -29,8 +29,23 @@ All 64 OCR passes, including losing candidates: wall 47.93s, process CPU 47.61s,
 
 Real mixed-header integration additionally ran both whitespace and invisible-layer re-extraction with four candidates. Both selected correction 270, preserved the complete caller bytes and original native words, and retained eight source tokens (two native plus six OCR). Re-extraction inserts each selected region using its correction angle. Whitespace boxes are explicitly approximate and now follow that baseline direction. All candidate outputs and timings remain retained; abstaining regions expose no OCR tokens.
 
-Source admissions bound four passes to 64 million cumulative clipped pixels, each full-page raster to 64 million pixels, each region candidate inventory to 16,384 boxes and 1 MiB text, and source output to the existing 4,096-word cap. Full-page raster cost is still paid for clipped interpretation.
+Source admissions bound four passes to 64 million cumulative clipped pixels, each full-page raster to 64 million pixels, each region candidate inventory to 16,384 boxes and 1 MiB text, and source output to the then-existing 4,096-word cap. These actual measurements retain the v1 admission rules. Full-page raster cost is still paid for clipped interpretation.
 
 The dense comparison freezes the two explicitly requested source IDs, DPI 150/300, fixed correction 0, empty mode, whitespace tokenization, one thread and one worker before observation. It uses native-free PDF carrier sources and reads no text or table references. Inventories and confidence are observations, not recall or table quality. Complete input links, outputs and costs are retained in `pipeline-p002/orientation-mini/dense-results.json`.
 
 Procedural note: the initial broad filename lookup in the earlier resumed native audit repeated a protected-path filename-only discovery incident. It printed the protected AGENTS filename, without reading protected contents, constructing datasets, extracting/scoring heldout pages, or using them to select settings. All subsequent discovery and this orientation/dense audit use explicit named files and the supplied manifest IDs. No further protected paths were accessed.
+
+All four dense arms completed without errors or truncation, and all caller bytes were preserved. The existing v1 4,096-word cap admitted these complete results.
+
+| Source | DPI | Recognized boxes | Whitespace tokens | Alphanumeric characters | Mean confidence | Wall (s) | CPU (s) | Cumulative process peak RSS (MiB) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| p1bfa52a41a5e15015698 | 150 | 666 | 1953 | 7652 | 0.9756 | 57.77 | 56.37 | 468.05 |
+| p1bfa52a41a5e15015698 | 300 | 1533 | 4086 | 17523 | 0.9621 | 144.91 | 142.17 | 566.46 |
+| p98d10ef50dee4b24506a | 150 | 669 | 1687 | 7514 | 0.9828 | 53.59 | 52.44 | 566.46 |
+| p98d10ef50dee4b24506a | 300 | 1263 | 2700 | 12236 | 0.9881 | 125.33 | 123.15 | 570.83 |
+
+All dense arms including engine initialization: wall 381.95s, CPU 374.46s. Rows were sequential in one process; RSS is a cumulative executable high-water mark and includes retained earlier outputs, not independently reset per arm. Timings include extraction and caller serialization checks. Shared-host workloads were not isolated; a short mixed-source integration check overlapped the first 300-DPI arm.
+
+300 DPI increased retained inventories from 1,953 to 4,086 tokens and from 1,687 to 2,700 tokens, at roughly 2.5x and 2.3x wall cost respectively. Mean confidence changed separately; neither higher token count nor confidence proves tiny-letter correctness. No source/reference recall or table quality was scored. The first 300-DPI arm ended only ten tokens below the old word cap, revealing a units mismatch even though neither source was refused.
+
+Admission correction v2 now distinguishes 4,096 recognized boxes per OCR call from 65,536 complete source tokens and 4,194,304 source characters including IDs, matching the page-source contract. These limits apply to native and combined sources, and refusal carries before-limit counts and recognized diagnostics through `SourceAdmissionError` without returning a partial source. Region request packing retains its independent 4,096-token / 16,000-character boundaries outside this helper. A 6,000-token / four-box regression test proves the separation; word and Unicode character boundary tests preserve caller bytes. The original v1 outputs remain unchanged, and no repeat was required because all four original arms succeeded.

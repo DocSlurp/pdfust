@@ -25,8 +25,32 @@ MAX_REGION_PIXELS = 16_000_000
 MAX_EMPTY_PIXELS = 64_000_000
 MAX_CLONE_BYTES = 32 * 1024 * 1024
 MAX_PARENT_PAGES = 4096
-MAX_WORDS = 4096
+MAX_RECOGNIZED_BOXES = 4096
+MAX_SOURCE_WORDS = 65_536
+MAX_SOURCE_CHARACTERS = 4 * 1024 * 1024
+SOURCE_ADMISSION_VERSION = "p002-source-v2-word-character-units"
 SEED = "p002-ocr-natural-four-v1"
+
+
+class SourceAdmissionError(ValueError):
+    """Retain measured admission counts and OCR diagnostics without partial source output."""
+
+    def __init__(self, message: str, diagnostics: dict[str, Any]) -> None:
+        """Expose complete before-limit observations to the retained audit writer."""
+        super().__init__(message)
+        self.diagnostics = diagnostics
+
+
+def _admit_source(words: list[dict[str, Any]], diagnostics: dict[str, Any], phase: str) -> None:
+    count = len(words)
+    characters = sum(len(word["id"]) + len(word["text"]) for word in words)
+    diagnostics["source_admission_observation"] = {
+        "phase": phase,
+        "words": count,
+        "characters_including_ids": characters,
+    }
+    if count > MAX_SOURCE_WORDS or characters > MAX_SOURCE_CHARACTERS:
+        raise SourceAdmissionError("Complete source word/character admission exceeded", diagnostics)
 
 
 def _box(value: Any) -> list[float]:
@@ -55,7 +79,7 @@ def discover_regions(
     """Admit only disjoint raster placements free of any retained native text."""
     if isinstance(dpi, bool) or not isinstance(dpi, (int, float)) or not math.isfinite(dpi) or dpi <= 0:
         raise ValueError("OCR DPI must be positive and finite")
-    if len(native) > MAX_WORDS:
+    if len(native) > MAX_SOURCE_WORDS:
         raise ValueError("Native geometry collection exceeds admission")
     page = _box(page_size)
     candidates: list[dict[str, Any]] = []
@@ -153,9 +177,13 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
         raise ValueError("OCR DPI must be positive and finite")
     native = _native_words(page)
     size = list(page.rect)
-    if len(native) > MAX_WORDS:
-        raise ValueError("Complete native word source exceeds admission")
     diagnostics: dict[str, Any] = {
+        "source_admission_version": SOURCE_ADMISSION_VERSION,
+        "admission": {
+            "recognized_boxes_per_call": MAX_RECOGNIZED_BOXES,
+            "source_words": MAX_SOURCE_WORDS,
+            "source_characters_including_ids": MAX_SOURCE_CHARACTERS,
+        },
         "orientation": orientation,
         "orientation_passes": [],
         "mode": mode,
@@ -168,6 +196,7 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
         "rejected_regions": [],
         "clone_serialized_bytes": 0,
     }
+    _admit_source(native, diagnostics, "native")
     source = {"page_size": size, "words": native}
     if mode == "empty" and native:
         diagnostics["status"] = "skipped_existing_native_text"
@@ -215,6 +244,9 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
                 words = trial["words"]
             else:
                 words = owned[0].get_text_ocr(dpi=dpi, engine=engine, clip=clip)
+            diagnostics["last_region_recognized_box_count"] = len(words)
+            if len(words) > MAX_RECOGNIZED_BOXES:
+                raise SourceAdmissionError("Recognized box count exceeds per-call admission", diagnostics)
             admitted: list[dict[str, Any]] = []
             for ocr_word in words:
                 box = _box(list(ocr_word["bbox"]))
@@ -232,8 +264,6 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
                 admitted.append(recognized[-1])
             if admitted:
                 oriented_groups.append((selected_rotation, admitted))
-        if len(recognized) > MAX_WORDS:
-            raise ValueError("Complete recognized source exceeds admission")
         diagnostics["recognized"] = recognized
         if recognized and tokenization == "reextract":
             for rotation, group in oriented_groups:
@@ -249,8 +279,7 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
                 word["recognized_line_id"] = f"r{word['line'][1]}"
                 word["line"][0] = block
                 complete.append(word)
-    if len(complete) > MAX_WORDS:
-        raise ValueError("Complete re-extracted source exceeds admission")
+    _admit_source(complete, diagnostics, "complete")
     native_counts = Counter(_key(word) for word in native)
     for word in complete:
         key = _key(word)

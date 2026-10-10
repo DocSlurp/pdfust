@@ -124,7 +124,7 @@ DENSE_DPIS = (150, 300)
 def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
     """Compare fixed upright whitespace source inventories without quality labels."""
     import pylopdf
-    from bench.pipeline_ocr_sources import extract
+    from bench.pipeline_ocr_sources import SOURCE_ADMISSION_VERSION, SourceAdmissionError, extract
 
     manifest = json.loads(manifest_path.read_text())
     selected = {row["id"]: row for row in manifest["pages"] if row["id"] in DENSE_IDS}
@@ -132,6 +132,13 @@ def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
         message = "Explicit dense source IDs are missing"
         raise ValueError(message)
     directory.mkdir(parents=True, exist_ok=True)
+    previous = directory / "dense-results.json"
+    if (
+        previous.exists()
+        and json.loads(previous.read_text()).get("source_admission_version") != SOURCE_ADMISSION_VERSION
+    ):
+        message = "Retained dense results use another admission version; choose a separate output arm"
+        raise ValueError(message)
     start, cpu = time.perf_counter(), time.process_time()
     engine = pylopdf.OcrEngine(threads=1)
     rows = []
@@ -162,6 +169,8 @@ def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
                     }
                 except Exception as error:
                     row["error"] = f"{type(error).__name__}: {error}"
+                    if isinstance(error, SourceAdmissionError):
+                        row["before_limit_diagnostics"] = error.diagnostics
                 row["caller_preserved"] = document.tobytes() == before
             row.update(wall_seconds=time.perf_counter() - started, cpu_seconds=time.process_time() - consumed)
             row["process_peak_rss_bytes"], row["rss_tool"] = process_peak_rss()
@@ -177,6 +186,7 @@ def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
             "tokenization": "whitespace",
             "orientation": "fixed",
         },
+        "source_admission_version": SOURCE_ADMISSION_VERSION,
         "scope": "source inventories only; no reference text or table recall",
         "wall_seconds": time.perf_counter() - start,
         "cpu_seconds": time.process_time() - cpu,

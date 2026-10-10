@@ -173,3 +173,74 @@ def test_invalid_dpi_or_tokenization_refuses_before_ocr() -> None:
             extract(page, dpi=False)
     with pytest.raises(ValueError, match="DPI"):
         discover_regions([0, 0, 600, 800], [], [], -150)
+
+
+def test_whitespace_source_words_can_exceed_recognized_box_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    text = " ".join(str(index) for index in range(1500))
+    monkeypatch.setattr(
+        pylopdf.Page,
+        "get_text_ocr",
+        lambda *_args, **_kwargs: [
+            {"bbox": pylopdf.Rect(20, 20 + row * 30, 500, 40 + row * 30), "text": text, "confidence": 0.9}
+            for row in range(4)
+        ],
+    )
+    with pylopdf.Document() as document:
+        page = document.new_page()
+        before = document.tobytes()
+        result = extract(page, tokenization="whitespace")
+        assert len(result["source"]["words"]) == 6000
+        assert result["diagnostics"]["recognized_box_count"] == 4
+        assert result["diagnostics"]["admission"]["source_words"] == 65_536
+        assert document.tobytes() == before
+
+
+def test_source_limit_refusal_retains_before_limit_diagnostics_and_caller(monkeypatch: pytest.MonkeyPatch) -> None:
+    from bench import pipeline_ocr_sources  # noqa: PLC0415
+
+    monkeypatch.setattr(pipeline_ocr_sources, "MAX_SOURCE_WORDS", 5)
+    monkeypatch.setattr(
+        pylopdf.Page,
+        "get_text_ocr",
+        lambda *_args, **_kwargs: [{"bbox": pylopdf.Rect(20, 20, 500, 40), "text": "A B C D E F", "confidence": 0.9}],
+    )
+    with pylopdf.Document() as document:
+        page = document.new_page()
+        before = document.tobytes()
+        with pytest.raises(pipeline_ocr_sources.SourceAdmissionError) as caught:
+            extract(page, tokenization="whitespace")
+        assert document.tobytes() == before
+        observation = caught.value.diagnostics["source_admission_observation"]
+        assert observation["phase"] == "complete"
+        assert observation["words"] == 6
+        assert len(caught.value.diagnostics["recognized"]) == 1
+
+
+def test_native_character_admission_matches_character_units_including_ids(monkeypatch: pytest.MonkeyPatch) -> None:
+    from bench import pipeline_ocr_sources  # noqa: PLC0415
+
+    monkeypatch.setattr(pipeline_ocr_sources, "MAX_SOURCE_CHARACTERS", 5)
+    monkeypatch.setattr(
+        pipeline_ocr_sources,
+        "_native_words",
+        lambda _page: [{"id": "w0", "text": "日本語", "bbox": [20, 20, 40, 40], "line": [0, 0]}],
+    )
+    with pylopdf.Document() as document:
+        result = extract(document.new_page())
+        assert result["diagnostics"]["source_admission_observation"]["characters_including_ids"] == 5
+    monkeypatch.setattr(pipeline_ocr_sources, "MAX_SOURCE_CHARACTERS", 4)
+    with pylopdf.Document() as document, pytest.raises(pipeline_ocr_sources.SourceAdmissionError):
+        extract(document.new_page())
+
+
+def test_recognized_box_admission_is_per_ocr_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    from bench import pipeline_ocr_sources  # noqa: PLC0415
+
+    monkeypatch.setattr(
+        pylopdf.Page,
+        "get_text_ocr",
+        lambda *_args, **_kwargs: [{"bbox": pylopdf.Rect(20, 20, 500, 40), "text": "A", "confidence": 0.9}] * 4097,
+    )
+    with pylopdf.Document() as document, pytest.raises(pipeline_ocr_sources.SourceAdmissionError) as caught:
+        extract(document.new_page(), tokenization="whitespace")
+    assert caught.value.diagnostics["last_region_recognized_box_count"] == 4097
