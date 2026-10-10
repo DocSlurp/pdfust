@@ -109,3 +109,11 @@ failed at CLI parsing because of an unsupported worker argument; no paid request
 occurred. The corrected queue has a real parser integration test. Gateway arms
 remain serial and do not overlap this queue. No automatic retry changes a failed
 provider route into a successful run.
+
+## P003 re-evaluation, 2026-10-10 19:55 UTC
+
+Five additional gate arms produce 181 (Tev), 304 (d1), 124 (Solar timeout), 0 (Solar Flash), and 352 (Clef) strict anchors against the same 2,333-anchor denominator. None beats the 384 source-ID control. Queue SIGKILL interruptions have unconfirmed cause; completed artifacts remain independently verified and partial results are not scored as complete runs. Subsequent queues use a bounded monitored systemd user service.
+
+A 29-arm incremental batch now tests whole-crop candidate choice and bounded boundary repair. Next prioritize the bounded YOLO/fixed-grid proposal union: offline coverage expands from 26 to 39 tables, but this is an opportunity, not achieved quality. Source inventory remains a ceiling on ownership-only techniques. Gate image/prompt loops will hold transcription fixed to isolate their effects.
+
+The earlier best Sonnet crop result of 982 strict anchors is unstable: same-request repeats reached 289 and 287 due to dense-page atomic failures. Publish repeat variability and preserve strict admission. No new setting is a production recommendation.
