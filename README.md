@@ -381,16 +381,29 @@ in the denominators.
 
 | PPLX selector treatment | Model-confirmed strict cells | Complete tables | Selected / abstained calls | Incremental pages/min | Incremental pages/API USD |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 128 px RGB, fresh repeat | **984** | **5** | 15 / 1 | 4.83 | 26,746 |
+| 128 px RGB, fresh repeat | 984 | 5 | 15 / 1 | 4.83 | 26,746 |
 | 128 px blank-image control | 11 | 0 | 2 / 14 | 3.94 | 26,746 |
+| 400 px RGB, candidate-order seed 19 | 1,081 | 5 | 16 / 0 | 3.26 | 26,562 |
+| 500 px, 16-color palette | 980 | 5 | 15 / 1 | 4.19 | 26,082 |
+| 1024 px RGB, fresh repeat | 294 | 4 | 15 / 1 | 4.58 | 21,942 |
 
 These rates count retained-page processing, including no-question and abstained
 pages, under six contending host jobs and three paid transports. Both original
 candidate generations are excluded. They are neither complete extraction rates
 nor counts of fully decided pages. Each model is evaluated separately; transport
-failures do not trigger another model. A [fresh 48-page source-frozen sample](bench/results/p003-confirmation-corpus.md)
+failures do not trigger another model. The 400 px treatment adds three extra
+tables and changes candidate order as well as image size; its result is not a
+controlled image-size improvement. [Detailed comparison tables](bench/results/p003-current-queue-progress.md)
+retain all measured scores, failed compositions, costs, CPU/RAM and provider
+cache coverage. A [fresh 48-page source-frozen sample](bench/results/p003-confirmation-corpus.md)
 contains 32 additional natural pages from distinct known document parents and
 16 new synthetic layouts. Its confirmation results are pending.
+
+Source-owned geometry remains substantially weaker: the best tested CPU table
+structure placement recovers 204 strict cells and three complete tables, with
+false tables on three of four negative pages. Whole-page and residual-crop
+variants do worse. [All geometry results](bench/results/p003-structure-acquisition.md)
+remain published alongside the [next experiment hypotheses](bench/results/p003-council-next-layer.md).
 
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering
