@@ -567,3 +567,40 @@ def test_cost_overlay_rejects_incomplete_or_changed_evidence(tmp_path: Path, mut
     write_json(sidecar, data)
     with pytest.raises(ValueError, match=r"overlay|bytes|response|accounting"):
         verify_cost_reconciliation(run, sidecar, ledger)
+
+
+@pytest.mark.parametrize("mode", ["selected", "abstain", "duplicate", "malformed"])
+def test_candidate_verifier_replays_complete_pools_and_atomic_fallback(tmp_path: Path, mode: str) -> None:
+    import json
+
+    from bench import p003_candidate_run as runner
+    from bench.p003_report import verify_candidate_run
+    from test_p003_candidate_run import Client, baseline, config
+
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, _, trust0 = baseline(first, "first")
+    _, _, trust1 = baseline(second, "first" if mode == "duplicate" else "second")
+    output = tmp_path / "ranked"
+    report = runner.run(
+        [first, second],
+        [trust0, trust1],
+        output,
+        config(),
+        Client(tmp_path, abstain=mode == "abstain", malformed=mode == "malformed"),
+    )
+    frozen = json.loads((output / "frozen.json").read_bytes())
+    trust = {"baseline-0": trust0, "baseline-1": trust1}
+    provenance, verified = verify_candidate_run(output, report, frozen, trust)
+    assert sum(v["operational"] for v in verified.values()) == 16
+    assert len(provenance["candidate_baselines"]) == 2
+    assert report["pages_per_minute"] is None
+    with pytest.raises(ValueError, match="independent trust"):
+        verify_candidate_run(output, report, frozen, None)
+    if mode == "selected":
+        changed = deepcopy(report)
+        changed["results"][0]["ranking_regions"][0]["selected_sha256"] = "changed"
+        from bench.silver import write_json
+
+        write_json(output / "p0-result.json", changed["results"][0])
+        with pytest.raises(ValueError, match="selected origin"):
+            verify_candidate_run(output, changed, frozen, trust)

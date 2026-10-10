@@ -290,3 +290,24 @@ non-BYOK nested amounts are never added. Unchanged estimates retain their prior
 basis, and unresolved reservations keep the reconciled total unknown. Original
 and reconciled API costs and pages/APIUSD are separate outputs. The overlay
 makes no invoice-total claim and never edits the report or shared ledger.
+
+Frozen candidate selection is verified with `--candidate-trusted-code <map.json>`,
+whose independent operator-supplied object maps `baseline-0`, `baseline-1`, etc.
+to authenticated basename-to-code-digest snapshots. Trust maps embedded in the
+candidate run itself are provenance and cannot authenticate their own code.
+All declared historical reports, requests, outputs and code inventories are
+hashed; original sources, detector crop inventories and actual crop bytes must
+match before pool selection. The verifier reconstructs exact complete candidate
+alternatives, deterministic opaque alias order, deduplication, selector pixels
+(or declared text-only state), fresh requests, typed probabilities and selected
+original input. Selected raw candidate responses are strictly reparsed and
+recomposed; unresolved decisions retain the predeclared first baseline.
+
+Atomic ranking failures and baseline-error skips retain the first baseline's
+complete output bytes and explicit ranking status/errors. Their quality remains
+in all intended-page denominators. Historical generation costs/resources and
+new ranking costs/resources are reported separately. Newly measured ranking
+pages processed per minute/APIUSD are incremental processing rates, and fresh
+full-pipeline throughput remains null. Combined cost across generation pools
+requires ledger-index deduplication and cannot be inferred by summing copied
+reports, particularly when historical BYOK accounting overlays exist.

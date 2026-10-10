@@ -396,6 +396,247 @@ def verify_incremental_run(
     }, verified
 
 
+def verify_candidate_run(
+    directory: Path,
+    report: dict[str, Any],
+    frozen: dict[str, Any],
+    trusted_inputs: dict[str, dict[str, str]] | None,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """Replay authenticated whole-crop pools and fresh selector decisions without generation."""
+    from bench import generalization_vision_regions as regions
+    from bench import p003_candidate_choice as chooser
+    from bench import p003_candidate_run as runner
+    from bench import pipeline_vision_transcription as transcription
+
+    config = frozen["config"]
+    inventories = frozen["candidate_inputs"]
+    names = [f"baseline-{i}" for i in range(len(inventories))]
+    if not 2 <= len(inventories) <= 4 or trusted_inputs is None or set(trusted_inputs) != set(names):
+        raise ValueError("Candidate verification requires independent trust maps for every declared baseline")
+    for name in ("p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py"):
+        if frozen["code_sha256"].get(name) != sha((Path(__file__).parent / name).read_bytes()):
+            raise ValueError("Unsupported frozen candidate replay helper version")
+    baseline_reports, directories = [], []
+    for name, inventory in zip(names, inventories, strict=True):
+        if inventory["copied_directory"] != name:
+            raise ValueError("Candidate copied baseline directory differs from declared input order")
+        copied = directory / name
+        hashes = inventory["file_sha256"]
+        for filename, digest in hashes.items():
+            parts = Path(filename).parts
+            if not (len(parts) == 1 or (len(parts) == 2 and parts[0] == "code")) or ".." in parts:
+                raise ValueError("Unsafe candidate baseline hash path")
+            if sha(guard_path(copied / filename).read_bytes()) != digest:
+                raise ValueError("Copied candidate baseline bytes changed")
+        original_frozen = _read(copied / "frozen.json")
+        baseline = _read(copied / "report.json")
+        if (
+            baseline["config"] != original_frozen["config"]
+            or inventory["original_config"] != original_frozen["config"]
+            or original_frozen["records"] != frozen["records"]
+            or original_frozen["manifest_sha256"] != frozen["manifest_sha256"]
+            or baseline["config"].get("transcription_representation", "legacy") != "legacy"
+        ):
+            raise ValueError("Candidate original configuration or source inventory changed")
+        required = {"report.json", "frozen.json", *("code/" + n for n in original_frozen["code_sha256"])}
+        for page in baseline["results"]:
+            required.add(page["id"] + "-result.json")
+            if page["status"] == "ok":
+                required.update({page["id"] + "-structure.json", page["id"] + ".md"})
+            required.update(
+                f"{page['id']}-request-{crop['request_index']}.json" for crop in page.get("transcription_regions", [])
+            )
+        if not required <= set(hashes):
+            raise ValueError("Candidate baseline hash inventory lacks original requests or output evidence")
+        verify_archive(copied, original_frozen, trusted_inputs[name])
+        runner.authenticate(copied, trusted_inputs[name])
+        directories.append(copied)
+        baseline_reports.append(baseline)
+    if report["candidate_generation_reports"] != baseline_reports:
+        raise ValueError("Historical candidate reports differ from copied immutable originals")
+    maps = [{p["id"]: p for p in baseline["results"]} for baseline in baseline_reports]
+    verified = {}
+    statuses = Counter()
+    for prediction in report["results"]:
+        ident = prediction["id"]
+        if _read(directory / f"{ident}-result.json") != prediction:
+            raise ValueError("Candidate result differs from complete report")
+        pages = [mapping[ident] for mapping in maps]
+        first = pages[0]
+        provenance = [
+            {
+                "baseline_index": i,
+                "status": page["status"],
+                "calls": page.get("calls", []),
+                "wall_seconds": page.get("wall_seconds"),
+                "cpu_seconds": page.get("cpu_seconds"),
+            }
+            for i, page in enumerate(pages)
+        ]
+        if prediction["candidate_generation_provenance"] != provenance:
+            raise ValueError("Candidate generation provenance changed")
+        for key, value in first.items():
+            if (
+                key not in {"tables", "transcription_regions", "status", "source_conserved", "text_provenance"}
+                and prediction.get(key) != value
+            ):
+                raise ValueError("Candidate ranking changed immutable baseline provenance")
+        status = prediction["ranking_status"]
+        statuses[status] += 1
+        fallback = status in {"baseline_failed_skipped", "not_applicable_baseline_failure", "failed_retained_first"}
+        if status == "baseline_failed_skipped" and first["status"] == "ok":
+            raise ValueError("Successful candidate baseline incorrectly marked failed")
+        if status == "not_applicable_baseline_failure" and all(p["status"] == "ok" for p in pages):
+            raise ValueError("Candidate skip lacks a baseline failure")
+        if fallback:
+            if status == "failed_retained_first" and not prediction["ranking_errors"]:
+                raise ValueError("Candidate atomic failure lacks explicit errors")
+            for key in ("tables", "transcription_regions", "status", "source_conserved", "text_provenance"):
+                if prediction.get(key) != first.get(key):
+                    raise ValueError("Candidate atomic fallback differs from predeclared first baseline")
+            for suffix in ("-structure.json", ".md"):
+                name = ident + suffix
+                if (
+                    name in inventories[0]["file_sha256"]
+                    and sha(guard_path(directory / name).read_bytes()) != inventories[0]["file_sha256"][name]
+                ):
+                    raise ValueError("Candidate fallback output bytes changed")
+            verified[ident] = {"operational": first["status"] == "ok", "conserved": False}
+            continue
+        if (
+            status not in {"completed", "not_applicable"}
+            or any(p["status"] != "ok" for p in pages)
+            or prediction["status"] != "ok"
+            or prediction.get("source_conserved") is not False
+            or prediction.get("text_provenance") != "model-transcribed"
+        ):
+            raise ValueError("Invalid completed candidate page or baseline status")
+        proposal_keys = ("index", "request_index", "viewport", "detector_box")
+        expected = [{k: crop[k] for k in proposal_keys} for crop in first["transcription_regions"]]
+        if any(
+            page["viewport"] != first["viewport"]
+            or [{k: c[k] for k in proposal_keys} for c in page["transcription_regions"]] != expected
+            for page in pages
+        ):
+            raise ValueError("Candidate generation crops do not match exactly")
+        infos = prediction["ranking_regions"]
+        if [r["index"] for r in infos] != list(range(len(expected))):
+            raise ValueError("Candidate pool inventory is incomplete")
+        staged, used_calls = deepcopy(first["transcription_regions"]), set()
+        for index, info in enumerate(infos):
+            crops = [page["transcription_regions"][index] for page in pages]
+            candidates, urls, image_hashes = [], [], []
+            for copied, crop in zip(directories, crops, strict=True):
+                body = _read(copied / f"{ident}-request-{crop['request_index']}.json")
+                url, pixels = runner._crop_bytes(body)
+                expected_body = transcription.request(body["model"], url, crop["viewport"], body["max_tokens"])
+                if (
+                    body != expected_body
+                    or sha(json.dumps(expected_body, separators=(",", ":")).encode()) != crop["request"]["body_sha256"]
+                ):
+                    raise ValueError("Candidate original generation request changed")
+                if (
+                    sha(pixels) != crop["image"]["image_sha256"]
+                    or crop["image"]["image_bytes"] != len(pixels)
+                    or crop["image"]["image_viewport"] != crop["viewport"]
+                ):
+                    raise ValueError("Candidate original crop bytes or viewport changed")
+                candidates.append(transcription.parse(crop["transcription_response"], crop["viewport"]))
+                urls.append(url)
+                image_hashes.append(sha(pixels))
+            if len(set(image_hashes)) != 1 or info["original_crop_sha256"] != image_hashes[0]:
+                raise ValueError("Candidate pool pixels are not identical")
+            seed = int(sha(f"{config['seed']}/{ident}/{index}".encode())[:16], 16)
+            pool = chooser.freeze_pool(crops[0]["viewport"], candidates, seed=seed)
+            pool_record = chooser.pool_record(pool)
+            if (
+                info["viewport"] != crops[0]["viewport"]
+                or info["pool"] != pool_record
+                or _read(directory / f"{ident}-pool-{index}.json") != pool_record
+            ):
+                raise ValueError("Candidate frozen pool differs from original complete alternatives")
+            if len(pool.candidates) < 2:
+                if info["ranking_status"] != "not_applicable_duplicates":
+                    raise ValueError("Duplicate-only candidate pool incorrectly selected")
+                continue
+            if config["image_edge"]:
+                record = next(r for r in frozen["records"] if r["id"] == ident)
+                url, metadata = runner._rerender(record, first, crops[0], config["image_edge"])
+            else:
+                url, metadata = (
+                    urls[0],
+                    {"image_edge": 0, "source_pixels_supplied": False, "original_crop_sha256": image_hashes[0]},
+                )
+            if info["selector_image"] != metadata:
+                raise ValueError("Selector image differs from independently rendered declared crop")
+            body = runner._body(pool, config["model"], url, config["image_edge"])
+            retained_body = _read(directory / f"{ident}-selector-{index}-request.json")
+            response = _read(directory / f"{ident}-selector-{index}-response.json")
+            calls = [c for c in prediction["ranking_calls"] if c["crop_index"] == index]
+            if (
+                retained_body != body
+                or len(calls) != 1
+                or calls[0]["entry"] != response["entry"]
+                or calls[0].get("replayed")
+                or response.get("replayed")
+                or calls[0]["usage"] != response["result"].get("usage", {})
+            ):
+                raise ValueError("Candidate selector request or fresh response provenance changed")
+            entry = response["entry"]
+            if entry.get("request_sha256") is not None and entry["request_sha256"] != sha(
+                json.dumps(body, separators=(",", ":")).encode()
+            ):
+                raise ValueError("Candidate selector ledger request hash differs")
+            if entry.get("requested_model") is not None and entry["requested_model"] != config["model"]:
+                raise ValueError("Candidate selector ledger model differs")
+            if entry.get("tag") != f"P003/{config['run_id']}/{ident}/{index}":
+                raise ValueError("Candidate selector call belongs to another run or crop")
+            used_calls.add(index)
+            selected, audit = chooser.select(pool, chooser.parse(pool, response["result"]))
+            if canonical(info["audit"]) != canonical(audit):
+                raise ValueError("Candidate selection audit differs from raw probabilities")
+            if selected is None:
+                if info["ranking_status"] != "unresolved_retained_first":
+                    raise ValueError("Candidate abstention does not retain first baseline")
+            else:
+                origin = audit["original_input_indexes"][0]
+                if (
+                    info["ranking_status"] != "selected"
+                    or info["selected_baseline_index"] != origin
+                    or info["selected_sha256"] != sha(selected)
+                ):
+                    raise ValueError("Candidate selected origin or exact bytes changed")
+                staged[index] = {
+                    **deepcopy(crops[origin]),
+                    "selection_origin_baseline": origin,
+                    "selection_audit": audit,
+                }
+        if len(used_calls) != len(prediction["ranking_calls"]) or bool(used_calls) != (status == "completed"):
+            raise ValueError("Candidate ranking call inventory differs from eligible pools")
+        state = regions.compose(staged, first["viewport"])
+        if (
+            prediction["transcription_regions"] != staged
+            or prediction["tables"] != state["tables"]
+            or _read(directory / f"{ident}-structure.json") != state
+            or guard_path(directory / f"{ident}.md").read_bytes() != transcription.markdown(state).encode()
+        ):
+            raise ValueError("Candidate complete output differs from strict selected-response recomposition")
+        verified[ident] = {"operational": True, "conserved": False}
+    return {
+        "candidate_baselines": [
+            {
+                "name": name,
+                "report_sha256": inventory["file_sha256"]["report.json"],
+                "costs": costs(baseline),
+                "resources": baseline.get("metrics", {}),
+            }
+            for name, inventory, baseline in zip(names, inventories, baseline_reports, strict=True)
+        ],
+        "ranking_status_counts": dict(statuses),
+        "scope": "Historical candidate generation is separate; only retained-candidate ranking is newly measured",
+    }, verified
+
+
 def verify_regions_output(
     directory: Path, prediction: dict[str, Any], frozen: dict[str, Any], record: dict[str, Any]
 ) -> dict[str, Any]:
@@ -613,6 +854,7 @@ def score_run(
     cohort: str | None = None,
     trusted_code: dict[str, str] | None = None,
     baseline_trusted_code: dict[str, str] | None = None,
+    candidate_trusted_code: dict[str, dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Validate existing runner artifacts without calling inference or executing archives."""
     # The existing offline verifier reconstructs source ownership and Markdown.
@@ -660,6 +902,13 @@ def score_run(
             "pipeline_vision_transcription.py",
             "generalization_vision_regions.py",
         }
+    elif processor == "p003_candidate_choice":
+        required = {
+            "p003_candidate_run.py",
+            "p003_candidate_choice.py",
+            "pipeline_vision_transcription.py",
+            "generalization_vision_regions.py",
+        }
     elif processor == "p003_boundary_repair":
         required |= {
             "p003_boundary_run.py",
@@ -671,10 +920,14 @@ def score_run(
         raise ValueError("Unsupported frozen processor")
     if not required <= code.keys():
         raise ValueError("Frozen code lacks required processor dependencies")
-    incremental = processor == "p003_boundary_repair"
-    baseline_provenance, repair_verified = (
-        verify_incremental_run(directory, report, frozen, baseline_trusted_code) if incremental else (None, {})
-    )
+    incremental = processor in {"p003_boundary_repair", "p003_candidate_choice"}
+    if processor == "p003_candidate_choice":
+        baseline_provenance, repair_verified = verify_candidate_run(directory, report, frozen, candidate_trusted_code)
+    elif incremental:
+        baseline_provenance, repair_verified = verify_incremental_run(directory, report, frozen, baseline_trusted_code)
+    else:
+        baseline_provenance, repair_verified = None, {}
+    incremental_key = "incremental_ranking" if processor == "p003_candidate_choice" else "incremental_repair"
     artifacts = []
     operational = 0
     for prediction in predictions:
@@ -751,7 +1004,7 @@ def score_run(
         if not audit["explicit_reference_fields_absent"]:
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
-    accounting = costs(report["incremental_repair"] if incremental else report)
+    accounting = costs(report[incremental_key] if incremental else report)
     metrics = dict(report.get("metrics", {}))
     if report.get("layout_detector_initialization") is not None:
         metrics["layout_detector_worker"] = {
@@ -775,7 +1028,13 @@ def score_run(
         errors["missing"] += len(expected) - len(predictions)
     return {
         "name": directory.name,
-        "evaluation_scope": "incremental repair on retained artifacts" if incremental else "complete pipeline",
+        "evaluation_scope": (
+            "incremental ranking on retained candidates"
+            if processor == "p003_candidate_choice"
+            else "incremental repair on retained artifacts"
+        )
+        if incremental
+        else "complete pipeline",
         "baseline_provenance": baseline_provenance,
         "dataset_sha256": manifest["dataset_sha256"],
         "manifest_sha256": frozen["manifest_sha256"],
@@ -812,14 +1071,23 @@ def score_run(
         "intended_pages_per_minute": None if incremental else _rate(len(expected), metrics.get("wall_seconds"), 60),
         "pages_per_api_usd": None if incremental else _rate(operational, accounting["effective_api_usd"]),
         "incremental_attempted_pages_per_minute": _rate(
-            sum(p["incremental_repair"]["attempted"] for p in predictions), metrics.get("wall_seconds"), 60
+            sum(p.get("incremental_repair", {}).get("attempted", False) for p in predictions),
+            metrics.get("wall_seconds"),
+            60,
         )
         if incremental
         else None,
         "incremental_attempted_pages_per_api_usd": _rate(
-            sum(p["incremental_repair"]["attempted"] for p in predictions), accounting["effective_api_usd"]
+            sum(p.get("incremental_repair", {}).get("attempted", False) for p in predictions),
+            accounting["effective_api_usd"],
         )
         if incremental
+        else None,
+        "incremental_ranking_pages_processed_per_minute": _rate(len(predictions), metrics.get("wall_seconds"), 60)
+        if processor == "p003_candidate_choice"
+        else None,
+        "incremental_ranking_pages_processed_per_api_usd": _rate(len(predictions), accounting["effective_api_usd"])
+        if processor == "p003_candidate_choice"
         else None,
         "exact_positive_pages_per_minute": None
         if incremental
@@ -1018,11 +1286,17 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
                 "",
                 "Historical baseline provenance: `" + json.dumps(run["baseline_provenance"], sort_keys=True) + "`.",
                 "",
-                "Incremental repair processing rate (attempted repair pages, not fresh pipeline outputs): `"
+                "Incremental processing rates (repair attempts or ranking pages processed; "
+                "historical generation is separate): `"
                 + json.dumps(
                     {
                         key: run.get(key)
-                        for key in ("incremental_attempted_pages_per_minute", "incremental_attempted_pages_per_api_usd")
+                        for key in (
+                            "incremental_attempted_pages_per_minute",
+                            "incremental_attempted_pages_per_api_usd",
+                            "incremental_ranking_pages_processed_per_minute",
+                            "incremental_ranking_pages_processed_per_api_usd",
+                        )
                     },
                     sort_keys=True,
                 )
@@ -1053,6 +1327,12 @@ def main() -> None:
     parser.add_argument(
         "--cost-reconciliation", type=Path, action="append", help="Immutable cost overlay; exactly one per --run"
     )
+    parser.add_argument(
+        "--candidate-trusted-code",
+        type=Path,
+        action="append",
+        help="Independent baseline-N digest maps; one shared or one per --run",
+    )
     parser.add_argument("--cost-ledger", type=Path, help="Explicit shared ledger JSON for cost overlay verification")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown", type=Path)
@@ -1075,6 +1355,7 @@ def main() -> None:
 
     trusted = snapshots(args.trusted_code)
     baseline_trusted = snapshots(args.baseline_trusted_code)
+    candidate_trusted = snapshots(args.candidate_trusted_code)
     runs = [
         score_run(
             p,
@@ -1083,8 +1364,11 @@ def main() -> None:
             cohort=args.cohort,
             trusted_code=code,
             baseline_trusted_code=baseline_code,
+            candidate_trusted_code=candidate_code,
         )
-        for p, code, baseline_code in zip(args.run, trusted, baseline_trusted, strict=True)
+        for p, code, baseline_code, candidate_code in zip(
+            args.run, trusted, baseline_trusted, candidate_trusted, strict=True
+        )
     ]
     if args.cost_reconciliation:
         if args.cost_ledger is None or len(args.cost_reconciliation) != len(args.run):
