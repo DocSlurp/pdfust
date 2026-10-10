@@ -14,3 +14,15 @@ Both completed arms independently pass archive authentication against their sepa
 These are incremental selector experiments over the same frozen Luna/P002 Sonnet candidate generations. Candidate generation costs remain historical and separate; selecting those predeclared candidates is not a service fallback to another decision model. Reported selector pages/minute and pages/APIUSD count retained-page processing, including no-question and abstained pages. They do not count fully chosen model pages and do not establish fresh full-pipeline throughput. Transport allows three paid requests globally; six concurrent host jobs can contend for preprocessing and request capacity.
 
 This audit covers completed arms from the explicit `parallel-mechanisms-generalization-v3/status.json` list. It excludes historical startup queues. Original evaluations are retained as `evaluation-retained-pipeline.json`; updated evaluations expose `decision_confirmed_quality` and `decision_evidence` separately from legacy `scores`. Temporary failures and abstentions remain explicit; no automatic alternative model or inline retry is credited as success. Text-only and further same-model repeats will be compared on this same primary metric after their independently verified completion.
+
+Additional independently verified completed arms in the same current queue:
+
+| Treatment | Model-confirmed strict / complete | Legacy retained strict / complete | Fresh calls | Completed / failed-retained / no-question pages |
+| --- | ---: | ---: | ---: | --- |
+| PPLX blank 512 palette | 2 / 0 | 784 / 3 | 16 | 11 / 0 / 5; 15 abstained regions |
+| Ownership hybrid PPLX neighbors | Not a candidate-choice metric | 370 / 3 | 172 | 10 / 1 / 5 |
+| Ownership all-words PPLX compact | Not a candidate-choice metric | 302 / 1 | 250 | 10 / 1 / 5 |
+| Ownership all-words Jev neighbors | Not a candidate-choice metric | 126 / 1 | 163 | 9 / 2 / 5 |
+| Ownership direct Jev neighbors | Not a candidate-choice metric | 358 / 3 | 99 | 9 / 2 / 5 |
+
+The ownership counts distinguish completed assembly from whole-page baseline retention. These legacy output scores include that retention and do not establish successful model decisions on failed pages. All these completed arms have consistent requested-model inventories and no explicit retries. Each model's results remain separate.
