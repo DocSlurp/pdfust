@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import html
 import json
 import shutil
 import tempfile
@@ -20,8 +21,9 @@ from bench.p003_client import P003ConcurrentClient, P003DecisionClient
 from bench.p003_gate_run import authenticate as authenticate_source
 from bench.p003_micro_relations_run import CODE_FILES as COMMON_CODE
 from bench.p003_topology_ownership import _choices
-from bench.pipeline_run import Resources, markdown
-from bench.silver import guard_path, sha, write_json
+from bench.pipeline_repair import MAX_PACKET_BYTES, validate
+from bench.pipeline_run import Resources
+from bench.silver import canonical, guard_path, sha, write_json
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -248,6 +250,41 @@ def prepare(
     }
     write_json(output / "frozen.json", frozen)
     return {**prepared, "selected": selected, "run_frozen": frozen}
+
+
+def markdown(page: dict[str, Any], state: dict[str, Any]) -> str:
+    """Emit literal cells with spans and all outside words, without inventing headers."""
+    if len(canonical(page)) > MAX_PACKET_BYTES:
+        raise ValueError("Complete source exceeds 2MiB rendering admission; no truncation")
+    validate(page, state)
+    lookup = {w["id"]: w for w in page["words"]}
+    entries: list[tuple[int, str]] = []
+    order = {w["id"]: i for i, w in enumerate(page["words"])}
+    for table in state["tables"]:
+        spans = {(s["row"], s["column"]): s for s in table["spans"]}
+        text = ["<table>"]
+        for r, row in enumerate(table["values"]):
+            text.append("<tr>")
+            for c, value in enumerate(row):
+                if value is None:
+                    continue
+                span = spans.get((r, c), {"row_span": 1, "column_span": 1})
+                attrs = f' rowspan="{span["row_span"]}" colspan="{span["column_span"]}"'
+                text.append(f"<td{attrs}>{html.escape(value)}</td>")
+            text.append("</tr>")
+        text.append("</table>")
+        owned = [i for cell in table["cells"] for i in cell["source_ids"]]
+        entries.append((min((order[i] for i in owned), default=len(order)), "\n".join(text)))
+    lines: dict[tuple[Any, ...], list[str]] = {}
+    for ident in state["unresolved_ids"]:
+        word = lookup[ident]
+        line = tuple(word.get("line", [round(word["bbox"][1], 1)]))
+        lines.setdefault(line, []).append(ident)
+    entries.extend(
+        (min(order[i] for i in ids), "<p>" + html.escape(" ".join(lookup[i]["text"] for i in ids)) + "</p>")
+        for ids in lines.values()
+    )
+    return "\n\n".join(text for _, text in sorted(entries)) + "\n"
 
 
 def receipt(result: Any) -> dict[str, Any]:
