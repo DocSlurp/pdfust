@@ -268,3 +268,13 @@ The four-worker control is moved into the pause between hybrid runs while a
 confirmed no-source-word table/footer ordering bug is fixed. No legacy serial
 request overlaps it. The 768-pixel crop control follows during that same pause;
 completed runs will be removed from the later queue rather than repeated.
+
+After the gated ordinal pilot, reprioritize the pending full276 gated expansion
+behind the image/crop and hybrid controls: it removes one negative-page false
+positive but loses 79 exact cells, one operational page and three exact topologies,
+while adding seven positive-page fragments. Keep the measured pilot and the full
+expansion hypothesis; do not silently promote this gate. Run full276 Sonnet hybrid
+before it if the time allowance fits, to broaden evidence on the crop approach and
+observe another fresh natural16 response set. The smaller-image sweep and derived
+row-context comparisons remain separate controls. Any arms that cannot fit before
+the deadline must be listed as deferred, without implying a measured verdict.
