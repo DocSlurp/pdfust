@@ -18,6 +18,7 @@ from bench.pipeline_frontier import MODELS
 from bench.silver import guard_path, sha, write_json
 
 if TYPE_CHECKING:
+    from bench.decision_concurrent import ConcurrentDecisionClient
     from bench.decision_hosted import DecisionClient
 
 MAX_REQUESTS = 32
@@ -59,12 +60,12 @@ def image(page: Any, edge: int, quality: int = 90) -> tuple[str, dict[str, Any]]
     return "data:image/jpeg;base64," + base64.b64encode(data).decode(), metadata
 
 
-def _ledger(client: DecisionClient) -> list[dict[str, Any]]:
+def _ledger(client: DecisionClient | ConcurrentDecisionClient) -> list[dict[str, Any]]:
     return json.loads(client.ledger.read_bytes())["requests"] if client.ledger.exists() else []
 
 
 def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default behavior
-    client: DecisionClient | None,
+    client: DecisionClient | ConcurrentDecisionClient | None,
     body: dict[str, Any],
     config: dict[str, Any],
     result: dict[str, Any],
@@ -94,7 +95,12 @@ def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default
     previous = _ledger(client)
     spent = sum(accounted_cost(row["accounted_usd"]) for row in previous if row.get("tag", "").startswith("P002/"))
     reservation = 1.0 if body["model"] == "anthropic/claude-opus-5.5" else 0.30
-    if spent + reservation > baseline.WAVE_LIMIT:
+    if config.get("workers", 1) == baseline.VISION_WORKERS:
+        from bench.decision_concurrent import ConcurrentDecisionClient
+
+        if not isinstance(client, ConcurrentDecisionClient):
+            raise ValueError("Concurrent vision requires atomic shared wave admission")
+    elif spent + reservation > baseline.WAVE_LIMIT:
         raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
     tag = f"P002/{config['run_id']}/{result['id']}/vision/{request_index}"
     before_indexes = {row["index"] for row in previous if "index" in row}
@@ -138,7 +144,10 @@ def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default
 
 
 def process(
-    record: dict[str, Any], config: dict[str, Any], output: Path, client: DecisionClient | None
+    record: dict[str, Any],
+    config: dict[str, Any],
+    output: Path,
+    client: DecisionClient | ConcurrentDecisionClient | None,
 ) -> dict[str, Any]:
     """Transcribe a whole source page's tables and refuse malformed output atomically."""
     import pylopdf
@@ -191,6 +200,12 @@ def process(
         if isinstance(error, ValueError):
             result["error"] = str(error)[:500]
     result.update(wall_seconds=time.perf_counter() - began, cpu_seconds=time.process_time() - cpu)
+    if config.get("workers", 1) == baseline.VISION_WORKERS:
+        result["cpu_measurement_scope"] = "overlapping whole-process interval; nonadditive across pages"
+        for retained_call in result["calls"]:
+            retained_call["client_cpu_measurement_scope"] = (
+                "overlapping whole-process interval; nonadditive across calls"
+            )
     write_json(output / f"{record['id']}-result.json", result)
     return result
 
@@ -198,6 +213,7 @@ def process(
 def main() -> None:
     """Run a separately frozen P002 table-only image comparator through shared metering."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--workers", type=int, choices=(1, 4), default=1)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--generation-model", choices=MODELS, default=MODELS[1])

@@ -17,6 +17,7 @@ import random
 import threading
 import time
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from functools import lru_cache
 from pathlib import Path
@@ -34,8 +35,12 @@ from bench.silver import guard_path, sha, write_json
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from bench.decision_concurrent import ConcurrentDecisionClient
+
 MODELS = ("perplexity/pplx-decider-v1.1-27b", "cloudflare/clef-flash", "openai/gpt-6-luna-decisions", *CHAT_MODELS)
 POLICIES = ("native", "native_text", "assembly", "cascade", "repair", "adaptive", "gated")
+VISION_WORKERS = 4
+VISION_MAX_TOKENS = 16384
 WAVE_LIMIT = 50.0
 GATE_REVIEW_SCORE = 0.8
 GATE_REVIEW_MARGIN = 0.25
@@ -249,7 +254,7 @@ def markdown(page: dict[str, Any], state: dict[str, Any]) -> str:
     return "\n\n".join(text for _, text in sorted(entries)) + "\n"
 
 
-def process(  # noqa: PLR0912 - explicitly retain each experimental route and failure.
+def process(  # noqa: PLR0912 - retain each experimental route and failure.
     record: dict[str, Any], config: dict[str, Any], output: Path, client: DecisionClient | None
 ) -> dict[str, Any]:
     """Run one complete page; failures preserve provenance and remain in scoring."""
@@ -446,8 +451,35 @@ def _processor(name: str | None) -> Callable[..., dict[str, Any]]:
     return importlib.import_module("bench." + modules[name]).process
 
 
-def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, Any]:
+def _workers(config: dict[str, Any]) -> int:
+    """Reject unsupported concurrent routes before output or client construction."""
+    workers = config.get("workers", 1)
+    if type(workers) is not int or workers not in (1, VISION_WORKERS):
+        raise ValueError("Workers must be 1 or 4")
+    if workers == VISION_WORKERS and (
+        config.get("campaign") != "P002"
+        or config.get("processor") != "vision"
+        or config.get("policy") != "gated"
+        or config.get("generation_model") != "anthropic/claude-haiku-5.5"
+        or config.get("model", "anthropic/claude-haiku-5.5") != "anthropic/claude-haiku-5.5"
+        or type(config.get("generation_tokens", VISION_MAX_TOKENS)) is not int
+        or not 1 <= config.get("generation_tokens", VISION_MAX_TOKENS) <= VISION_MAX_TOKENS
+        or config.get("layout_detector", "none") != "none"
+        or config.get("ocr_empty", False)
+        or config.get("_layout_detector") is not None
+        or config.get("retry_failed_index") is not None
+        or config.get("retry_reason") is not None
+        or config.get("replay", False) is not False
+    ):
+        raise ValueError("Four workers require fresh P002 whole-page Haiku vision without OCR, detector or retry")
+    return workers
+
+
+def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explicitly.
+    manifest_path: Path, output: Path, config: dict[str, Any]
+) -> dict[str, Any]:
     """Freeze code/source/config before any calls; reference loading is a separate command."""
+    workers = _workers(config)
     campaign = config.get("campaign", "P001")
     if campaign not in {"P001", "P002"}:
         raise ValueError("Unknown complete-pipeline campaign")
@@ -462,6 +494,14 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
     rows = [r for r in manifest["pages"] if not config["pilot"] or r["pilot"]]
     # Projection is explicit: metadata used to select the predefined pilot is not model evidence.
     records = [{k: row[k] for k in ("id", "pdf_path", "pdf_sha256", "page_number")} for row in rows]
+    if workers == VISION_WORKERS and (
+        any(
+            not isinstance(r["id"], str) or not r["id"] or r["id"] in {".", ".."}
+            or "/" in r["id"] or "\\" in r["id"] for r in records
+        )
+        or len({r["id"] for r in records}) != len(records)
+    ):
+        raise ValueError("Concurrent page outputs require unique nonempty filename-safe page IDs")
     random.Random(config["order_seed"]).shuffle(records)  # noqa: S311 - reproducible experimental order.
     output = guard_path(output)
     output.mkdir(parents=True, exist_ok=False)
@@ -481,6 +521,10 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "pipeline_admission.py",
                 "pipeline_frontier.py",
                 "decision_hosted.py",
+                *(
+                    ["decision_concurrent.py", "decision_gateway.py", "decision_langfuse.py", "reprice_model_rates.py"]
+                    if workers == VISION_WORKERS else []
+                ),
                 "rolling_rows.py",
                 "rolling_topology.py",
                 "decision_evidence_designs.py",
@@ -539,14 +583,21 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
         "python": platform.python_version(),
         "platform": platform.platform(),
         "logical_cpus": os.cpu_count(),
-        "concurrency": 1,
+        "concurrency": workers,
         "local_replay": False,
     }
     write_json(output / "frozen.json", frozen)
     (output / "code").mkdir()
     for name in frozen["code_sha256"]:
         (output / "code" / name).write_bytes((ROOT / "bench" / name).read_bytes())
-    client = DecisionClient() if config["policy"] not in {"native", "native_text"} else None
+    serial_client = DecisionClient() if config["policy"] not in {"native", "native_text"} else None
+    client: DecisionClient | ConcurrentDecisionClient | None = serial_client
+    if workers == VISION_WORKERS:
+        from bench.decision_concurrent import ConcurrentDecisionClient
+
+        if serial_client is None:
+            raise ValueError("Concurrent vision requires a metered client")
+        client = ConcurrentDecisionClient(serial_client, max_inflight=VISION_WORKERS, wave_limits={"P002": 50.0})
     detector_initialization = None
     with Resources() as resources, ExitStack() as stack:
         process_config = config
@@ -557,19 +608,43 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
             detector_initialization = detector.initialization
             process_config = {**config, "_layout_detector": detector}
         results = []
-        for record in records:
-            results.append(processor(record, process_config, output, client))
-            print(
-                json.dumps(
-                    {
-                        "run": config["run_id"],
-                        "done": len(results),
-                        "total": len(records),
-                        "status": results[-1]["status"],
-                    }
-                ),
-                flush=True,
-            )
+        if workers == VISION_WORKERS:
+            # The context drains every future before resource sampling/reporting
+            # ends. Each unchanged vision processor opens its own Document.
+            ordered: list[dict[str, Any] | None] = [None] * len(records)
+            with ThreadPoolExecutor(max_workers=VISION_WORKERS) as executor:
+                pending = {
+                    executor.submit(processor, record, process_config, output, client): i
+                    for i, record in enumerate(records)
+                }
+                for done, future in enumerate(as_completed(pending), 1):
+                    index = pending[future]
+                    try:
+                        row = future.result()
+                    except Exception as error:
+                        row = {
+                            "id": records[index]["id"], "status": "error", "tables": [], "calls": [],
+                            "error_type": type(error).__name__, "error_stage": "worker",
+                        }
+                        write_json(output / f"{row['id']}-result.json", row)
+                    ordered[index] = row
+                    print(json.dumps({"run": config["run_id"], "done": done,
+                                      "total": len(records), "status": row["status"]}), flush=True)
+            results = [row for row in ordered if row is not None]
+        else:
+            for record in records:
+                results.append(processor(record, process_config, output, client))
+                print(
+                    json.dumps(
+                        {
+                            "run": config["run_id"],
+                            "done": len(results),
+                            "total": len(records),
+                            "status": results[-1]["status"],
+                        }
+                    ),
+                    flush=True,
+                )
     calls = [c for row in results for c in row["calls"]]
     ledger = json.loads((ARTIFACTS / "ledger.json").read_bytes()) if client else {"requests": []}
     charged = [e for e in ledger["requests"] if e.get("tag", "").startswith(f"{campaign}/{config['run_id']}/")]
@@ -595,6 +670,12 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
         "results": results,
         "layout_detector_initialization": detector_initialization,
     }
+    if workers == VISION_WORKERS:
+        report["metrics"].update(
+            measurement_scope="whole-run parent process across four threads; primary CPU/RSS/wall",
+            per_page_cpu_scope="overlapping process_time intervals; nonadditive; do not sum",
+            concurrency=4,
+        )
     write_json(output / "resources.json", resources.samples)
     write_json(output / "report.json", report)
     return report
@@ -603,6 +684,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
 def main() -> None:
     """Run source-only inference independently of private scoring."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--workers", type=int, choices=(1, 4), default=1)
     parser.add_argument("--campaign", choices=("P001", "P002"), default="P001")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -626,6 +708,7 @@ def main() -> None:
     args = parser.parse_args()
     config = {
         "run_id": args.output.name,
+        "workers": args.workers,
         "campaign": args.campaign,
         "policy": args.policy,
         "model": args.model,
