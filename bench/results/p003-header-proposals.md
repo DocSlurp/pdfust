@@ -1,0 +1,22 @@
+# Bounded hypothetical header structures
+
+The new `p003_header_proposals` helper freezes structural alternatives over one retained model's original literal response. It does not change the strict parser, mutate the baseline, send a request, invent text, or repair malformed JSON. Each proposal is an explicit counterfactual, not an assertion that row0 is a header or that a merge exists.
+
+Eligibility is universal and source-only: a normally finished exact legacy JSON response, exactly one short row0 in an affected table, at least one rectangular body row, whole string cells, valid original bbox, and `mergedspans=[]`. Any other malformed aspect refuses the complete page. Already valid tables remain exact controls. A failed page without an eligible short-row0 defect is refused rather than silently rescued.
+
+For width C and k row0 strings, enumerate every ordered positive partition of C among k strings, placing whole literals at the partition anchors and declaring spans wider than one column as **hypothesized** row0 spans. Also enumerate left and right alignment with explicit blank padding and no spans. Every body row and bbox remains unchanged. Original header strings remain whole and ordered; added slots contain empty strings only. Deduplicate complete raw table structures. The complete menu must fit 32 alternatives/table and 256 alternatives/page; otherwise refuse rather than truncate. Every full alternative passes the existing strict transcription parser and atomic non-overlapping crop composition.
+
+The separate CPU preparer authenticates all archived baseline code with an external root map, current strict parser compatibility, actual PDF bytes/page geometry, detector crop inventories, exact original model/request hashes, pinned provider declarations, and crop image hashes. It freezes all 16 intended pages before reference scoring. Missing requests, responses, incomplete JSON, unrelated invalid bodies or unsupported representations produce explicit refusals and zero proposed outputs. Baseline errors, response bytes and historical generation costs remain immutable provenance.
+
+```bash
+.venv/bin/python -m bench.p003_header_proposals_prepare \
+  --baseline bench/results/pdf-master-artifacts/pipeline-p003/parallel-mechanisms-generalization-v3/screen-crops-luna-1024-pinned-r3-c6 \
+  --trusted-code bench/results/pdf-master-artifacts/pipeline-p003/parallel-mechanisms-generalization-v3/trusted-code/screen-crops-luna-1024-pinned-r3-c6.json \
+  --output bench/results/pdf-master-artifacts/p003-header-proposals-fresh
+```
+
+Source-only real preparation retained all 16 pages: 15 unchanged valid controls and one originally failed page with 135 complete alternatives. The affected tables have k/C values 1/4, 1/4, 1/3 and 3/4; their independently bounded menus contain 3, 3, 3 and 5 structures, respectively. The artifact therefore contains 150 complete page alternatives including the 15 controls. No gold was read to create or select these alternatives. The frozen v5 artifact is in the implementation worktree's ignored `bench/results/pdf-master-artifacts/p003-header-proposals-v5/`.
+
+Independent scoring seam: authenticate `frozen.json` against external baseline/current-helper code maps and original PDF identity; rebuild `freeze_page(original_page)` from copied baseline receipts. Each `ID-header-plan.json` contains the immutable `original_page`, its hash and original status, `crop_plans.table_menus` with whole literals/anchors/hypothesized mechanisms, and complete page alternatives with canonical states and opaque content hashes. Status is `unchanged_valid|header_proposals|refused`. Refused plans contain no alternatives and explicit zero primary tables. No production fallback or final model selection is implied by an offline oracle.
+
+This preserves retained model literals, not OCR source ownership: every state is explicitly `source_conserved=False`. Generation costs are historical; preparation makes zero API calls. CPU/RSS/wall are measured separately with one process and 100ms RSS samples. These are local candidate construction measurements, not pipeline throughput. Eleven CPU tests cover all 135 four-table alternatives, exact body/bbox/header-string conservation, valid controls, other malformation refusal, both caps, original parser rejection after preparation, actual source/crop request authentication, missing-request refusal, immutable originals, and fresh output.
