@@ -100,7 +100,7 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
 
 def cache_usage(calls: list[dict[str, Any]], ledger_attempts: int | None) -> dict[str, Any]:
     """Sum explicit provider cache counters over unique fresh returned ledger entries only."""
-    indexed = {}
+    indexed: dict[int, dict[str, Any]] = {}
     replayed = unattributed = unknown_freshness = 0
     for call in calls:
         if call.get("replayed") is True:
