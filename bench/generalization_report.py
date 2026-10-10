@@ -36,6 +36,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "944e10e8670b57b4f4067e4abc54015d45ded6198eb757f75c5d9875ac4f10b7": "42bf028",
         "a4ff7678b279a875935ce5f989eb81f92544873bab4974f510c343c70aab4964": "69f2d81",
         "baae56a9e99eb624502b1238a51a25f4751bd755752ad7499ae5187d98dfca2a": "1185a06",
         "8c51ca5295c8c9e27cf4cad0f5a7e957c36be94c1739ac616d2aa1cd9f7dd865": "1083b53",
@@ -205,6 +206,9 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             required.add("pipeline_ocr_sources.py")
     if frozen.get("config", {}).get("detector_fusion", "none") != "none":
         required.add("pipeline_layout_fusion.py")
+    row_evidence = any(frozen.get("config", {}).get(flag) for flag in ("generation_row_evidence", "gate_row_evidence"))
+    if row_evidence:
+        required |= {"pipeline_row_context.py", "pipeline_row_evidence.py"}
     if not required <= hashes.keys():
         raise ValueError("Frozen code lacks required verifier dependencies")
     for name, digest in hashes.items():
@@ -227,6 +231,10 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         historical_helpers[helper_name] = reviewed
     if "pipeline_layout_fusion.py" in required and comparison["pipeline_layout_fusion.py"] != "identical":
         raise ValueError("Trusted source-only detector fusion differs from frozen code")
+    if row_evidence and any(
+        comparison[name] != "identical" for name in ("pipeline_row_context.py", "pipeline_row_evidence.py")
+    ):
+        raise ValueError("Trusted source-derived row evidence differs from frozen code")
     if frozen.get("config", {}).get("generation_format") == "indices" and any(
         comparison.get(name) != "identical"
         for name in (
@@ -643,7 +651,9 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
             category = "invalid_anchor_collection"
         elif "source id" in lower or "source_id" in lower or "unknown id" in lower:
             category = "invalid_source_ids"
-        elif any(word in lower for word in ("span", "topology", "rectangular", "overlap", "tiling")):
+        elif any(
+            word in lower for word in ("span", "topology", "rectangular", "overlap", "tiling", "covered merge slots")
+        ):
             category = "invalid_table_topology"
         elif any(word in lower for word in ("admission", "exceeds", "over-limit", "budget")):
             category = "local_input_or_output_admission"

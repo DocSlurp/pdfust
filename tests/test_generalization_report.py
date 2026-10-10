@@ -902,3 +902,23 @@ def test_reviewed_crop_image_controls_never_relax_composition_ast(
     history[name][sha(altered)] = "reviewed-test-mutated-validator"
     with pytest.raises(ValueError, match="incompatible historical vision region"):
         verify_code(f["run"], frozen, processor=processor)
+
+
+@pytest.mark.parametrize("flag", ["generation_row_evidence", "gate_row_evidence"])
+@pytest.mark.parametrize("changed", ["pipeline_row_context.py", "pipeline_row_evidence.py"])
+def test_row_evidence_requires_complete_exact_dependencies(fixture: dict[str, Any], flag: str, changed: str) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    frozen["config"][flag] = True
+    with pytest.raises(ValueError, match="required verifier dependencies"):
+        verify_code(f["run"], frozen, processor="whole")
+    for name in ("pipeline_row_context.py", "pipeline_row_evidence.py"):
+        data = (Path(module.__file__).parent / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    assert verify_code(f["run"], frozen, processor="whole")["archive_hashes_verified"]
+    altered = (f["run"] / "code" / changed).read_bytes() + b"\n# Unreviewed row treatment.\n"
+    (f["run"] / "code" / changed).write_bytes(altered)
+    frozen["code_sha256"][changed] = sha(altered)
+    with pytest.raises(ValueError, match="source-derived row evidence"):
+        verify_code(f["run"], frozen, processor="whole")
