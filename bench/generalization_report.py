@@ -610,7 +610,12 @@ def score_run(
     if report.get("layout_detector_initialization") is not None:
         metrics["layout_detector_worker"] = {
             "initialization": report["layout_detector_initialization"],
-            "requests": [p["layout_detector"]["metrics"] for p in predictions if "layout_detector" in p],
+            "requests": [
+                p[key]["metrics"]
+                for p in predictions
+                for key in ("layout_detector", "layout_detection")
+                if isinstance(p.get(key), dict) and "metrics" in p[key]
+            ],
             "scope": "Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. "
             "Parent elapsed time includes initialization and requests; RSS peaks are not summed.",
         }

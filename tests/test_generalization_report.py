@@ -519,11 +519,12 @@ def test_posthoc_density_preserves_all_targets_and_positive_denominators() -> No
     assert _posthoc_density([{"id": "other"}], targets, predictions) is None
 
 
-def test_progress_keeps_separate_detector_worker_cpu_and_rss_scope(fixture: dict[str, Any]) -> None:
+@pytest.mark.parametrize("key", ["layout_detector", "layout_detection"])
+def test_progress_keeps_separate_detector_worker_cpu_and_rss_scope(fixture: dict[str, Any], key: str) -> None:
     f = fixture
     raw = deepcopy(f["report"])
     raw["layout_detector_initialization"] = {"initialization": {"wall_seconds": 2, "cpu_seconds": 4}}
-    raw["results"][0]["layout_detector"] = {"metrics": {"cpu_seconds": 3, "peak_sampled_rss_bytes": 2000}}
+    raw["results"][0][key] = {"metrics": {"cpu_seconds": 3, "peak_sampled_rss_bytes": 2000}}
     write(f["run"] / "report.json", raw)
     write(f["run"] / "negative-result.json", raw["results"][0])
     result = score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
