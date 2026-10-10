@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from bench import p003_parallel as parallel
+from bench import p003_run
 
 # ruff: noqa: ANN001, ANN201, ANN202, ANN003 - short mock fixtures and observed counters.
 
@@ -55,7 +56,7 @@ def test_queue_cpu_children_overlap_freeze_and_no_overwrite(tmp_path, monkeypatc
     assert result["max_observed_concurrent_arms"] == 3
     assert len(result["arms"]) == 4
     assert all(arm["status"] == "completed" for arm in result["arms"])
-    assert all(command[command.index("--workers") + 1] == "1" for command in commands)
+    assert all("--workers" not in command for command in commands)
     assert all(command[command.index("--transport-concurrency") + 1] == "3" for command in commands)
     assert len(result["frozen_order"]) == 4
     assert result["resources"]["cpu_seconds_sampled"] > 0
@@ -89,7 +90,7 @@ def test_mixed_kinds_fixed_commands_and_separate_rate_scopes(tmp_path):
         command = parallel.command_for(arm, tmp_path / "manifest", tmp_path / kind)
         assert command[2] == module
         assert ("--manifest" in command) is (kind == "pipeline")
-        assert ("--workers" in command) is (kind == "pipeline")
+        assert "--workers" not in command
         assert ("--run-hosted" in command) is (kind != "pipeline")
         assert command[command.index("--transport-concurrency") + 1] == "3"
     with pytest.raises(ValueError, match="manifest"):
@@ -132,3 +133,16 @@ def test_incremental_declared_paths_use_guard_before_launch(tmp_path, monkeypatc
     assert plan[0]["arguments"][1] == "base"
     with pytest.raises(ValueError, match="Mock protected"):
         parallel.validate_plan([{"name": "a", "kind": "boundary", "arguments": ["--baseline=blocked-fixture"]}], 1)
+
+
+def test_pipeline_queue_command_passes_real_cli_parser(tmp_path, monkeypatch):
+    captured = []
+    monkeypatch.setattr(p003_run.pipeline_run, "run", lambda *args: captured.append(args) or {})
+    command = parallel.command_for(
+        {"name": "integration", "arguments": ["--preset", "gated_ordinal"]},
+        tmp_path / "manifest.json", tmp_path / "integration",
+    )
+    monkeypatch.setattr(sys, "argv", [command[2], *command[3:]])
+    p003_run.main()
+    assert captured[0][2]["workers"] == 1
+    assert captured[0][2]["transport_concurrency"] == 3

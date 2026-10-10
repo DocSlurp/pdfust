@@ -109,7 +109,8 @@ def command_for(arm: dict[str, Any], manifest: Path | None, output: Path) -> lis
         if manifest is None:
             message = "Pipeline arms require an explicit manifest"
             raise ValueError(message)
-        command.extend(["--manifest", str(manifest.resolve()), "--workers", "1"])
+        # The P003 entry point fixes one CPU worker in its configuration.
+        command.extend(["--manifest", str(manifest.resolve())])
     else:
         command.append("--run-hosted")
     return [*command, *arm["arguments"]]
