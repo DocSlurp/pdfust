@@ -1639,3 +1639,53 @@ remains 3,430 passed/14 skipped/two expected failures, with new focused tests
 passing separately. No local GPU or rental is used. T3 preview tabs open, but
 snapshot/navigation automation fails on the client; gallery HTML is generated
 and tested, with no claim of successful browser visual inspection.
+
+### P002 checkpoint, 2026-10-10 06:34 UTC
+
+Both full276 image/native hybrids completed. Haiku produces 268 operational
+pages, 157/249 complete tables and 6,604/8,897 exact cells, with one negative
+false-positive page; Sonnet produces 271 pages, 157 complete tables and 6,119
+exact cells, with sixteen negative false-positive pages. All sixteen Sonnet
+false positives are authored negatives; its natural negatives remain clean.
+Reported API charges are USD 0.0397398 and USD 0.838664 respectively. Original
+page-processing rates are 18.33 and 16.73 pages/min, and 6,743.87 and 323.13
+pages/API USD. All original failures and costs remain in the report.
+
+Six matched-input controls expose response variance. For each model, all nineteen
+natural16 crop request hashes match across standalone crops, pilot hybrid and
+full276 hybrid. Haiku exact cells vary 687/289/732; Sonnet varies 982/289/287.
+Native exclusions and crop descriptors are identical on that screen. Dense-page
+normal-stop geometry failures account for much of the variation. These are fresh
+requests, not local response replay or evidence of a hybrid architecture penalty.
+
+A generated asymmetric table reproduces physical native matrix order at right-angle
+rotations. The committed logical projection uses actual character-weighted baseline
+direction, including merged/multiline grids, CropBox offsets and counterrotated
+content. Frozen offline replay changes exactly twelve rotated pages in each full
+control, restoring 259 cells and twelve complete tables: Haiku reaches 6,863 cells
+and 169 complete tables; Sonnet reaches 6,378 and 169. Every model table, physical
+box, source ledger, original failure and extra table remains unchanged. These are
+secondary corrected-quality observations, with separate local replay resources and
+no new throughput/provider-cache claim. See `bench/results/p002-native-orientation.md`.
+
+Independent arbitrary-document testing finds that regional proposal order can
+scramble prose despite preserving every word. An explicit original-source-order
+renderer restores original word and line metadata without changing model evidence,
+canonical states or geometry. The new single-document CLI selects it, keeps original
+child artifacts, and writes logically oriented native sidecars with frozen helper
+and runtime provenance. Hybrid document modes also select logical native orientation.
+Correction failures remain failed pages. Rich native styling remains a separate
+public-library path; the experimental assembler emits literal prose and table HTML.
+
+Multiscale Sonnet gains ten actual Table proposals on the dense page previously
+missed entirely, but two invalid-geometry responses still reject their whole pages.
+Its strict run has fourteen outputs and 293 exact cells. The unchanged partial
+salvage specification is now predeclared for all sixteen pages of both multiscale
+controls, retaining unsent proposals and partial replies without changing primary
+success. Larger crops and row-context/combined-source comparisons remain queued.
+
+Latest P002 accounting: 1,261 attempts, USD 7.82883072 positive reported charges,
+and the preserved USD 0.30 unresolved reservation; live reservations can vary.
+The newest orientation/source-order/wrapper focused checks pass, including 47
+tests in the latest root run. Guarded private-main pushes continue; raw artifacts
+remain local. No local GPU or remote rental is used in this wave.
