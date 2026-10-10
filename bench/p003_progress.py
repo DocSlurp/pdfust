@@ -73,9 +73,11 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                     "p003_boundary_repair": ("incremental_repair", "repair_calls"),
                     "p003_gate": ("incremental_gate", "calls"),
                     "p003_topology_source": ("incremental_ownership", "topology_calls"),
+                    "p003_structure_admission": ("incremental_admission", "decision_results"),
                 }.get(report["config"].get("processor"), (None, "calls"))
                 measured_calls = [call for page in report["results"] for call in page.get(call_key, [])]
-                measured_attempts = (report[incremental_key] if incremental_key else report).get("ledger_attempts")
+                attempt_scope = report[incremental_key] if incremental_key else report
+                measured_attempts = attempt_scope.get("charges", attempt_scope).get("ledger_attempts")
                 if report["config"].get("transcript_replay") is True:
                     if measured_attempts != 0:
                         raise ValueError("Transcript replay declares new provider attempts")
@@ -262,6 +264,9 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
                     f"{key}={run['config'][key]}"
                     for key in (
                         "processor",
+                        "acquisition",
+                        "threshold",
+                        "treatment",
                         "preset",
                         "transcription_representation",
                         "transcription_wire_schema",
@@ -413,6 +418,10 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
                             "incremental_attempted_pages_per_api_usd",
                             "incremental_ranking_pages_processed_per_minute",
                             "incremental_ranking_pages_processed_per_api_usd",
+                            "incremental_admission_intended_pages_per_minute",
+                            "incremental_admission_valid_pages_per_minute",
+                            "incremental_admission_intended_pages_per_api_usd",
+                            "incremental_admission_valid_pages_per_api_usd",
                         )
                     ),
                 ]

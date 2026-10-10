@@ -1168,14 +1168,28 @@ def score_run(
         }
     elif processor == "p003_topology_source":
         required |= {"p003_topology_run.py", "p003_topology_ownership.py", "pipeline_regions.py"}
+    elif processor == "p003_structure_admission":
+        required |= {"p003_structure_admission_run.py", "p003_structure_admission.py", "p003_structure_geometry.py"}
     elif processor == "p003_gate":
         required |= {"p003_gate_run.py", "p003_gate_image.py", "p003_gate_packet.py", "pipeline_regions.py"}
     elif processor != "whole":
         raise ValueError("Unsupported frozen processor")
     if not required <= code.keys():
         raise ValueError("Frozen code lacks required processor dependencies")
-    incremental = processor in {"p003_boundary_repair", "p003_candidate_choice", "p003_topology_source", "p003_gate"}
-    if processor == "p003_gate":
+    incremental = processor in {
+        "p003_boundary_repair",
+        "p003_candidate_choice",
+        "p003_topology_source",
+        "p003_gate",
+        "p003_structure_admission",
+    }
+    if processor == "p003_structure_admission":
+        from bench.p003_structure_admission_verification import verify_structure_admission
+
+        baseline_provenance, repair_verified = verify_structure_admission(
+            directory, report, frozen, incremental_trusted_code
+        )
+    elif processor == "p003_gate":
         from bench.p003_gate_verification import verify_gate
 
         baseline_provenance, repair_verified = verify_gate(directory, report, frozen, incremental_trusted_code)
@@ -1197,6 +1211,7 @@ def score_run(
         "p003_candidate_choice": "incremental_ranking",
         "p003_topology_source": "incremental_ownership",
         "p003_gate": "incremental_gate",
+        "p003_structure_admission": "incremental_admission",
     }.get(processor, "incremental_repair")
     artifacts = []
     operational = 0
@@ -1278,10 +1293,18 @@ def score_run(
         if not audit["explicit_reference_fields_absent"]:
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
-    accounting = costs(report[incremental_key] if incremental else report)
     attempt_report = report[incremental_key] if incremental else report
+    if processor == "p003_structure_admission":
+        attempt_report = attempt_report["charges"]
+    accounting = costs(attempt_report)
     attempt_entries = attempt_report.get("entries", [])
     metrics = dict(report.get("metrics", {}))
+    if processor == "p003_structure_admission":
+        metrics = {
+            **report[incremental_key]["metrics"],
+            "preprocessing": report.get("preprocessing"),
+            "scope": "Incremental retained-evidence admission only; OCR/TATR excluded",
+        }
     if report.get("layout_detector_initialization") is not None:
         metrics["layout_detector_worker"] = {
             "initialization": report["layout_detector_initialization"],
@@ -1305,7 +1328,9 @@ def score_run(
     return {
         "name": directory.name,
         "evaluation_scope": (
-            "incremental ranking on retained candidates"
+            "incremental pure structure admission, no baseline credit"
+            if processor == "p003_structure_admission"
+            else "incremental ranking on retained candidates"
             if processor == "p003_candidate_choice"
             else "incremental ownership conditional on frozen topology and source"
             if processor == "p003_topology_source"
@@ -1316,6 +1341,14 @@ def score_run(
         if incremental
         else "complete pipeline",
         "baseline_provenance": baseline_provenance,
+        "pure_admission_outcomes": {
+            "decision_status_counts": report["decision_status_counts"],
+            "page_status_counts": report["page_status_counts"],
+            "attempted_question_count": report["attempted_question_count"],
+            "baseline_credit": False,
+        }
+        if processor == "p003_structure_admission"
+        else None,
         "decision_evidence": decision_evidence(report),
         "decision_confirmed_quality": {
             "scope": "Primary model-selected crop quality; full intended denominator; no baseline or duplicate credit",
@@ -1393,6 +1426,18 @@ def score_run(
         "pages_per_minute": None if incremental else _rate(operational, metrics.get("wall_seconds"), 60),
         "intended_pages_per_minute": None if incremental else _rate(len(expected), metrics.get("wall_seconds"), 60),
         "pages_per_api_usd": None if incremental else _rate(operational, accounting["effective_api_usd"]),
+        "incremental_admission_intended_pages_per_minute": _rate(len(expected), metrics.get("wall_seconds"), 60)
+        if processor == "p003_structure_admission"
+        else None,
+        "incremental_admission_valid_pages_per_minute": _rate(operational, metrics.get("wall_seconds"), 60)
+        if processor == "p003_structure_admission"
+        else None,
+        "incremental_admission_intended_pages_per_api_usd": _rate(len(expected), accounting["effective_api_usd"])
+        if processor == "p003_structure_admission"
+        else None,
+        "incremental_admission_valid_pages_per_api_usd": _rate(operational, accounting["effective_api_usd"])
+        if processor == "p003_structure_admission"
+        else None,
         "incremental_attempted_pages_per_minute": _rate(
             sum(p.get("incremental_repair", {}).get("attempted", False) for p in predictions),
             metrics.get("wall_seconds"),
