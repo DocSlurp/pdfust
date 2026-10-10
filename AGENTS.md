@@ -44,6 +44,14 @@ overview.
   estimates, preserving the original reported zero. Missing tokens/rates remain
   unknown; partial estimates must not become complete totals. Keep ledger
   reservations separate from reported charges and effective estimates.
+- Evaluate each decision model as a separately named experiment. Do not switch
+  models after failure or retry inline. Investigated transient errors may receive
+  a separately recorded later retry. Preserve failed and abstained outcomes in
+  the intended-page denominator; retained baseline output is not model success.
+- Distinguish complete local source admission from bounded model evidence.
+  Source-conserving experiments may retain a full page that does not fit a model
+  prompt. Use complete-source validation for assembly and rendering, preserve
+  omitted-context counts in prompts, and test dense pages before paid runs.
 - On 2026-10-09 the user raised the cumulative remote compute/inference research
   spending authorization from USD 15 to USD 100, then authorized another USD 50,
   raising the cumulative cap to **USD 150**. The P001 complete-pipeline wave has
