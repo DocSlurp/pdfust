@@ -50,10 +50,15 @@ TRUSTED_HISTORICAL_CODE = {
         "8a87e312643ffc97e63448b8ef9c7b2fbaa169c28431eb177417c34f64ab5386": "b0775e2",
     },
     "generalization_vision_run.py": {
+        "365ec686584641896364a9daf1ad8f83e9e06a5fb8ac38a3b651f5c85dec9c91": "fc49724",
         "5d39813c50ece7844659081af76ee87c34e75d7c6a6bd3b949e900865755b106": "4bf4dc6",
         "132239db5e40a247e0044b2c0df7fc1d7208725bf092e5beb6f04919ff314896": "53aa05b",
         "7308db108bd043d6542c1dc7e767c9247ce6553bf50efb46c4172ced657f45a9": "30aa87b",
         "6043f2e9590d8caeb0262223b6fd0a48a737b75685c11b0f346cd9ec140f4ac4": "01273f1",
+    },
+    "generalization_vision_regions.py": {
+        "a4dbfc283488edd60ee3877e5acb74de1e9263626d567ef5d73a719810339325": "fc49724",
+        "d6a481f585c8baf09eca6d724b1f0311c1a02ce8c1fe9e3371dd16a99ea4154a": "be05820",
     },
     "pipeline_regions.py": {
         "66c6ec07d91753ec9a8885124e18a3d0a64f929be5f29682e1050ea826894d2a": "83bd9a6",
@@ -62,6 +67,28 @@ TRUSTED_HISTORICAL_CODE = {
 }
 REGION_VALIDATION_FUNCTIONS = {"_box", "_characters", "_source", "compose", "validate_composed"}
 REGION_VALIDATION_CONSTANTS = {"MAX_PAGE_WORDS", "MAX_PAGE_CHARACTERS", "MAX_REGIONS"}
+
+
+VISION_REGION_FUNCTIONS = {"_contained", "proposals", "compose"}
+VISION_REGION_CONSTANTS = {"MAX_REGIONS", "MAX_PAGE_SLOTS", "DETECTOR_CONFIDENCE"}
+
+
+def _vision_region_validation_ast(source: bytes) -> str:
+    """Fingerprint strict crop selection/composition independently of image controls."""
+    selected: list[ast.stmt] = []
+    found = set()
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.FunctionDef) and node.name in VISION_REGION_FUNCTIONS:
+            selected.append(node)
+            found.add(node.name)
+        elif isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id in VISION_REGION_CONSTANTS for target in node.targets
+        ):
+            selected.append(node)
+            found.update(target.id for target in node.targets if isinstance(target, ast.Name))
+    if not found >= VISION_REGION_FUNCTIONS | VISION_REGION_CONSTANTS:
+        raise ValueError("Vision region archive lacks strict composition dependencies")
+    return ast.dump(ast.Module(body=selected, type_ignores=[]), include_attributes=False)
 
 
 def _region_validation_ast(source: bytes) -> str:
@@ -189,6 +216,15 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] = (
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
+    historical_helpers = {}
+    helper_name = "generalization_vision_regions.py"
+    if helper_name in required and comparison[helper_name] != "identical":
+        reviewed = TRUSTED_HISTORICAL_CODE[helper_name].get(hashes[helper_name])
+        if reviewed is None or _vision_region_validation_ast(
+            guard_path(directory / "code" / helper_name).read_bytes()
+        ) != _vision_region_validation_ast((local / helper_name).read_bytes()):
+            raise ValueError("Unreviewed or incompatible historical vision region composition")
+        historical_helpers[helper_name] = reviewed
     if "pipeline_layout_fusion.py" in required and comparison["pipeline_layout_fusion.py"] != "identical":
         raise ValueError("Trusted source-only detector fusion differs from frozen code")
     if frozen.get("config", {}).get("generation_format") == "indices" and any(
@@ -203,9 +239,12 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     ):
         raise ValueError("Trusted ordinal expansion or matrix parser differs from frozen code")
     if processor in {"vision", "vision_regions"}:
-        if any(comparison[name] != "identical" for name in required - {"generalization_vision_run.py"}):
+        if any(
+            comparison[name] != "identical"
+            for name in required - {"generalization_vision_run.py"} - historical_helpers.keys()
+        ):
             raise ValueError("Trusted local vision adapter differs from frozen code")
-        historical_runner = {}
+        historical_runner = dict(historical_helpers)
         if comparison["generalization_vision_run.py"] != "identical":
             reviewed = TRUSTED_HISTORICAL_CODE["generalization_vision_run.py"].get(
                 hashes["generalization_vision_run.py"]
@@ -219,6 +258,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             "trusted_historical_commits": historical_runner,
             "renderer": "identical trusted vision transcription adapter",
             "region_validator_ast_compatible": False,
+            "vision_region_validator_ast_compatible": helper_name in required,
         }
     if processor == "hybrid":
         exact = required - {
@@ -227,7 +267,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             "generalization_vision_run.py",
             "pipeline_regions.py",
         }
-        if any(comparison[name] != "identical" for name in exact):
+        if any(comparison[name] != "identical" for name in exact - historical_helpers.keys()):
             raise ValueError("Trusted hybrid composition or child parser differs from frozen code")
     # Whole-run renderer compatibility is established through its approved AST.
     renderer = _verify_markdown_renderer(directory, frozen)
@@ -236,7 +276,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         validation_modules |= {"pipeline_regions.py", "generalization_run.py"}
     if processor == "hybrid":
         validation_modules.add("generalization_vision_run.py")
-    trusted_history = {}
+    trusted_history = dict(historical_helpers)
     for name in validation_modules:
         if comparison[name] != "identical":
             reviewed = TRUSTED_HISTORICAL_CODE.get(name, {}).get(hashes[name])
@@ -252,7 +292,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         "local_comparison": comparison,
         "trusted_historical_commits": trusted_history,
         "renderer": renderer,
-        "region_validator_ast_compatible": processor == "regions",
+        "region_validator_ast_compatible": processor in {"regions", "hybrid"},
+        "vision_region_validator_ast_compatible": helper_name in required,
     }
 
 

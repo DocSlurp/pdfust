@@ -852,3 +852,53 @@ def test_hybrid_model_breakdown_maps_nested_vision_request_paths() -> None:
     result = _model_breakdown(predictions, [{"path": "vision/page-request-0.json", "model": "model"}])
     assert result["models"]["model"]["returned_calls"] == 1
     assert result["request_entry_model_discrepancies"] == []
+
+
+@pytest.mark.parametrize("processor", ["vision_regions", "hybrid"])
+def test_reviewed_crop_image_controls_never_relax_composition_ast(
+    fixture: dict[str, Any], monkeypatch: pytest.MonkeyPatch, tmp_path: Path, processor: str
+) -> None:
+    f = fixture
+    local = Path(module.__file__).parent
+    trusted = tmp_path / "crop-trusted"
+    trusted.mkdir()
+    names = {
+        "generalization_vision_run.py",
+        "generalization_vision_regions.py",
+        "pipeline_vision_transcription.py",
+        "pipeline_frontier.py",
+    }
+    if processor == "hybrid":
+        names |= {
+            "generalization_hybrid_run.py",
+            "pipeline_hybrid_composition.py",
+            "generalization_run.py",
+            "pipeline_regions.py",
+            "pipeline_run.py",
+            "pipeline_assembly.py",
+        }
+    frozen = deepcopy(f["frozen"])
+    frozen["code_sha256"] = {}
+    for name in names:
+        data = (local / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+        (trusted / name).write_bytes(
+            data + (b"\n# New fixed image control.\n" if name == "generalization_vision_regions.py" else b"")
+        )
+    monkeypatch.setattr(module, "__file__", str(trusted / "generalization_report.py"))
+    history = deepcopy(module.TRUSTED_HISTORICAL_CODE)
+    name = "generalization_vision_regions.py"
+    history[name][frozen["code_sha256"][name]] = "reviewed-test-image-control"
+    monkeypatch.setattr(module, "TRUSTED_HISTORICAL_CODE", history)
+    verified = verify_code(f["run"], frozen, processor=processor)
+    assert verified["trusted_historical_commits"][name] == "reviewed-test-image-control"
+    altered = (
+        (f["run"] / "code" / name).read_bytes().replace(b"if slots > MAX_PAGE_SLOTS:", b"if slots >= MAX_PAGE_SLOTS:")
+    )
+    assert altered != (f["run"] / "code" / name).read_bytes()
+    (f["run"] / "code" / name).write_bytes(altered)
+    frozen["code_sha256"][name] = sha(altered)
+    history[name][sha(altered)] = "reviewed-test-mutated-validator"
+    with pytest.raises(ValueError, match="incompatible historical vision region"):
+        verify_code(f["run"], frozen, processor=processor)
