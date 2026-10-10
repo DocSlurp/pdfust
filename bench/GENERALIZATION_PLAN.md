@@ -1,6 +1,7 @@
 # P002: generalizing the complete PDF pipeline
 
-Started 2026-10-10 02:19 UTC. Stop paid work by 07:00 UTC and finish reporting
+Started 2026-10-10 02:19 UTC. Initial paid-work cutoff was 07:00 UTC; the bounded
+final validation revision below extends it to 07:12 UTC. Finish reporting
 within the user's five-hour window (07:19 UTC). Three worker worktrees plus root
 are the available four concurrent agents. Root alone coordinates metered calls.
 P002 has a USD 50 ceiling within the existing cumulative USD 150 authorization;
@@ -309,3 +310,18 @@ unsent proposals from complete replies, and report secondary exact cells and
 extra tables without complete-page or throughput claims. This tests whether
 the added detector coverage contains reviewable table evidence despite atomic
 failure; it does not weaken the primary parser or select pages from their gold.
+
+### Final validation revision, 06:49 UTC
+
+Use the remaining campaign allowance for one fresh full276 corrected Haiku
+hybrid, after the existing serial queue drains. The original full run took
+14.6 minutes; require an 18-minute start allowance before 07:12 UTC and retain
+the original 07:19 total campaign deadline. Its explicit logical-native flag
+changes deterministic native assembly only; model pixels, prompts and physical
+exclusions remain fixed. Report this as a new complete-pipeline observation,
+including fresh-response variation, rather than copying historical throughput
+onto an offline corrected score. Keep the offline paired correction as the
+causal native-order diagnostic. Defer the original full276 gated expansion,
+whose smaller pilot had regressed; retain its hypothesis and all pilot results.
+No other new paid arms may start in this final window. Root alone coordinates
+the transition, with no concurrent legacy paid clients.
