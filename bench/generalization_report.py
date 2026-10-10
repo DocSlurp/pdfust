@@ -51,6 +51,7 @@ TRUSTED_HISTORICAL_CODE = {
         "8a87e312643ffc97e63448b8ef9c7b2fbaa169c28431eb177417c34f64ab5386": "b0775e2",
     },
     "generalization_vision_run.py": {
+        "4b049ab18bf32cc05a1be620a7a68962fdc36600f7fffd9e22ffe10d803d7a87": "3abf651",
         "365ec686584641896364a9daf1ad8f83e9e06a5fb8ac38a3b651f5c85dec9c91": "fc49724",
         "5d39813c50ece7844659081af76ee87c34e75d7c6a6bd3b949e900865755b106": "4bf4dc6",
         "132239db5e40a247e0044b2c0df7fc1d7208725bf092e5beb6f04919ff314896": "53aa05b",
@@ -58,6 +59,7 @@ TRUSTED_HISTORICAL_CODE = {
         "6043f2e9590d8caeb0262223b6fd0a48a737b75685c11b0f346cd9ec140f4ac4": "01273f1",
     },
     "generalization_vision_regions.py": {
+        "a47235e0aad3c1789d460c924f273865cb911fb75fec4fb36a0f5eb39ad5d802": "3abf651",
         "a4dbfc283488edd60ee3877e5acb74de1e9263626d567ef5d73a719810339325": "fc49724",
         "d6a481f585c8baf09eca6d724b1f0311c1a02ce8c1fe9e3371dd16a99ea4154a": "be05820",
     },
