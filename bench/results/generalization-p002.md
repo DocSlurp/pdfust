@@ -1,25 +1,30 @@
 # P002 natural-PDF generalization progress
 
-Only completed runs with verified frozen sources, complete retained states, exact Markdown and source ownership appear below. Missing/error pages remain in every scored denominator. Protocol groups use different frozen datasets and must not be pooled into one quality score.
+Frozen runs with independently verified successful states, exact Markdown and explicit text provenance appear below. Missing/error pages remain in every scored denominator. Protocol groups use different frozen datasets and must not be pooled into one quality score.
 
 ## Authoritative natural16 DEV screen
 
 Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c2d`.
 
-| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Effective API USD |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| natural16-whole-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0 | 16804/16640 | 1 | 0 | 0.0496148 |
-| natural16-regions-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0 | 16804/16640 | 1 | 0 | 0.0358282 |
-| natural16-regions-80k | 16/16 | 0 | 0/12 | 0 | 1 | 320/2333 | 4 | 25948/16640 | 3 | 5 | 0.146207 |
+| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| natural16-whole-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0 | 16804/16640 | 1 | 0 | 2.74509 | 181.398 | 0.0496148 |
+| natural16-regions-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0 | 16804/16640 | 1 | 0 | 2.62157 | 251.199 | 0.0358282 |
+| natural16-regions-80k | 16/16 | 0 | 0/12 | 0 | 1 | 320/2333 | 4 | 25948/16640 | 3 | 5 | 3.6026 | 109.434 | 0.146207 |
+| natural16-raster-select-512 | 16/16 | 0 | 0/12 | 0 | 3 | 418/2333 | 92 | 25511/16640 | 5 | 5 | 3.91377 | 111.17 | 0.143924 |
+| natural16-generate-sonnet | 16/16 | 0 | 1/12 | 2 | 10 | 419/2333 | 295 | 14588/16640 | 15 | 7 | 2.59737 | 13.3194 | 1.20126 |
+| natural16-generate-whitespace | 15/16 | 1 | 1/12 | 2 | 7 | 447/2333 | 236 | 16144/16640 | 13 | 7 | 2.15636 | 12.0499 | 1.24482 |
 
 ### natural16-whole-reviewed
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 9/16.
 
 Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `anthropic/claude-sonnet-5.5`; generation `unmeasured`. Actual request models are listed below; a configured default does not prove it was called.
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.039142 | 0 / 1 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 16 | 16 | 0.0104728 | 0 / 0 / 16 |
+| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.039142 | 0 / 1 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -34,12 +39,14 @@ Ledger attempts 17; reported USD subtotal 0.0496148; missing reported charges 0;
 
 ### natural16-regions-reviewed
 
+Scope: complete source assembly; text: source-owned; source-conserved pages: 9/16.
+
 Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `anthropic/claude-sonnet-5.5`; generation `unmeasured`. Actual request models are listed below; a configured default does not prove it was called.
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.028466 | 0 / 1 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 24 | 24 | 0.0073622 | 0 / 0 / 24 |
+| anthropic/claude-sonnet-5.5 | 1 | 1 | 0.028466 | 0 / 1 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -54,12 +61,14 @@ Ledger attempts 25; reported USD subtotal 0.0358282; missing reported charges 0;
 
 ### natural16-regions-80k
 
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
 Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `anthropic/claude-sonnet-5.5`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
 |---|---:|---:|---:|---:|
-| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.122232 | 0 / 5 / 0 |
 | perplexity/pplx-decider-v1.1-27b | 56 | 56 | 0.0239754 | 0 / 0 / 56 |
+| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.122232 | 0 / 5 / 0 |
 
 Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
 
@@ -71,15 +80,81 @@ Whole-run wall 266.475s; CPU 359.703s; sampled RSS 660725760 bytes; verified out
 
 Ledger attempts 61; reported USD subtotal 0.146207; missing reported charges 0; cost bases `{"provider-reported USD": 61}`. Reservation amount 0; estimate amount 0.
 
+
+### natural16-raster-select-512
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Policy `gated`; assembly `select`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `anthropic/claude-sonnet-5.5`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| perplexity/pplx-decider-v1.1-27b | 57 | 57 | 0.0226022 | 0 / 0 / 57 |
+| anthropic/claude-sonnet-5.5 | 5 | 5 | 0.121322 | 0 / 5 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 0 | 3 | 418/2333 | 25511/16640 | 0/4 |
+
+Whole-run wall 245.288s; CPU 327.633s; sampled RSS 633634816 bytes; verified output pages/min 3.91377; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 62; reported USD subtotal 0.143924; missing reported charges 0; cost bases `{"provider-reported USD": 62}`. Reservation amount 0; estimate amount 0.
+
+
+### natural16-generate-sonnet
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 47 | 47 | 1.20126 | 0 / 47 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 10 | 419/2333 | 14588/16640 | 1/4 |
+
+Whole-run wall 369.605s; CPU 314.827s; sampled RSS 598724608 bytes; verified output pages/min 2.59737; exact positive pages/min 0.162335. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 47; reported USD subtotal 1.20126; missing reported charges 0; cost bases `{"provider-reported USD": 47}`. Reservation amount 0; estimate amount 0.
+
+
+### natural16-generate-whitespace
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 49 | 49 | 1.24482 | 0 / 49 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 7 | 447/2333 | 16144/16640 | 1/4 |
+
+Whole-run wall 417.369s; CPU 344.472s; sampled RSS 651649024 bytes; verified output pages/min 2.15636; exact positive pages/min 0.143758. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 49; reported USD subtotal 1.24482; missing reported charges 0; cost bases `{"provider-reported USD": 49}`. Reservation amount 0; estimate amount 0.
+
 ## Corrected full corpus-r2 DEV baseline
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
 
-| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Effective API USD |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 0 |
+| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 39.3111 | unmeasured | 0 |
 
 ### native-full-r2
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 270/276.
 
 Policy `native`; assembly `native`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `unmeasured`. Actual request models are listed below; a configured default does not prove it was called.
 
@@ -103,11 +178,13 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 
 Dataset SHA-256: `68dda47aa6b0e3fd61cb751d53c7d8ae11546dea4e97ab74e6f9cac6d528332b`.
 
-| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Effective API USD |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| native-full-r1 | 258/276 | 18 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 0 |
+| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| native-full-r1 | 258/276 | 18 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 38.3011 | unmeasured | 0 |
 
 ### native-full-r1
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 258/276.
 
 Policy `native`; assembly `native`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `unmeasured`. Actual request models are listed below; a configured default does not prove it was called.
 
@@ -129,7 +206,9 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 
 ## Pending completed reports
 
-- natural16-generate-sonnet: queued/running; complete report not yet retained
+- natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
+- natural16-matrix-sonnet-512: current wave; do not compare partial outcomes as a completed run
+- Image-only vision transcription comparator: runner/report verification integration; table-only, model-transcribed, no source conservation
 
 ## Interpretation
 
@@ -137,6 +216,29 @@ Exact topology and character edits separate structural assembly from text agreem
 
 Negative-page empty outputs can be exact without recovering a positive table. Authored DEV silver, independently annotated Omni pages, and unscored native diagnostics remain separate. A protocol screen is a predeclared DEV experiment, not a heldout estimate. Runs with different packet, OCR, generation, image or region settings are not isolated causal comparisons. Concurrent background workloads may affect timings.
 
+
+## Completed source-ID assembly screens
+
+The raster-select screen completed 16/16 operational pages with zero complete
+tables, three exact topologies, 418/2333 correct structural cells, 92 exact text
+cells, and five IoU ≥ 0.5 localized tables. Source-ID Sonnet generation completed
+16/16 operational pages with two complete tables, ten exact topologies, and 295
+exact text cells. Whitespace-anchor generation completed the full 16-page attempt
+with 15 operational pages and one `Invalid anchor cell collection` error; it
+recovered two complete tables and 236 exact text cells. Every official table
+remains scored. These settings change multiple parts of the pipeline and are
+not matched causal comparisons or heldout estimates.
+
+The two first observed matrix-Sonnet failures returned provider finish reason
+`content_filter`, no content, and 251/265 reasoning tokens. Their generic parser
+message about truncation or normal completion does not establish token-budget
+exhaustion. No retries were performed. Current partial matrix results remain
+outside completed-run comparisons; all calls and errors must be retained.
+
+The image-only vision control transcribes fresh text rather than selecting OCR
+source IDs. Its verified outputs will be labeled as a table-only comparator
+with `source_conserved=False`; it does not produce complete page prose. Source
+assembly conservation counts and vision operational counts must stay separate.
 
 ## Corpus correction and reference review
 

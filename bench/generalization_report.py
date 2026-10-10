@@ -17,6 +17,8 @@ from bench.generalization_scoring import audit_model_body, normalize_text, score
 from bench.pipeline_regions import compose, validate_composed
 from bench.pipeline_report import _render_markdown, _verify_markdown_renderer
 from bench.pipeline_scoring import score_dataset as authored_score_dataset
+from bench.pipeline_vision_transcription import markdown as vision_markdown
+from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, guard_path, sha
 
 LOCALIZATION_IOU = 0.5
@@ -29,6 +31,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "e9cfae5504773e6ee5e2e0265fcaa447ce4786e2bc015ead37c548593419180f": "119a9ca",
         "a5bc281951becd59633a78d00bdeae125405789e09b3368617ff85ecbd191b26": "7395782",
         "3945a5efaace0c02d80866460e32f67d7f2acb1c9c35500376a32edf0f151f38": "6afe326",
         "a6127f74c8054db3ec9483a6e46d70a9dd18eb0f3b892941cc47dbbf5f1deaad": "efaddcc",
@@ -122,7 +125,11 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     hashes = frozen["code_sha256"]
     local = Path(__file__).parent
     comparison = {}
-    required = {"pipeline_run.py", "pipeline_assembly.py"}
+    required = (
+        {"generalization_vision_run.py", "pipeline_vision_transcription.py", "pipeline_frontier.py"}
+        if processor == "vision"
+        else {"pipeline_run.py", "pipeline_assembly.py"}
+    )
     if processor == "regions":
         required |= {"pipeline_regions.py", "generalization_run.py"}
         if frozen.get("config", {}).get("assembly_method") in {"generate", "gated_generate"}:
@@ -144,6 +151,16 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] = (
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
+    if processor == "vision":
+        if any(comparison[name] != "identical" for name in required):
+            raise ValueError("Trusted local vision adapter or runner differs from frozen code")
+        return {
+            "archive_hashes_verified": True,
+            "local_comparison": comparison,
+            "trusted_historical_commits": {},
+            "renderer": "identical trusted vision transcription adapter",
+            "region_validator_ast_compatible": False,
+        }
     # Whole-run renderer compatibility is established through its approved AST.
     renderer = _verify_markdown_renderer(directory, frozen)
     validation_modules = {"pipeline_assembly.py"}
@@ -192,8 +209,22 @@ def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str
         raise ValueError("Per-page retained result differs from report")
     if prediction.get("status") != "ok":
         return {"operational": False, "conserved": False}
-    source = prediction["source"]
     state = _read(directory / f"{ident}-structure.json")
+    if processor == "vision":
+        if (
+            prediction.get("route") != "vision_transcription"
+            or prediction.get("source_conserved") is not False
+            or prediction.get("unresolved_ids") != []
+            or "source" in prediction
+        ):
+            raise ValueError("Vision output must be labeled model transcription without source ownership")
+        rebuilt = vision_parse(prediction["transcription_response"], prediction["viewport"])
+        if rebuilt != state or rebuilt["tables"] != prediction["tables"]:
+            raise ValueError("Vision transcription differs from reparsed retained response")
+        if guard_path(directory / f"{ident}.md").read_bytes() != vision_markdown(rebuilt).encode():
+            raise ValueError("Retained Markdown differs from trusted vision rendering")
+        return {"operational": True, "conserved": False}
+    source = prediction["source"]
     if state["tables"] != prediction["tables"] or state["unresolved_ids"] != prediction["unresolved_ids"]:
         raise ValueError("Retained complete structure differs from report")
     if processor == "regions":
@@ -377,7 +408,7 @@ def score_run(
     if actual != expected or len(actual) != len(frozen["records"]):
         raise ValueError("Frozen records differ from complete intended manifest cohort")
     processor = config.get("processor", "whole")
-    if processor not in {"whole", "regions"}:
+    if processor not in {"whole", "regions", "vision"}:
         raise ValueError("Unsupported processor")
     code = verify_code(directory, frozen, processor=processor)
     predictions = report["results"]
@@ -391,7 +422,9 @@ def score_run(
             derived_boxes += sum("bbox" in t for t in state["tables"])
     scored = _evaluate(private, scoring_predictions)
     by_id, by_target = {p["id"]: p for p in scoring_predictions}, {t["id"]: t for t in private}
-    operational = sum(verify_output(directory, p, processor=processor)["operational"] for p in predictions)
+    verified_outputs = [verify_output(directory, p, processor=processor) for p in predictions]
+    operational = sum(output["operational"] for output in verified_outputs)
+    conserved = sum(output["conserved"] for output in verified_outputs)
     groups: dict[str, Any] = {}
     for field in ("cohort", "family"):
         buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -465,7 +498,11 @@ def score_run(
         "operational_pages": operational,
         "all_errors": len(expected) - operational,
         "markdown_bytes_verified_pages": operational,
-        "conserved_pages": operational,
+        "conserved_pages": conserved,
+        "output_scope": (
+            "table-only image transcription comparator" if processor == "vision" else "complete source assembly"
+        ),
+        "text_provenance": ("model-transcribed" if processor == "vision" else "source-owned"),
         "source_candidate_ceilings": [{"id": t["id"], **_ceiling(t, by_id.get(t["id"], {}))} for t in private],
         "costs": costs,
         "resources": metrics,
@@ -515,6 +552,12 @@ def score_run(
                 "OCR recall is unavailable without aligned OCR gold."
             ),
             "Body field audits do not prove semantic absence of leaked answers inside arbitrary strings.",
+            (
+                "Vision is a table-only model transcription comparator; it neither conserves OCR source "
+                "nor produces complete page prose. Every intended table target remains scored."
+                if processor == "vision"
+                else "Source ownership conservation verifies retained words, not raster OCR completeness."
+            ),
             "Legacy predicted bboxes derive from owned text extents; annotation boxes may include borders or padding.",
         ],
     }
@@ -552,6 +595,13 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
         lines.append("| " + " | ".join(_fmt(v) for v in values) + " |")
     for run in runs:
         lines += ["", f"## {run['name']}", "", "Statuses: `" + json.dumps(run["statuses"], sort_keys=True) + "`.", ""]
+        lines += [
+            (
+                f"Scope: {run['output_scope']}; text: {run['text_provenance']}; "
+                f"source-conserved pages: {run['conserved_pages']}."
+            ),
+            "",
+        ]
         lines += [
             (
                 "| Group | Pages | Scored | Exact | Structure cells / expected | "
@@ -620,7 +670,7 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
         "",
         (
             "Frozen runs with independently verified successful states, exact Markdown "
-            "and source ownership appear below. Missing/error pages remain in every scored denominator. "
+            "and explicit text provenance appear below. Missing/error pages remain in every scored denominator. "
             "Protocol groups use different frozen datasets and must not be pooled into one quality score."
         ),
         "",
@@ -661,6 +711,13 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
             lines.append("| " + " | ".join(_fmt(v) for v in values) + " |")
         for r in runs:
             lines += ["", "### " + r["name"], ""]
+            lines += [
+                (
+                    f"Scope: {r['output_scope']}; text: {r['text_provenance']}; "
+                    f"source-conserved pages: {r['conserved_pages']}/{r['intended_pages']}."
+                ),
+                "",
+            ]
             config = r["config"]
             method = config.get("assembly_method", "select" if config.get("policy") == "gated" else "native")
             lines += [

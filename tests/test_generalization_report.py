@@ -24,6 +24,8 @@ from bench.generalization_report import (
 from bench.pipeline_assembly import native_state
 from bench.pipeline_regions import compose, split, unresolved_region
 from bench.pipeline_report import _render_markdown
+from bench.pipeline_vision_transcription import markdown as vision_markdown
+from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, sha
 
 
@@ -351,3 +353,96 @@ def test_progress_groups_reject_mixed_dataset_identities(fixture: dict[str, Any]
     assert "## protocol B" in text
     assert "pending run" in text
     assert "Exact positive pages" in text
+
+
+def vision_prediction(directory: Path) -> dict[str, Any]:
+    response = {"choices": [{"finish_reason": "stop", "message": {"content": '{"answers":{"q0":{"tables":[]}}}'}}]}
+    viewport = [0, 0, 100, 100]
+    state = vision_parse(response, viewport)
+    prediction = {
+        "id": "negative",
+        "status": "ok",
+        "route": "vision_transcription",
+        "source_conserved": False,
+        "viewport": viewport,
+        "transcription_response": response,
+        "tables": state["tables"],
+        "unresolved_ids": [],
+        "calls": [],
+    }
+    write(directory / "negative-result.json", prediction)
+    write(directory / "negative-structure.json", state)
+    (directory / "negative.md").write_text(vision_markdown(state))
+    return prediction
+
+
+def test_vision_output_is_operational_without_claiming_source_conservation(tmp_path: Path) -> None:
+    prediction = vision_prediction(tmp_path)
+    assert verify_output(tmp_path, prediction, processor="vision") == {"operational": True, "conserved": False}
+
+
+@pytest.mark.parametrize("field", ["tables", "structure", "markdown", "raw", "source", "source_conserved", "route"])
+def test_vision_reparse_rejects_tampered_output(tmp_path: Path, field: str) -> None:
+    prediction = vision_prediction(tmp_path)
+    if field == "tables":
+        prediction["tables"] = [{"unexpected": "table"}]
+    elif field == "structure":
+        write(tmp_path / "negative-structure.json", {"tables": []})
+    elif field == "markdown":
+        (tmp_path / "negative.md").write_text("invented prose")
+    elif field == "raw":
+        prediction["transcription_response"]["choices"][0]["finish_reason"] = "content_filter"
+    elif field == "source":
+        prediction["source"] = {"words": []}
+    elif field == "source_conserved":
+        prediction[field] = True
+    else:
+        prediction[field] = "source_assembly"
+    write(tmp_path / "negative-result.json", prediction)
+    with pytest.raises(ValueError, match=r"transcription|Markdown|truncated|finish"):
+        verify_output(tmp_path, prediction, processor="vision")
+
+
+def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
+    fixture: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    f = fixture
+    local = Path(module.__file__).parent
+    trusted = tmp_path / "trusted"
+    trusted.mkdir()
+    hashes = {}
+    for name in ("pipeline_vision_transcription.py", "pipeline_frontier.py", "generalization_vision_run.py"):
+        data = (
+            (local / name).read_bytes() if name != "generalization_vision_run.py" else b"# Trusted local test runner.\n"
+        )
+        (trusted / name).write_bytes(data)
+        (f["run"] / "code" / name).write_bytes(data)
+        hashes[name] = sha(data)
+    monkeypatch.setattr(module, "__file__", str(trusted / "generalization_report.py"))
+    frozen = deepcopy(f["frozen"])
+    frozen["config"]["processor"] = "vision"
+    frozen["code_sha256"] = hashes
+    report = deepcopy(f["report"])
+    report["config"] = frozen["config"]
+    report["results"] = [vision_prediction(f["run"])]
+    write(f["run"] / "frozen.json", frozen)
+    write(f["run"] / "report.json", report)
+    result = score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
+    assert result["operational_pages"] == 1
+    assert result["conserved_pages"] == 0
+    assert result["intended_pages"] == 3
+    assert result["all_errors"] == 2
+    assert result["positive"]["expected_tables"] == 1
+    assert result["positive"]["missing_tables"] == 1
+    assert result["text_provenance"] == "model-transcribed"
+    assert "table-only" in result["output_scope"]
+    assert "table-only" in markdown_report([result])
+    assert "source-conserved pages: 0/3" in module.protocol_report({"vision comparator": [result]})
+    assert result["authored_legacy_exact"]["cell_slots"] == 1
+    changed = b"# Unreviewed archive adapter.\n"
+    (f["run"] / "code" / "pipeline_vision_transcription.py").write_bytes(changed)
+    frozen["code_sha256"]["pipeline_vision_transcription.py"] = sha(changed)
+    with pytest.raises(ValueError, match="differs from frozen"):
+        verify_code(f["run"], frozen, processor="vision")
