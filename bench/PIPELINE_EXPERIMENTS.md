@@ -204,6 +204,8 @@ The next complete-corpus layer separates treatments before combining them:
 - Vector-first PPLX cascade supplies the previously declared geometry-only routing
   control, without the independent admission question.
 - PPLX gating with column-consensus alternatives tests proposal reachability.
+  A separate reviewed version combines only the column fix and conditional Sonnet
+  review, leaving the original evidence format intact.
 - PPLX gating with a compact assembly packet tests whether exact source/ownership
   references reduce duplicated evidence without losing selection quality.
 - Repeat compact PPLX gating without images to test whether the pilot's geometry

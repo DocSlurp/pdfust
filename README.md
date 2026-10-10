@@ -307,6 +307,31 @@ extracted word exactly once to a cell or remaining prose. Merged spans are emitt
 as HTML tables inside Markdown. The [reproduction commands and offline demo](bench/PIPELINE_EXPERIMENTS.md#reproduce-the-complete-path)
 show PDF input through final Markdown and JSON; no hosted model is enabled by default.
 
+Selected completed full-corpus configurations (181 input pages; 35 scored table pages, 133
+scored non-table pages and 13 diagnostics):
+
+| Complete pipeline configuration | Outputs / 181 | Exact table pages / 35 | False-table pages / 133 | Exact scored pages / 168 | Output pages/min | Output pages/USD |
+|---|---:|---:|---:|---:|---:|---:|
+| Native vector grids + CPU OCR | 178 | 16 | 0 | 149 | 1,524.9 | Unpriced CPU |
+| PPLX assembly, 256 px | 175 | 34 | 27 | 140 | 53.0 | 10,170 |
+| PPLX independent gate, 256 px | 178 | 34 | 4 | 163 | 117.9 | 28,641 |
+| PPLX gate + Sonnet review, 256 px | 178 | 34 | 0 | 167 | 72.4 | 1,659 |
+| PPLX adaptive row edits | 178 | 28 | 30 | 131 | 151.6 | 69,429 |
+| Luna gate, 1024 px | 178 | 34 | 6 | 161 | 105.8 | 6,321 (estimate) |
+| Clef Flash gate, 512 px | 178 | 22 | 5 | 150 | 58.5 | 10,958 |
+| Haiku 5.5 assembly, 512 px | 175 | 34 | 18 | 149 | 22.0 | 2,093 |
+
+These are single serial runs on authored DEV silver, with different routing and
+image settings. Rates count complete emitted outputs, include all pipeline
+waiting/bookkeeping, and price API usage only; quality is reported separately.
+PPLX denotes `perplexity/pplx-decider-v1.1-27b`; Luna denotes `openai/gpt-6-luna-decisions`.
+Luna's reported zero is preserved and replaced only in effective-cost calculations
+by a labeled catalog estimate. Full errors, cells/spans, family scores, CPU/RSS,
+candidate ceilings and all controls are in the [complete report](bench/results/pipeline-p001.md).
+The [matched pilot comparison](bench/results/pipeline-pilot-findings.md) separately
+records Sonnet and Opus at 32/32 exact pilot pages and a conditional-review tie;
+it does not establish superiority on independent documents.
+
 The private DEV experiments below ask hosted models to group **two selected
 source-text chunks**. They evaluate word boundaries and description-row
 ownership on small authored controls; they do not measure complete PDF
