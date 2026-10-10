@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from bench import p003_candidate_run as candidate
+from bench import p003_topology_chunks as chunks
 from bench import p003_topology_geometry as geometry
 from bench import p003_topology_ownership as ownership
 from bench import pipeline_run as pipeline
@@ -191,6 +192,7 @@ def prepare_page(
         else:
             assigned[word["id"]] = owners[0] if owners else None
     regions, states = [], {}
+    structure_losses = []
     source_lookup = {w["id"]: w for w in source["words"]}
     for old in original_plan["regions"]:
         remaining = [identifier for identifier in old["source_ids"] if assigned[identifier] is None]
@@ -199,7 +201,17 @@ def prepare_page(
             ids = [i for cell in table["cells"] for i in cell["source_ids"]]
             destinations = {assigned[i] for i in ids}
             if len(destinations) > 1:
-                raise UnsupportedError("original_table_crosses_crop_partition")
+                if config.get("crossed_tables") != "residual_prose":
+                    raise UnsupportedError("original_table_crosses_crop_partition")
+                structure_losses.append(
+                    {
+                        "region_id": old["id"],
+                        "table_source_ids": ids,
+                        "original_table_sha256": sha(ownership._dump(table).encode()),
+                        "reason": "Crossed baseline table replaced by complete residual literal prose",
+                    }
+                )
+                continue
             if not destinations or destinations == {None}:
                 tables.append(deepcopy(table))
         region = {
@@ -225,13 +237,19 @@ def prepare_page(
             raise UnsupportedError("empty_source_inventory_cannot_transcribe")
         local = {"page_size": source["page_size"], "words": words}
         try:
-            frozen = ownership.freeze(local, crop["topology_response"], crop["viewport"], crop["url"])
-            row_bodies = ownership.batches(
+            protocol = chunks if config.get("chunked_inventory") else ownership
+            frozen = protocol.freeze(local, crop["topology_response"], crop["viewport"], crop["url"])
+            row_bodies = protocol.batches(
                 frozen,
                 config["model"],
                 crop["url"],
                 max_questions=config["max_questions"],
                 image=config.get("image", True),
+                **(
+                    {"evidence_mode": config.get("topology_evidence", "compact")}
+                    if config.get("chunked_inventory")
+                    else {}
+                ),
             )
             if any(
                 len(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()) > MAX_BODY_BYTES
@@ -255,6 +273,11 @@ def prepare_page(
             **source,
             "regions": regions,
             "coordinate_space": "display_global",
+            **(
+                {"residual_structure_losses": structure_losses}
+                if config.get("crossed_tables") == "residual_prose"
+                else {}
+            ),
             **(
                 {
                     "boundary_words": {
@@ -317,6 +340,7 @@ def process_page(
         if not work["crops"]:
             return result
         states = deepcopy(work["states"])
+        protocol = chunks if config.get("chunked_inventory") else ownership
         for crop in work["crops"]:
             stage = f"{crop['id']}/rows"
             stem = f"{ident}-{crop['id']}"
@@ -359,15 +383,20 @@ def process_page(
                 )
                 result["topology_calls"].append(response)
                 responses.append(response["result"])
-            rows = ownership.collect(crop["snapshot"], crop["row_bodies"], responses)
+            rows = protocol.collect(crop["snapshot"], crop["row_bodies"], responses)
             write_json(output / f"{stem}-row-receipt.json", rows)
-            cell_bodies = ownership.batches(
+            cell_bodies = protocol.batches(
                 crop["snapshot"],
                 config["model"],
                 crop["url"],
                 rows=rows,
                 max_questions=config["max_questions"],
                 image=config.get("image", True),
+                **(
+                    {"evidence_mode": config.get("topology_evidence", "compact")}
+                    if config.get("chunked_inventory")
+                    else {}
+                ),
             )
             stage = f"{crop['id']}/cells"
             cell_responses = []
@@ -379,7 +408,7 @@ def process_page(
                 )
                 result["topology_calls"].append(response)
                 cell_responses.append(response["result"])
-            audit = ownership.assemble(crop["snapshot"], crop["row_bodies"], responses, cell_bodies, cell_responses)
+            audit = protocol.assemble(crop["snapshot"], crop["row_bodies"], responses, cell_bodies, cell_responses)
             states[crop["id"]] = audit["state"]
             write_json(output / f"{stem}-audit.json", audit)
             write_json(output / f"{stem}-updated-state.json", audit["state"])
@@ -500,6 +529,14 @@ def run(
         raise ValueError("Choose exactly one explicit hosted, preparation, geometry, or transcript mode")
     if config.get("transcript_replay") and client is None:
         raise ValueError("Transcript replay requires an injected offline exact-body transport")
+    if config.get("crossed_tables", "strict") not in {"strict", "residual_prose"}:
+        raise ValueError("Unknown crossed baseline table treatment")
+    if type(config.get("chunked_inventory", False)) is not bool:
+        raise ValueError("Chunked inventory flag must be boolean")
+    if config.get("topology_evidence", "compact") not in {"compact", "neighbors", "bands"} or (
+        "topology_evidence" in config and not config.get("chunked_inventory")
+    ):
+        raise ValueError("Local evidence modes require chunked inventory")
     if config.get("band_mode", "uniform") not in {"uniform", "source"} or (
         config.get("band_mode") == "source" and not config.get("geometry_only")
     ):
@@ -554,6 +591,7 @@ def run(
         + (("p003_topology_geometry.py",) if config.get("geometry_only") else ())
         + (("p003_topology_replay.py",) if config.get("transcript_replay") else ())
         + (("p003_spatial_bands.py",) if config.get("band_mode") == "source" else ())
+        + (("p003_topology_chunks.py", "p003_spatial_bands.py") if config.get("chunked_inventory") else ())
     ):
         data = (root / name).read_bytes()
         (output / "code" / name).write_bytes(data)
@@ -662,6 +700,9 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", choices=ownership.DECISION_MODELS, required=True)
     parser.add_argument("--text-only", action="store_true")
+    parser.add_argument("--chunked-inventory", action="store_true")
+    parser.add_argument("--topology-evidence", choices=("compact", "neighbors", "bands"))
+    parser.add_argument("--crossed-tables", choices=("strict", "residual_prose"), default="strict")
     parser.add_argument("--band-mode", choices=("uniform", "source"), default="uniform")
     parser.add_argument("--boundary-words", choices=("strict", "residual"), default="strict")
     parser.add_argument("--max-questions", type=int, choices=range(1, 17), default=16)
@@ -675,6 +716,12 @@ def main() -> None:
     config = {
         k: getattr(args, k) for k in ("model", "max_questions", "run_hosted", "prepare_only", "reviewed_parser_sha256")
     }
+    if args.chunked_inventory:
+        config["chunked_inventory"] = True
+    if args.topology_evidence is not None:
+        config["topology_evidence"] = args.topology_evidence
+    if args.crossed_tables == "residual_prose":
+        config["crossed_tables"] = "residual_prose"
     if args.band_mode == "source":
         config["band_mode"] = "source"
     if args.text_only:

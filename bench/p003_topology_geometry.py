@@ -4,14 +4,16 @@ Overlap and distance scores are geometry heuristics, never model probabilities.
 No image analysis or literal transcription is performed.
 """
 
-# ruff: noqa: SLF001, EM101, TRY003
+# ruff: noqa: SLF001, EM101, TRY003, PLR2004
 from __future__ import annotations
 
+import json
 import math
 from copy import deepcopy
 from typing import Any
 
 from bench import p003_spatial_bands as bands
+from bench import p003_topology_chunks as chunks
 from bench import p003_topology_ownership as ownership
 
 MIN_OVERLAP = 0.8
@@ -27,7 +29,7 @@ def place(plan: ownership.Plan, *, band_mode: str = "uniform") -> dict[str, Any]
     """Rank every anchor and atomically retain one literal-word owner or abstain."""
     if band_mode not in {"uniform", "source"}:
         raise ValueError("Unknown geometric band mode")
-    packet = ownership._packet(plan)
+    packet = chunks.packet(plan) if json.loads(plan.packet_json).get("version") == 2 else ownership._packet(plan)
     source, tables = packet["source"], deepcopy(packet["topology"]["canonical"])
     anchors = []
     band_receipts = []

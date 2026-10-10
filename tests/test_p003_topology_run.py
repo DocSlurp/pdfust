@@ -493,3 +493,51 @@ def test_text_only_prepare_admits_text_decision_models_without_pixels(tmp_path: 
     body = work["crops"][0]["row_bodies"][0]
     assert isinstance(body["state"], str)
     assert "image_url" not in json.dumps(body)
+
+
+def test_crossed_baseline_table_residual_prose_loss_is_explicit(tmp_path: Path) -> None:
+    original, topology = fixtures(tmp_path / "source", tmp_path / "topology")
+    topology["transcription_regions"][0]["viewport"][3] = 50
+    crop = topology["transcription_regions"][0]
+    body = transcription.request("anthropic/claude-haiku-5.5", URL, crop["viewport"], 8192)
+    body["provider"] = {"only": ["anthropic"], "allow_fallbacks": False, "require_parameters": True}
+    crop["request"]["body_sha256"] = sha(json.dumps(body, separators=(",", ":")).encode())
+    crop["image"]["image_viewport"] = crop["viewport"]
+    write_json(tmp_path / "topology/p0-request-0.json", body)
+    with pytest.raises(runner.UnsupportedError, match="crosses_crop"):
+        runner.prepare_page(original, topology, tmp_path / "topology", {"generation_provider": "anthropic"}, config())
+    work = runner.prepare_page(
+        original,
+        topology,
+        tmp_path / "topology",
+        {"generation_provider": "anthropic"},
+        config(crossed_tables="residual_prose", chunked_inventory=True, image=False),
+    )
+    assert len(work["plan"]["residual_structure_losses"]) == 1
+    assert work["states"]["r0"]["tables"] == []
+    assert work["states"]["r0"]["unresolved_ids"] == ["id4", "id5"]
+    assert [i for r in work["plan"]["regions"] for i in r["source_ids"]] == ["id4", "id5", "id0", "id1", "id2", "id3"]
+
+
+def test_authenticated_mock_chunked_protocol_is_runnable_and_conserved(tmp_path: Path) -> None:
+    source, topology = tmp_path / "source", tmp_path / "topology"
+    a, b = archives(source, topology)
+    output = tmp_path / "chunked"
+    report = runner.run(
+        source,
+        topology,
+        a,
+        b,
+        output,
+        config(run_hosted=True, chunked_inventory=True, topology_evidence="neighbors"),
+        Client(tmp_path),
+    )
+    assert report["incremental_ownership"]["status_counts"] == {"completed": 16}
+    assert report["incremental_ownership"]["returned_calls"] == 32
+    assert report["source_generation_report"]["effective_usd"] == 5
+    assert report["pages_per_minute"] is None
+    audit = json.loads((output / "p0-topology-0-audit.json").read_bytes())
+    assert set(audit["rows"]["decisions"]) == {f"id{i}" for i in range(6)}
+    assert audit["source_conserved"] is True
+    frozen = json.loads((output / "frozen.json").read_bytes())
+    assert "p003_topology_chunks.py" in frozen["code_sha256"]
