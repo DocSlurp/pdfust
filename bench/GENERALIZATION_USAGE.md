@@ -145,6 +145,13 @@ provenance. Conflicting table geometry refuses the whole page; a retained native
 baseline is diagnostic, not a successful hybrid output. With no transcription, a
 validated native baseline remains source-conserved.
 
+The command above retains the historical physical-order control. Add
+`--native-table-orientation logical` for the corrected native-table presentation:
+actual text baselines within each table determine logical rows, columns and spans.
+Physical source coordinates, detector exclusions and image requests remain
+unchanged. The single-document hybrid modes select this correction explicitly.
+Its offline quality audit is separate from the original measured run timings.
+
 ## Offline scoring and complete-output inspection
 
 Scoring is a separate command that verifies archived code, replays retained output

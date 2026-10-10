@@ -120,7 +120,10 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
         command += ["--policy", "native", "--rotation-mode", "preserve", "--ocr-source", "whitespace"]
     else:
         model = "anthropic/claude-" + mode.split("-", 1)[1] + "-5.5"
-        command += ["--generation-model", model, "--generation-tokens", "16384", "--ocr-source", "whitespace"]
+        command += [
+            "--generation-model", model, "--generation-tokens", "16384", "--ocr-source", "whitespace",
+            "--native-table-orientation", "logical",
+        ]
     command += ["--ocr-dpi", "150"]
     wrapper_path = Path(__file__).resolve()
     (output / "extract_document.py").write_bytes(wrapper_path.read_bytes())

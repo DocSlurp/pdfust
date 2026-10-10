@@ -69,6 +69,7 @@ def test_hosted_modes_are_explicit_delegation_and_missing_pages_stay_partial(
     assert "bench.generalization_hybrid_run" in command
     assert command[command.index("--generation-model") + 1] == f"anthropic/claude-{mode.split('-')[1]}-5.5"
     assert "--generation-tokens" in command
+    assert command[command.index("--native-table-orientation") + 1] == "logical"
     assert result["status"] == "partial"
     assert not result["complete"]
     assert not result["requested_pages_complete"]

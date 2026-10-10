@@ -55,7 +55,7 @@ def runtime_fingerprints() -> dict[str, Any]:
         except importlib.metadata.PackageNotFoundError:
             versions[name] = None
     modules = {}
-    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial"):
+    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial", "pylopdf._markdown"):
         module = importlib.import_module(name)
         if module.__file__ is None:
             message = f"Extraction module has no fingerprintable file: {name}"
@@ -575,6 +575,11 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                 *(
                     ["generalization_hybrid_run.py", "pipeline_hybrid_composition.py"]
                     if config.get("processor") == "hybrid"
+                    else []
+                ),
+                *(
+                    ["pipeline_native_orientation.py"]
+                    if config.get("processor") == "hybrid" and config.get("native_table_orientation") == "logical"
                     else []
                 ),
             )
