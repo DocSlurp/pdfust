@@ -1485,3 +1485,51 @@ P002 has 529 reserved/returned attempts at this checkpoint, USD 4.97082344 in
 positive provider-reported charges, the preserved USD 0.30 interrupted reservation
 and USD 0.30 active reservation. Conservative P002 accounting is USD 5.57082344;
 reservations are not charges. No local GPU, remote GPU or rented host was used.
+
+### P002 checkpoint: 2026-10-10 05:07 UTC
+
+The fixed full276 Haiku expansion now has 270 verified complete source-owned
+outputs, 166/249 complete tables, 6,329 exact text anchors and 136/172 exact
+positive pages. Reported API charges are USD 0.1275912 for 119 calls; throughput
+is 12.64 output pages/min and 2,116.13 output pages/API USD. The native regional
+baseline has 120 complete tables, 4,258 exact anchors and 96 exact positive
+pages, with 272 outputs and no API calls. Four unsupported diagnostics persist;
+two model responses end at their output limit and fail atomically.
+
+The cohort distinction matters: Haiku recovers 155/156 authored tables but only
+11/93 natural tables. It also invents tables on eight authored negative pages
+(six prose, two decorative) and one natural negative. The additional 48 natural
+DEV pages contribute 9/40 complete tables and 1,041/1,514 exact text anchors,
+without operational errors or extra tables. These pages extend the fixed screen;
+they are not protected confirmation data. The complete negative audit retains
+all 48 negative pages, including correct negatives, and all positive-family
+aggregates. Simple line density, token length and punctuation observations
+overlap positives and negatives; no threshold was fitted to this audit.
+
+Matched natural16 YOLO + Haiku at 1024 pixels does not improve the 512-pixel arm:
+outputs fall from 15 to 14, exact anchors from 258 to 247, and complete tables
+remain 2/53. Both new failures are local frozen request admission, including
+one dense newspaper. This is a coverage result, not proof that higher-resolution
+pixels are unhelpful when admitted. Higher-DPI OCR plus compact evidence, fixed
+JPEG50 whole-page controls, detector crops, static row-wrap/column-track prompts,
+ordinal source indexes, PPLX admission gates and native/image hybrid runs remain
+separately identified comparisons in the serial queue.
+
+The retained full276 profile attributes 62.83% of summed page wall time to API
+calls, 29.07% to source extraction including OCR, 6.37% to layout detection and
+1.73% to other work. Parent totals are 1,281.413 s wall, 1,288.233 s CPU and
+758.383 MiB sampled peak RSS. Detector worker CPU is separately 256.538 s and
+peak RSS 1,187.758 MiB; these asynchronous peaks are not added. A verified
+native-only detector shortcut has zero eligible pages, so it is not integrated.
+An isolated, mocked concurrency prototype is being evaluated without changing
+the paid queue. Compact row-continuation evidence is another source-only
+experiment, with its generic specification frozen before outcome stratification.
+
+Hybrid output verification now independently replays native quarantine, physical
+grid bounds, detector exclusions, both child outputs, raw model responses,
+source accounting and exact composed Markdown. Model-transcribed values remain
+explicitly distinct from source-owned text. The latest 82 focused tests pass;
+full mypy passes on 218 source files. At this checkpoint P002 has 632 attempts,
+USD 5.09574214 positive provider-reported charges and the preserved USD 0.30
+interruption reservation. Active reservations are transient and reported by the
+live ledger. Local work remains CPU-only; no host is rented.

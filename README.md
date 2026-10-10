@@ -298,7 +298,22 @@ annotated OmniDocBench page images, and 56 native-PDF diagnostics. A fixed
 newspaper pages contain 39 of those tables. It exposes substantially harder
 localization, OCR, and assembly failures than the earlier authored study.
 
-Verified natural-screen checkpoint (all 16 intended pages remain scored):
+The first fixed 276-page expansion compares 249 reference tables across 220
+scored pages; another 56 native-PDF pages are operational diagnostics. The
+configuration was selected before running the additional natural pages.
+
+| Configuration | Outputs / 276 | Complete tables / 249 | Exact text cells | Exact positive pages / 172 | Negative false-positive pages / 48 | Pages/min | Pages/API USD |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Native regional extraction + CPU OCR | 272 | 120 | 4,258 | 96 | 0 | 36.78 | No API calls |
+| Native grids + YOLO + Haiku source-ID matrix, 512 px | 270 | 166 | 6,329 | 136 | 9 | 12.64 | 2,116.13 |
+
+The Haiku run costs USD 0.1275912 in reported API charges. It recovers 155/156
+authored tables and 11/93 natural tables, with eight authored and one natural
+negative-page false positives. Four unsupported diagnostics and two truncated
+responses remain failures. These results support further gated and hybrid
+experiments; they do not establish reliable extraction across natural PDFs.
+
+Selected natural-screen comparisons (all 16 intended pages remain scored):
 
 | Configuration | Outputs / 16 | Complete tables / 53 | Exact text cells / 2,333 | Pages/min | Pages/API USD |
 |---|---:|---:|---:|---:|---:|
@@ -306,6 +321,10 @@ Verified natural-screen checkpoint (all 16 intended pages remain scored):
 | Pixel grids + PPLX + selective Sonnet | 16 | 0 | 92 | 3.91 | 111.17 |
 | Sonnet source-ID assembly, 512 px | 16 | 2 | 295 | 2.60 | 13.32 |
 | Haiku source-ID matrix, 512 px | 16 | 2 | 240 | 1.99 | 225.44 |
+| YOLO + Sonnet source-ID matrix, 512 px | 15 | 2 | 341 | 3.89 | 52.29 |
+| YOLO + Haiku source-ID matrix, 512 px | 15 | 2 | 258 | 3.24 | 638.72 |
+| Sonnet whole-page image transcription, 1200 px | 15 | 3 | 299 | 6.51 | 106.65 |
+| Haiku whole-page image transcription, 1200 px | 13 | 2 | 245 | 6.41 | 1,527.90 |
 
 These are exploratory serial runs with concurrent research workloads. Rates count
 complete emitted outputs and API charges, including failed calls; they do not
@@ -314,6 +333,13 @@ tables, positive and negative pages, CPU/RAM, provider usage, and failures.
 Source-ID assembly preserves literal evidence but cannot repair missing OCR text.
 Image transcription is a separately labeled table-only comparator. No model is
 enabled by default, and public benchmark pretraining contamination is unknown.
+The [source inventory audit](bench/results/p002-source-inventory-ceilings.md)
+finds that even an optimistic rearrangement of existing OCR words can form only
+1,194/2,333 reference cells under the literal source-assembly rules. Both OCR and
+assembly need improvement. The [stage profile](bench/results/pipeline-native-fastpath.md)
+attributes 62.83% of page wall time to API calls, 29.07% to source extraction
+including OCR, and 6.37% to layout detection. Parent and worker CPU/RAM are
+reported separately; GPU use is unmeasured for hosted inference.
 See the [plan](bench/GENERALIZATION_PLAN.md) and [corpus provenance](bench/GENERALIZATION_CORPUS.md).
 
 The [P001 complete-pipeline study](bench/results/pipeline-p001.md) now measures
