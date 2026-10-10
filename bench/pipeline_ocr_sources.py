@@ -15,7 +15,7 @@ import threading
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 from bench.silver import guard_path, sha, write_json
 
@@ -97,12 +97,22 @@ def whitespace_projection(recognized: list[dict[str, Any]]) -> list[dict[str, An
     for line, word in enumerate(recognized):
         text, box = word["text"], word["bbox"]
         for token in re.finditer(r"\S+", text):
-            scale = (box[2] - box[0]) / max(1, len(text))
+            rotation = word.get("rotation", 0)
+            start, end = token.start() / max(1, len(text)), token.end() / max(1, len(text))
+            if rotation == 0:
+                token_box = [box[0] + start * (box[2] - box[0]), box[1], box[0] + end * (box[2] - box[0]), box[3]]
+            elif rotation == 180:
+                token_box = [box[2] - end * (box[2] - box[0]), box[1], box[2] - start * (box[2] - box[0]), box[3]]
+            elif rotation == 90:
+                token_box = [box[0], box[3] - end * (box[3] - box[1]), box[2], box[3] - start * (box[3] - box[1])]
+            else:
+                token_box = [box[0], box[1] + start * (box[3] - box[1]), box[2], box[1] + end * (box[3] - box[1])]
             output.append(
                 {
                     "id": f"w{len(output)}",
                     "text": token.group(),
-                    "bbox": [box[0] + token.start() * scale, box[1], box[0] + token.end() * scale, box[3]],
+                    "bbox": token_box,
+                    "rotation": rotation,
                     "line": [0, line],
                     "geometry": "approximate uniform character advance; not recognized word boxes",
                 }
@@ -121,12 +131,20 @@ def _key(word: dict[str, Any]) -> tuple[Any, ...]:
     return (word["text"], *(round(float(coordinate), 3) for coordinate in word["bbox"]))
 
 
-def extract(
-    page: Any, mode: str = "empty", dpi: float = 150, *, engine: Any = None, tokenization: str = "reextract"
+def extract(  # noqa: PLR0913 - experimental controls are explicit
+    page: Any,
+    mode: str = "empty",
+    dpi: float = 150,
+    *,
+    engine: Any = None,
+    tokenization: str = "reextract",
+    orientation: str = "fixed",
 ) -> dict[str, Any]:
     """Return global source words and diagnostics, preserving the supplied document."""
     import pylopdf
 
+    if orientation not in ("fixed", "candidates"):
+        raise ValueError("Unknown OCR orientation mode")
     if tokenization not in ("reextract", "whitespace"):
         raise ValueError("Unknown OCR tokenization mode")
     if mode not in ("empty", "uncovered_images"):
@@ -138,6 +156,8 @@ def extract(
     if len(native) > MAX_WORDS:
         raise ValueError("Complete native word source exceeds admission")
     diagnostics: dict[str, Any] = {
+        "orientation": orientation,
+        "orientation_passes": [],
         "mode": mode,
         "tokenization": tokenization,
         "dpi": dpi,
@@ -165,6 +185,8 @@ def extract(
     if not regions:
         diagnostics["status"] = "abstained_no_uncovered_image_regions"
         return {"source": source, "diagnostics": diagnostics}
+    if orientation == "candidates" and sum(region["render_pixels"] for region in regions) * 4 > MAX_EMPTY_PIXELS:
+        raise ValueError("Complete orientation region passes exceed pixel admission")
     if _pixels(size, dpi) > MAX_EMPTY_PIXELS:
         raise ValueError("Full-page render cost exceeds 64M pixel admission even for clipped regions")
     if len(page.parent) > MAX_PARENT_PAGES:
@@ -180,8 +202,20 @@ def extract(
         if Counter(_key(word) for word in _native_words(owned[0])) != Counter(_key(word) for word in native):
             raise ValueError("Selected-page clone changed native text inventory")
         recognized: list[dict[str, Any]] = []
+        oriented_groups: list[tuple[int, list[dict[str, Any]]]] = []
         for region in regions:
-            words = owned[0].get_text_ocr(dpi=dpi, engine=engine, clip=None if mode == "empty" else region["bbox"])
+            clip = None if mode == "empty" else region["bbox"]
+            selected_rotation = 0
+            if orientation == "candidates":
+                from bench.pipeline_ocr_orientation import recognize
+
+                trial = recognize(owned[0], dpi=dpi, engine=engine, clip=clip)
+                diagnostics["orientation_passes"].append(trial)
+                selected_rotation = trial["selected_rotation"]
+                words = trial["words"]
+            else:
+                words = owned[0].get_text_ocr(dpi=dpi, engine=engine, clip=clip)
+            admitted: list[dict[str, Any]] = []
             for ocr_word in words:
                 box = _box(list(ocr_word["bbox"]))
                 if any(_intersects(box, word["bbox"]) for word in native):
@@ -192,13 +226,20 @@ def extract(
                         "bbox": box,
                         "text": ocr_word["text"],
                         "confidence": ocr_word["confidence"],
+                        "rotation": selected_rotation,
                     }
                 )
+                admitted.append(recognized[-1])
+            if admitted:
+                oriented_groups.append((selected_rotation, admitted))
         if len(recognized) > MAX_WORDS:
             raise ValueError("Complete recognized source exceeds admission")
         diagnostics["recognized"] = recognized
         if recognized and tokenization == "reextract":
-            owned[0].insert_ocr_text_layer([(*word["bbox"], word["text"]) for word in recognized])
+            for rotation, group in oriented_groups:
+                owned[0].insert_ocr_text_layer(
+                    [(*word["bbox"], word["text"]) for word in group], rotation=cast(Literal[0, 90, 180, 270], rotation)
+                )
         complete = _native_words(owned[0])
         if tokenization == "whitespace":
             block = max((word["line"][0] for word in native), default=-1) + 1
