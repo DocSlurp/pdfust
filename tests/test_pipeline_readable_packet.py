@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import bench.pipeline_readable_packet as module
 import pytest
@@ -131,10 +131,10 @@ def test_duplicate_source_input_and_excess_candidates_are_refused() -> None:
 
 
 @pytest.mark.parametrize("limit", [0, -1, 128001, True, 1.5])
-def test_explicit_larger_packet_budget_is_still_bounded(limit: Any) -> None:
+def test_explicit_larger_packet_budget_is_still_bounded(limit: object) -> None:
     page, candidates = fixture()
     with pytest.raises(ValueError, match="admission"):
-        packet(page, candidates, max_characters=limit)
+        packet(page, candidates, max_characters=cast("int", limit))
 
 
 def test_explicit_packet_budget_preserves_complete_evidence() -> None:
