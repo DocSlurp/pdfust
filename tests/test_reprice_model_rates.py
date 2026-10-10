@@ -38,6 +38,29 @@ def test_positive_provider_cost_wins(usage: dict[str, Any]) -> None:
     assert result["basis"] == "provider-reported USD"
 
 
+@pytest.mark.parametrize("gateway", [0, 0.0005])
+def test_byok_reports_upstream_and_gateway_separately(gateway: float) -> None:
+    usage = {"cost": gateway, "is_byok": True, "cost_details": {"upstream_inference_cost": 0.01}}
+    result = request_cost(entry(cost=0.3, status="reserved"), usage, {})
+    assert result["reported_usd"] == gateway
+    assert result["gateway_reported_usd"] == gateway
+    assert result["upstream_inference_usd"] == 0.01
+    assert result["effective_usd"] == pytest.approx(0.01 + gateway)
+    assert result["basis"] == "provider-reported BYOK upstream plus gateway USD"
+
+
+def test_shared_routing_upstream_is_not_added_again() -> None:
+    usage = {"cost": 0.01, "is_byok": False, "cost_details": {"upstream_inference_cost": 0.009}}
+    assert request_cost(entry(), usage, {})["effective_usd"] == 0.01
+
+
+def test_byok_missing_gateway_does_not_turn_partial_cost_into_total() -> None:
+    usage = {"is_byok": True, "cost_details": {"upstream_inference_cost": 0.01}}
+    result = request_cost(entry(cost=0.3, status="reserved"), usage, {})
+    assert result["effective_usd"] is None
+    assert result["upstream_inference_usd"] == 0.01
+
+
 def test_missing_tokens_unknown_and_reservations_not_spend() -> None:
     result = request_cost(entry(cost=0.3, status="reserved unknown charge"), {}, PRICE)
     assert result["effective_usd"] is None

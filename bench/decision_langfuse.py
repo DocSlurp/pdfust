@@ -364,7 +364,7 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
                 key for key in ("input", "output") if key not in estimated
             ]
             attributes["langfuse.observation.metadata.catalog_estimate_is_charge"] = False
-    if provided_cost is None or provided_cost == 0:
+    if provided_cost is None or provided_cost == 0 or usage.get("is_byok") is True:
         from bench.reprice_model_rates import request_cost  # noqa: PLC0415 - shared pure pricing projection.
 
         rate = prices.get(model, {}) if isinstance(prices, dict) else {}
@@ -372,7 +372,16 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         for key in ("cache_status", "cache_assumption", "cache_read_tokens", "cache_write_tokens"):
             if quote.get(key) is not None:
                 attributes["langfuse.observation.metadata." + key] = quote[key]
-        if quote.get("cache_read_counter_present") or quote.get("cache_write_counter_present"):
+        if quote.get("upstream_inference_usd") is not None:
+            attributes["langfuse.observation.metadata.upstream_inference_usd"] = quote["upstream_inference_usd"]
+            attributes["langfuse.observation.metadata.cost_basis"] = quote["basis"]
+            if quote["effective_usd"] is not None:
+                attributes["langfuse.observation.cost_details"] = {"total": quote["effective_usd"]}
+            else:
+                attributes.pop("langfuse.observation.cost_details", None)
+            attributes.pop("langfuse.observation.metadata.catalog_estimated_usd", None)
+            attributes["langfuse.observation.metadata.effective_cost_complete"] = quote["effective_usd"] is not None
+        elif quote.get("cache_read_counter_present") or quote.get("cache_write_counter_present"):
             if quote["effective_usd"] is not None:
                 attributes["langfuse.observation.cost_details"] = {"total": quote["effective_usd"]}
                 attributes["langfuse.observation.metadata.catalog_estimated_usd"] = quote["effective_usd"]

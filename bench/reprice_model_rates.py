@@ -85,6 +85,18 @@ def request_cost(entry: dict[str, Any], usage: dict[str, Any], price: dict[str, 
         "usage": usage,
         **cache,
     }
+    # BYOK gateway fees and direct-provider inference are distinct amounts.
+    # Preserve the original gateway zero; never add upstream costs for shared routing.
+    details = usage.get("cost_details")
+    upstream = number(details.get("upstream_inference_cost")) if isinstance(details, dict) else None
+    if usage.get("is_byok") is True and upstream is not None and upstream > 0:
+        return {
+            **result, "upstream_inference_usd": upstream, "gateway_reported_usd": reported,
+            "effective_usd": upstream + reported if reported is not None else None,
+            "basis": "provider-reported BYOK upstream plus gateway USD"
+            if reported is not None else "unknown: missing BYOK gateway charge",
+            "cost_scope": "API-reported upstream inference plus gateway fee; not invoice reconciliation",
+        }
     if positive is not None:
         return {**result, "effective_usd": positive, "basis": "provider-reported USD"}
     inputs = number(usage.get("input_tokens", usage.get("prompt_tokens")))

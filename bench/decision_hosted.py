@@ -325,6 +325,18 @@ class DecisionClient:
             entry["provider_reported_usd"] = cost
             if cost > 0:
                 entry.update({"accounted_usd": cost, "cost_status": "provider-reported USD"})
+        if result.get("usage", {}).get("is_byok") is True:
+            from bench.reprice_model_rates import request_cost  # noqa: PLC0415 - shared pure BYOK accounting.
+
+            reported = request_cost(entry, result.get("usage", {}), {})
+            if reported.get("upstream_inference_usd") is not None:
+                entry["upstream_inference_usd"] = reported["upstream_inference_usd"]
+                entry["gateway_reported_usd"] = reported["gateway_reported_usd"]
+                if reported["effective_usd"] is not None:
+                    entry.update(accounted_usd=reported["effective_usd"], cost_status=reported["basis"])
+                else:
+                    entry.update(accounted_usd=max(entry["reservation_usd"], reported["upstream_inference_usd"]),
+                                 cost_status="reserved")
         if entry["cost_status"] == "reserved":
             from bench.reprice_model_rates import request_cost  # noqa: PLC0415 - pure offline accounting.
 
