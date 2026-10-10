@@ -172,11 +172,16 @@ def _cells(table: dict[str, Any]) -> dict[tuple[int, int, int, int], str]:
     rows, cols, values = table["row_count"], table["col_count"], table["values"]
     if type(rows) is not int or type(cols) is not int or min(rows, cols) < 1 or rows * cols > MAX_SLOTS:
         raise ValueError("Invalid table dimensions")
+    if not isinstance(values, list) or any(not isinstance(row, list) for row in values):
+        raise ValueError("Table matrix and rows must be lists")
     if len(values) != rows or any(len(row) != cols for row in values):
         raise ValueError("Invalid rectangular matrix")
+    raw_spans = table.get("spans", [])
+    if not isinstance(raw_spans, list) or any(not isinstance(span, dict) for span in raw_spans):
+        raise ValueError("Table spans must be a list of dictionaries")
     spans: dict[tuple[int, int], tuple[int, int]] = {}
     covered = set()
-    for span in table.get("spans", []):
+    for span in raw_spans:
         r, c, height, width = (span[k] for k in ("row", "column", "row_span", "column_span"))
         if any(type(v) is not int for v in (r, c, height, width)):
             raise ValueError("Invalid span types")
