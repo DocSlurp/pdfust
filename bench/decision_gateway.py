@@ -415,7 +415,7 @@ class GatewayDecisionClient(hosted.DecisionClient):
             if estimate["effective_usd"] is not None:
                 entry.update(accounted_usd=estimate["effective_usd"], cost_status=estimate["basis"])
 
-    def request(  # noqa: C901 - one atomic reserve/retain/settle transmission.
+    def request(  # noqa: C901, PLR0913 - retain the shared client signature and atomic accounting.
         self,
         body: dict[str, Any],
         *,
@@ -423,8 +423,13 @@ class GatewayDecisionClient(hosted.DecisionClient):
         max_body_bytes: int = hosted.MAX_BODY_BYTES,
         replay: bool = True,
         reservation_usd: float = hosted.RESERVATION,
+        retry_failed_index: int | None = None,
+        retry_reason: str | None = None,
     ) -> dict[str, Any]:
         """Transmit once with a 90-second timeout; successful exact replays are local."""
+        if retry_failed_index is not None or retry_reason is not None:
+            message = "Explicit failed-request retries are not supported on the Gateway transport"
+            raise ValueError(message)
         hosted.validate_request_reservation(reservation_usd)
         encoded = self._encode(body, max_body_bytes)
         body_hash, identity = hashlib.sha256(encoded).hexdigest(), request_identity(encoded, endpoint=self.endpoint)

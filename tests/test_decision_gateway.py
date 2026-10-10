@@ -376,3 +376,11 @@ def test_gateway_failure_persists_safe_diagnostics_without_retry(
     assert entry["http_error_diagnostic"]["locations"] == [["state"]]
     assert entry["accounted_usd"] == hosted.RESERVATION
     assert "secret-source-value" not in client.ledger.read_text()
+
+
+def test_gateway_rejects_openrouter_retry_approval_without_a_reservation(client: GatewayDecisionClient) -> None:
+    before = client.ledger.read_bytes() if client.ledger.exists() else None
+    with pytest.raises(ValueError, match="not supported on the Gateway"):
+        client.request(body(), tag="unsupported-retry", retry_failed_index=7, retry_reason="Inspected HTTP 500")
+    after = client.ledger.read_bytes() if client.ledger.exists() else None
+    assert after == before

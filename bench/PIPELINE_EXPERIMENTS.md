@@ -261,6 +261,14 @@ the 25,000-character complete-packet boundary. Compare column consensus plus the
 same gate and Sonnet review using this new format against the original and compact
 formats. No references or specific failed-cell strings enter the new prompt.
 
+The Haiku-review control retained a PPLX admission HTTP 500 at ledger entry 17158,
+with no response or known charge. The same source admission succeeded in preceding
+runs. After inspecting this failure, the final readable arm permits one explicit
+replacement of that exact request. The old USD 0.30 reservation remains unchanged;
+the replacement receives its own reservation and `retry_of_index` audit record.
+No automatic retry loop is enabled. Authentication, rate-limit and input failures
+remain ineligible, and the one-use permission cannot apply to another body.
+
 Keep the older mechanisms available; poor performance of a whole-page policy does
 not establish that its component is useless in a narrower role. In particular:
 

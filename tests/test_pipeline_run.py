@@ -766,11 +766,63 @@ def test_cli_rejects_multiple_packet_encodings(tmp_path: Path, monkeypatch: pyte
         sys,
         "argv",
         [
-            "pipeline_run", "--manifest", str(tmp_path / "missing.json"), "--output", str(tmp_path / "output"),
-            "--policy", "assembly", "--compact-packet", "--readable-packet",
+            "pipeline_run",
+            "--manifest",
+            str(tmp_path / "missing.json"),
+            "--output",
+            str(tmp_path / "output"),
+            "--policy",
+            "assembly",
+            "--compact-packet",
+            "--readable-packet",
         ],
     )
     with pytest.raises(SystemExit) as error:
         runner.main()
     assert error.value.code == 2
+    assert not (tmp_path / "output").exists()
+
+
+@pytest.mark.parametrize("matching", [False, True])
+def test_explicit_retry_is_scoped_to_the_original_request_hash(tmp_path: Path, *, matching: bool) -> None:
+    request = runner.body("perplexity/pplx-decider-v1.1-27b", "literal source", {"unresolved": "keep"}, None)
+    request_hash = runner.sha(json.dumps(request, separators=(",", ":")).encode())
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text(
+        json.dumps(
+            {
+                "requests": [
+                    {
+                        "index": 7,
+                        "tag": "P001/earlier",
+                        "accounted_usd": 0.3,
+                        "request_sha256": request_hash if matching else "f" * 64,
+                    }
+                ]
+            }
+        )
+    )
+    transmissions: list[dict[str, Any]] = []
+
+    def transmit(_request: dict[str, Any], **kwargs: Any) -> dict[str, Any]:  # noqa: ANN401 - capture the client contract.
+        transmissions.append(kwargs)
+        message = "Test transport reached"
+        raise RuntimeError(message)
+
+    client = cast("Any", SimpleNamespace(ledger=ledger, request=transmit))
+    with pytest.raises(RuntimeError, match="Test transport reached"):
+        runner.call(client, request, "P001/new", retry_failed_index=7, retry_reason="Inspected transient HTTP 500")
+    assert len(transmissions) == 1
+    assert transmissions[0]["replay"] is False
+    if matching:
+        assert transmissions[0]["retry_failed_index"] == 7
+        assert transmissions[0]["retry_reason"] == "Inspected transient HTTP 500"
+    else:
+        assert "retry_failed_index" not in transmissions[0]
+        assert "retry_reason" not in transmissions[0]
+
+
+def test_retry_requires_index_and_reason_before_source_loading(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="both a ledger index"):
+        runner.run(tmp_path / "missing.json", tmp_path / "output", {"retry_failed_index": 7})
     assert not (tmp_path / "output").exists()

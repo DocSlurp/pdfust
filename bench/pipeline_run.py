@@ -167,14 +167,28 @@ def body(model: str, prompt: str, choices: dict[str, str], url: str | None) -> d
     return translate(request, model) if model in CHAT_MODELS else request
 
 
-def call(client: DecisionClient, request: dict[str, Any], tag: str) -> dict[str, Any]:
+def call(
+    client: DecisionClient,
+    request: dict[str, Any],
+    tag: str,
+    *,
+    retry_failed_index: int | None = None,
+    retry_reason: str | None = None,
+) -> dict[str, Any]:
     """Root-only serial metering, fresh transmission, separate persistent wave cap."""
     ledger = json.loads(client.ledger.read_bytes())
     spent = sum(accounted_cost(e["accounted_usd"]) for e in ledger["requests"] if e.get("tag", "").startswith("P001/"))
     if spent + 0.30 > WAVE_LIMIT:
         raise RuntimeError("P001 reservation would exceed its USD 50 wave cap")
+    retry_options: dict[str, Any] = {}
+    if retry_failed_index is not None:
+        prior = next((e for e in ledger["requests"] if e.get("index") == retry_failed_index), None)
+        if prior is None:
+            raise ValueError("Explicit retry refers to an unknown ledger index")
+        if prior["request_sha256"] == sha(json.dumps(request, separators=(",", ":")).encode()):
+            retry_options = {"retry_failed_index": retry_failed_index, "retry_reason": retry_reason}
     started, cpu = time.perf_counter(), time.process_time()
-    result = client.request(request, tag=tag, max_body_bytes=750_000, replay=False)
+    result = client.request(request, tag=tag, max_body_bytes=750_000, replay=False, **retry_options)
     if request["model"] in CHAT_MODELS:
         options = request["response_format"]["json_schema"]["schema"]["properties"]["answers"]["properties"]["q0"][
             "properties"
@@ -233,6 +247,7 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
 
     started, cpu = time.perf_counter(), time.process_time()
     result: dict[str, Any] = {"id": record["id"], "status": "error", "tables": [], "calls": [], "stages": {}}
+    retry_options = {k: config[k] for k in ("retry_failed_index", "retry_reason") if config.get(k) is not None}
     try:
         pdf = guard_path(Path(record["pdf_path"]))
         data = pdf.read_bytes()
@@ -309,13 +324,17 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     }
                     request = body(config["model"], prompt, choices, url)
                     write_json(output / f"{record['id']}-request-0.json", request)
-                    response = call(client, request, f"P001/{config['run_id']}/{record['id']}/0")
+                    response = call(client, request, f"P001/{config['run_id']}/{record['id']}/0", **retry_options)
                     result["calls"].append(response)
                     probabilities = response["answer"].get("probabilities", {})
                     ranked = sorted(probabilities.values(), reverse=True)
-                    if config.get("gate_review_model") and ranked and (
-                        ranked[0] < GATE_REVIEW_SCORE
-                        or (len(ranked) > 1 and ranked[0] - ranked[1] < GATE_REVIEW_MARGIN)
+                    if (
+                        config.get("gate_review_model")
+                        and ranked
+                        and (
+                            ranked[0] < GATE_REVIEW_SCORE
+                            or (len(ranked) > 1 and ranked[0] - ranked[1] < GATE_REVIEW_MARGIN)
+                        )
                     ):
                         result["gate_review"] = {
                             "reason": "uncalibrated score <0.8 or margin <0.25",
@@ -323,7 +342,7 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                         }
                         review = body(config["gate_review_model"], prompt, choices, url)
                         write_json(output / f"{record['id']}-request-1.json", review)
-                        response = call(client, review, f"P001/{config['run_id']}/{record['id']}/1")
+                        response = call(client, review, f"P001/{config['run_id']}/{record['id']}/1", **retry_options)
                         result["calls"].append(response)
                     result["admission_choice"] = response["answer"]["choice"]
                     if response["answer"]["choice"] != "table":
@@ -348,7 +367,9 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                         choices["keep"] = "Keep the current complete state; no supplied edit is justified."
                         request = body(config["model"], prompt, choices, url)
                         write_json(output / f"{record['id']}-request-{step}.json", request)
-                        response = call(client, request, f"P001/{config['run_id']}/{record['id']}/{step}")
+                        response = call(
+                            client, request, f"P001/{config['run_id']}/{record['id']}/{step}", **retry_options
+                        )
                         result["calls"].append(response)
                         choice = response["answer"]["choice"]
                         if choice == "keep":
@@ -372,7 +393,7 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     request = body(config["model"], prompt, choices, url)
                     step = len(result["calls"])
                     write_json(output / f"{record['id']}-request-{step}.json", request)
-                    response = call(client, request, f"P001/{config['run_id']}/{record['id']}/{step}")
+                    response = call(client, request, f"P001/{config['run_id']}/{record['id']}/{step}", **retry_options)
                     result["calls"].append(response)
                     choice = response["answer"]["choice"]
                     state = next((c for c in candidates if c["id"] == choice), candidates[0])
@@ -398,6 +419,8 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
     """Freeze code/source/config before any calls; reference loading is a separate command."""
     if config.get("compact_packet") and config.get("readable_packet"):
         raise ValueError("Select only one optional packet encoding")
+    if (config.get("retry_failed_index") is None) != (config.get("retry_reason") is None):
+        raise ValueError("An explicit retry requires both a ledger index and an investigation reason")
     manifest = json.loads(guard_path(manifest_path).read_bytes())
     if manifest.get("split") != "DEV":
         raise ValueError("Pipeline requires explicit DEV sources")
@@ -420,6 +443,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "pipeline_routing.py",
                 "pipeline_admission.py",
                 "pipeline_frontier.py",
+                "decision_hosted.py",
                 "rolling_rows.py",
                 "rolling_topology.py",
                 "decision_evidence_designs.py",
@@ -505,6 +529,8 @@ def main() -> None:
     packet_options = parser.add_mutually_exclusive_group()
     packet_options.add_argument("--compact-packet", action="store_true")
     packet_options.add_argument("--readable-packet", action="store_true")
+    parser.add_argument("--retry-failed-index", type=int)
+    parser.add_argument("--retry-reason")
     parser.add_argument("--pilot", action="store_true")
     parser.add_argument("--order-seed", type=int, default=20261009)
     args = parser.parse_args()
@@ -524,6 +550,8 @@ def main() -> None:
         "column_consensus": args.column_consensus,
         "compact_packet": args.compact_packet,
         "readable_packet": args.readable_packet,
+        "retry_failed_index": args.retry_failed_index,
+        "retry_reason": args.retry_reason,
     }
     result = run(args.manifest, args.output, config)
     print(json.dumps({k: v for k, v in result.items() if k != "results"}, indent=2))
