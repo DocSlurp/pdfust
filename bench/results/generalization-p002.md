@@ -1510,37 +1510,50 @@ Complete tables and exact positive pages use different units and denominators: t
 
 ## Latest comparison and priorities
 
-Source-ID matrix Sonnet 512 completed a full 16-page attempt with 14 operational
-outputs, two complete tables on one exact positive page (1/12), nine exact
-topologies, 327/2333 structural cells, 227 exact text cells, and 13 localized
-tables. It added nine extra tables, including one false-positive negative page.
-All 44 calls were positively provider-charged, totaling USD 0.966024. Both
-failed pages are independently confirmed `content_filter` finishes with no
-content; neither is an observed output-length finish. No retries were performed.
+The fixed full276 Haiku hybrid is the strongest observed inexpensive broad
+complete-pipeline treatment so far: 6,604/8,897 exact cells, 157/249 complete
+tables and one false-positive negative page for USD 0.0397398. It verifies
+268/276 pages, with 198 source-conserved and seventy mixed native/model outputs.
+It improves natural64 cell recovery over the full source-ID matrix treatment
+(1,813 versus 1,299), while the source-ID arm retains more complete tables
+before correction (166 versus 157). All primary scored and diagnostic cohorts
+remain fixed. The full Sonnet hybrid costs USD 0.838664, recovers fewer exact
+cells and adds sixteen authored negative-page false positives in its single
+fresh run; this is observed DEV evidence, not a universal model comparison.
 
-The previous Sonnet anchor format retained 16 operational outputs, the same two
-complete tables on one exact positive page, ten exact topologies, 419 structural
-cells, and 295 exact text cells. Whitespace-anchor generation retained 15 outputs
-with one invalid anchor collection, two complete tables, and 236 exact text
-cells. Matrix format has not improved complete-table recovery in this screen;
-its lower text recovery, extra tables, operational failures, and cost must be
-considered together. These treatments also differ in settings and cannot isolate
-the effect of output format.
+A source-only native orientation defect accounts for the hybrid's twelve authored
+rotated-table failures. Physical source grids and baselines survive unchanged;
+the independently frozen logical-projection counterfactual is documented in
+[p002-native-orientation.md](p002-native-orientation.md). It is supplementary
+CPU replay of retained model calls, with its own exact identity, and does not
+replace the primary physical-run rows. New logical replay requires exact helper
+and extraction/Markdown runtime fingerprints and recomputes baseline evidence
+from the original hash-verified PDF. Original regional source-order rendering
+is another explicit presentation-only control; legacy outputs remain replayable.
 
-The two dense newspaper pages contain 39/53 target tables and 1972/2333 cells.
-Matrix Sonnet recovers no complete table there, with 121 structural and 59 exact
-text cells. The remaining fourteen pages contain fourteen target tables and
-recover two complete tables, 206 structural and 168 text cells. That subgroup
-also contains four negative pages, so its exact-page count cannot be presented
-as positive recovery. This is a posthoc density diagnosis; all sixteen pages
-and every official target remain the primary denominator.
+On natural16, direct image transcription avoids the OCR source-text ceiling,
+but frozen whole-page and crop responses still fail strict geometry/topology
+checks and miss dense tables. Ordinary Sonnet1024 crops recover 982/2333 cells;
+Haiku1024 crops recover 687. Across three matched-input repeats per model,
+identical proposals, crops and all nineteen request hashes produce substantial
+quality variation through fresh responses and page-atomic dense failure. Those
+variations must not be attributed to the hybrid architecture. Supplementary
+positive-page macro recalls keep dense pages from dominating every diagnostic,
+while the primary 53-table/2,333-cell micro totals remain unchanged.
 
-Priority is improving dense-page evidence and coherent table boundaries, then
-checking whether image-only transcription can exceed missing-OCR source-ID
-ceilings. Raising token budgets does not address the observed content-filter
-failures. A new table-only vision comparator must preserve model transcription
-provenance and cannot claim complete page prose or source conservation. No
-current result supports a general PDF extraction quality claim.
+Multiscale detection restores ten Table proposals on formerly missed dense p1,
+with Haiku recovering 161 cells there, but complete dense-table recovery remains
+zero. Larger2048/JPEG50 crops do not fix strict failures; smaller768/512/400
+crops trade recovery and operational coverage. Source-derived row evidence
+loses33 exact cells versus matched base512 while increasing API cost53% and
+retaining the same15/16 operational count. Existing columns and ordinal controls
+remain separately labeled, without claiming an OCR-only or universal prompt win.
+
+Priorities are reliable source-based native ordering, complete detector coverage,
+strict format reliability and independent fresh repeat measurement. Any partial
+salvage, orientation correction or inventory ceiling stays a separately labeled
+offline diagnostic. No reference values influence requests or runtime routing,
+no failed calls disappear from costs, and no new default parser repair is enabled.
 
 ## Corpus correction and reference review
 
