@@ -20,6 +20,28 @@ from test_pipeline_run import config, pdf_bytes, record
 import pylopdf
 
 
+@pytest.mark.parametrize("factor", [0.5, 1, 2, 4])
+def test_fixed_ocr_edge_preserves_raster_size_under_physical_scaling(factor: float) -> None:
+    viewport = [10 * factor, 20 * factor, 410 * factor, 620 * factor]
+    dpi, metadata = runner.ocr_resolution(viewport, {"ocr_edge": 2048, "ocr_dpi": 150})
+    assert (viewport[3] - viewport[1]) * dpi / 72 == pytest.approx(2048)
+    assert (viewport[2] - viewport[0]) * dpi / 72 == pytest.approx(2048 * 2 / 3)
+    assert metadata["resolution_mode"] == "fixed_edge"
+    assert metadata["display_viewport"] == viewport
+
+
+def test_fixed_dpi_is_unchanged_without_explicit_ocr_edge() -> None:
+    assert runner.ocr_resolution([0, 0, 400, 600], {"ocr_dpi": 300})[0] == 300
+
+
+@pytest.mark.parametrize(
+    ("viewport", "edge"), [([0, 0, 0, 600], 2048), ([0, 0, 400, float("inf")], 2048), ([0, 0, 400, 600], True)]
+)
+def test_ocr_resolution_rejects_invalid_geometry_or_choice(viewport: list[float], edge: object) -> None:
+    with pytest.raises(ValueError, match="OCR"):
+        runner.ocr_resolution(viewport, {"ocr_edge": edge})
+
+
 def test_region_native_output_is_complete_and_has_no_api_calls(tmp_path: Path) -> None:
     settings = {**config("native"), "ocr_empty": False}
     result = runner.process(record(tmp_path), settings, tmp_path, None)

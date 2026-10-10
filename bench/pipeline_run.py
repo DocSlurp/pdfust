@@ -490,6 +490,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                         "pipeline_ocr_orientation.py",
                         "pipeline_layout_detector.py",
                         "pipeline_layout_tiles.py",
+                        "pipeline_layout_fusion.py",
                     ]
                     if config.get("processor") == "regions"
                     else []

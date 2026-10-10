@@ -8,6 +8,7 @@ import argparse
 import base64
 import io
 import json
+import math
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -23,6 +24,25 @@ if TYPE_CHECKING:
     from bench.decision_hosted import DecisionClient
 
 MAX_RASTER_EDGE = 2400
+
+
+def ocr_resolution(page_size: list[float], config: dict[str, Any]) -> tuple[float, dict[str, Any]]:
+    """Choose explicit DPI or a physical-scale-invariant longest raster edge."""
+    edge = config.get("ocr_edge", 0)
+    if type(edge) is not int or edge not in (0, 1536, 2048, 3072):
+        raise ValueError("Unknown fixed OCR edge")
+    if len(page_size) != 4 or any(not math.isfinite(v) for v in page_size):  # noqa: PLR2004
+        raise ValueError("Invalid OCR display viewport")
+    width, height = page_size[2] - page_size[0], page_size[3] - page_size[1]
+    if min(width, height) <= 0:
+        raise ValueError("Invalid OCR display extent")
+    dpi = edge * 72 / max(width, height) if edge else config.get("ocr_dpi", 150)
+    return dpi, {
+        "resolution_mode": "fixed_edge" if edge else "fixed_dpi",
+        "requested_edge": edge or None,
+        "effective_dpi": dpi,
+        "display_viewport": page_size,
+    }
 
 
 def sanitize_vectors(snapshot: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -335,6 +355,7 @@ def process(
                 page.set_rotation(0)
             result["effective_rotation"] = page.rotation
             snapshot = baseline.source(page)
+            ocr_dpi, resolution = ocr_resolution(list(page.rect), config)
             ocr_source = config.get("ocr_source", "legacy")
             if ocr_source != "legacy" and (
                 not snapshot["words"] or config.get("ocr_mode", "empty") == "uncovered_images"
@@ -345,7 +366,7 @@ def process(
                 evidence = extract(
                     page,
                     mode=config.get("ocr_mode", "empty"),
-                    dpi=config.get("ocr_dpi", 150),
+                    dpi=ocr_dpi,
                     engine=baseline.ocr_engine(),
                     tokenization=ocr_source,
                     orientation=config.get("ocr_orientation", "fixed"),
@@ -353,17 +374,19 @@ def process(
                 snapshot = {**snapshot, **evidence["source"]}
                 result["ocr"] = {
                     **evidence["diagnostics"],
+                    "resolution": resolution,
                     "engine": "RTen native CPU",
                     "threads": 4,
                     "wall_seconds": time.perf_counter() - began,
                 }
             elif not snapshot["words"] and config.get("ocr_empty", True):
                 began = time.perf_counter()
-                recognized = page.apply_ocr(dpi=config.get("ocr_dpi", 150), engine=baseline.ocr_engine())
+                recognized = page.apply_ocr(dpi=ocr_dpi, engine=baseline.ocr_engine())
                 result["ocr"] = {
                     "engine": "RTen native CPU",
                     "threads": 4,
-                    "dpi": config.get("ocr_dpi", 150),
+                    "dpi": ocr_dpi,
+                    "resolution": resolution,
                     "recognized_regions": len(recognized),
                     "wall_seconds": time.perf_counter() - began,
                 }
@@ -408,6 +431,17 @@ def process(
                         "Initialization is recorded separately; full parent wall includes all calls and rendering.",
                     }
                     plan = tile_regions(snapshot, detection["boxes"], **region_options)
+                if config.get("detector_fusion", "none") != "none":
+                    from bench.pipeline_layout_fusion import fuse, fusion_regions
+
+                    raw_boxes = (
+                        [box for call in detection["calls"] for box in call["boxes"]]
+                        if tiles != "none"
+                        else detection["boxes"]
+                    )
+                    evidence = fuse(raw_boxes, list(page.rect), arm=config["detector_fusion"])
+                    plan = fusion_regions(snapshot, evidence, **region_options)
+                    detection["fusion"] = evidence
                 result["layout_detector"] = {
                     **detection,
                     "image_sha256": sha(raster),
@@ -462,6 +496,13 @@ def main() -> None:
     parser.add_argument("--region-words", type=int, default=256)
     parser.add_argument("--region-characters", type=int, default=8000)
     parser.add_argument("--ocr-dpi", type=int, choices=(100, 150, 200, 300), default=150)
+    parser.add_argument(
+        "--ocr-edge",
+        type=int,
+        choices=(0, 1536, 2048, 3072),
+        default=0,
+        help="Explicit longest-edge OCR resolution; nonzero overrides fixed DPI",
+    )
     parser.add_argument("--ocr-source", choices=("legacy", "reextract", "whitespace"), default="legacy")
     parser.add_argument("--ocr-mode", choices=("empty", "uncovered_images"), default="empty")
     parser.add_argument("--ocr-orientation", choices=("fixed", "candidates"), default="fixed")
@@ -479,6 +520,9 @@ def main() -> None:
     parser.add_argument("--detector-residual", choices=("retain", "analyze"), default="retain")
     parser.add_argument("--detector-tiles", choices=("none", "2x2", "3x3", "both"), default="none")
     parser.add_argument("--detector-boundary", choices=("retain", "analyze"), default="retain")
+    parser.add_argument(
+        "--detector-fusion", choices=("none", "nms", "larger_containment", "overlap_union"), default="none"
+    )
     parser.add_argument("--rotation-mode", choices=("always", "native", "preserve"), default="native")
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
