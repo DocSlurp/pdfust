@@ -187,3 +187,38 @@ estimates and unresolved reserves distinct; unknowns do not become zero costs.
 Preserve failed-call reservations and raw receipts, and investigate them before any
 explicit retry. These experiments remain DEV-only; protected heldout data is outside
 this reproduction workflow.
+
+## Extracting your own PDF
+
+The experimental single-document wrapper creates a source-only manifest for an
+arbitrary local PDF; it creates no annotations or scoring corpus. Native CPU
+extraction is the default:
+
+```sh
+.venv/bin/python -m bench.extract_document /absolute/path/document.pdf \
+  --output "$PWD/bench/results/pdf-master-artifacts/my-document-$repro_id"
+```
+
+Use `--page 0 --page 2` for an explicit zero-based subset. The default admits up to
+128 requested pages; `--max-pages` can explicitly increase that bound through
+4,096. Larger whole documents require an explicit subset or raised admission.
+Inputs are bounded to 64 MiB, and an existing output directory is refused.
+
+`document.md` combines requested pages in physical page order with visible failure
+placeholders. `document.json` distinguishes complete document output from partial
+output and separately records whether every requested page succeeded. A successful
+subset remains a partial document. The CLI exits 2 for partial output. The unique
+child directory retains the original runner's frozen manifest/config/code, complete
+page Markdown/structures/results, requests/responses, costs and resource report;
+`pipeline.log` retains startup or dispatch failures. Wrapper dispatch wall includes
+child startup; pipeline CPU/RSS measures the runner child, and detector worker
+measurements remain separate. Wrapper CPU/RSS is unmeasured.
+
+The explicit paid modes `--mode hybrid-haiku` and `--mode hybrid-sonnet` delegate to
+the existing coordinated hybrid runner with preserved page rotation, whitespace
+OCR at 150 DPI and 16,384 output tokens. They use the project provider configuration
+and shared ledger; they require the same local OCR/YOLO assets described above.
+Native mode also uses OCR on pages lacking extractable text, so those pages need
+the OCR extra. Failed pages remain partial rather than becoming successful empty
+outputs. This wrapper does not make the research pipeline a portable public
+production API or alter the frozen experiment settings.
