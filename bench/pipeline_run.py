@@ -521,7 +521,10 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                 "pipeline_admission.py",
                 "pipeline_frontier.py",
                 "decision_hosted.py",
-                *(["research_policy.py", "p003_run.py"] if campaign == "P003" else []),
+                *([
+                    "research_policy.py", "p003_run.py", "p003_transport.py", "p003_client.py", "decision_langfuse.py",
+                    "decision_gateway.py", "decision_gateway_vision.py", "reprice_model_rates.py",
+                ] if campaign == "P003" else []),
                 *(
                     ["decision_concurrent.py", "decision_gateway.py", "decision_langfuse.py", "reprice_model_rates.py"]
                     if workers == VISION_WORKERS else []
@@ -598,6 +601,10 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
     for name in frozen["code_sha256"]:
         (output / "code" / name).write_bytes((ROOT / "bench" / name).read_bytes())
     serial_client = DecisionClient() if config["policy"] not in {"native", "native_text"} else None
+    if campaign == "P003" and serial_client is not None:
+        from bench.p003_client import P003DecisionClient
+
+        serial_client = P003DecisionClient()
     client: DecisionClient | ConcurrentDecisionClient | None = serial_client
     if workers == VISION_WORKERS:
         from bench.decision_concurrent import ConcurrentDecisionClient

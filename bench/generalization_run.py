@@ -175,9 +175,24 @@ def _request(
     if config.get("answer_tokens") and request["model"] in baseline.CHAT_MODELS:
         request["max_tokens"] = config["answer_tokens"]
     step = len(result["calls"])
-    write_json(output / f"{result['id']}-request-{step}.json", request)
     campaign = config.get("campaign", "P002")
-    response = baseline.call(client, request, f"{campaign}/{config['run_id']}/{result['id']}/{region_id}/{step}")
+    tag = f"{campaign}/{config['run_id']}/{result['id']}/{region_id}/{step}"
+    if campaign == "P003" and config.get("gate_provider") == "vercel":
+        from bench.p003_client import P003DecisionClient
+        from bench.p003_transport import request_gate
+
+        if isinstance(client, P003DecisionClient):
+            client.ensure_active()
+        try:
+            response = request_gate(request, tag, output / f"{result['id']}-request-{step}.json")
+        except Exception:
+            if isinstance(client, P003DecisionClient):
+                client.stopped = True
+            raise
+        result["calls"].append(response)
+        return response["answer"]
+    write_json(output / f"{result['id']}-request-{step}.json", request)
+    response = baseline.call(client, request, tag)
     result["calls"].append(response)
     return response["answer"]
 

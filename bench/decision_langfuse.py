@@ -301,7 +301,8 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         # This deployment rejects date-versioned duplicate model names. Keep
         # historical definitions intact and use a distinct telemetry-only name.
         alias = "cloudflare/clef-flash@2026-10-10"
-        prices = {**prices, alias: prices.get(model, {})}
+        original_prices = prices or {}
+        prices = {**original_prices, alias: original_prices.get(model, {})}
         model = alias
     attributes = {
         "langfuse.trace.name": "pdf-master DEV decisions",
