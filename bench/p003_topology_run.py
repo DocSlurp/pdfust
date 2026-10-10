@@ -15,6 +15,7 @@ from typing import Any
 
 from bench import p003_candidate_run as candidate
 from bench import p003_topology_chunks as chunks
+from bench import p003_topology_direct as direct
 from bench import p003_topology_geometry as geometry
 from bench import p003_topology_hybrid as hybrid
 from bench import p003_topology_ownership as ownership
@@ -267,7 +268,8 @@ def prepare_page(
                 if {i for cell in table["cells"] for i in cell["source_ids"]} <= local_ids
             ]
             mixed = hybrid.prepare(frozen, baseline_tables)
-            row_bodies = hybrid.batches(
+            selection = direct if config.get("ownership_protocol") == "direct_cell" else hybrid
+            row_bodies = selection.batches(
                 mixed,
                 config["model"],
                 crop["url"],
@@ -372,7 +374,7 @@ def process_page(
                 "word_count": len(json.loads(crop["snapshot"].packet_json)["source"]["words"]),
                 "maximum_new_ownership_calls": 0
                 if config.get("geometry_only") or config.get("transcript_replay")
-                else 2 * len(crop["row_bodies"]),
+                else (1 if config.get("ownership_protocol") == "direct_cell" else 2) * len(crop["row_bodies"]),
                 "rows": [],
                 "cells": [],
             }
@@ -413,6 +415,16 @@ def process_page(
                     )
                     result["topology_calls"].append(response)
                     responses.append(response["result"])
+                if config.get("ownership_protocol") == "direct_cell":
+                    stage = f"{crop['id']}/direct_assembly"
+                    audit = direct.assemble(mixed, crop["row_bodies"], responses)
+                    states[crop["id"]] = audit["state"]
+                    write_json(output / f"{stem}-direct-receipt.json", audit.get("direct", {}))
+                    write_json(output / f"{stem}-audit.json", audit)
+                    write_json(output / f"{stem}-updated-state.json", audit["state"])
+                    info["ownership_protocol"] = "direct_cell"
+                    info["status"] = "staged"
+                    continue
                 rows = hybrid.collect(mixed, crop["row_bodies"], responses)
                 write_json(output / f"{stem}-row-receipt.json", rows)
                 cell_bodies = hybrid.batches(
@@ -601,6 +613,10 @@ def run(
         and (not config.get("chunked_inventory") or config.get("geometry_only") or config.get("transcript_replay"))
     ):
         raise ValueError("Geometry-first model disputes require explicit chunked preparation or hosted mode")
+    if config.get("ownership_protocol", "row_anchor") not in {"row_anchor", "direct_cell"} or (
+        config.get("ownership_protocol") == "direct_cell" and not config.get("geometry_first")
+    ):
+        raise ValueError("Direct-cell ownership requires explicit geometry-first treatment")
     if config.get("geometry_first"):
         config = {**config, "topology_evidence": config.get("topology_evidence", "neighbors")}
     if config.get("crossed_tables", "strict") not in {"strict", "residual_prose"}:
@@ -664,6 +680,7 @@ def run(
         CODE_FILES
         + (("p003_topology_geometry.py",) if config.get("geometry_only") else ())
         + (("p003_topology_hybrid.py", "p003_topology_geometry.py") if config.get("geometry_first") else ())
+        + (("p003_topology_direct.py",) if config.get("ownership_protocol") == "direct_cell" else ())
         + (("p003_topology_replay.py",) if config.get("transcript_replay") else ())
         + (("p003_spatial_bands.py",) if config.get("band_mode") == "source" else ())
         + (("p003_topology_chunks.py", "p003_spatial_bands.py") if config.get("chunked_inventory") else ())
@@ -777,6 +794,7 @@ def main() -> None:
     parser.add_argument("--text-only", action="store_true")
     parser.add_argument("--geometry-first", action="store_true")
     parser.add_argument("--chunked-inventory", action="store_true")
+    parser.add_argument("--ownership-protocol", choices=("row_anchor", "direct_cell"), default="row_anchor")
     parser.add_argument("--topology-evidence", choices=("compact", "neighbors", "bands"))
     parser.add_argument("--crossed-tables", choices=("strict", "residual_prose"), default="strict")
     parser.add_argument("--band-mode", choices=("uniform", "source"), default="uniform")
@@ -794,6 +812,8 @@ def main() -> None:
     }
     if args.geometry_first:
         config["geometry_first"] = True
+    if args.ownership_protocol == "direct_cell":
+        config["ownership_protocol"] = "direct_cell"
     if args.chunked_inventory:
         config["chunked_inventory"] = True
     if args.topology_evidence is not None:
