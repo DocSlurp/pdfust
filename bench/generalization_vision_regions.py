@@ -67,7 +67,7 @@ def proposals(detection: dict[str, Any], viewport: list[float]) -> list[dict[str
                 }
             )
     if len(retained) > MAX_REGIONS:
-        raise ValueError("Complete table proposal inventory exceeds32 regions; no subset selection")
+        raise ValueError("Complete table proposal inventory exceeds 32 regions; no subset selection")
     return retained
 
 
@@ -92,7 +92,7 @@ def compose(regions: list[dict[str, Any]], viewport: list[float]) -> dict[str, A
         for table in parsed["tables"]:
             slots += table["row_count"] * table["col_count"]
             if slots > MAX_PAGE_SLOTS:
-                raise ValueError("Complete crop transcription exceeds4096 slots")
+                raise ValueError("Complete crop transcription exceeds 4096 slots")
             box = table["bbox"]
             for prior in tables:
                 other = prior["bbox"]
@@ -179,7 +179,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             or config.get("image_edge", CROP_EDGE) != CROP_EDGE
             or config.get("jpeg_quality", JPEG_QUALITY) != JPEG_QUALITY
         ):
-            raise ValueError("Crop control requires P002 and fixed1024 image edge")
+            raise ValueError("Crop control requires P002 and fixed 1024 image edge")
         detector = config.get("_layout_detector")
         if detector is None:
             raise ValueError("Crop control requires an initialized persistent CPU detector")
@@ -208,13 +208,13 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             result["stages"]["detector_seconds"] = time.perf_counter() - began
             if regions:
                 stage = "render"
-                pixels = page.render(
-                    scale=RENDER_EDGE / max(page.rect.width, page.rect.height), background=(255, 255, 255)
-                )
+                render_scale = (RENDER_EDGE - 1) / max(page.rect.width, page.rect.height)
+                result["render_scale"] = render_scale
+                pixels = page.render(scale=render_scale, background=(255, 255, 255))
                 with Image.open(io.BytesIO(pixels)) as rendered:
                     image = rendered.convert("RGB")
                     if max(image.size) > RENDER_EDGE:
-                        raise ValueError("Full-page raster exceeds fixed4096 edge cap")
+                        raise ValueError("Full-page raster exceeds fixed 4096 edge cap")
                     result["render_image_size"] = list(image.size)
                     for region in regions:
                         stage = "crop"

@@ -159,3 +159,45 @@ def test_parse_error_keeps_raw_responses_costs_and_fails_complete_page(
     assert "transcription_response" in result["transcription_regions"][1]
     assert not (tmp_path / "fixture-structure.json").exists()
     assert not (tmp_path / "fixture.md").exists()
+
+
+def test_indexed_transport_retains_unique_files_tags_and_default_zero(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Client:
+        """Record a local transport stub without inference or credentials."""
+
+        ledger = tmp_path / "absent-ledger.json"
+
+        def __init__(self) -> None:
+            self.tags: list[str] = []
+
+        def request(self, _body: dict, **kwargs: Any) -> dict:
+            self.tags.append(kwargs["tag"])
+            return {"entry": {"index": len(self.tags) - 1}, "result": raw([[str(len(self.tags))]]), "replayed": False}
+
+    monkeypatch.setattr(vision, "_ledger", lambda _client: [])
+    client: Any = Client()
+    body = {"model": "anthropic/claude-sonnet-5.5", "max_tokens": 100, "messages": []}
+    result: dict[str, Any] = {"id": "fixture", "calls": []}
+    config = {"run_id": "test"}
+    vision._transcribe(client, body, config, result, tmp_path)
+    before = (tmp_path / "fixture-response-0.json").read_bytes()
+    vision._transcribe(client, body, config, result, tmp_path, request_index=1)
+    assert (tmp_path / "fixture-response-0.json").read_bytes() == before
+    assert (tmp_path / "fixture-response-1.json").exists()
+    assert (tmp_path / "fixture-request-0.json").read_bytes() == (tmp_path / "fixture-request-1.json").read_bytes()
+    assert client.tags == ["P002/test/fixture/vision/0", "P002/test/fixture/vision/1"]
+    assert len(result["calls"]) == 2
+    assert "request_index" not in result["request"]
+
+
+def test_complete_proposals_over32_refuse_before_any_request() -> None:
+    detection: dict[str, Any] = {
+        "type": "result",
+        "device": "cpu",
+        "viewport": [0, 0, 600, 800],
+        "boxes": [{"label": "Table", "confidence": 0.8, "bbox": [10, 10, 50, 50]} for _ in range(33)],
+    }
+    with pytest.raises(ValueError, match="32 regions"):
+        regions.proposals(detection, detection["viewport"])
