@@ -1393,6 +1393,7 @@ Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d092842955
 | full276-yolo-matrix-haiku-512 | 270/276 | 6 | 136/172 | 166 | 197 | 6784/8897 | 6329/8897 | 25472/55180 | 180 | 10 | 12.6423 | 2116.13 | 0.127591 |
 | full276-hybrid-haiku-1024 | 268/276 | 8 | 129/172 | 157 | 193 | 7306/8897 | 6604/8897 | 16329/55180 | 184 | 2 | 18.3269 | 6743.87 | 0.0397398 |
 | full276-hybrid-sonnet-1024 | 271/276 | 5 | 128/172 | 157 | 191 | 6758/8897 | 6119/8897 | 32776/55180 | 179 | 16 | 16.7304 | 323.133 | 0.838664 |
+| full276-hybrid-haiku-1024-logical | 269/276 | 7 | 141/172 | 170 | 195 | 7213/8897 | 6615/8897 | 16592/55180 | 175 | 3 | 18.1999 | 6977.17 | 0.0385543 |
 
 ### native-full-r2
 
@@ -1534,6 +1535,35 @@ Ledger attempts 119; reported USD subtotal 0.838664; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.60717s, CPU 5.33543s; 272 per-page measurement entries, request CPU total 252.225s; maximum sampled request RSS 1236541440 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### full276-hybrid-haiku-1024-logical
+
+Scope: complete retained-source assembly with explicit mixed text provenance; text: mixed native-source/model-transcribed; source-conserved pages: 198/276.
+
+Failure categories: `{"invalid_table_geometry": 1, "invalid_table_topology": 2, "missing_source_text": 4}`.
+
+Supplementary positive-page macro recall (172 pages): exact cells 90.41%; complete tables 82.46%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 118 | 118 | 0.0385543 | 0 / 118 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| authored | 156/156 | 156 | 156 | 5050/5050 | 0/27830 | 0/24 |
+| native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
+| omnidoc | 64/64 | 14 | 39 | 2163/3847 | 16592/27350 | 2/24 |
+
+Page-processing run wall (excludes freeze/client setup) 886.82s; CPU 1286.13s; sampled RSS 873086976 bytes; verified output pages/min 18.1999; exact positive pages/min 9.5397. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 118; reported USD subtotal 0.0385543; missing reported charges 0; cost bases `{"provider-reported USD": 118}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.56705s, CPU 5.25327s; 272 per-page measurement entries, request CPU total 240.982s; maximum sampled request RSS 1252999168 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Historical full-r1 snapshot — invalid scan carriers
 
 Dataset SHA-256: `68dda47aa6b0e3fd61cb751d53c7d8ae11546dea4e97ab74e6f9cac6d528332b`.
@@ -1572,7 +1602,6 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
 - full276-yolo-matrix-haiku-512-gated: deferred before any request; fixed 25-minute allowance did not fit the deadline
-- full276-hybrid-haiku-1024-logical: fresh explicitly configured full276 run in progress; no completed result yet
 
 ## Interpretation
 
@@ -1583,18 +1612,19 @@ Complete tables and exact positive pages use different units and denominators: t
 
 ## Latest comparison and priorities
 
-The fixed full276 Haiku hybrid is the strongest observed inexpensive broad
-complete-pipeline treatment so far: 6,604/8,897 exact cells, 157/249 complete
-tables and one false-positive negative page for USD 0.0397398. It verifies
-268/276 pages, with 198 source-conserved and seventy mixed native/model outputs.
-It improves natural64 cell recovery over the full source-ID matrix treatment
-(1,813 versus 1,299), while the source-ID arm retains more complete tables
-before correction (166 versus 157). All primary scored and diagnostic cohorts
-remain fixed. The full Sonnet hybrid costs USD 0.838664, recovers fewer exact
-cells and adds sixteen authored negative-page false positives in its single
-fresh run; this is observed DEV evidence, not a universal model comparison.
+The fresh full276 logical-native Haiku hybrid verifies 269/276 pages and recovers
+6,615/8,897 exact cells and 170/249 complete tables for USD 0.0385543. Its authored
+cohort is exact on all 5,050 cells and 156 tables, including the twelve rotated
+pages. Natural64 remains difficult: 1,565/3,847 cells, fourteen complete tables,
+three atomic failures and two negative false-positive pages. This is a fresh
+measured pipeline run; the earlier physical Haiku run and frozen orientation
+counterfactual remain separate rows. All 118 requests are identical to the
+physical run, so natural response differences cannot be attributed to orientation.
+The full Sonnet physical hybrid costs USD 0.838664 and adds sixteen authored
+negative-page false positives in its single fresh run. These are observed DEV
+results, not a universal model comparison. All primary cohorts remain fixed.
 
-A source-only native orientation defect accounts for the hybrid's twelve authored
+A source-only native orientation defect accounts for the physical hybrid's twelve authored
 rotated-table failures. Physical source grids and baselines survive unchanged;
 the independently frozen logical-projection counterfactual is documented in
 [p002-native-orientation.md](p002-native-orientation.md). It is supplementary
@@ -1608,6 +1638,7 @@ On natural16, direct image transcription avoids the OCR source-text ceiling,
 but frozen whole-page and crop responses still fail strict geometry/topology
 checks and miss dense tables. Ordinary Sonnet1024 crops recover 982/2333 cells;
 Haiku1024 crops recover 687. Across three matched-input repeats per model,
+plus a fourth fresh Haiku logical repeat,
 identical proposals, crops and all nineteen request hashes produce substantial
 quality variation through fresh responses and page-atomic dense failure. Those
 variations must not be attributed to the hybrid architecture. Supplementary
@@ -1625,9 +1656,10 @@ ordinal512 and columns control reaches395 cells with no errors or extra tables;
 its multiple changes cannot establish an OCR-only or universal prompt win.
 
 Priorities are reliable source-based native ordering, complete detector coverage,
-strict format reliability and independent fresh repeat measurement. Any partial
-salvage, orientation correction or inventory ceiling stays a separately labeled
-offline diagnostic. No reference values influence requests or runtime routing,
+strict format reliability and independent fresh repeat measurement. Partial
+salvage, frozen orientation replay and inventory ceilings stay separately labeled
+offline diagnostics; the fresh logical treatment has its own measured row.
+No reference values influence requests or runtime routing,
 no failed calls disappear from costs, and no new default parser repair is enabled.
 
 ## Corpus correction and reference review
@@ -2360,6 +2392,7 @@ the unchanged 53-table/2,333-cell references, without feeding them into requests
 | Haiku | standalone crops1024 | 14 | 687 | 4 | 3 | 2 | 3 | 0 |
 | Haiku | pilot hybrid1024 | 14 | 289 | 3 | 2 | 2 | 1 | 1 |
 | Haiku | full276 hybrid subset | 15 | 732 | 2 | 2 | 1 | 2 | 1 |
+| Haiku | fresh logical full276 subset | 14 | 632 | 3 | 2 | 2 | 1 | 1 |
 | Sonnet | standalone crops1024 | 16 | 982 | 5 | 3 | 0 | 0 | 0 |
 | Sonnet | pilot hybrid1024 | 15 | 289 | 4 | 3 | 1 | 0 | 0 |
 | Sonnet | full276 hybrid subset | 15 | 287 | 3 | 2 | 1 | 0 | 0 |
@@ -2532,7 +2565,60 @@ actual assembly quality, and dense detector coverage remains limited.
 
 The scheduler deferred `full276-yolo-matrix-haiku-512-gated` before any request:
 the fixed 25-minute allowance no longer fit the remaining paid-run deadline.
-There is no completed expansion result or charge to invent. A separately frozen
-fresh `full276-hybrid-haiku-1024-logical` run started after CPU validation finished;
-it will retain all 276 intended pages and explicit logical-native provenance,
-with a new measured result rather than replacing offline replay or physical rows.
+There is no completed expansion result or charge to invent. The separately frozen fresh `full276-hybrid-haiku-1024-logical` run completed
+with all 276 intended pages retained; its verified measured result follows.
+
+
+## Fresh full276 logical-native Haiku pipeline
+
+The final fresh run verifies 269/276 operational pages: 198 source-conserved
+and 71 mixed native/model outputs. The unchanged 220 scored pages recover
+6,615/8,897 exact cells, 7,213 structural cells, 195 exact topologies and
+170/249 complete tables on 141/172 exact positive pages. Thirty-nine tables
+remain missing. Three extra tables include one on a positive page and two on
+two natural negative pages.
+Supplementary positive-page macro recall is 90.41% exact cells and 82.46%
+complete tables. The 56 native diagnostics remain unscored, including the same
+four unsupported-source failures. No denominator or atomic failure is removed.
+
+Authored156 now recovers all 5,050 anchor cells and all 156 complete tables,
+with no errors or negative false positives. All twelve rotated pages recover
+264/264 cells and twelve complete tables. Natural64 recovers 1,565/3,847 cells,
+39 exact topologies and fourteen complete tables. Three normal-stop model
+responses fail strict parsing: p9f92 has out-of-range normalized table bounds;
+pf012 and pa31b have nonempty covered merge slots. Each failed page contributes
+zero quality; calls and raw responses remain retained.
+
+All 118 positive provider-reported charges total USD 0.0385543. Operational
+throughput is 18.20 pages/minute and 6,977.17 pages/API USD. The page-processing
+interval is 886.820288 seconds, excluding freeze/client setup; parent CPU is
+1,286.129753 seconds and peak parent RSS is 873,086,976 bytes. Detector-worker
+resources remain separately reported. The run started after the complete CPU
+test suite finished and had no other heavy benchmark CPU work active.
+
+A source-only comparison against the original physical full Haiku run verifies
+identical native boxes, raw and filtered detector proposals, exclusions and
+complete crop descriptors on every one of the 276 pages. All 118 independently
+verified retained request hashes match exactly. Natural16 also matches all
+sixteen pages and nineteen requests, with no native proposal exclusions. The
+audit is retained at `regions-audit/haiku-physical-logical-repeat-identity.json`.
+The native orientation correction explains the authored rotated improvement;
+fresh natural model-response variation remains separate. Against the earlier
+physical run, natural64 loses 248 exact cells while gaining one complete table.
+It would be incorrect to credit or blame logical projection for those image-only
+response differences.
+
+The fresh natural16 subset verifies 14/16 pages and recovers 632/2333 cells,
+914 structural cells, thirteen exact topologies and three complete tables on
+two exact positive pages. There is one extra table on one negative page and
+31 missing tables. Supplementary macro recall is 50.92% cells and 20.83% tables.
+Dense p1 again has zero proposals; p98 contributes 366 cells and no complete
+tables. The remaining fourteen pages contribute 266 cells and all three
+complete tables. The subset failures are p9f92 bounds and pf012 covered merge
+slots. Its fourth matched-input Haiku repeat reinforces the observed response
+variation; it receives no invented share of full-run wall time or charges.
+
+This fresh measured run does not replace the original physical runs or the
+independently frozen CPU-only orientation counterfactual. No model calls used
+reference values, no raw response was repaired for the primary score, and no
+paid job remains pending; the deferred gate arm never started.
