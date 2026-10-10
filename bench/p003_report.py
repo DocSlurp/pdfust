@@ -594,6 +594,18 @@ def verify_candidate_failure_labels(prediction: dict[str, Any], frozen: dict[str
             raise ValueError("Distinct failed candidate pool incorrectly labeled duplicate-only")
 
 
+def candidate_original_requests(page: dict[str, Any]) -> set[str]:
+    """Require attempted crop bodies while preserving explicit never-requested failure tails."""
+    required = set()
+    for crop in page.get("transcription_regions", []):
+        if crop.get("status") == "not_requested":
+            if page["status"] == "ok" or crop.get("request") is not None or crop.get("call_indexes"):
+                raise ValueError("Unrequested candidate crop has successful page or attempted request evidence")
+            continue
+        required.add(f"{page['id']}-request-{crop['request_index']}.json")
+    return required
+
+
 def verify_candidate_run(
     directory: Path,
     report: dict[str, Any],
@@ -658,9 +670,7 @@ def verify_candidate_run(
             required.add(page["id"] + "-result.json")
             if page["status"] == "ok":
                 required.update({page["id"] + "-structure.json", page["id"] + ".md"})
-            required.update(
-                f"{page['id']}-request-{crop['request_index']}.json" for crop in page.get("transcription_regions", [])
-            )
+            required.update(candidate_original_requests(page))
         if not required <= set(hashes):
             raise ValueError("Candidate baseline hash inventory lacks original requests or output evidence")
         verify_archive(copied, original_frozen, trusted_inputs[name])
