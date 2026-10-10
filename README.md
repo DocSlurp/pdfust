@@ -350,8 +350,34 @@ on frozen model topology also remains below the 384-cell ordinal baseline:
 uniform geometry recovers 276 cells, source-derived bands 328, PPLX ownership 280,
 and Luna Decisions ownership 232. The latter two are independently verified
 offline replays of original responses after a composition-order fix; they have
-no new inference throughput or cost claim. Local evidence, ambiguous-only
-placement, image encoding, and a broader 64-page DEV sample are under evaluation.
+no new inference throughput or cost claim.
+
+Fresh broader P003 runs on 64 natural DEV pages (93 tables, 3,847 reference
+cells; includes the original 16 pages) narrow the quality gap:
+
+| Pipeline | Outputs / 64 | Complete tables / 93 | Strict cells / 3,847 | Extra tables | Pages/min | Pages/API USD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Haiku source IDs, OCR300 | 62 | 11 | 1,309 | 11 | 2.69 | 1,013.32 |
+| GPT-6 Luna, 1024 px crops | 63 | 12 | 1,348 | 0 | 5.54 | 1,985.15 |
+
+Both retain all 64 pages in quality denominators and produce no table false
+positives on the 24 negative pages. The ordinal run has two raster-admission
+failures; Luna has one invalid rectangular-matrix response. Rates count usable
+outputs under concurrent load, with full generation costs and unpriced local
+compute. This broader DEV sample is not held-out confirmation.
+
+Smaller-image candidate selection remains promising: PPLX at 128 px with a
+16-color palette recovers 1,086 strict cells / 4 complete tables on the original
+16 pages; 400 px RGB JPEG, RGB PNG, and palette runs each recover 1,081 / 5.
+These are single runs using the frozen Luna/Sonnet pool. Repeats, blank/blur
+controls, and candidate-order changes test whether the image benefit persists.
+Their incremental selection rates exclude both original generations.
+
+The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
+all 266 compared image byte streams exactly while reducing measured rendering
+CPU time by 6.09–6.18 times through page reuse across crops and image sizes.
+This is a preprocessing result, not a complete-pipeline speedup or provider
+cache saving.
 
 The [P002 generalization study](bench/results/generalization-p002.md)
 expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
