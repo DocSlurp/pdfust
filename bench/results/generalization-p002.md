@@ -1,6 +1,6 @@
 # P002 natural-PDF generalization progress
 
-Frozen runs with independently verified successful states, exact Markdown and explicit text provenance appear below. Missing/error pages remain in every scored denominator. Protocol groups use different frozen datasets and must not be pooled into one quality score.
+Frozen runs with independently verified successful states, exact Markdown and explicit text provenance appear below. Missing/error pages remain in every scored denominator. Protocol groups use different frozen datasets and must not be pooled into one quality score. Timing/throughput cover page processing, excluding freeze/client setup and command startup; overlapping concurrent per-page CPU intervals are not additive.
 
 ## Authoritative natural16 DEV screen
 
@@ -35,6 +35,11 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-yolo-matrix-haiku-512-columns | 16/16 | 0 | 1/12 | 2 | 12 | 545/2333 | 332/2333 | 13616/16640 | 14 | 0 | 3.38242 | 584.159 | 0.0273898 |
 | natural16-yolo-indices-haiku-512 | 16/16 | 0 | 1/12 | 2 | 12 | 477/2333 | 311/2333 | 13497/16640 | 15 | 1 | 3.50996 | 645.992 | 0.0247681 |
 | natural16-yolo-indices-haiku-512-gated | 15/16 | 1 | 1/12 | 2 | 9 | 314/2333 | 232/2333 | 14832/16640 | 10 | 7 | 3.05878 | 539.852 | 0.0277854 |
+| natural16-hybrid-sonnet-1024 | 15/16 | 1 | 3/12 | 4 | 14 | 361/2333 | 289/2333 | 13209/16640 | 14 | 0 | 3.99775 | 67.3225 | 0.222808 |
+| natural16-vision-haiku-2048-q50-workers4 | 13/16 | 3 | 3/12 | 4 | 9 | 261/2333 | 216/2333 | 14878/16640 | 9 | 3 | 30.9319 | 1181.46 | 0.0110033 |
+| natural16-vision-crops-haiku-768 | 16/16 | 0 | 2/12 | 3 | 13 | 533/2333 | 403/2333 | 13298/16640 | 14 | 0 | 9.86646 | 1849.2 | 0.0086524 |
+| natural16-vision-crops-haiku-512 | 16/16 | 0 | 2/12 | 2 | 12 | 364/2333 | 290/2333 | 13879/16640 | 14 | 1 | 9.7988 | 1979.73 | 0.0080819 |
+| natural16-vision-crops-haiku-400 | 16/16 | 0 | 2/12 | 3 | 12 | 359/2333 | 225/2333 | 14420/16640 | 12 | 2 | 8.49134 | 1779.68 | 0.0089904 |
 
 ### natural16-whole-reviewed
 
@@ -64,7 +69,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 0 | 0 | 2/2333 | 16804/16640 | 0/4 |
 
-Whole-run wall 196.715s; CPU 374.167s; sampled RSS 588820480 bytes; verified output pages/min 2.74509; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 196.715s; CPU 374.167s; sampled RSS 588820480 bytes; verified output pages/min 2.74509; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 17; reported USD subtotal 0.0496148; missing reported charges 0; cost bases `{"provider-reported USD": 17}`. Reservation amount 0; estimate amount 0.
 
@@ -97,7 +102,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 0 | 0 | 2/2333 | 16804/16640 | 0/4 |
 
-Whole-run wall 205.984s; CPU 342.123s; sampled RSS 636424192 bytes; verified output pages/min 2.62157; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 205.984s; CPU 342.123s; sampled RSS 636424192 bytes; verified output pages/min 2.62157; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 25; reported USD subtotal 0.0358282; missing reported charges 0; cost bases `{"provider-reported USD": 25}`. Reservation amount 0; estimate amount 0.
 
@@ -130,7 +135,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 0 | 1 | 320/2333 | 25948/16640 | 0/4 |
 
-Whole-run wall 266.475s; CPU 359.703s; sampled RSS 660725760 bytes; verified output pages/min 3.6026; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 266.475s; CPU 359.703s; sampled RSS 660725760 bytes; verified output pages/min 3.6026; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 61; reported USD subtotal 0.146207; missing reported charges 0; cost bases `{"provider-reported USD": 61}`. Reservation amount 0; estimate amount 0.
 
@@ -163,7 +168,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 0 | 3 | 418/2333 | 25511/16640 | 0/4 |
 
-Whole-run wall 245.288s; CPU 327.633s; sampled RSS 633634816 bytes; verified output pages/min 3.91377; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 245.288s; CPU 327.633s; sampled RSS 633634816 bytes; verified output pages/min 3.91377; exact positive pages/min 0. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 62; reported USD subtotal 0.143924; missing reported charges 0; cost bases `{"provider-reported USD": 62}`. Reservation amount 0; estimate amount 0.
 
@@ -195,7 +200,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 10 | 419/2333 | 14588/16640 | 1/4 |
 
-Whole-run wall 369.605s; CPU 314.827s; sampled RSS 598724608 bytes; verified output pages/min 2.59737; exact positive pages/min 0.162335. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 369.605s; CPU 314.827s; sampled RSS 598724608 bytes; verified output pages/min 2.59737; exact positive pages/min 0.162335. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 47; reported USD subtotal 1.20126; missing reported charges 0; cost bases `{"provider-reported USD": 47}`. Reservation amount 0; estimate amount 0.
 
@@ -227,7 +232,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 7 | 447/2333 | 16144/16640 | 1/4 |
 
-Whole-run wall 417.369s; CPU 344.472s; sampled RSS 651649024 bytes; verified output pages/min 2.15636; exact positive pages/min 0.143758. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 417.369s; CPU 344.472s; sampled RSS 651649024 bytes; verified output pages/min 2.15636; exact positive pages/min 0.143758. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 49; reported USD subtotal 1.24482; missing reported charges 0; cost bases `{"provider-reported USD": 49}`. Reservation amount 0; estimate amount 0.
 
@@ -259,7 +264,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 9 | 327/2333 | 15229/16640 | 1/4 |
 
-Whole-run wall 310.605s; CPU 360.122s; sampled RSS 647983104 bytes; verified output pages/min 2.7044; exact positive pages/min 0.193171. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 310.605s; CPU 360.122s; sampled RSS 647983104 bytes; verified output pages/min 2.7044; exact positive pages/min 0.193171. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 44; reported USD subtotal 0.966024; missing reported charges 0; cost bases `{"provider-reported USD": 44}`. Reservation amount 0; estimate amount 0.
 
@@ -291,7 +296,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 10 | 406/2333 | 14902/16640 | 0/4 |
 
-Whole-run wall 482.609s; CPU 393.46s; sampled RSS 639729664 bytes; verified output pages/min 1.98919; exact positive pages/min 0.124324. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 482.609s; CPU 393.46s; sampled RSS 639729664 bytes; verified output pages/min 1.98919; exact positive pages/min 0.124324. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 47; reported USD subtotal 0.0709715; missing reported charges 0; cost bases `{"provider-reported USD": 47}`. Reservation amount 0; estimate amount 0.
 
@@ -323,7 +328,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 12 | 437/2333 | 13543/16640 | 0/4 |
 
-Whole-run wall 231.4s; CPU 304.83s; sampled RSS 612708352 bytes; verified output pages/min 3.88937; exact positive pages/min 0.259291. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 231.4s; CPU 304.83s; sampled RSS 612708352 bytes; verified output pages/min 3.88937; exact positive pages/min 0.259291. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 19; reported USD subtotal 0.286868; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
@@ -357,7 +362,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 10 | 431/2333 | 14446/16640 | 0/4 |
 
-Whole-run wall 386.294s; CPU 317.07s; sampled RSS 603447296 bytes; verified output pages/min 2.32983; exact positive pages/min 0.155322. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 386.294s; CPU 317.07s; sampled RSS 603447296 bytes; verified output pages/min 2.32983; exact positive pages/min 0.155322. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 29; reported USD subtotal 0.449296; missing reported charges 0; cost bases `{"provider-reported USD": 29}`. Reservation amount 0; estimate amount 0.
 
@@ -391,7 +396,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 3 | 14 | 408/2333 | 12984/16640 | 0/4 |
 
-Whole-run wall 138.297s; CPU 9.53371s; sampled RSS 225779712 bytes; verified output pages/min 6.50775; exact positive pages/min 0.8677. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 138.297s; CPU 9.53371s; sampled RSS 225779712 bytes; verified output pages/min 6.50775; exact positive pages/min 0.8677. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 16; reported USD subtotal 0.140648; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
 
@@ -423,7 +428,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 8 | 358/2333 | 14802/16640 | 0/4 |
 
-Whole-run wall 121.746s; CPU 9.48039s; sampled RSS 283582464 bytes; verified output pages/min 6.40679; exact positive pages/min 0.98566. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 121.746s; CPU 9.48039s; sampled RSS 283582464 bytes; verified output pages/min 6.40679; exact positive pages/min 0.98566. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 16; reported USD subtotal 0.0085084; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
 
@@ -455,7 +460,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 12 | 359/2333 | 13879/16640 | 1/4 |
 
-Whole-run wall 277.729s; CPU 302.662s; sampled RSS 573603840 bytes; verified output pages/min 3.24057; exact positive pages/min 0.216038. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 277.729s; CPU 302.662s; sampled RSS 573603840 bytes; verified output pages/min 3.24057; exact positive pages/min 0.216038. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 18; reported USD subtotal 0.0234843; missing reported charges 0; cost bases `{"provider-reported USD": 18}`. Reservation amount 0; estimate amount 0.
 
@@ -489,7 +494,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 3 | 12 | 244/2333 | 13931/16640 | 0/4 |
 
-Whole-run wall 51.2988s; CPU 8.4647s; sampled RSS 252555264 bytes; verified output pages/min 12.8658; exact positive pages/min 2.33924. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 51.2988s; CPU 8.4647s; sampled RSS 252555264 bytes; verified output pages/min 12.8658; exact positive pages/min 2.33924. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 11; reported USD subtotal 0.137902; missing reported charges 0; cost bases `{"provider-reported USD": 11}`. Reservation amount 0; estimate amount 0.
 
@@ -521,7 +526,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 3 | 11 | 244/2333 | 14419/16640 | 1/4 |
 
-Whole-run wall 57.4374s; CPU 8.0963s; sampled RSS 230289408 bytes; verified output pages/min 11.4908; exact positive pages/min 2.08923. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 57.4374s; CPU 8.0963s; sampled RSS 230289408 bytes; verified output pages/min 11.4908; exact positive pages/min 2.08923. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 11; reported USD subtotal 0.0087591; missing reported charges 0; cost bases `{"provider-reported USD": 11}`. Reservation amount 0; estimate amount 0.
 
@@ -553,7 +558,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 11 | 336/2333 | 14369/16640 | 1/4 |
 
-Whole-run wall 235.301s; CPU 297.055s; sampled RSS 580620288 bytes; verified output pages/min 3.56989; exact positive pages/min 0.254992. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 235.301s; CPU 297.055s; sampled RSS 580620288 bytes; verified output pages/min 3.56989; exact positive pages/min 0.254992. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 17; reported USD subtotal 0.0211337; missing reported charges 0; cost bases `{"provider-reported USD": 17}`. Reservation amount 0; estimate amount 0.
 
@@ -587,7 +592,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 3 | 11 | 440/2333 | 13206/16640 | 0/4 |
 
-Whole-run wall 346.731s; CPU 772.823s; sampled RSS 700506112 bytes; verified output pages/min 2.59567; exact positive pages/min 0.346089. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 346.731s; CPU 772.823s; sampled RSS 700506112 bytes; verified output pages/min 2.59567; exact positive pages/min 0.346089. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 17; reported USD subtotal 0.0166027; missing reported charges 0; cost bases `{"provider-reported USD": 17}`. Reservation amount 0; estimate amount 0.
 
@@ -621,7 +626,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 7 | 20 | 622/2333 | 11698/16640 | 0/4 |
 
-Whole-run wall 99.0159s; CPU 10.41s; sampled RSS 239202304 bytes; verified output pages/min 9.69541; exact positive pages/min 1.21193. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 99.0159s; CPU 10.41s; sampled RSS 239202304 bytes; verified output pages/min 9.69541; exact positive pages/min 1.21193. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 16; reported USD subtotal 0.252816; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
 
@@ -653,7 +658,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 9 | 261/2333 | 15829/16640 | 1/4 |
 
-Whole-run wall 67.5617s; CPU 10.5548s; sampled RSS 238407680 bytes; verified output pages/min 12.4331; exact positive pages/min 1.77615. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 67.5617s; CPU 10.5548s; sampled RSS 238407680 bytes; verified output pages/min 12.4331; exact positive pages/min 1.77615. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 16; reported USD subtotal 0.0117628; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
 
@@ -685,7 +690,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 5 | 25 | 1287/2333 | 7864/16640 | 0/4 |
 
-Whole-run wall 139.579s; CPU 16.3054s; sampled RSS 338841600 bytes; verified output pages/min 6.87782; exact positive pages/min 1.28959. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 139.579s; CPU 16.3054s; sampled RSS 338841600 bytes; verified output pages/min 6.87782; exact positive pages/min 1.28959. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 19; reported USD subtotal 0.230508; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
@@ -719,7 +724,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 4 | 14 | 862/2333 | 11089/16640 | 0/4 |
 
-Whole-run wall 98.0732s; CPU 15.9637s; sampled RSS 347344896 bytes; verified output pages/min 8.56503; exact positive pages/min 1.83536. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 98.0732s; CPU 15.9637s; sampled RSS 347344896 bytes; verified output pages/min 8.56503; exact positive pages/min 1.83536. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 19; reported USD subtotal 0.0090984; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
@@ -753,7 +758,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 3 | 14 | 463/2333 | 15091/16640 | 0/4 |
 
-Whole-run wall 140.251s; CPU 10.5721s; sampled RSS 237559808 bytes; verified output pages/min 6.84489; exact positive pages/min 0.855611. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 140.251s; CPU 10.5721s; sampled RSS 237559808 bytes; verified output pages/min 6.84489; exact positive pages/min 0.855611. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 16; reported USD subtotal 0.462612; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
 
@@ -785,7 +790,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 3 | 11 | 471/2333 | 14352/16640 | 0/4 |
 
-Whole-run wall 317.303s; CPU 343.496s; sampled RSS 577916928 bytes; verified output pages/min 2.83641; exact positive pages/min 0.378188. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 317.303s; CPU 343.496s; sampled RSS 577916928 bytes; verified output pages/min 2.83641; exact positive pages/min 0.378188. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 27; reported USD subtotal 0.0242193; missing reported charges 0; cost bases `{"provider-reported USD": 27}`. Reservation amount 0; estimate amount 0.
 
@@ -819,7 +824,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 12 | 349/2333 | 14139/16640 | 1/4 |
 
-Whole-run wall 279.892s; CPU 303.585s; sampled RSS 590168064 bytes; verified output pages/min 3.21552; exact positive pages/min 0.214368. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 279.892s; CPU 303.585s; sampled RSS 590168064 bytes; verified output pages/min 3.21552; exact positive pages/min 0.214368. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 18; reported USD subtotal 0.0252378; missing reported charges 0; cost bases `{"provider-reported USD": 18}`. Reservation amount 0; estimate amount 0.
 
@@ -853,7 +858,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 12 | 545/2333 | 13616/16640 | 0/4 |
 
-Whole-run wall 283.821s; CPU 300.288s; sampled RSS 584110080 bytes; verified output pages/min 3.38242; exact positive pages/min 0.211401. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 283.821s; CPU 300.288s; sampled RSS 584110080 bytes; verified output pages/min 3.38242; exact positive pages/min 0.211401. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 19; reported USD subtotal 0.0273898; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
@@ -887,7 +892,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 12 | 477/2333 | 13497/16640 | 1/4 |
 
-Whole-run wall 273.507s; CPU 318.325s; sampled RSS 583811072 bytes; verified output pages/min 3.50996; exact positive pages/min 0.219372. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 273.507s; CPU 318.325s; sampled RSS 583811072 bytes; verified output pages/min 3.50996; exact positive pages/min 0.219372. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 19; reported USD subtotal 0.0247681; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
 
@@ -922,11 +927,179 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 |---|---:|---:|---:|---:|---:|---:|
 | omnidoc | 16/16 | 2 | 9 | 314/2333 | 14832/16640 | 0/4 |
 
-Whole-run wall 294.235s; CPU 316.183s; sampled RSS 618385408 bytes; verified output pages/min 3.05878; exact positive pages/min 0.203919. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 294.235s; CPU 316.183s; sampled RSS 618385408 bytes; verified output pages/min 3.05878; exact positive pages/min 0.203919. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 35; reported USD subtotal 0.0277854; missing reported charges 0; cost bases `{"provider-reported USD": 35}`. Reservation amount 0; estimate amount 0.
 
 Separate CPU detector worker: initialization wall 2.94507s, CPU 6.3519s; 16 per-page measurement entries, request CPU total 13.9478s; maximum sampled request RSS 1198125056 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-hybrid-sonnet-1024
+
+Scope: complete retained-source assembly with explicit mixed text provenance; text: mixed native-source/model-transcribed; source-conserved pages: 5/16.
+
+Failure categories: `{"invalid_table_topology": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 60.43%; complete tables 25.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 4/14 | 3/10 | 289 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-sonnet-5.5`; review `unmeasured`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 19 | 19 | 0.222808 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 4 | 14 | 361/2333 | 13209/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 225.127s; CPU 303.9s; sampled RSS 648929280 bytes; verified output pages/min 3.99775; exact positive pages/min 0.799549. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.222808; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.7259s, CPU 5.9275s; 16 per-page measurement entries, request CPU total 13.7779s; maximum sampled request RSS 1217159168 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-vision-haiku-2048-q50-workers4
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"invalid_table_geometry": 1, "invalid_table_topology": 2}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 43.01%; complete tables 25.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 4/14 | 3/10 | 216 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 16 | 16 | 0.0110033 | 0 / 16 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 4 | 9 | 261/2333 | 14878/16640 | 1/4 |
+
+Page-processing run wall (excludes freeze/client setup) 25.2167s; CPU 17.9386s; sampled RSS 513708032 bytes; verified output pages/min 30.9319; exact positive pages/min 7.13813. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 4; logical CPUs 8.
+
+Ledger attempts 16; reported USD subtotal 0.0110033; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
+
+
+### natural16-vision-crops-haiku-768
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 59.10%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 110 |
+| remaining_fourteen | 3/14 | 2/10 | 293 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0086524 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 13 | 533/2333 | 13298/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 97.2993s; CPU 16.0702s; sampled RSS 353124352 bytes; verified output pages/min 9.86646; exact positive pages/min 1.23331. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0086524; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.6506s, CPU 5.61253s; 16 per-page measurement entries, request CPU total 16.0262s; maximum sampled request RSS 1209356288 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-vision-crops-haiku-512
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 58.29%; complete tables 16.67%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 2 |
+| remaining_fourteen | 2/14 | 2/10 | 288 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0080819 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 12 | 364/2333 | 13879/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 97.9712s; CPU 16.0089s; sampled RSS 352960512 bytes; verified output pages/min 9.7988; exact positive pages/min 1.22485. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0080819; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.56285s, CPU 5.26988s; 16 per-page measurement entries, request CPU total 13.9584s; maximum sampled request RSS 1193586688 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-vision-crops-haiku-400
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 46.49%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 3/14 | 2/10 | 225 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0089904 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 12 | 359/2333 | 14420/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 113.056s; CPU 15.8973s; sampled RSS 342110208 bytes; verified output pages/min 8.49134; exact positive pages/min 1.06142. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0089904; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.56095s, CPU 5.23286s; 16 per-page measurement entries, request CPU total 14.5423s; maximum sampled request RSS 1202163712 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
@@ -960,7 +1133,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 | native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
 | omnidoc | 64/64 | 0 | 0 | 0/3847 | 27350/27350 | 0/24 |
 
-Whole-run wall 412.098s; CPU 1232.85s; sampled RSS 725770240 bytes; verified output pages/min 39.3111; exact positive pages/min 13.9773. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 412.098s; CPU 1232.85s; sampled RSS 725770240 bytes; verified output pages/min 39.3111; exact positive pages/min 13.9773. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bases `{}`. Reservation amount 0; estimate amount 0.
 
@@ -987,7 +1160,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 | native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
 | omnidoc | 64/64 | 0 | 0 | 0/3847 | 27350/27350 | 0/24 |
 
-Whole-run wall 443.769s; CPU 1345.78s; sampled RSS 709750784 bytes; verified output pages/min 36.7759; exact positive pages/min 12.9797. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 443.769s; CPU 1345.78s; sampled RSS 709750784 bytes; verified output pages/min 36.7759; exact positive pages/min 12.9797. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bases `{}`. Reservation amount 0; estimate amount 0.
 
@@ -1014,7 +1187,7 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 | native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
 | omnidoc | 64/64 | 11 | 42 | 1754/3847 | 17870/27350 | 1/24 |
 
-Whole-run wall 1281.41s; CPU 1288.23s; sampled RSS 795222016 bytes; verified output pages/min 12.6423; exact positive pages/min 6.36797. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 1281.41s; CPU 1288.23s; sampled RSS 795222016 bytes; verified output pages/min 12.6423; exact positive pages/min 6.36797. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 119; reported USD subtotal 0.127591; missing reported charges 0; cost bases `{"provider-reported USD": 119}`. Reservation amount 0; estimate amount 0.
 
@@ -1050,14 +1223,13 @@ Per-model usage/cost are returned-call observations, including calls on failed p
 | native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
 | omnidoc | 64/64 | 0 | 0 | 0/3847 | 27350/27350 | 0/24 |
 
-Whole-run wall 404.166s; CPU 1266.32s; sampled RSS 700555264 bytes; verified output pages/min 38.3011; exact positive pages/min 14.2516. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+Page-processing run wall (excludes freeze/client setup) 404.166s; CPU 1266.32s; sampled RSS 700555264 bytes; verified output pages/min 38.3011; exact positive pages/min 14.2516. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
 
 Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bases `{}`. Reservation amount 0; estimate amount 0.
 
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- Additional hybrid, multiscale, crop-size, row-evidence, full-corpus and four-worker controls are queued; each frozen treatment remains separate
 
 ## Interpretation
 
@@ -1619,3 +1791,78 @@ coverage/assembly in this screen; zero negative errors alone is insufficient
 to choose it as the better complete pipeline. The fixed full-corpus gated
 control remains a separately configured expansion, without changing
 thresholds against these references.
+
+
+## Legacy hybrid Sonnet and request identity
+
+The legacy renderer-v1 Sonnet hybrid run produces 15/16 verified atomic outputs,
+289/2333 exact cells, 361 structural cells, fourteen exact topologies and four
+complete tables on three exact positive pages. All four negatives remain correct;
+all 39 dense reference tables remain missing. Five outputs conserve source text
+because no model tables were accepted; other successful outputs have explicit
+mixed provenance. All nineteen reported charges total USD 0.222808, including
+the failed page, at 4.00 operational pages/minute and 67.32 pages/API USD.
+Supplementary positive-page macro recall is 60.43% cells and 25.00% tables.
+
+The standalone crop run's 982 exact cells versus hybrid's 289 must not be
+attributed to the hybrid architecture. A source-only audit, conducted without
+loading references, finds identical detector proposals and crop descriptors on
+all sixteen pages, no native exclusions, and byte-identical retained model
+requests for all nineteen crops. Eight response contents and eight per-region
+canonical table outputs match exactly; the other fresh responses differ.
+The dense p98 page succeeds standalone but the hybrid's fresh responses produce
+cross-crop overlap. Its entire page is rejected atomically despite both responses
+ending normally, losing all 692 dense exact cells. The other fourteen pages differ
+by only one exact cell (290 versus 289). Dense p1 has zero proposals in both runs.
+Hybrid source inventories contain 1,953 and 1,687 words on those two pages, but
+those inventories are accounting inputs, absent from the image-only requests.
+The standalone comparator has no source inventory. The ignored source-only audit
+is retained at `regions-audit/hybrid-sonnet-request-identity.json`.
+
+The frozen old helper's exact reviewed hash selects renderer v1 during verification.
+Renderer v2 fixes source-free table/footer ties and geometric table ordering;
+model data cannot choose a renderer. Unknown hashes fail verification. This
+ordering correction changes Markdown placement, not canonical table quality;
+new frozen hybrid runs use v2 and remain separately labeled.
+
+## Fresh four-worker whole-page control
+
+Four-worker Haiku2048/JPEG50 yields 13/16 verified table-only outputs, 216/2333
+exact cells, 261 structural cells, nine exact topologies and four complete tables
+on three exact positive pages. Three extra tables include one negative-page false
+positive. Three normal-stop responses fail strict validation: an out-of-range
+normalized bbox, invalid merged-span bounds, and a nonrectangular literal matrix.
+There are no retries or successful partial outputs. All sixteen charges total
+USD 0.0110033, giving 30.93 operational pages/minute and 1,181.46 pages/API USD.
+Supplementary positive-page macro recall is 43.01% cells and 25.00% tables.
+
+All sixteen request bodies match the serial control byte-for-byte. This single
+fresh stochastic replicate does not establish that concurrency caused its quality
+difference from serial (14/16 outputs, 208 cells and two complete tables).
+Page-processing wall is 25.217 seconds versus serial's 67.562 seconds, excluding
+freeze/client setup and command startup in both. Actual parent process CPU is
+17.939 seconds. Concurrent per-page CPU intervals overlap and cannot be summed;
+their 67.538-second sum is not whole-run process CPU.
+
+## Smaller fixed crop controls
+
+Haiku768/512/400 pixels with JPEG90 each verify all sixteen intended pages,
+using the same detector proposals and strict parser. Every run retains nineteen
+charged fresh calls. These are table-only model transcriptions, without source
+conservation. All four negatives remain correct in each arm.
+
+| Crop edge | Exact cells / 2333 | Structural cells | Exact topologies | Complete tables / 53 | Extra tables | API USD | Pages/min | Pages/API USD | Positive macro cells | Positive macro tables |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 768 | 403 | 533 | 13 | 3 | 0 | 0.0086524 | 9.87 | 1849.20 | 59.10% | 20.83% |
+| 512 | 290 | 364 | 12 | 2 | 1 | 0.0080819 | 9.80 | 1979.73 | 58.29% | 16.67% |
+| 400 | 225 | 359 | 12 | 3 | 2 | 0.0089904 | 8.49 | 1779.68 | 46.49% | 20.83% |
+
+All three runs produce two exact positive pages; complete-table counts have a
+different denominator. The 768 arm recovers 110 dense cells and 293 on the other
+fourteen pages. Smaller images reduce observed exact-cell recovery versus the
+1024 baseline's 687 cells, while eliminating its two strict format failures in
+these fresh replicates. Higher operational coverage alone does not imply higher
+quality. The 400 arm is slower and costs more than 512 in this sample; image size
+alone does not determine stochastic output length or service latency. No prompts,
+thresholds or reference-selected routing were changed. All sixteen pages and the
+53-table/2,333-cell primary denominators remain fixed.
