@@ -6,17 +6,19 @@ Frozen runs with independently verified successful states, exact Markdown and ex
 
 Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c2d`.
 
-| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
+| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells / expected | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| natural16-whole-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0 | 16804/16640 | 1 | 0 | 2.74509 | 181.398 | 0.0496148 |
-| natural16-regions-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0 | 16804/16640 | 1 | 0 | 2.62157 | 251.199 | 0.0358282 |
-| natural16-regions-80k | 16/16 | 0 | 0/12 | 0 | 1 | 320/2333 | 4 | 25948/16640 | 3 | 5 | 3.6026 | 109.434 | 0.146207 |
-| natural16-raster-select-512 | 16/16 | 0 | 0/12 | 0 | 3 | 418/2333 | 92 | 25511/16640 | 5 | 5 | 3.91377 | 111.17 | 0.143924 |
-| natural16-generate-sonnet | 16/16 | 0 | 1/12 | 2 | 10 | 419/2333 | 295 | 14588/16640 | 15 | 7 | 2.59737 | 13.3194 | 1.20126 |
-| natural16-generate-whitespace | 15/16 | 1 | 1/12 | 2 | 7 | 447/2333 | 236 | 16144/16640 | 13 | 7 | 2.15636 | 12.0499 | 1.24482 |
-| natural16-matrix-sonnet-512 | 14/16 | 2 | 1/12 | 2 | 9 | 327/2333 | 227 | 15229/16640 | 13 | 9 | 2.7044 | 14.4924 | 0.966024 |
-| natural16-matrix-haiku-512 | 16/16 | 0 | 1/12 | 2 | 10 | 406/2333 | 240 | 14902/16640 | 14 | 3 | 1.98919 | 225.443 | 0.0709715 |
-| natural16-yolo-matrix-sonnet-512 | 15/16 | 1 | 1/12 | 2 | 12 | 437/2333 | 341 | 13543/16640 | 15 | 3 | 3.88937 | 52.2889 | 0.286868 |
+| natural16-whole-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0/2333 | 16804/16640 | 1 | 0 | 2.74509 | 181.398 | 0.0496148 |
+| natural16-regions-reviewed | 9/16 | 7 | 0/12 | 0 | 0 | 2/2333 | 0/2333 | 16804/16640 | 1 | 0 | 2.62157 | 251.199 | 0.0358282 |
+| natural16-regions-80k | 16/16 | 0 | 0/12 | 0 | 1 | 320/2333 | 4/2333 | 25948/16640 | 3 | 5 | 3.6026 | 109.434 | 0.146207 |
+| natural16-raster-select-512 | 16/16 | 0 | 0/12 | 0 | 3 | 418/2333 | 92/2333 | 25511/16640 | 5 | 5 | 3.91377 | 111.17 | 0.143924 |
+| natural16-generate-sonnet | 16/16 | 0 | 1/12 | 2 | 10 | 419/2333 | 295/2333 | 14588/16640 | 15 | 7 | 2.59737 | 13.3194 | 1.20126 |
+| natural16-generate-whitespace | 15/16 | 1 | 1/12 | 2 | 7 | 447/2333 | 236/2333 | 16144/16640 | 13 | 7 | 2.15636 | 12.0499 | 1.24482 |
+| natural16-matrix-sonnet-512 | 14/16 | 2 | 1/12 | 2 | 9 | 327/2333 | 227/2333 | 15229/16640 | 13 | 9 | 2.7044 | 14.4924 | 0.966024 |
+| natural16-matrix-haiku-512 | 16/16 | 0 | 1/12 | 2 | 10 | 406/2333 | 240/2333 | 14902/16640 | 14 | 3 | 1.98919 | 225.443 | 0.0709715 |
+| natural16-yolo-matrix-sonnet-512 | 15/16 | 1 | 1/12 | 2 | 12 | 437/2333 | 341/2333 | 13543/16640 | 15 | 3 | 3.88937 | 52.2889 | 0.286868 |
+| natural16-vision-sonnet-1200 | 15/16 | 1 | 2/12 | 3 | 14 | 408/2333 | 299/2333 | 12984/16640 | 14 | 0 | 6.50775 | 106.649 | 0.140648 |
+| natural16-vision-haiku-1200 | 13/16 | 3 | 2/12 | 2 | 8 | 358/2333 | 245/2333 | 14802/16640 | 9 | 3 | 6.40679 | 1527.9 | 0.0085084 |
 
 ### natural16-whole-reviewed
 
@@ -293,14 +295,74 @@ Ledger attempts 19; reported USD subtotal 0.286868; missing reported charges 0; 
 
 Separate CPU detector worker: initialization wall 2.56802s, CPU 5.28494s; 16 measured requests, request CPU total 14.4786s; maximum sampled request RSS 1189687296 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-vision-sonnet-1200
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"invalid_table_geometry": 1}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 25 |
+| remaining_fourteen | 3/14 | 2/10 | 274 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-sonnet-5.5`; review `unmeasured`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 16 | 16 | 0.140648 | 0 / 16 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 14 | 408/2333 | 12984/16640 | 0/4 |
+
+Whole-run wall 138.297s; CPU 9.53371s; sampled RSS 225779712 bytes; verified output pages/min 6.50775; exact positive pages/min 0.8677. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 16; reported USD subtotal 0.140648; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
+
+
+### natural16-vision-haiku-1200
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"invalid_table_topology": 3}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 1 |
+| remaining_fourteen | 2/14 | 2/10 | 244 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 16 | 16 | 0.0085084 | 0 / 16 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 8 | 358/2333 | 14802/16640 | 0/4 |
+
+Whole-run wall 121.746s; CPU 9.48039s; sampled RSS 283582464 bytes; verified output pages/min 6.40679; exact positive pages/min 0.98566. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 16; reported USD subtotal 0.0085084; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
+
 ## Corrected full corpus-r2 DEV baseline
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
 
-| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
+| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells / expected | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 39.3111 | unmeasured | 0 |
-| native-regional-full-r2 | 272/276 | 4 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 36.7759 | unmeasured | 0 |
+| native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 39.3111 | unmeasured | 0 |
+| native-regional-full-r2 | 272/276 | 4 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 36.7759 | unmeasured | 0 |
 
 ### native-full-r2
 
@@ -355,9 +417,9 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 
 Dataset SHA-256: `68dda47aa6b0e3fd61cb751d53c7d8ae11546dea4e97ab74e6f9cac6d528332b`.
 
-| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
+| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | Structure cells / expected | Exact text cells / expected | Text edits / reference chars | IoU >= 0.5 tables | Extra tables | Pages/min | Pages/API USD | Effective API USD |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| native-full-r1 | 258/276 | 18 | 96/172 | 120 | 120 | 4258/8897 | 4258 | 31739/55180 | 96 | 0 | 38.3011 | unmeasured | 0 |
+| native-full-r1 | 258/276 | 18 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 38.3011 | unmeasured | 0 |
 
 ### native-full-r1
 
@@ -386,7 +448,7 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- YOLO matrix and image-only vision transcription controls: queued; different settings are separate treatments
+- Higher-budget/tiled YOLO matrix and matched 2048-pixel/ROI vision controls: queued; different settings are separate treatments
 
 ## Interpretation
 
@@ -498,6 +560,49 @@ sampled RSS; request CPU totals and maximum sampled request RSS appear above.
 Parent and worker RSS peaks are not summed. Configuration changes and background
 CPU load prevent treating elapsed-time differences as an isolated detector
 speedup. No GPU or additional report-time inference is used.
+
+## Whole-page image transcription at 1200 pixels
+
+These controls produce table-only model transcription, with zero source-conserved
+pages and no complete page prose. Sonnet retains 15/16 operational outputs,
+three complete tables on two exact positive pages (2/12), fourteen exact
+topologies, 408/2333 structural cells, 299/2333 exact text cells, fourteen
+localized tables, and no extras. Its sixteen positively charged calls cost
+USD 0.140648. Verified table-only throughput is 6.51 pages/min and 106.65
+pages/API USD; CPU is 9.53 seconds, versus much higher OCR CPU in source-ID
+arms. Remaining-fourteen text agreement is 274/361 cells with 455 character
+edits against 3799 reference characters. The dense pair still misses 37/39
+tables, yields only 25 exact text cells, and completes none.
+
+Sonnet's sole error is invalid normalized geometry on
+`pf012d6adb9592dab9a13`: returned bbox `[113, 777, 899, 1098]`, image
+845×1200 pixels, display viewport
+`[0, 0, 213.1199951171875, 302.3999938964844]`. Bottom 1098 violates the
+required normalized 0..1000 coordinate range, while right 899 also exceeds
+raw pixel width 845. These numbers do not establish a consistent raw-pixel
+box; mixed units or invalid geometry remain possible. No clipping, rescaling,
+reference-driven correction, or successful-table-prefix salvage was applied.
+The provider finished normally, so this is a protocol/geometry failure rather
+than observed output-length exhaustion.
+
+Haiku retains 13/16 operational outputs, two complete tables on two exact
+positive pages (2/12), eight exact topologies, 358/2333 structural cells,
+245/2333 exact text cells, nine localized tables, and three extras. Its sixteen
+positive charges total USD 0.0085084, with 6.41 verified pages/min and 1527.90
+pages/API USD. Three normally completed responses fail strict parsing: two
+nonrectangular/nonstring matrices and one invalid merged span. One failed
+page is a negative control, so negative operational success is 3/4; zero
+admitted negative false positives must not hide that failure. Dense text
+recovery is one cell, with no complete table; remaining-fourteen text agreement
+is 244/361 cells. Cost is low but does not compensate for weak dense recovery
+and protocol failures.
+
+Fresh vision demonstrates useful simpler-page text recovery without CPU OCR,
+but the 1200-pixel whole-page treatment is inadequate for minute newspaper
+content. These results motivate matched-resolution and retained-ROI controls,
+not a claim that all OCR ceilings have been solved. Table-only operational
+throughput is not full page-conversion throughput. All sixteen primary pages,
+53 official tables, failed responses, and positive API charges remain retained.
 
 ## Native regional full-corpus confirmation
 

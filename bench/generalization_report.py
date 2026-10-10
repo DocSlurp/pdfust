@@ -32,9 +32,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
-        "b65ce79aef238bceed439bca6998dd003130bb190b4b2c85feb1eaf67eb04456": (
-            "reviewed root source snapshot: evidence/orientation flag plumbing after 01273f1"
-        ),
+        "b65ce79aef238bceed439bca6998dd003130bb190b4b2c85feb1eaf67eb04456": "0cc3b3f",
         "4c02938d7abea98dbc070944aa0b962f85ef5069e2b07c9f801a80c308b40b80": "01273f1",
         "4a88118faa12c6dfd92ce692daf04e215c3ff848335f66ddd57b073ffda87d0b": "ac1f842",
         "e9cfae5504773e6ee5e2e0265fcaa447ce4786e2bc015ead37c548593419180f": "119a9ca",
@@ -43,6 +41,9 @@ TRUSTED_HISTORICAL_CODE = {
         "a6127f74c8054db3ec9483a6e46d70a9dd18eb0f3b892941cc47dbbf5f1deaad": "efaddcc",
         "10639663e5dc17bd5628baba232fbc5321209d7132a6f66f6deab33742a41a5d": "082ea9a",
         "8a87e312643ffc97e63448b8ef9c7b2fbaa169c28431eb177417c34f64ab5386": "b0775e2",
+    },
+    "generalization_vision_run.py": {
+        "6043f2e9590d8caeb0262223b6fd0a48a737b75685c11b0f346cd9ec140f4ac4": "01273f1",
     },
     "pipeline_regions.py": {
         "66c6ec07d91753ec9a8885124e18a3d0a64f929be5f29682e1050ea826894d2a": "83bd9a6",
@@ -158,12 +159,20 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
     if processor == "vision":
-        if any(comparison[name] != "identical" for name in required):
-            raise ValueError("Trusted local vision adapter or runner differs from frozen code")
+        if any(comparison[name] != "identical" for name in required - {"generalization_vision_run.py"}):
+            raise ValueError("Trusted local vision adapter differs from frozen code")
+        historical_runner = {}
+        if comparison["generalization_vision_run.py"] != "identical":
+            reviewed = TRUSTED_HISTORICAL_CODE["generalization_vision_run.py"].get(
+                hashes["generalization_vision_run.py"]
+            )
+            if reviewed is None:
+                raise ValueError("Trusted local vision runner differs from unreviewed frozen code")
+            historical_runner["generalization_vision_run.py"] = reviewed
         return {
             "archive_hashes_verified": True,
             "local_comparison": comparison,
-            "trusted_historical_commits": {},
+            "trusted_historical_commits": historical_runner,
             "renderer": "identical trusted vision transcription adapter",
             "region_validator_ast_compatible": False,
         }
@@ -446,6 +455,8 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
             category = "provider_output_length"
         elif "no extracted or recognized source text" in lower:
             category = "missing_source_text"
+        elif any(word in lower for word in ("normalized image coordinates", "table bounds", "viewport")):
+            category = "invalid_table_geometry"
         elif "anchor" in lower:
             category = "invalid_anchor_collection"
         elif "source id" in lower or "source_id" in lower or "unknown id" in lower:
@@ -785,7 +796,8 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
         lines += [
             (
                 "| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | "
-                "Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | "
+                "Structure cells / expected | Exact text cells / expected | "
+                "Text edits / reference chars | IoU >= 0.5 tables | "
                 "Extra tables | Pages/min | Pages/API USD | Effective API USD |"
             ),
             "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
@@ -802,7 +814,7 @@ def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list
                 s.get("complete_tables", 0),
                 s.get("exact_table_spans", 0),
                 cells,
-                s.get("correct_text_cells", 0),
+                f"{s.get('correct_text_cells', 0)}/{s.get('expected_cells', 0)}",
                 edits,
                 s.get("localized_tables_iou_ge_0_5", 0),
                 s.get("false_positive_tables", 0),

@@ -460,6 +460,7 @@ def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
         ("stop", "Overlapping merged spans", "invalid_table_topology"),
         (None, "Response was truncated or has no normal finish", "unclassified_completion_failure"),
         (None, "No extracted or recognized source text", "missing_source_text"),
+        ("stop", "Table bounds are outside normalized image coordinates", "invalid_table_geometry"),
     ],
 )
 def test_failure_categories_use_retained_responses_not_generic_error_messages(
@@ -525,3 +526,31 @@ def test_progress_keeps_separate_detector_worker_cpu_and_rss_scope(fixture: dict
     assert "2000 bytes" in text
     assert "parent CPU/RSS excludes this worker" in text
     assert "RSS peaks are not summed" in text
+
+
+def test_reviewed_vision_runner_history_never_relaxes_adapter_identity(
+    fixture: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    f = fixture
+    local = Path(module.__file__).parent
+    trusted = tmp_path / "trusted_vision"
+    trusted.mkdir()
+    frozen = deepcopy(f["frozen"])
+    frozen["code_sha256"] = {}
+    for name in ("pipeline_vision_transcription.py", "pipeline_frontier.py", "generalization_vision_run.py"):
+        data = (local / name).read_bytes()
+        (trusted / name).write_bytes(
+            data + (b"\n# Current runner plumbing.\n" if name == "generalization_vision_run.py" else b"")
+        )
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    monkeypatch.setattr(module, "__file__", str(trusted / "generalization_report.py"))
+    verified = verify_code(f["run"], frozen, processor="vision")
+    assert verified["trusted_historical_commits"] == {"generalization_vision_run.py": "01273f1"}
+    changed = b"raise RuntimeError('artifact Python must never execute')\n"
+    (f["run"] / "code" / "generalization_vision_run.py").write_bytes(changed)
+    frozen["code_sha256"]["generalization_vision_run.py"] = sha(changed)
+    with pytest.raises(ValueError, match="unreviewed frozen code"):
+        verify_code(f["run"], frozen, processor="vision")
