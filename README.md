@@ -296,6 +296,26 @@ reports fresh natural-document quality, pages/minute, pages/API USD, and CPU/RAM
 measurements. It separates source-ID assembly, image transcription, admission
 gates, and incremental repair so their different output contracts stay visible.
 
+First P003 transcription screens on the same 16 natural DEV pages (53 tables,
+2,333 reference cells), using fixed 1024 px detector crops:
+
+| Model | Outputs / 16 | Complete tables / 53 | Strict cells / 2,333 | Pages/min | Pages/API USD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Haiku 5.5 | 15 | 3 | 393 | 8.49 | 1,822.07 |
+| GPT-6 Luna | 16 | 3 | 784 | 4.19 | 1,234.11 |
+| Gemma 4 26B A4B | 12 | 3 | 201 | 1.08 | 4,945.25 |
+| Gemma 4 31B | 14 | 3 | 264 | 2.60 | 5,755.63 |
+| Ministral 14B | 13 | 2 | 263 | 4.95 | 3,130.72 |
+| Ministral 8B | 12 | 2 | 252 | 6.84 | 3,860.07 |
+
+These are single serial runs. Pages/API USD counts operational outputs, including
+empty negative pages, and does not imply correct extraction. Qwen 3.5 9B and
+Gemini 3.5 Flash Lite had provider-route failures; their failed attempts and
+unresolved reservations are included in the [full P003 report](bench/results/decision-p003.md).
+Luna costs include independently verified BYOK upstream charges. The earlier
+matched Sonnet run recovered 982 strict cells and five complete tables; the
+new screens have not surpassed it.
+
 The [P002 generalization study](bench/results/generalization-p002.md)
 expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
 annotated OmniDocBench page images, and 56 native-PDF diagnostics. A fixed

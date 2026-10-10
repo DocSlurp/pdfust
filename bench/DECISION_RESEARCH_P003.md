@@ -86,3 +86,26 @@ Additional acquisition and candidate reranking earn priority because decisions
 cannot recover omitted regions or literal strings absent from their evidence.
 Local row repair remains an incremental diagnostic on retained baseline states;
 its rates must not be presented as newly measured end-to-end pipeline throughput.
+
+## Second re-evaluation, 19:35 UTC
+
+Eight transcription routes completed screening. Luna leads these new runs on
+strict anchors (784), but the older authenticated matched-pixel Sonnet result
+remains stronger (982 and five complete tables). Qwen HTTP 429 and Gemini HTTP 400
+are availability/request failures, not quality rankings. Strict matrix and
+atomic-cell representations merit fresh tests because malformed output remains
+common among small models. Preserve all failed pages and their costs.
+
+Whole-crop oracle ceilings favor testing the Luna/Sonnet candidate pool (1,088
+strict anchors) over Luna/Haiku (796). Adding Haiku raises the ceiling to 1,097;
+none of these pools exceeds five complete tables. Therefore region acquisition
+and missing literal evidence remain first-class experiments alongside reranking.
+Oracle scores use DEV labels only after candidates are frozen; they are not
+routing inputs or achieved model-selected performance.
+
+Thirteen gate arms use up to three concurrent root-controlled OpenRouter
+requests, with one CPU worker per arm and measured contention. An initial queue
+failed at CLI parsing because of an unsupported worker argument; no paid request
+occurred. The corrected queue has a real parser integration test. Gateway arms
+remain serial and do not overlap this queue. No automatic retry changes a failed
+provider route into a successful run.

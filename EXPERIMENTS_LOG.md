@@ -1863,3 +1863,26 @@ never add upstream costs again. Missing fee data stays incomplete. All nineteen
 Luna responses provide both amounts; their combined API-reported cost is
 USD 0.012964825, pending independent overlay verification of the original frozen
 report. Pricing and telemetry regression checks pass within 200 targeted tests.
+
+### P003 eight-model screen and candidate ceilings, 2026-10-10 19:35 UTC
+
+All eight pinned crop-transcription routes are scored with intended-page and
+reference-table denominators intact. Six produce usable model outputs; Qwen
+HTTP 429 and Gemini HTTP 400 stop their circuits after one attempted request each.
+Luna reaches 784 strict anchors, Gemma 26B: 201, Gemma 31B: 264, Ministral 14B: 263,
+Ministral 8B: 252, and Haiku: 393. Complete-table counts remain two or three; the
+prior matched Sonnet run retains five. Full quality/cost/resource comparisons
+are in README and `bench/results/decision-p003.md`.
+
+Independent Luna cost reconciliation verifies all nineteen retained responses
+and resolves its effective API charge to USD 0.012964825 while retaining original
+zeros, old reservations and accounting revision history. No old Langfuse
+observation was re-exported; new BYOK requests use corrected accounting.
+
+A posthoc whole-crop oracle gives Luna/Sonnet 1,088 strict anchors and five complete
+tables; adding Haiku gives 1,097 strict anchors and the same five tables. This
+motivates blinded candidate ranking while preserving acquisition improvements.
+No gold/quality/model identity is placed in selector prompts. Thirteen new gate
+arms run at bounded transport concurrency 3. An initial unsupported CLI argument
+failed all arms before inference; logs remain retained and the corrected launcher
+now passes a real parser integration test.
