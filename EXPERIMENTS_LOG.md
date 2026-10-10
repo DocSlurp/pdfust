@@ -1204,3 +1204,21 @@ and stricter Markdown/report verification. Original candidates and configuration
 remain retained. The new options are separately frozen and tested before combined
 arms. At this checkpoint 240 targeted CPU tests pass; all 12 pipeline modules
 pass strict mypy and Ruff. No local GPU or rented host is used.
+
+The full Sonnet control finished at 166/168 exact scored pages, 34/35 positives
+and zero false-positive tables, with 174/181 complete outputs. Its one additional
+scored failure exhausted the 1,024-token answer limit entirely on provider-reported
+reasoning tokens; the response was correctly rejected as truncated. The failed
+attempt remains charged. Haiku completed 149/168 exact scored pages with 18
+negative false positives. All 175 retained Sonnet/Haiku requests match after
+removing only the model field; source inventories, candidate menus and images
+also match. Reviewed PPLX uses different routing and 256-pixel images, so its
+better complete-pipeline rate is not an equal-input model-ability claim.
+
+Three independent read-only audits verified frozen inputs/code, source ownership,
+retained JSON/report equality and exact Markdown reproduction. Their ten-run
+snapshot contains 1,770 successful outputs from 1,810 page attempts. Compact
+encoding roundtrips all 180 admitted source/candidate snapshots exactly; its
+effect on model selection remains an experiment, not an assumed improvement.
+Validation at this checkpoint: 258 targeted tests pass, repository-wide Ruff
+passes, `mypy src tests` passes for 187 files and all 12 pipeline modules pass.

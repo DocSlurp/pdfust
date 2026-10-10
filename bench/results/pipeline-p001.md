@@ -50,6 +50,7 @@ Dataset SHA-256: `3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9
 | full-adaptive-pplx | full | adaptive | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | True | — | False | False | 178/181 | 28/35 | 30/133 | 3/0 |
 | full-gated-reviewed-pplx | full | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | True | relational | False | False | 178/181 | 34/35 | 0/133 | 3/0 |
 | full-frontier-haiku | full | assembly | anthropic/claude-haiku-5.5 | — | 512 | 1 | True | True | True | — | False | False | 175/181 | 34/35 | 18/133 | 6/0 |
+| full-frontier-sonnet | full | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | True | — | False | False | 174/181 | 34/35 | 0/133 | 7/1 |
 
 Every successful page's retained Markdown is checked byte-for-byte against a trusted deterministic rendering of its complete source-owned final state. Artifact Python is never executed.
 
@@ -101,6 +102,7 @@ Legacy frozen renderer source unavailable: `native-r1`. Their Markdown matches t
 | full-adaptive-pplx | 131/168 | 28/71 | 28/35 | 29/35 | 361/437/1265 | 6/36 | 178/178 | 34/35 |
 | full-gated-reviewed-pplx | 167/168 | 34/35 | 34/35 | 35/35 | 433/437/437 | 0/0 | 178/178 | 34/35 |
 | full-frontier-haiku | 149/168 | 34/53 | 34/35 | 35/35 | 433/437/815 | 0/18 | 175/175 | 34/35 |
+| full-frontier-sonnet | 166/168 | 34/35 | 34/35 | 35/35 | 433/437/437 | 0/0 | 174/174 | 34/35 |
 
 | Run | Output p/min | Output p/USD | Exact positive p/min | Exact positive p/USD | Wall s | CPU s | Peak sampled RSS bytes | Provider USD | Missing provider charges | Effective USD | Accounted USD | Cost bases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -148,6 +150,7 @@ Legacy frozen renderer source unavailable: `native-r1`. Their Markdown matches t
 | full-adaptive-pplx | 151.612 | 69429.3 | 23.8491 | 10921.5 | 70.4428 | 51.9641 | 540483584 | 0.00256376 | 0 | 0.00256376 | 0.00256376 | {"provider-reported USD": 67} |
 | full-gated-reviewed-pplx | 72.3848 | 1658.72 | 13.8263 | 316.833 | 147.545 | 63.8772 | 541716480 | 0.107312 | 0 | 0.107312 | 0.107312 | {"provider-reported USD": 90} |
 | full-frontier-haiku | 22.0223 | 2092.66 | 4.27862 | 406.573 | 476.79 | 104.75 | 547942400 | 0.0836258 | 0 | 0.0836258 | 0.0836258 | {"provider-reported USD": 175} |
+| full-frontier-sonnet | 15.9365 | 107.684 | 3.11403 | 21.0416 | 655.101 | 108.119 | 546701312 | 1.61585 | 0 | 1.61585 | 1.61585 | {"provider-reported USD": 175} |
 
 Successful retained calls by requested model:
 
@@ -196,6 +199,7 @@ Primary and optional review models form one experimental policy; both charges en
 | full-gated-reviewed-pplx | anthropic/claude-sonnet-5.5 | 12 | 0.101444 | 0 | 0.101444 | 0.101444 | {"provider-reported USD": 12} |
 | full-gated-reviewed-pplx | perplexity/pplx-decider-v1.1-27b | 78 | 0.00586794 | 0 | 0.00586794 | 0.00586794 | {"provider-reported USD": 78} |
 | full-frontier-haiku | anthropic/claude-haiku-5.5 | 175 | 0.0836258 | 0 | 0.0836258 | 0.0836258 | {"provider-reported USD": 175} |
+| full-frontier-sonnet | anthropic/claude-sonnet-5.5 | 174 | 1.5978 | 0 | 1.5978 | 1.5978 | {"provider-reported USD": 174} |
 
 Candidate oracle coverage uses private references to choose an already-retained complete candidate. It is reference-informed and unrunnable as an extraction policy; it does not synthesize missing candidates. Coverage is policy-specific: it scores only alternatives retained by that run. No output or model was supplied references during inference. Exactness compares complete matrices and spans after whitespace normalization; extra tables charge both table and cell denominators. Errors on negative pages remain failures, not correct zero-table pages.
 
@@ -1496,6 +1500,55 @@ API cost excludes local electricity and amortization. Positive provider charges 
 | full-frontier-haiku | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
 | full-frontier-haiku | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
 | full-frontier-haiku | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | companion/borderless-plain | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-frontier-sonnet | companion/borderless-wrap | 6/0 | 6/6 | 0/0 | 6/6 | 0 |
+| full-frontier-sonnet | companion/prose | 12/0 | 0/0 | 0/12 | 11/12 | 1 |
+| full-frontier-sonnet | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-frontier-sonnet | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-frontier-sonnet | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-frontier-sonnet | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-frontier-sonnet | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-frontier-sonnet | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-frontier-sonnet | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-frontier-sonnet | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-frontier-sonnet | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-frontier-sonnet | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-frontier-sonnet | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-borderless | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-borderless-aligned | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-borderless-rotate-180 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-borderless-rotate-270 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-borderless-scanned | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-frontier-sonnet | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-frontier-sonnet | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-frontier-sonnet | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-frontier-sonnet | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-frontier-sonnet | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
 
 </details>
 
@@ -1505,7 +1558,7 @@ No completed report exists for these frozen runs; they may be running or aborted
 
 | Run | Policy | Model | Gate review model | column_consensus | compact_packet | Planned pages | Result files | Source contract matches |
 |---|---|---|---|---|---|---:|---:|---|
-| full-frontier-sonnet | assembly | anthropic/claude-sonnet-5.5 | — | False | False | 181 | 83 | True |
+| full-frontier-opus | assembly | anthropic/claude-opus-5.5 | — | False | False | 181 | 28 | True |
 
 Measurement and frozen provenance:
 
@@ -1553,3 +1606,4 @@ Measurement and frozen provenance:
 - `full-adaptive-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
 - `full-gated-reviewed-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
 - `full-frontier-haiku`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-frontier-sonnet`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "8e4b26ea64e41977914f392fb04ecab8b04f631b73693d67be6ebffeef2b0684", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.

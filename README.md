@@ -320,6 +320,7 @@ scored non-table pages and 13 diagnostics):
 | Luna gate, 1024 px | 178 | 34 | 6 | 161 | 105.8 | 6,321 (estimate) |
 | Clef Flash gate, 512 px | 178 | 22 | 5 | 150 | 58.5 | 10,958 |
 | Haiku 5.5 assembly, 512 px | 175 | 34 | 18 | 149 | 22.0 | 2,093 |
+| Sonnet 5.5 assembly, 512 px | 174 | 34 | 0 | 166 | 15.9 | 108 |
 
 These are single serial runs on authored DEV silver, with different routing and
 image settings. Rates count complete emitted outputs, include all pipeline
