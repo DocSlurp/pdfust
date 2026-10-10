@@ -1,12 +1,14 @@
 """Offline scoring preserves failure and unknown-cost denominators."""
 
+import inspect
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 import pytest
 from bench.pipeline_corpus import _table
-from bench.pipeline_report import run
+from bench.pipeline_report import _render_markdown, run
 from bench.silver import canonical, sha, write_json
 
 
@@ -52,10 +54,14 @@ def _fixture(directory: Path) -> tuple[Path, dict[str, Any]]:
         "context_rows": 1,
         "legend": True,
     }
+    code = inspect.getsource(_render_markdown).replace("def _render_markdown(", "def markdown(").encode()
+    (pipeline / "code").mkdir()
+    (pipeline / "code/pipeline_run.py").write_bytes(code)
     write_json(
         pipeline / "frozen.json",
         {
             "config": config,
+            "code_sha256": {"pipeline_run.py": sha(code)},
             "manifest_sha256": sha((corpus / "manifest.json").read_bytes()),
             "records": [{key: row[key] for key in ("id", "pdf_path", "pdf_sha256", "page_number")} for row in records],
         },
@@ -65,11 +71,17 @@ def _fixture(directory: Path) -> tuple[Path, dict[str, Any]]:
         "id": "positive",
         "status": "ok",
         **state,
-        "source": {"words": [{"id": f"w{i}"} for i in range(4)]},
+        "source": {
+            "page_size": [200, 300],
+            "words": [
+                {"id": f"w{i}", "text": text, "bbox": [i * 10, 10, i * 10 + 8, 20], "line": [0, 0]}
+                for i, text in enumerate(("a", "b", "c", "d"))
+            ],
+        },
         "candidates": [{"tables": []}, state],
     }
     write_json(pipeline / "positive-structure.json", state)
-    (pipeline / "positive.md").write_text("<table>complete</table>\n")
+    (pipeline / "positive.md").write_text(_render_markdown(prediction["source"], state))
     report = {
         "config": config,
         "results": [prediction, {"id": "negative", "status": "error", "tables": []}],
@@ -250,3 +262,98 @@ def test_review_model_and_successful_call_costs_visible_without_changing_artifac
     assert "| gated | test-model | anthropic/claude-sonnet-5.5 |" in text
     assert "Failed or parse-rejected attempts" in text
     assert result["config"]["gate_review_model"] == "anthropic/claude-sonnet-5.5"
+
+
+def test_altered_markdown_is_rejected_even_when_json_conservation_holds(tmp_path: Path) -> None:
+    pipeline, _report = _fixture(tmp_path)
+    (pipeline / "positive.md").write_text("<p>only a subset</p>\n")
+    with pytest.raises(ValueError, match="Markdown does not match"):
+        run(tmp_path, tmp_path / "summary.md")
+
+
+def test_frozen_renderer_changes_and_unknown_versions_are_rejected(tmp_path: Path) -> None:
+    pipeline, _report = _fixture(tmp_path)
+    code = pipeline / "code/pipeline_run.py"
+    code.write_text(code.read_text().replace("without inventing headers", "changed renderer"))
+    with pytest.raises(ValueError, match="code hash changed"):
+        run(tmp_path, tmp_path / "summary.md")
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["code_sha256"]["pipeline_run.py"] = sha(code.read_bytes())
+    write_json(pipeline / "frozen.json", frozen)
+    with pytest.raises(ValueError, match="not a supported deterministic version"):
+        run(tmp_path, tmp_path / "summary.md")
+
+
+def test_artifact_python_is_parsed_without_execution(tmp_path: Path) -> None:
+    pipeline, _report = _fixture(tmp_path)
+    code = pipeline / "code/pipeline_run.py"
+    code.write_text(code.read_text() + '\nraise RuntimeError("artifact Python must never execute")\n')
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["code_sha256"]["pipeline_run.py"] = sha(code.read_bytes())
+    write_json(pipeline / "frozen.json", frozen)
+    assert run(tmp_path, tmp_path / "summary.md")["runs"][0]["operational_pages"] == 1
+
+
+def test_renderer_retains_merged_cells_outside_words_and_escaped_text() -> None:
+    source = {
+        "page_size": [200, 300],
+        "words": [
+            {"id": "a", "text": "A&B", "bbox": [10, 10, 30, 20], "line": [0, 0]},
+            {"id": "outside", "text": "<note>", "bbox": [10, 40, 30, 50], "line": [1, 0]},
+        ],
+    }
+    state = {
+        "tables": [
+            {
+                "row_count": 1,
+                "col_count": 2,
+                "values": [["A&B", None]],
+                "cells": [{"source_ids": ["a"], "role": "unknown"}, {"source_ids": [], "role": "unknown"}],
+                "spans": [{"row": 0, "column": 0, "row_span": 1, "column_span": 2}],
+            }
+        ],
+        "unresolved_ids": ["outside"],
+    }
+    markdown = _render_markdown(source, state)
+    assert '<td rowspan="1" colspan="2">A&amp;B</td>' in markdown
+    assert "<p>&lt;note&gt;</p>" in markdown
+    assert markdown.count("A&amp;B") == 1
+    assert markdown.count("&lt;note&gt;") == 1
+
+
+def test_legacy_missing_renderer_source_is_visible_but_outputs_still_checked(tmp_path: Path) -> None:
+    pipeline, _report = _fixture(tmp_path)
+    (pipeline / "code/pipeline_run.py").unlink()
+    result = run(tmp_path, tmp_path / "summary.md")["runs"][0]
+    assert result["markdown_renderer_source_status"] == "legacy_frozen_source_unavailable"
+    assert result["markdown_bytes_verified_pages"] == 1
+    assert result["scores"]["exact_page"] == 1
+    assert "historical renderer source integrity is unverified" in (tmp_path / "summary.md").read_text()
+    (pipeline / "positive.md").write_text("<p>omitted</p>\n")
+    with pytest.raises(ValueError, match="Markdown does not match"):
+        run(tmp_path, tmp_path / "summary.md")
+
+
+def test_every_emitted_table_has_matching_header_separator_and_data_columns(tmp_path: Path) -> None:
+    pipeline, _report = _fixture(tmp_path)
+    incomplete = tmp_path / "unfinished"
+    incomplete.mkdir()
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["config"]["run_id"] = "unfinished"
+    write_json(incomplete / "frozen.json", frozen)
+    run(tmp_path, tmp_path / "summary.md")
+    groups: list[list[str]] = []
+    for line in (tmp_path / "summary.md").read_text().splitlines():
+        if line.startswith("|"):
+            if not groups or not groups[-1]:
+                groups.append([])
+            groups[-1].append(line)
+        elif groups and groups[-1]:
+            groups.append([])
+    tables = [group for group in groups if group]
+    assert len(tables) >= 5
+    for rows in tables:
+        counts = [len(re.split(r"(?<!\\)\|", row[1:-1])) for row in rows]
+        assert len(set(counts)) == 1, rows
+        assert len(rows) >= 2
+        assert set(rows[1]) <= set("|:- ")

@@ -5,14 +5,20 @@
 from __future__ import annotations
 
 import argparse
+import ast
+import hashlib
+import html
 import json
 import math
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, TypeGuard
 
+from bench.pipeline_assembly import validate
 from bench.pipeline_scoring import conservation, score_dataset, score_page
 from bench.silver import canonical, guard_path, sha
+
+APPROVED_MARKDOWN_AST_SHA256 = "203102ba248ba0a8294c79d07536f64c4fd33ac39a4f5f0ad377d0c6239ced5d"
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 
@@ -97,6 +103,57 @@ def _source_contract(directory: Path) -> tuple[dict[str, Any], dict[str, Any], s
     return manifest, targets, sha(manifest_path.read_bytes())
 
 
+def _verify_markdown_renderer(path: Path, frozen: dict[str, Any]) -> str:
+    """Recognize the frozen renderer syntactically without executing artifact code."""
+    code_path = path / "code/pipeline_run.py"
+    if not code_path.is_file():
+        return "legacy_frozen_source_unavailable"
+    code = guard_path(code_path).read_bytes()
+    if frozen.get("code_sha256", {}).get("pipeline_run.py") != sha(code):
+        raise ValueError("Frozen Markdown renderer code hash changed")
+    module = ast.parse(code)
+    renderers = [node for node in module.body if isinstance(node, ast.FunctionDef) and node.name == "markdown"]
+    if len(renderers) != 1:
+        raise ValueError("Frozen source must declare exactly one Markdown renderer")
+    digest = hashlib.sha256(ast.dump(renderers[0]).encode()).hexdigest()
+    if digest != APPROVED_MARKDOWN_AST_SHA256:
+        raise ValueError("Frozen Markdown renderer is not a supported deterministic version")
+    return "frozen_source_verified"
+
+
+def _render_markdown(page: dict[str, Any], state: dict[str, Any]) -> str:
+    """Emit literal cells with spans and all outside words, without inventing headers."""
+    validate(page, state)
+    lookup = {w["id"]: w for w in page["words"]}
+    entries: list[tuple[int, str]] = []
+    order = {w["id"]: i for i, w in enumerate(page["words"])}
+    for table in state["tables"]:
+        spans = {(s["row"], s["column"]): s for s in table["spans"]}
+        text = ["<table>"]
+        for r, row in enumerate(table["values"]):
+            text.append("<tr>")
+            for c, value in enumerate(row):
+                if value is None:
+                    continue
+                span = spans.get((r, c), {"row_span": 1, "column_span": 1})
+                attrs = f' rowspan="{span["row_span"]}" colspan="{span["column_span"]}"'
+                text.append(f"<td{attrs}>{html.escape(value)}</td>")
+            text.append("</tr>")
+        text.append("</table>")
+        owned = [i for cell in table["cells"] for i in cell["source_ids"]]
+        entries.append((min((order[i] for i in owned), default=len(order)), "\n".join(text)))
+    lines: dict[tuple[Any, ...], list[str]] = {}
+    for ident in state["unresolved_ids"]:
+        word = lookup[ident]
+        line = tuple(word.get("line", [round(word["bbox"][1], 1)]))
+        lines.setdefault(line, []).append(ident)
+    entries.extend(
+        (min(order[i] for i in ids), "<p>" + html.escape(" ".join(lookup[i]["text"] for i in ids)) + "</p>")
+        for ids in lines.values()
+    )
+    return "\n\n".join(text for _, text in sorted(entries)) + "\n"
+
+
 def _score_run(path: Path, manifest: dict[str, Any], targets: dict[str, Any], manifest_hash: str) -> dict[str, Any]:
     report = _read(path / "report.json")
     frozen = _read(path / "frozen.json")
@@ -109,6 +166,7 @@ def _score_run(path: Path, manifest: dict[str, Any], targets: dict[str, Any], ma
     if len(actual) != len(frozen["records"]) or actual != expected:
         raise ValueError("Frozen records do not match the complete intended cohort")
     private = [target for target in targets["pages"] if target["id"] in expected]
+    renderer_source_status = _verify_markdown_renderer(path, frozen)
     predictions = report["results"]
     # Unknown/duplicate IDs are rejected by score_dataset; missing outputs remain errors.
     scores = score_dataset(private, predictions)
@@ -132,8 +190,13 @@ def _score_run(path: Path, manifest: dict[str, Any], targets: dict[str, Any], ma
         structure = _read(structure_path)
         if structure["tables"] != prediction["tables"] or structure["unresolved_ids"] != prediction["unresolved_ids"]:
             raise ValueError("Retained output does not match the reported complete state")
-        operational += 1
         source = prediction.get("source")
+        if source is None:
+            raise ValueError("Successful output has no retained source for Markdown verification")
+        expected_markdown = _render_markdown(source, structure).encode("utf-8")
+        if markdown_path.read_bytes() != expected_markdown:
+            raise ValueError("Retained Markdown does not match complete source-owned state")
+        operational += 1
         if source is not None:
             conservation_available += 1
             assigned = structure["unresolved_ids"] + [
@@ -173,6 +236,8 @@ def _score_run(path: Path, manifest: dict[str, Any], targets: dict[str, Any], ma
             positives, [row for row in oracle if row["id"] in {t["id"] for t in positives}]
         )["totals"],
         "operational_pages": operational,
+        "markdown_renderer_source_status": renderer_source_status,
+        "markdown_bytes_verified_pages": operational,
         "all_errors": len(expected) - operational,
         "page_scores": scores["pages"],
         "conserved_pages": conserved,
@@ -261,7 +326,7 @@ def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - com
         "Full and pilot cohorts have distinct denominators.",
         "",
         "| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
-        "|---|---|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|",
+        "|---|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|",
     ]
     for item in runs:
         config, pos, neg = item["config"], item["positive"], item["negative"]
@@ -279,6 +344,20 @@ def run(directory: Path, output: Path) -> dict[str, Any]:  # noqa: PLR0912 - com
             f"{item['operational_pages']}/{item['scores']['pages']} | {pos['exact_page']}/{pos['scored_pages']} | "
             f"{neg['false_positive_page']}/{neg['scored_pages']} | {item['all_errors']}/{item['scores']['error']} |"
         )
+    legacy_renderers = [
+        item["name"] for item in runs if item["markdown_renderer_source_status"] != "frozen_source_verified"
+    ]
+    lines += [
+        "",
+        "Every successful page's retained Markdown is checked byte-for-byte against a trusted deterministic rendering of its complete source-owned final state. Artifact Python is never executed.",
+    ]
+    if legacy_renderers:
+        lines += [
+            "",
+            "Legacy frozen renderer source unavailable: "
+            + ", ".join(f"`{_label(name)}`" for name in legacy_renderers)
+            + ". Their Markdown matches the trusted output format, but historical renderer source integrity is unverified; matched repeats with retained source are preferred.",
+        ]
     lines += [
         "",
         "| Run | Exact scored pages | Complete tables / charged tables | Exact cells / expected tables | Exact spans / expected tables | Correct slots / expected / charged slots | Missing / extra tables | Conserved / checked output pages | Oracle exact positive pages |",
