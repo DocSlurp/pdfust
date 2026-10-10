@@ -45,6 +45,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-multiscale-haiku-1024 | 15/16 | 1 | 2/12 | 2 | 14 | 829/2333 | 581/2333 | 13308/16640 | 17 | 2 | 5.51649 | 1135.8 | 0.0132065 |
 | natural16-vision-crops-sonnet-2048-q50 | 15/16 | 1 | 2/12 | 3 | 14 | 361/2333 | 292/2333 | 13211/16640 | 14 | 3 | 10.2095 | 81.3123 | 0.184474 |
 | natural16-vision-crops-haiku-2048-q50 | 14/16 | 2 | 2/12 | 2 | 10 | 332/2333 | 268/2333 | 14130/16640 | 12 | 0 | 7.88064 | 1016.28 | 0.0137757 |
+| natural16-yolo-matrix-haiku-512-row-evidence | 15/16 | 1 | 1/12 | 2 | 11 | 347/2333 | 225/2333 | 14143/16640 | 14 | 1 | 3.12581 | 416.142 | 0.0360454 |
 
 ### natural16-whole-reviewed
 
@@ -1276,6 +1277,40 @@ Ledger attempts 19; reported USD subtotal 0.0137757; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 3.05997s, CPU 7.15446s; 16 per-page measurement entries, request CPU total 15s; maximum sampled request RSS 1185980416 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-yolo-matrix-haiku-512-row-evidence
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
+
+Failure categories: `{"provider_output_length": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 45.65%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 2/14 | 1/10 | 225 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 18 | 18 | 0.0360454 | 0 / 18 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 11 | 347/2333 | 14143/16640 | 1/4 |
+
+Page-processing run wall (excludes freeze/client setup) 287.925s; CPU 307.664s; sampled RSS 613330944 bytes; verified output pages/min 3.12581; exact positive pages/min 0.208388. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 18; reported USD subtotal 0.0360454; missing reported charges 0; cost bases `{"provider-reported USD": 18}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.70852s, CPU 6.04068s; 16 per-page measurement entries, request CPU total 14.4566s; maximum sampled request RSS 1191841792 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -2328,3 +2363,26 @@ Response-length/service variation and atomic dense failures prevent interpreting
 this as a universal size/quality optimum. Legibility, detector coverage and strict
 transcription format need separate matched tests; neither bounded parameter
 change justifies repairing or rescaling the returned normalized coordinates.
+
+
+## Matched matrix row-evidence control
+
+The explicit source-derived row-context flag retains 15/16 source-conserved
+outputs, 225/2333 exact cells, 347 structural cells and eleven exact topologies.
+Two complete tables occur on one exact positive page; one negative page is a
+false positive, and 39 reference tables remain missing. Both dense pages recover
+zero cells. P98's retained provider finish is explicitly `length`, rather than an
+inference from a generic parser error. All failed calls remain charged.
+
+API charges total USD 0.0360454, at 3.13 operational pages/minute and 416.14
+pages/API USD. Supplementary positive-page macro recall is 45.65% cells and
+12.50% complete tables. Both row-evidence helper dependency files match trusted
+current bytes; no context is truncated or supplemented with reference values.
+
+The matched base512 run also verifies 15/16 outputs and fails p98 on length;
+row evidence does not change that operational count. It loses 33 exact cells
+(225 versus 258), twelve structural cells and one exact topology, while complete
+tables, exact positive pages and the negative false positive stay unchanged.
+API cost rises by approximately 53% from USD 0.0234843. This frozen screen offers
+no evidence that the added mechanical row context improves the complete pipeline.
+Its independently configured gated ordinal variant remains a separate control.
