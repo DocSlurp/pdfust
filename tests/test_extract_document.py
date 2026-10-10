@@ -198,7 +198,7 @@ def test_combined_markdown_limit_preserves_pages_without_reading_or_truncating_t
     monkeypatch.setattr(wrapper, "MAX_COMBINED_BYTES", 256)
     monkeypatch.setattr(wrapper, "_invoke", invoke)
     output = tmp_path / "combined-refusal"
-    result = wrapper.extract(pdf, output)
+    result = wrapper.extract(pdf, output, mode="hybrid-haiku")
     assert result["requested_pages_complete"]
     assert not result["complete"]
     assert result["status"] == "partial"
@@ -236,3 +236,95 @@ def test_whole_page_admission_precedes_range_materialization(
     with pytest.raises(ValueError, match="max_pages admission"):
         wrapper.extract(pdf, tmp_path / "oversized-page-count")
     materialize.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("rotation", "counterrotate"), [(0, False), (90, False), (180, False), (270, False), (90, True)]
+)
+def test_native_logical_sidecars_preserve_physical_child_and_merged_grid(
+    tmp_path: Path, rotation: int, *, counterrotate: bool,
+) -> None:
+    from test_pipeline_native_orientation import grid  # noqa: PLC0415
+
+    import pylopdf  # noqa: PLC0415 - generated native PDF only.
+
+    pdf = tmp_path / "grid.pdf"
+    with pylopdf.open(stream=grid(counterrotate=counterrotate)) as document:
+        document[0].set_rotation(rotation)
+        document.save(pdf)
+    output = tmp_path / "logical-native"
+    result = wrapper.extract(pdf, output)
+    assert result["complete"]
+    page = result["pages"][0]
+    corrected = json.loads((output / page["structure"]).read_text())
+    assert corrected["tables"][0]["values"] == [
+        ["Merged heading", None], ["Alpha one continuation", "42"], ["Beta", "99"]
+    ]
+    assert corrected["source_conserved"]
+    assert corrected["accounting_complete"]
+    assert corrected["source_inventory_complete"]
+    child = json.loads((output / page["result"]).read_text())
+    assert child["original_rotation"] == child["effective_rotation"] == rotation
+    assert corrected["source_ledger"] == [
+        {"id": word["id"], "owner": "native", "table_index": 0} for word in child["source"]["words"]
+    ]
+    evidence = corrected["native_orientation_evidence"]
+    expected_direction = "right" if counterrotate else ("right", "down", "left", "up")[rotation // 90]
+    assert evidence["tables"][0]["direction"] == expected_direction
+    assert page["structure"].startswith("corrected-native/")
+    assert (output / page["original_child_structure"]).exists()
+    assert (output / page["original_child_markdown"]).exists()
+    provenance = json.loads((output / page["native_correction_provenance"]).read_text())
+    assert provenance["source_order"] == "original"
+    for entry in provenance["files"].values():
+        assert wrapper.sha((output / entry["path"]).read_bytes()) == entry["sha256"]
+    assert result["native_correction_resources"]["cpu_seconds"] > 0
+
+
+def test_native_corrected_multicolumn_prose_retains_original_line_order(tmp_path: Path) -> None:
+    import pylopdf  # noqa: PLC0415 - generated native PDF only.
+
+    pdf = tmp_path / "columns.pdf"
+    with pylopdf.open() as document:
+        page = document.new_page(width=600, height=800)
+        for column, x in (("Left", 40), ("Right", 330)):
+            for index in range(1, 9):
+                page.insert_text(
+                    (x, 100 + 22 * index), f"{column} paragraph line {index} alpha beta gamma", fontsize=11
+                )
+        document.save(pdf)
+    output = tmp_path / "columns-output"
+    result = wrapper.extract(pdf, output)
+    assert result["complete"]
+    rendered = (output / "document.md").read_text()
+    labels = [f"{column} paragraph line {index}" for column in ("Left", "Right") for index in range(1, 9)]
+    positions = [rendered.index(label) for label in labels]
+    assert positions == sorted(positions)
+    assert all(rendered.count(label) == 1 for label in labels)
+    page = result["pages"][0]
+    child = json.loads((output / page["result"]).read_text())
+    corrected = json.loads((output / page["corrected_result"]).read_text())
+    assert corrected["source"]["words"] == child["source"]["words"]
+
+
+def test_native_correction_error_is_failed_page_without_fallback(
+    pdf: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def refuse(*_args: object) -> None:
+        message = "mock correction refusal"
+        raise ValueError(message)
+
+    monkeypatch.setattr(wrapper, "_correct_native", refuse)
+    output = tmp_path / "correction-failed"
+    result = wrapper.extract(pdf, output)
+    assert not result["complete"]
+    assert not result["requested_pages_complete"]
+    assert result["successful_pages"] == 0
+    page = result["pages"][0]
+    assert page["error_type"] == "NativeCorrectionFailure"
+    assert "markdown" not in page
+    assert (output / page["original_child_markdown"]).exists()
+    assert (output / page["native_correction_diagnostic"]).exists()
+    rendered = (output / "document.md").read_text()
+    assert "Page 1 extraction failed" in rendered
+    assert "Alpha" not in rendered

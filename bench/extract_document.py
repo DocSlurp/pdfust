@@ -23,6 +23,77 @@ MAX_PDF_BYTES = 64 * 1024 * 1024
 MAX_COMBINED_BYTES = 64 * 1024 * 1024
 
 
+def _freeze_native_correction(output: Path) -> dict[str, Any]:
+    """Retain exact post-processing helpers and the local extension identity."""
+    from bench import (
+        generalization_run,
+        pipeline_assembly,
+        pipeline_hybrid_composition,
+        pipeline_native_orientation,
+        pipeline_regions,
+        pipeline_run,
+        pipeline_vision_transcription,
+    )
+    from pylopdf import _markdown
+
+    directory = output / "native-correction-runtime"
+    directory.mkdir()
+    files = {}
+    for module in (
+        generalization_run, pipeline_hybrid_composition, pipeline_native_orientation, pipeline_run,
+        pipeline_assembly, pipeline_regions, pipeline_vision_transcription, _markdown,
+    ):
+        path = Path(module.__file__ or "").resolve()
+        data = path.read_bytes()
+        destination = directory / path.name
+        destination.write_bytes(data)
+        files[module.__name__] = {"path": str(destination.relative_to(output)), "sha256": sha(data)}
+    provenance = {
+        "files": files, "runtime": pipeline_run.runtime_fingerprints(),
+        "native_table_orientation": pipeline_native_orientation.SPEC,
+        "source_order": "original", "rotation_mode": "preserve",
+        "scope": "CPU post-processing of retained native state; child artifacts unchanged",
+    }
+    write_json(directory / "provenance.json", provenance)
+    return provenance
+
+
+def _correct_native(
+    record: dict[str, Any], row: dict[str, Any], physical_structure: Path, output: Path,
+) -> tuple[dict[str, Any], Path, Path]:
+    """Create complete logical sidecars while retaining physical source geometry."""
+    import pylopdf
+    from bench import generalization_run as native
+    from bench import pipeline_hybrid_composition as hybrid
+    from bench import pipeline_native_orientation as orientation
+
+    if row.get("calls") or row.get("source_conserved") is not True:
+        raise ValueError("Native correction requires validated source-owned child output")
+    source, warnings = native.sanitize_vectors(row["source"])
+    source = hybrid.sanitize_vectors(source)
+    state = json.loads(physical_structure.read_text())
+    with Path(record["pdf_path"]).open("rb") as stream:
+        data = stream.read(MAX_PDF_BYTES + 1)
+    if len(data) > MAX_PDF_BYTES or sha(data) != record["pdf_sha256"]:
+        raise ValueError("Native correction source PDF hash or size changed")
+    with pylopdf.open(stream=data) as document:
+        page = document[record["page_number"]]
+        direction = orientation.evidence(page, hybrid.native_boxes(source, state))
+    composed = orientation.compose(
+        source, state, {"tables": [], "text_provenance": "model-transcribed", "source_conserved": False}, direction,
+    )
+    if composed["status"] != "ok":
+        raise ValueError("Native logical correction refused complete composition")
+    markdown_path = output / f"{record['id']}.md"
+    structure_path = output / f"{record['id']}-structure.json"
+    markdown_path.write_text(hybrid.markdown(composed))
+    write_json(structure_path, {key: value for key, value in composed.items() if key != "markdown"})
+    corrected = {**row, **{key: value for key, value in composed.items() if key != "markdown"},
+                 "native_warnings": warnings, "source": source}
+    write_json(output / f"{record['id']}-result.json", corrected)
+    return corrected, markdown_path, structure_path
+
+
 def _invoke(command: list[str], log: Path) -> int:
     """Delegate assembly and metering to existing CLI code in a CPU child process."""
     with log.open("wb") as stream:
@@ -117,7 +188,10 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
     module = "bench.generalization_run" if mode == "native" else "bench.generalization_hybrid_run"
     command = [sys.executable, "-m", module, "--manifest", str(manifest), "--output", str(pipeline)]
     if mode == "native":
-        command += ["--policy", "native", "--rotation-mode", "preserve", "--ocr-source", "whitespace"]
+        command += [
+            "--policy", "native", "--rotation-mode", "preserve", "--ocr-source", "whitespace",
+            "--source-order", "original",
+        ]
     else:
         model = "anthropic/claude-" + mode.split("-", 1)[1] + "-5.5"
         command += [
@@ -127,11 +201,13 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
     command += ["--ocr-dpi", "150"]
     wrapper_path = Path(__file__).resolve()
     (output / "extract_document.py").write_bytes(wrapper_path.read_bytes())
+    correction_provenance = _freeze_native_correction(output) if mode == "native" else None
     write_json(output / "document-input.json", {
         "pdf_path": str(pdf), "pdf_sha256": fingerprint, "source_page_count": page_count,
         "requested_pages": requested, "max_pages": max_pages, "max_pdf_bytes": MAX_PDF_BYTES,
         "mode": mode, "command": command, "wrapper_sha256": sha(wrapper_path.read_bytes()),
         "local_gpu_used": False, "pipeline_directory": pipeline.name,
+        "native_correction": correction_provenance,
     })
     started = time.perf_counter()
     exit_code = _invoke(command, output / "pipeline.log")
@@ -140,18 +216,36 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
     predictions = {row["id"]: row for row in report.get("results", [])}
     summary: list[dict[str, Any]] = []
     fragments: list[str | Path] = []
+    correction_wall, correction_cpu = time.perf_counter(), time.process_time()
+    correction_output = output / "corrected-native"
+    if mode == "native":
+        correction_output.mkdir()
     for record in records:
         ident, page = record["id"], record["page_number"]
         row = predictions.get(ident, {})
         markdown_path = pipeline / f"{ident}.md"
         structure_path = pipeline / f"{ident}-structure.json"
         successful = row.get("status") == "ok" and markdown_path.is_file() and structure_path.is_file()
+        correction_error = None
+        if successful and mode == "native":
+            try:
+                row, markdown_path, structure_path = _correct_native(record, row, structure_path, correction_output)
+            except Exception as exc:
+                successful = False
+                correction_error = {"error_type": type(exc).__name__, "error": str(exc)[:500]}
+                write_json(correction_output / f"{ident}-error.json", correction_error)
         item = {
             "id": ident, "page_number": page, "status": "ok" if successful else "error",
             "source_conserved": row.get("source_conserved", False) if successful else False,
             **(_provenance(row, mode) if successful else {"text_provenance": "unavailable"}),
             "result": str((pipeline / f"{ident}-result.json").relative_to(output)),
         }
+        if mode == "native":
+            item["original_child_markdown"] = str((pipeline / f"{ident}.md").relative_to(output))
+            item["original_child_structure"] = str((pipeline / f"{ident}-structure.json").relative_to(output))
+            if successful:
+                item["corrected_result"] = str((correction_output / f"{ident}-result.json").relative_to(output))
+                item["native_correction_provenance"] = "native-correction-runtime/provenance.json"
         fragments.append(f"## Page {page + 1}\n\n")
         if successful:
             item.update(
@@ -159,8 +253,15 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
             )
             fragments.extend([markdown_path, "\n\n"])
         else:
-            reason = row.get("error_type", "MissingCompletePageOutput")
+            reason = (
+                "NativeCorrectionFailure" if correction_error else row.get("error_type", "MissingCompletePageOutput")
+            )
             item["error_type"] = reason
+            if correction_error:
+                item["native_correction_error"] = correction_error
+                item["native_correction_diagnostic"] = str(
+                    (correction_output / f"{ident}-error.json").relative_to(output)
+                )
             fragments.append(f"[Page {page + 1} extraction failed; see retained page diagnostics.]\n\n")
         summary.append(item)
     selected_complete = exit_code == 0 and all(row["status"] == "ok" for row in summary)
@@ -182,6 +283,13 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
         "local_gpu_used": False,
         "combined_max_bytes": MAX_COMBINED_BYTES,
         "combined_markdown_complete": True,
+        "native_correction": correction_provenance,
+        "native_correction_resources": {
+            "wall_seconds": time.perf_counter() - correction_wall,
+            "cpu_seconds": time.process_time() - correction_cpu,
+            "scope": "wrapper parent aggregation and native post-processing; child resources separate",
+            "peak_rss_bytes": None, "rss_scope": "unmeasured",
+        } if mode == "native" else None,
     }
     status_line = (
         f"Status: {result['status']}; {len(requested)} of {page_count} source pages requested, "
