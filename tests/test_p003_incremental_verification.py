@@ -60,7 +60,8 @@ def test_topology_replay_authenticated_prepare_and_complete_output(tmp_path: Pat
 
 
 @pytest.mark.parametrize("band_mode", ["uniform", "source"])
-def test_geometry_replays_source_placement_without_api_calls(tmp_path: Path, band_mode: str) -> None:
+@pytest.mark.parametrize("chunked", [False, True])
+def test_geometry_replays_source_placement_without_api_calls(tmp_path: Path, band_mode: str, *, chunked: bool) -> None:
     source, topology = tmp_path / "source", tmp_path / "topology"
     source_trust, topology_trust = archives(source, topology)
     for i in range(16):
@@ -72,7 +73,13 @@ def test_geometry_replays_source_placement_without_api_calls(tmp_path: Path, ban
         source_trust,
         topology_trust,
         output,
-        config(prepare_only=False, run_hosted=False, geometry_only=True, band_mode=band_mode),
+        config(
+            prepare_only=False,
+            run_hosted=False,
+            geometry_only=True,
+            band_mode=band_mode,
+            **({"chunked_inventory": True, "topology_evidence": "bands"} if chunked else {}),
+        ),
         None,
     )
     frozen = json.loads((output / "frozen.json").read_bytes())

@@ -98,6 +98,21 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         digest = frozen["code_sha256"].get(name)
         uniform_config = frozen["config"]
         if (
+            name in {"p003_topology_run.py", "p003_topology_geometry.py"}
+            and uniform_config.get("chunked_inventory", False) is False
+            and uniform_config.get("crossed_tables", "strict") == "strict"
+            and "topology_evidence" not in uniform_config
+            and set(uniform_config)
+            <= historical_config_keys
+            | {"geometry_only", "band_mode", "transcript_replay", "chunked_inventory", "crossed_tables"}
+            and digest
+            == {
+                "p003_topology_run.py": "7037330072debc889bdd37225b334090da09ed4791b7f6d10e70cd279f7dbdaf",
+                "p003_topology_geometry.py": "1f5d69b8a190fb4a71b003077c075b80005ca492eae0173645692558091e1d12",
+            }[name]
+        ):
+            continue  # Root reviewed unchanged defaults before the bounded local inventory protocol.
+        if (
             name == "p003_topology_run.py"
             and digest == "83ee9fb21074606db7d8020daae3c1fc5046712e97736b6139edf5a060998edf"
             and uniform_config.get("transcript_replay") is True
@@ -210,6 +225,7 @@ def verify_topology(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Replay frozen topology/source partition, row ownership, anchors and atomic outputs."""
     from bench import p003_candidate_run as candidate
+    from bench import p003_topology_chunks as chunks
     from bench import p003_topology_ownership as ownership
     from bench import p003_topology_run as runner
     from bench import pipeline_run as pipeline
@@ -218,6 +234,15 @@ def verify_topology(
     from bench.pipeline_source_order import render_source
 
     config = frozen["config"]
+    if type(config.get("chunked_inventory", False)) is not bool:
+        raise ValueError("Invalid topology inventory treatment")
+    if config.get("topology_evidence", "compact") not in {"compact", "neighbors", "bands"} or (
+        "topology_evidence" in config and not config.get("chunked_inventory")
+    ):
+        raise ValueError("Invalid topology local evidence treatment")
+    if config.get("crossed_tables", "strict") not in {"strict", "residual_prose"}:
+        raise ValueError("Invalid crossed source table treatment")
+    protocol = chunks if config.get("chunked_inventory") else ownership
     names = {"source-baseline", "topology-baseline"}
     if config.get("transcript_replay"):
         names.add("original-ownership-run")
@@ -242,6 +267,8 @@ def verify_topology(
             raise ValueError("Unsupported geometry band treatment")
         if config.get("band_mode") == "source":
             _helpers(frozen, ("p003_spatial_bands.py",))
+    if config.get("chunked_inventory"):
+        _helpers(frozen, ("p003_topology_chunks.py", "p003_spatial_bands.py"))
     if config.get("transcript_replay"):
         _helpers(frozen, ("p003_topology_replay.py",))
     reviewed = config.get("reviewed_parser_sha256", [])
@@ -344,16 +371,21 @@ def verify_topology(
                             retained.append(_retained_response(directory, transcript, request_stem, body, response))
                         calls.append(response)
                         responses.append(response["result"])
-                    rows = ownership.collect(crop["snapshot"], crop["row_bodies"], responses)
+                    rows = protocol.collect(crop["snapshot"], crop["row_bodies"], responses)
                     if _read(directory / f"{stem}-row-receipt.json") != rows:
                         raise ValueError("Topology row receipt changed")
-                    bodies = ownership.batches(
+                    bodies = protocol.batches(
                         crop["snapshot"],
                         config["model"],
                         crop["url"],
                         rows=rows,
                         max_questions=config["max_questions"],
                         image=config.get("image", True),
+                        **(
+                            {"evidence_mode": config.get("topology_evidence", "compact")}
+                            if config.get("chunked_inventory")
+                            else {}
+                        ),
                     )
                     if info["cells"] != [f"{stem}-cell-{i}" for i in range(len(bodies))]:
                         raise ValueError("Topology anchor request inventory changed")
@@ -367,7 +399,7 @@ def verify_topology(
                             retained.append(_retained_response(directory, transcript, request_stem, body, response))
                         calls.append(response)
                         results.append(response["result"])
-                    audit = ownership.assemble(crop["snapshot"], crop["row_bodies"], responses, bodies, results)
+                    audit = protocol.assemble(crop["snapshot"], crop["row_bodies"], responses, bodies, results)
                     if (
                         _read(directory / f"{stem}-audit.json") != audit
                         or _read(directory / f"{stem}-updated-state.json") != audit["state"]
