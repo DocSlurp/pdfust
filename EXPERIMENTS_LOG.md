@@ -1135,3 +1135,41 @@ admission before candidate choices, and adaptive evidence/repair routing. See
 [the P001 plan](bench/PIPELINE_EXPERIMENTS.md) and
 [the complete comparison](bench/results/pipeline-p001.md) for all successes,
 failures, candidate ceilings, family slices, CPU/RSS and cost scopes.
+
+P001 second checkpoint: orientation normalization recovered the missing rotated
+pilot table, reaching 16/16 positives. Independent admission reduced PPLX negative
+false-positive pages from four to one. Minimal, relational and reading-order
+premises all retained that one error; more evidence alone did not resolve it.
+Luna's 1024-pixel gate also reached 16/16 positives and one negative false positive.
+Bounded row edits recovered 10–11/16 positives with 5–6 false-positive pages;
+adaptive repair routing recovered 10–12/16 with 4–6 false-positive pages. Those
+losses remain in the comparison and are not promoted.
+
+The normalized text-only PPLX arm retained 16/16 positives and four false-positive
+pages, matching its 256-pixel assembly arm with less input cost. Clef Flash lost
+all positive tables without pixels, compared with 5/16 at 512 pixels before
+normalization. The latter comparison changes orientation as well as images and
+is not a pure matched pixel ablation. Image utility is model-dependent.
+
+Matched 512-pixel Anthropic candidate-selection controls completed: Haiku scored
+29/32 exact pages (16 positive, three negative false positives); Sonnet and Opus
+each scored 32/32. Their sources, candidate sets and images match byte-for-byte.
+They constrain the same source-derived menu, not unrestricted frontier extraction.
+The selective PPLX gate plus Sonnet review reached 32/32 using one review call,
+61.28 output pages/minute and 3,128 output pages/USD, versus direct Sonnet's 18.23
+and 110 and Opus's 13.01 and 56. This compares complete configurations with
+different image sizes and routing, not equal-input model ability. Review thresholds
+were chosen after observing DEV misses; this is exploratory, not confirmation.
+
+The expanded full-corpus runs include CPU OCR, rotation normalization, independent
+admission, review, all three frontier controls and the lower-performing adaptive
+and Flash arms. Source-only OCR recovered literal text on one of three empty-text
+pages; the other two remain unsupported. The recovered table exposes a proposal
+placement gap, motivating a separately versioned column-consensus experiment.
+CPU OCR uses four RTen threads; no local GPU or rented host is used.
+
+An offline HTML demo shows a wrapped borderless table reconstructed from its PDF
+with native baseline, final JSON/Markdown and source ownership. Source and raw
+outputs remain ignored artifacts. Three worktrees independently audit candidate
+gaps, paired-input fairness and output integrity. Targeted validation at this
+checkpoint: 207 CPU tests passed; new pipeline modules pass Ruff and strict mypy.

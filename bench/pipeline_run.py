@@ -8,6 +8,7 @@ import argparse
 import base64
 import html
 import importlib
+import importlib.metadata
 import io
 import json
 import os
@@ -16,18 +17,42 @@ import random
 import threading
 import time
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Self
 
 from bench.decision_hosted import ARTIFACTS, ROOT, DecisionClient, accounted_cost
 from bench.decision_oplog_run import parse_choice
 from bench.pipeline_assembly import native_state, packet, propose, validate
+from bench.pipeline_frontier import MODELS as CHAT_MODELS
+from bench.pipeline_frontier import parse as parse_chat
+from bench.pipeline_frontier import translate
 from bench.silver import guard_path, sha, write_json
 from bench.silver_structure import observed_table
 
-MODELS = ("perplexity/pplx-decider-v1.1-27b", "cloudflare/clef-flash", "openai/gpt-6-luna-decisions")
+MODELS = ("perplexity/pplx-decider-v1.1-27b", "cloudflare/clef-flash", "openai/gpt-6-luna-decisions", *CHAT_MODELS)
 POLICIES = ("native", "native_text", "assembly", "cascade", "repair", "adaptive", "gated")
 WAVE_LIMIT = 50.0
+GATE_REVIEW_SCORE = 0.8
+GATE_REVIEW_MARGIN = 0.25
+
+
+def runtime_fingerprints() -> dict[str, Any]:
+    """Identify installed packages and the exact extraction implementation."""
+    versions: dict[str, str | None] = {}
+    for name in ("jev-pdf", "pylopdf-ocr-models", "Pillow", "psutil", "requests"):
+        try:
+            versions[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            versions[name] = None
+    modules = {}
+    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial"):
+        module = importlib.import_module(name)
+        if module.__file__ is None:
+            raise ValueError(f"Extraction module has no fingerprintable file: {name}")
+        path = Path(module.__file__)
+        modules[name] = {"filename": path.name, "sha256": sha(path.read_bytes())}
+    return {"package_versions": versions, "extraction_modules": modules}
 
 
 class Resources:
@@ -110,12 +135,20 @@ def image(page: Any, edge: int) -> tuple[str | None, dict[str, Any]]:
         }
 
 
+@lru_cache(maxsize=1)
+def ocr_engine() -> Any:
+    """Load one CPU RTen engine lazily; initialization is inside first-use timing."""
+    import pylopdf
+
+    return pylopdf.OcrEngine(threads=4, max_concurrent=1)
+
+
 def body(model: str, prompt: str, choices: dict[str, str], url: str | None) -> dict[str, Any]:
     """Keep text before image for publisher decision adapters."""
     state: Any = prompt
     if url:
         state = [prompt, {"type": "image_url", "image_url": {"url": url, "detail": "high"}}]
-    return {
+    request = {
         "model": model,
         "state": state,
         "questions": {
@@ -130,6 +163,7 @@ def body(model: str, prompt: str, choices: dict[str, str], url: str | None) -> d
             }
         },
     }
+    return translate(request, model) if model in CHAT_MODELS else request
 
 
 def call(client: DecisionClient, request: dict[str, Any], tag: str) -> dict[str, Any]:
@@ -140,7 +174,13 @@ def call(client: DecisionClient, request: dict[str, Any], tag: str) -> dict[str,
         raise RuntimeError("P001 reservation would exceed its USD 50 wave cap")
     started, cpu = time.perf_counter(), time.process_time()
     result = client.request(request, tag=tag, max_body_bytes=750_000, replay=False)
-    answer = parse_choice(result["result"], set(request["questions"]["q0"]["criteria"]))
+    if request["model"] in CHAT_MODELS:
+        options = request["response_format"]["json_schema"]["schema"]["properties"]["answers"]["properties"]["q0"][
+            "properties"
+        ]["choice"]["enum"]
+        answer = parse_chat(result["result"], options)
+    else:
+        answer = parse_choice(result["result"], set(request["questions"]["q0"]["criteria"]))
     return {
         "answer": answer,
         "entry": result["entry"],
@@ -205,6 +245,18 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
             result["rotation_normalized"] = bool(config.get("normalize_rotation") and result["original_rotation"])
             snapshot = source(page, text_tables=config["policy"] == "native_text")
             result["stages"]["extraction_seconds"] = time.perf_counter() - started
+            if not snapshot["words"] and config.get("ocr_empty"):
+                ocr_start, ocr_cpu = time.perf_counter(), time.process_time()
+                recognized = page.apply_ocr(dpi=150, engine=ocr_engine())
+                result["ocr"] = {
+                    "engine": "RTen native CPU",
+                    "threads": 4,
+                    "dpi": 150,
+                    "recognized_regions": len(recognized),
+                    "wall_seconds": time.perf_counter() - ocr_start,
+                    "cpu_seconds": time.process_time() - ocr_cpu,
+                }
+                snapshot = source(page, text_tables=config["policy"] == "native_text")
             if not snapshot["words"]:
                 result["status"] = "unsupported_no_text"
                 raise ValueError("No source text; this pipeline does not silently substitute an OCR result")
@@ -229,6 +281,8 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                 result["routing"] = routing
                 route = {"keep_native": "native", "assemble": "assembly", "repair": "repair"}[routing["action"]]
                 edge, context_rows = routing["image_edge"], routing["context_rows"]
+            if config["policy"] in {"adaptive", "gated"} and len(candidates) == 1:
+                route, state = "no_alternative", candidates[0]
             if route in {"assembly", "cascade", "repair", "gated"}:
                 if client is None:
                     raise ValueError("Hosted policy requires the coordinated metered client")
@@ -252,6 +306,20 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     write_json(output / f"{record['id']}-request-0.json", request)
                     response = call(client, request, f"P001/{config['run_id']}/{record['id']}/0")
                     result["calls"].append(response)
+                    probabilities = response["answer"].get("probabilities", {})
+                    ranked = sorted(probabilities.values(), reverse=True)
+                    if config.get("gate_review_model") and ranked and (
+                        ranked[0] < GATE_REVIEW_SCORE
+                        or (len(ranked) > 1 and ranked[0] - ranked[1] < GATE_REVIEW_MARGIN)
+                    ):
+                        result["gate_review"] = {
+                            "reason": "uncalibrated score <0.8 or margin <0.25",
+                            "primary_answer": response["answer"],
+                        }
+                        review = body(config["gate_review_model"], prompt, choices, url)
+                        write_json(output / f"{record['id']}-request-1.json", review)
+                        response = call(client, review, f"P001/{config['run_id']}/{record['id']}/1")
+                        result["calls"].append(response)
                     result["admission_choice"] = response["answer"]["choice"]
                     if response["answer"]["choice"] != "table":
                         route, state = "gated_out", candidates[0]
@@ -334,8 +402,16 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "pipeline_repair.py",
                 "pipeline_routing.py",
                 "pipeline_admission.py",
+                "pipeline_frontier.py",
+                "rolling_rows.py",
+                "rolling_topology.py",
+                "decision_evidence_designs.py",
+                "corpus_routes.py",
+                "silver_structure.py",
+                "silver.py",
             )
         },
+        "runtime": runtime_fingerprints(),
         "python": platform.python_version(),
         "platform": platform.platform(),
         "logical_cpus": os.cpu_count(),
@@ -402,7 +478,9 @@ def main() -> None:
     parser.add_argument("--context-rows", type=int, choices=(1, 3), default=1)
     parser.add_argument("--no-legend", action="store_true")
     parser.add_argument("--normalize-rotation", action="store_true")
-    parser.add_argument("--gate-premise", choices=("minimal", "relational"), default="relational")
+    parser.add_argument("--ocr-empty", action="store_true")
+    parser.add_argument("--gate-premise", choices=("minimal", "relational", "reading_order"), default="relational")
+    parser.add_argument("--gate-review-model", choices=CHAT_MODELS)
     parser.add_argument("--pilot", action="store_true")
     parser.add_argument("--order-seed", type=int, default=20261009)
     args = parser.parse_args()
@@ -416,7 +494,9 @@ def main() -> None:
         "pilot": args.pilot,
         "order_seed": args.order_seed,
         "normalize_rotation": args.normalize_rotation,
+        "ocr_empty": args.ocr_empty,
         "gate_premise": args.gate_premise,
+        "gate_review_model": args.gate_review_model,
     }
     result = run(args.manifest, args.output, config)
     print(json.dumps({k: v for k, v in result.items() if k != "results"}, indent=2))

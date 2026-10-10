@@ -99,3 +99,102 @@ The six packet refusals from source preflight remain recorded: five oversized
 complete packets and one incomplete native span tiling. Image-only sources without
 OCR are explicit unsupported cases. A successful output conserves extractable
 snapshot words, which does not establish preservation of unmapped glyphs or pixels.
+
+## Broader runs and remaining controls
+
+The normalized PPLX/256 pilot recovered 16/16 positives. Independent admission
+reduced negative false positives from four to one for both PPLX premises; Luna's
+1024-pixel gate also reached 16/16 with one false-positive page. Local row edits
+and the first adaptive routing policy retained only 10–12/16 positives, with
+5–6 false-positive pages. Preserve these losses rather than promote that policy.
+
+Next, run the fixed complete corpus with native, model-only, geometry cascade,
+independent gate, and adaptive controls. Include the promising PPLX and Luna
+routes and retain a lower-recall Flash comparison. These are broader DEV runs,
+not a newly untouched or independent confirmation set.
+
+Additional declared controls before execution:
+
+- Matched Opus/Sonnet/Haiku 5.5 choose from exactly the same source-derived
+  assemblies. This compares complete constrained pipelines, not unrestricted
+  frontier extraction. Output schemas change transport only; no probabilities
+  are fabricated for chat models.
+- Empty-text OCR uses native CPU RTen at 150 dpi with four threads. Load lazily,
+  charge initialization and recognition to the pipeline, preserve input bytes,
+  and keep zero-recognition pages explicitly unsupported. The source-only probe
+  recovered text on one of three empty pages; semantic accuracy is still scored.
+- A reading-order admission premise compares the unchanged native sequence with
+  mechanically formed horizontal bands. Both views contain each source ID once.
+  This tests whether coherent prose continuation can disambiguate aligned columns.
+- A separate gate-review cascade invokes Sonnet only when the initial gate's
+  maximum score is below 0.8 or its top-two margin is below 0.25. These fixed
+  exploratory thresholds are uncalibrated heuristics motivated by a DEV miss,
+  not probabilities of correctness. The reviewer sees the same source evidence,
+  without the first model's answer or any reference. Count every review call.
+- Adaptive and gated arms skip a model when only one complete candidate exists:
+  the model's declared menu cannot alter that output. Missing positive candidates
+  remain failures in structural scoring. This saves calls without adding evidence.
+
+## Reproduce the complete path
+
+Build DEV sources and separate construction references:
+
+```bash
+.venv/bin/python -m bench.pipeline_corpus --directory bench/results/pdf-master-artifacts/pipeline-p001/corpus
+```
+
+Run the measured experimental pipeline, including all page preparation, OCR when
+needed, decision calls, validation and output writing. Hosted execution spends
+from the persistent ledger; use a fresh output directory for each condition.
+
+```bash
+.venv/bin/python -m bench.pipeline_run \
+  --manifest bench/results/pdf-master-artifacts/pipeline-p001/corpus/manifest.json \
+  --output bench/results/pdf-master-artifacts/pipeline-p001/example-reviewed \
+  --policy gated --model perplexity/pplx-decider-v1.1-27b \
+  --image-edge 256 --normalize-rotation --ocr-empty \
+  --gate-review-model anthropic/claude-sonnet-5.5
+```
+
+Add `--pilot` for the predefined 32-page screen; use `--policy native` for a
+CPU-only baseline. Inference does not load private targets. Score retained outputs
+locally in a separate step:
+
+```bash
+.venv/bin/python -m bench.pipeline_report \
+  --directory bench/results/pdf-master-artifacts/pipeline-p001 \
+  --output bench/results/pipeline-p001.md
+```
+
+The offline demo pairs a source image with native and selected table structure,
+Markdown, source ownership and provenance. It opens as a standalone HTML file:
+
+```bash
+.venv/bin/python -m bench.pipeline_demo \
+  --run bench/results/pdf-master-artifacts/pipeline-p001/pilot-oriented-pplx-256 \
+  --page p16e14ea079d4c7949923 \
+  --output bench/results/pdf-master-artifacts/pipeline-p001/demo-wrapped \
+  --image-edge 1024
+```
+
+This research runner is opt-in; the package's default extraction path does not
+make hosted calls. It emits HTML tables inside Markdown to retain merged spans.
+It preserves remaining extracted words as paragraphs without claiming recovered
+heading, list, link, mathematical or semantic header roles.
+
+## Pilot re-evaluation and next hypothesis
+
+Selective Sonnet review matched the 32/32 exact pages of direct Sonnet and Opus
+with one review call. Perplexity gating alone reached 31/32; adding a second
+reading-order view did not close that remaining gap. These thresholds were
+chosen after DEV observations and remain exploratory. For normalized choice
+scores summing to one, the 0.25 margin trigger is redundant with the 0.8 maximum
+score trigger; these are not two independently established uncertainty signals.
+
+The full source audit found an additional proposal ceiling: CPU OCR recovered
+the strings of a sparse table, but existing gap corridors placed some strings in
+adjacent columns. A separate optional experiment will offer column-consensus
+alternatives using observed centers/edges and header geometry. It must retain
+existing candidates, use no reference strings or fixture identities, and remain
+a hypothesis for a model to select rather than force a table from aligned prose.
+Compare it only as a distinct proposal version, preserving the original wave.

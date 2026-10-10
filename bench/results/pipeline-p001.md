@@ -4,18 +4,44 @@ Offline private scoring after complete pipeline runs. Chronological completed-re
 
 Dataset SHA-256: `3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9b2`. Manifest bytes SHA-256: `7570272d524d68ff3aad59ac1b5ea080e48b77acf605ba8bb30bef27205b94c8`. The fixed pilot is selected by frozen manifest membership; absent results remain failures. Full and pilot cohorts have distinct denominators.
 
-| Run | Cohort | Policy | Model | Image edge | Context rows | Legend | Normalize rotation | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |
-|---|---|---|---|---:|---:|---|---|---|---:|---:|---:|---:|
-| native-r1 | full | native | CPU only | — | — | — | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
-| pilot-pplx-512 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | 512 | 1 | True | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| native-r2 | full | native | CPU only | — | — | — | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
-| native-text-r1 | full | native_text | CPU only | — | — | — | False | False | 178/181 | 3/35 | 26/133 | 3/1 |
-| native-r3 | full | native | CPU only | — | — | — | False | False | 177/181 | 16/35 | 0/133 | 4/1 |
-| pilot-flash-512 | pilot | assembly | cloudflare/clef-flash | 512 | 1 | True | False | False | 32/32 | 5/16 | 0/16 | 0/0 |
-| pilot-luna-512 | pilot | assembly | openai/gpt-6-luna-decisions | 512 | 1 | True | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| pilot-flash-256 | pilot | assembly | cloudflare/clef-flash | 256 | 1 | True | False | False | 32/32 | 3/16 | 0/16 | 0/0 |
-| pilot-luna-256 | pilot | assembly | openai/gpt-6-luna-decisions | 256 | 1 | True | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
-| pilot-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | 256 | 1 | True | False | False | 32/32 | 15/16 | 4/16 | 0/0 |
+| Run | Cohort | Policy | Model | Gate review model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |
+|---|---|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|
+| native-r1 | full | native | CPU only | — | — | — | — | False | False | — | 177/181 | 16/35 | 0/133 | 4/1 |
+| pilot-pplx-512 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 512 | 1 | True | False | False | — | 32/32 | 15/16 | 4/16 | 0/0 |
+| native-r2 | full | native | CPU only | — | — | — | — | False | False | — | 177/181 | 16/35 | 0/133 | 4/1 |
+| native-text-r1 | full | native_text | CPU only | — | — | — | — | False | False | — | 178/181 | 3/35 | 26/133 | 3/1 |
+| native-r3 | full | native | CPU only | — | — | — | — | False | False | — | 177/181 | 16/35 | 0/133 | 4/1 |
+| pilot-flash-512 | pilot | assembly | cloudflare/clef-flash | — | 512 | 1 | True | False | False | — | 32/32 | 5/16 | 0/16 | 0/0 |
+| pilot-luna-512 | pilot | assembly | openai/gpt-6-luna-decisions | — | 512 | 1 | True | False | False | — | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-flash-256 | pilot | assembly | cloudflare/clef-flash | — | 256 | 1 | True | False | False | — | 32/32 | 3/16 | 0/16 | 0/0 |
+| pilot-luna-256 | pilot | assembly | openai/gpt-6-luna-decisions | — | 256 | 1 | True | False | False | — | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | False | False | — | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-flash-1024 | pilot | assembly | cloudflare/clef-flash | — | 1024 | 1 | True | False | False | — | 32/32 | 6/16 | 1/16 | 0/0 |
+| pilot-luna-1024 | pilot | assembly | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | False | False | — | 32/32 | 15/16 | 2/16 | 0/0 |
+| pilot-pplx-1024 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 1024 | 1 | True | False | False | — | 32/32 | 15/16 | 4/16 | 0/0 |
+| pilot-repair-flash-c1 | pilot | repair | cloudflare/clef-flash | — | 512 | 1 | True | False | False | — | 32/32 | 10/16 | 5/16 | 0/0 |
+| pilot-repair-luna-c1 | pilot | repair | openai/gpt-6-luna-decisions | — | 512 | 1 | True | False | False | — | 32/32 | 10/16 | 5/16 | 0/0 |
+| pilot-repair-pplx-c1 | pilot | repair | perplexity/pplx-decider-v1.1-27b | — | 512 | 1 | True | False | False | — | 32/32 | 11/16 | 6/16 | 0/0 |
+| pilot-repair-flash-c3 | pilot | repair | cloudflare/clef-flash | — | 512 | 3 | True | False | False | — | 32/32 | 10/16 | 6/16 | 0/0 |
+| pilot-repair-luna-c3 | pilot | repair | openai/gpt-6-luna-decisions | — | 512 | 3 | True | False | False | — | 32/32 | 10/16 | 6/16 | 0/0 |
+| pilot-repair-pplx-c3 | pilot | repair | perplexity/pplx-decider-v1.1-27b | — | 512 | 3 | True | False | False | — | 32/32 | 11/16 | 5/16 | 0/0 |
+| pilot-oriented-pplx-256 | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | — | 32/32 | 16/16 | 4/16 | 0/0 |
+| pilot-gated-pplx-minimal | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | minimal | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-pplx-relational | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | relational | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-luna-1024 | pilot | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | False | relational | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-flash-512 | pilot | gated | cloudflare/clef-flash | — | 512 | 1 | True | True | False | relational | 32/32 | 10/16 | 0/16 | 0/0 |
+| pilot-adaptive-pplx | pilot | adaptive | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | — | 32/32 | 12/16 | 6/16 | 0/0 |
+| pilot-adaptive-luna | pilot | adaptive | openai/gpt-6-luna-decisions | — | 256 | 1 | True | True | False | — | 32/32 | 10/16 | 4/16 | 0/0 |
+| pilot-text-pplx | pilot | assembly | perplexity/pplx-decider-v1.1-27b | — | 0 | 1 | True | True | False | — | 32/32 | 16/16 | 4/16 | 0/0 |
+| pilot-text-luna | pilot | assembly | openai/gpt-6-luna-decisions | — | 0 | 1 | True | True | False | — | 32/32 | 15/16 | 3/16 | 0/0 |
+| pilot-text-flash | pilot | assembly | cloudflare/clef-flash | — | 0 | 1 | True | True | False | — | 32/32 | 0/16 | 0/16 | 0/0 |
+| pilot-frontier-haiku | pilot | assembly | anthropic/claude-haiku-5.5 | — | 512 | 1 | True | True | False | — | 32/32 | 16/16 | 3/16 | 0/0 |
+| pilot-frontier-sonnet | pilot | assembly | anthropic/claude-sonnet-5.5 | — | 512 | 1 | True | True | False | — | 32/32 | 16/16 | 0/16 | 0/0 |
+| pilot-frontier-opus | pilot | assembly | anthropic/claude-opus-5.5 | — | 512 | 1 | True | True | False | — | 32/32 | 16/16 | 0/16 | 0/0 |
+| pilot-gated-reading-pplx | pilot | gated | perplexity/pplx-decider-v1.1-27b | — | 256 | 1 | True | True | False | reading_order | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-reading-luna | pilot | gated | openai/gpt-6-luna-decisions | — | 1024 | 1 | True | True | False | reading_order | 32/32 | 16/16 | 1/16 | 0/0 |
+| pilot-gated-reviewed-pplx | pilot | gated | perplexity/pplx-decider-v1.1-27b | anthropic/claude-sonnet-5.5 | 256 | 1 | True | True | False | relational | 32/32 | 16/16 | 0/16 | 0/0 |
+| full-native-ocr | full | native | CPU only | — | — | — | — | True | True | — | 178/181 | 16/35 | 0/133 | 3/0 |
 
 | Run | Exact scored pages | Complete tables / charged tables | Exact cells / expected tables | Exact spans / expected tables | Correct slots / expected / charged slots | Missing / extra tables | Conserved / checked output pages | Oracle exact positive pages |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -29,6 +55,32 @@ Dataset SHA-256: `3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9
 | pilot-flash-256 | 19/32 | 3/16 | 3/16 | 3/16 | 36/207/207 | 13/0 | 32/32 | 15/16 |
 | pilot-luna-256 | 27/32 | 15/20 | 15/16 | 15/16 | 198/207/294 | 1/4 | 32/32 | 15/16 |
 | pilot-pplx-256 | 27/32 | 15/21 | 15/16 | 15/16 | 198/207/288 | 1/5 | 32/32 | 15/16 |
+| pilot-flash-1024 | 21/32 | 6/17 | 6/16 | 6/16 | 75/207/237 | 10/1 | 32/32 | 15/16 |
+| pilot-luna-1024 | 29/32 | 15/18 | 15/16 | 15/16 | 198/207/246 | 1/2 | 32/32 | 15/16 |
+| pilot-pplx-1024 | 27/32 | 15/20 | 15/16 | 15/16 | 198/207/280 | 1/4 | 32/32 | 15/16 |
+| pilot-repair-flash-c1 | 21/32 | 10/27 | 10/16 | 10/16 | 138/207/434 | 6/11 | 32/32 | 15/16 |
+| pilot-repair-luna-c1 | 21/32 | 10/26 | 10/16 | 10/16 | 138/207/415 | 6/10 | 32/32 | 15/16 |
+| pilot-repair-pplx-c1 | 21/32 | 11/27 | 11/16 | 11/16 | 150/207/404 | 5/11 | 32/32 | 15/16 |
+| pilot-repair-flash-c3 | 20/32 | 10/28 | 10/16 | 10/16 | 138/207/449 | 6/12 | 32/32 | 15/16 |
+| pilot-repair-luna-c3 | 20/32 | 10/28 | 10/16 | 10/16 | 138/207/457 | 6/12 | 32/32 | 15/16 |
+| pilot-repair-pplx-c3 | 22/32 | 11/26 | 11/16 | 11/16 | 150/207/394 | 5/10 | 32/32 | 15/16 |
+| pilot-oriented-pplx-256 | 28/32 | 16/20 | 16/16 | 16/16 | 207/207/280 | 0/4 | 32/32 | 16/16 |
+| pilot-gated-pplx-minimal | 31/32 | 16/17 | 16/16 | 16/16 | 207/207/222 | 0/1 | 32/32 | 16/16 |
+| pilot-gated-pplx-relational | 31/32 | 16/17 | 16/16 | 16/16 | 207/207/222 | 0/1 | 32/32 | 16/16 |
+| pilot-gated-luna-1024 | 31/32 | 16/17 | 16/16 | 16/16 | 207/207/222 | 0/1 | 32/32 | 16/16 |
+| pilot-gated-flash-512 | 26/32 | 10/16 | 10/16 | 10/16 | 138/207/207 | 6/0 | 32/32 | 16/16 |
+| pilot-adaptive-pplx | 22/32 | 12/26 | 12/16 | 12/16 | 159/207/400 | 4/10 | 32/32 | 16/16 |
+| pilot-adaptive-luna | 22/32 | 10/25 | 10/16 | 10/16 | 135/207/405 | 6/9 | 32/32 | 16/16 |
+| pilot-text-pplx | 28/32 | 16/20 | 16/16 | 16/16 | 207/207/280 | 0/4 | 32/32 | 16/16 |
+| pilot-text-luna | 28/32 | 15/19 | 15/16 | 15/16 | 192/207/264 | 1/3 | 32/32 | 16/16 |
+| pilot-text-flash | 16/32 | 0/16 | 0/16 | 0/16 | 0/207/207 | 16/0 | 32/32 | 16/16 |
+| pilot-frontier-haiku | 29/32 | 16/19 | 16/16 | 16/16 | 207/207/276 | 0/3 | 32/32 | 16/16 |
+| pilot-frontier-sonnet | 32/32 | 16/16 | 16/16 | 16/16 | 207/207/207 | 0/0 | 32/32 | 16/16 |
+| pilot-frontier-opus | 32/32 | 16/16 | 16/16 | 16/16 | 207/207/207 | 0/0 | 32/32 | 16/16 |
+| pilot-gated-reading-pplx | 31/32 | 16/17 | 16/16 | 16/16 | 207/207/222 | 0/1 | 32/32 | 16/16 |
+| pilot-gated-reading-luna | 31/32 | 16/17 | 16/16 | 16/16 | 207/207/222 | 0/1 | 32/32 | 16/16 |
+| pilot-gated-reviewed-pplx | 32/32 | 16/16 | 16/16 | 16/16 | 207/207/207 | 0/0 | 32/32 | 16/16 |
+| full-native-ocr | 149/168 | 16/35 | 16/35 | 16/35 | 228/437/437 | 19/0 | 178/178 | 16/35 |
 
 | Run | Output p/min | Output p/USD | Exact positive p/min | Exact positive p/USD | Wall s | CPU s | Peak sampled RSS bytes | Provider USD | Missing provider charges | Effective USD | Accounted USD | Cost bases |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
@@ -42,6 +94,71 @@ Dataset SHA-256: `3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9
 | pilot-flash-256 | 31.8398 | 5442.45 | 2.98498 | 510.23 | 60.3019 | 15.4808 | 204025856 | 0.0058797 | 0 | 0.0058797 | 0.0058797 | {"provider-reported USD": 32} |
 | pilot-luna-256 | 58.3245 | 3293.03 | 27.3396 | 1543.61 | 32.9193 | 20.4373 | 192884736 | 0 | 0 | 0.0097175 | 0.0097175 | {"catalog estimate": 32} |
 | pilot-pplx-256 | 46.5715 | 10445.4 | 21.8304 | 4896.26 | 41.2269 | 20.2362 | 204152832 | 0.00306356 | 0 | 0.00306356 | 0.00306356 | {"provider-reported USD": 32} |
+| pilot-flash-1024 | 24.9997 | 4737.66 | 4.68745 | 888.312 | 76.8009 | 19.8347 | 197775360 | 0.00675439 | 0 | 0.00675439 | 0.00675439 | {"provider-reported USD": 32} |
+| pilot-luna-1024 | 61.0887 | 2645 | 28.6354 | 1239.84 | 31.4297 | 16.8555 | 197107712 | 0 | 0 | 0.0120983 | 0.0120983 | {"catalog estimate": 32} |
+| pilot-pplx-1024 | 38.8031 | 9080.8 | 18.189 | 4256.62 | 49.4806 | 19.6573 | 200085504 | 0.00352392 | 0 | 0.00352392 | 0.00352392 | {"provider-reported USD": 32} |
+| pilot-repair-flash-c1 | 72.5316 | 24224.2 | 22.6661 | 7570.06 | 26.4712 | 10.3348 | 194093056 | 0.00132099 | 0 | 0.00132099 | 0.00132099 | {"provider-reported USD": 17} |
+| pilot-repair-luna-c1 | 108.632 | 9985.96 | 33.9475 | 3120.61 | 17.6743 | 10.4208 | 205475840 | 0 | 0 | 0.0032045 | 0.0032045 | {"catalog estimate": 21} |
+| pilot-repair-pplx-c1 | 84.2327 | 31661.2 | 28.955 | 10883.5 | 22.794 | 11.9655 | 193032192 | 0.0010107 | 0 | 0.0010107 | 0.0010107 | {"provider-reported USD": 23} |
+| pilot-repair-flash-c3 | 49.3068 | 16880.9 | 15.4084 | 5275.29 | 38.9399 | 13.8762 | 193368064 | 0.00189563 | 0 | 0.00189563 | 0.00189563 | {"provider-reported USD": 18} |
+| pilot-repair-luna-c3 | 69.801 | 8570.13 | 21.8128 | 2678.16 | 27.5068 | 17.3023 | 195485696 | 0 | 0 | 0.0037339 | 0.0037339 | {"catalog estimate": 19} |
+| pilot-repair-pplx-c3 | 47.392 | 27889.6 | 16.291 | 9587.06 | 40.5131 | 18.8634 | 191852544 | 0.00114738 | 0 | 0.00114738 | 0.00114738 | {"provider-reported USD": 22} |
+| pilot-oriented-pplx-256 | 47.1868 | 10798.8 | 23.5934 | 5399.42 | 40.6893 | 19.444 | 193822720 | 0.00296328 | 0 | 0.00296328 | 0.00296328 | {"provider-reported USD": 32} |
+| pilot-gated-pplx-minimal | 60.2864 | 19642.3 | 30.1432 | 9821.13 | 31.848 | 16.8666 | 192708608 | 0.00162914 | 0 | 0.00162914 | 0.00162914 | {"provider-reported USD": 28} |
+| pilot-gated-pplx-relational | 54.5458 | 20241.1 | 27.2729 | 10120.6 | 35.1998 | 20.5435 | 205422592 | 0.00158094 | 0 | 0.00158094 | 0.00158094 | {"provider-reported USD": 27} |
+| pilot-gated-luna-1024 | 54.9414 | 4337.04 | 27.4707 | 2168.52 | 34.9463 | 22.6739 | 204877824 | 0 | 0 | 0.0073783 | 0.0073783 | {"catalog estimate": 27} |
+| pilot-gated-flash-512 | 34.1627 | 8043.34 | 10.6758 | 2513.54 | 56.2017 | 21.6577 | 200462336 | 0.00397845 | 0 | 0.00397845 | 0.00397845 | {"provider-reported USD": 30} |
+| pilot-adaptive-pplx | 82.1111 | 40437.7 | 30.7917 | 15164.2 | 23.3829 | 11.7197 | 192634880 | 0.00079134 | 0 | 0.00079134 | 0.00079134 | {"provider-reported USD": 21} |
+| pilot-adaptive-luna | 100.023 | 12560.8 | 31.2573 | 3925.26 | 19.1955 | 10.3758 | 192548864 | 0 | 0 | 0.0025476 | 0.0025476 | {"catalog estimate": 18} |
+| pilot-text-pplx | 48.909 | 11643 | 24.4545 | 5821.48 | 39.2565 | 17.1114 | 193626112 | 0.00274844 | 0 | 0.00274844 | 0.00274844 | {"provider-reported USD": 32} |
+| pilot-text-luna | 63.9053 | 3507.62 | 29.9556 | 1644.2 | 30.0445 | 17.7252 | 203886592 | 0 | 0 | 0.009123 | 0.009123 | {"catalog estimate": 32} |
+| pilot-text-flash | 35.5441 | 6059.27 | 0 | 0 | 54.0174 | 16.4484 | 205336576 | 0.00528116 | 0 | 0.00528116 | 0.00528116 | {"provider-reported USD": 32} |
+| pilot-frontier-haiku | 16.0081 | 1989.01 | 8.00403 | 994.505 | 119.94 | 23.9085 | 195391488 | 0.0160884 | 0 | 0.0160884 | 0.0160884 | {"provider-reported USD": 32} |
+| pilot-frontier-sonnet | 18.2279 | 109.77 | 9.11396 | 54.8851 | 105.333 | 19.181 | 195506176 | 0.291518 | 0 | 0.291518 | 0.291518 | {"provider-reported USD": 32} |
+| pilot-frontier-opus | 13.0072 | 56.1703 | 6.50362 | 28.0852 | 147.61 | 19.8952 | 197185536 | 0.569696 | 0 | 0.569696 | 0.569696 | {"provider-reported USD": 32} |
+| pilot-gated-reading-pplx | 68.0934 | 15080.8 | 34.0467 | 7540.41 | 28.1966 | 13.1731 | 199663616 | 0.0021219 | 0 | 0.0021219 | 0.0021219 | {"provider-reported USD": 27} |
+| pilot-gated-reading-luna | 69.4643 | 3301.35 | 34.7321 | 1650.68 | 27.6401 | 14.2842 | 200142848 | 0 | 0 | 0.009693 | 0.009693 | {"catalog estimate": 28} |
+| pilot-gated-reviewed-pplx | 61.2827 | 3128.21 | 30.6414 | 1564.11 | 31.3302 | 13.2686 | 197636096 | 0.0102295 | 0 | 0.0102295 | 0.0102295 | {"provider-reported USD": 27} |
+| full-native-ocr | 1524.94 | unknown | 137.073 | unknown | 7.00355 | 17.8262 | 465768448 | 0 | 0 | 0 | 0 | {} |
+
+Successful retained calls by requested model:
+
+Primary and optional review models form one experimental policy; both charges enter the run total. This breakdown covers only calls retained in completed page results. Failed or parse-rejected attempts may be absent, so the complete-run ledger-attempt cost totals above remain authoritative. Reported USD is a known-value subtotal with missing counts, not a complete total when values are missing.
+
+| Run | Requested model | Successful calls | Reported USD subtotal | Missing reported charges | Effective USD for listed calls | Accounted USD for listed calls | Cost bases |
+|---|---|---:|---:|---:|---:|---:|---|
+| pilot-pplx-512 | perplexity/pplx-decider-v1.1-27b | 32 | 0.00313544 | 0 | 0.00313544 | 0.00313544 | {"provider-reported USD": 32} |
+| pilot-flash-512 | cloudflare/clef-flash | 32 | 0.00601627 | 0 | 0.00601627 | 0.00601627 | {"provider-reported USD": 32} |
+| pilot-luna-512 | openai/gpt-6-luna-decisions | 32 | 0 | 0 | 0.0102039 | 0.0102039 | {"catalog estimate": 32} |
+| pilot-flash-256 | cloudflare/clef-flash | 32 | 0.0058797 | 0 | 0.0058797 | 0.0058797 | {"provider-reported USD": 32} |
+| pilot-luna-256 | openai/gpt-6-luna-decisions | 32 | 0 | 0 | 0.0097175 | 0.0097175 | {"catalog estimate": 32} |
+| pilot-pplx-256 | perplexity/pplx-decider-v1.1-27b | 32 | 0.00306356 | 0 | 0.00306356 | 0.00306356 | {"provider-reported USD": 32} |
+| pilot-flash-1024 | cloudflare/clef-flash | 32 | 0.00675439 | 0 | 0.00675439 | 0.00675439 | {"provider-reported USD": 32} |
+| pilot-luna-1024 | openai/gpt-6-luna-decisions | 32 | 0 | 0 | 0.0120983 | 0.0120983 | {"catalog estimate": 32} |
+| pilot-pplx-1024 | perplexity/pplx-decider-v1.1-27b | 32 | 0.00352392 | 0 | 0.00352392 | 0.00352392 | {"provider-reported USD": 32} |
+| pilot-repair-flash-c1 | cloudflare/clef-flash | 17 | 0.00132099 | 0 | 0.00132099 | 0.00132099 | {"provider-reported USD": 17} |
+| pilot-repair-luna-c1 | openai/gpt-6-luna-decisions | 21 | 0 | 0 | 0.0032045 | 0.0032045 | {"catalog estimate": 21} |
+| pilot-repair-pplx-c1 | perplexity/pplx-decider-v1.1-27b | 23 | 0.0010107 | 0 | 0.0010107 | 0.0010107 | {"provider-reported USD": 23} |
+| pilot-repair-flash-c3 | cloudflare/clef-flash | 18 | 0.00189563 | 0 | 0.00189563 | 0.00189563 | {"provider-reported USD": 18} |
+| pilot-repair-luna-c3 | openai/gpt-6-luna-decisions | 19 | 0 | 0 | 0.0037339 | 0.0037339 | {"catalog estimate": 19} |
+| pilot-repair-pplx-c3 | perplexity/pplx-decider-v1.1-27b | 22 | 0.00114738 | 0 | 0.00114738 | 0.00114738 | {"provider-reported USD": 22} |
+| pilot-oriented-pplx-256 | perplexity/pplx-decider-v1.1-27b | 32 | 0.00296328 | 0 | 0.00296328 | 0.00296328 | {"provider-reported USD": 32} |
+| pilot-gated-pplx-minimal | perplexity/pplx-decider-v1.1-27b | 28 | 0.00162914 | 0 | 0.00162914 | 0.00162914 | {"provider-reported USD": 28} |
+| pilot-gated-pplx-relational | perplexity/pplx-decider-v1.1-27b | 27 | 0.00158094 | 0 | 0.00158094 | 0.00158094 | {"provider-reported USD": 27} |
+| pilot-gated-luna-1024 | openai/gpt-6-luna-decisions | 27 | 0 | 0 | 0.0073783 | 0.0073783 | {"catalog estimate": 27} |
+| pilot-gated-flash-512 | cloudflare/clef-flash | 30 | 0.00397845 | 0 | 0.00397845 | 0.00397845 | {"provider-reported USD": 30} |
+| pilot-adaptive-pplx | perplexity/pplx-decider-v1.1-27b | 21 | 0.00079134 | 0 | 0.00079134 | 0.00079134 | {"provider-reported USD": 21} |
+| pilot-adaptive-luna | openai/gpt-6-luna-decisions | 18 | 0 | 0 | 0.0025476 | 0.0025476 | {"catalog estimate": 18} |
+| pilot-text-pplx | perplexity/pplx-decider-v1.1-27b | 32 | 0.00274844 | 0 | 0.00274844 | 0.00274844 | {"provider-reported USD": 32} |
+| pilot-text-luna | openai/gpt-6-luna-decisions | 32 | 0 | 0 | 0.009123 | 0.009123 | {"catalog estimate": 32} |
+| pilot-text-flash | cloudflare/clef-flash | 32 | 0.00528116 | 0 | 0.00528116 | 0.00528116 | {"provider-reported USD": 32} |
+| pilot-frontier-haiku | anthropic/claude-haiku-5.5 | 32 | 0.0160884 | 0 | 0.0160884 | 0.0160884 | {"provider-reported USD": 32} |
+| pilot-frontier-sonnet | anthropic/claude-sonnet-5.5 | 32 | 0.291518 | 0 | 0.291518 | 0.291518 | {"provider-reported USD": 32} |
+| pilot-frontier-opus | anthropic/claude-opus-5.5 | 32 | 0.569696 | 0 | 0.569696 | 0.569696 | {"provider-reported USD": 32} |
+| pilot-gated-reading-pplx | perplexity/pplx-decider-v1.1-27b | 27 | 0.0021219 | 0 | 0.0021219 | 0.0021219 | {"provider-reported USD": 27} |
+| pilot-gated-reading-luna | openai/gpt-6-luna-decisions | 28 | 0 | 0 | 0.009693 | 0.009693 | {"catalog estimate": 28} |
+| pilot-gated-reviewed-pplx | anthropic/claude-sonnet-5.5 | 1 | 0.008714 | 0 | 0.008714 | 0.008714 | {"provider-reported USD": 1} |
+| pilot-gated-reviewed-pplx | perplexity/pplx-decider-v1.1-27b | 26 | 0.00151548 | 0 | 0.00151548 | 0.00151548 | {"provider-reported USD": 26} |
 
 Candidate oracle coverage uses private references to choose an already-retained complete candidate. It is reference-informed and unrunnable as an extraction policy; it does not synthesize missing candidates. Coverage is policy-specific: it scores only alternatives retained by that run. No output or model was supplied references during inference. Exactness compares complete matrices and spans after whitespace normalization; extra tables charge both table and cell denominators. Errors on negative pages remain failures, not correct zero-table pages.
 
@@ -376,6 +493,580 @@ API cost excludes local electricity and amortization. Positive provider charges 
 | pilot-pplx-256 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
 | pilot-pplx-256 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
 | pilot-pplx-256 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-flash-1024 | companion/borderless-plain | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-flash-1024 | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-flash-1024 | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-flash-1024 | companion/ruled-control | 2/0 | 0/2 | 0/0 | 0/2 | 0 |
+| pilot-flash-1024 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-flash-1024 | silver/merged-table | 2/0 | 1/2 | 0/0 | 1/2 | 0 |
+| pilot-flash-1024 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/multilevel-table | 2/0 | 0/2 | 0/0 | 0/2 | 0 |
+| pilot-flash-1024 | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-flash-1024 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-flash-1024 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-luna-1024 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-luna-1024 | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-luna-1024 | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-luna-1024 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-luna-1024 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-luna-1024 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-luna-1024 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-luna-1024 | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-luna-1024 | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-luna-1024 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-luna-1024 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-pplx-1024 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-pplx-1024 | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-pplx-1024 | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-pplx-1024 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-pplx-1024 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-pplx-1024 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-pplx-1024 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-pplx-1024 | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-pplx-1024 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-pplx-1024 | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-pplx-1024 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-pplx-1024 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-pplx-1024 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-repair-flash-c1 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-repair-flash-c1 | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-repair-flash-c1 | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-repair-flash-c1 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-flash-c1 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-repair-flash-c1 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-flash-c1 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-flash-c1 | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c1 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c1 | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c1 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c1 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-flash-c1 | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-luna-c1 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-repair-luna-c1 | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-repair-luna-c1 | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-repair-luna-c1 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-luna-c1 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-repair-luna-c1 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-luna-c1 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-luna-c1 | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | silver/rotated-page | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c1 | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c1 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c1 | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c1 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c1 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-luna-c1 | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-pplx-c1 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-repair-pplx-c1 | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-repair-pplx-c1 | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-repair-pplx-c1 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-pplx-c1 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-repair-pplx-c1 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-pplx-c1 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-pplx-c1 | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c1 | silver/rotated-page | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c1 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c1 | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c1 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c1 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-pplx-c1 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-repair-flash-c3 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-repair-flash-c3 | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-repair-flash-c3 | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-repair-flash-c3 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-flash-c3 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-repair-flash-c3 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-flash-c3 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-flash-c3 | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c3 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c3 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c3 | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-flash-c3 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-flash-c3 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-flash-c3 | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-luna-c3 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-repair-luna-c3 | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-repair-luna-c3 | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-repair-luna-c3 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-luna-c3 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-repair-luna-c3 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-luna-c3 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-luna-c3 | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c3 | silver/rotated-page | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c3 | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c3 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-luna-c3 | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-luna-c3 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-luna-c3 | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-pplx-c3 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-repair-pplx-c3 | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-repair-pplx-c3 | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-repair-pplx-c3 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-pplx-c3 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-repair-pplx-c3 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-pplx-c3 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-repair-pplx-c3 | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c3 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c3 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-repair-pplx-c3 | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-repair-pplx-c3 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-repair-pplx-c3 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-oriented-pplx-256 | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-oriented-pplx-256 | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-oriented-pplx-256 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-oriented-pplx-256 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-oriented-pplx-256 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-oriented-pplx-256 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-oriented-pplx-256 | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-oriented-pplx-256 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-oriented-pplx-256 | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-oriented-pplx-256 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-oriented-pplx-256 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-pplx-minimal | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-pplx-minimal | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-gated-pplx-minimal | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-pplx-minimal | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-pplx-minimal | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-pplx-minimal | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-pplx-minimal | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-pplx-minimal | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-pplx-relational | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-pplx-relational | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-pplx-relational | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-gated-pplx-relational | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-pplx-relational | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-pplx-relational | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-pplx-relational | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-pplx-relational | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-pplx-relational | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-pplx-relational | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-luna-1024 | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-luna-1024 | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-luna-1024 | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-gated-luna-1024 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-luna-1024 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-luna-1024 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-luna-1024 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-luna-1024 | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-luna-1024 | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-luna-1024 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-flash-512 | companion/borderless-plain | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-gated-flash-512 | companion/borderless-wrap | 4/0 | 3/4 | 0/0 | 3/4 | 0 |
+| pilot-gated-flash-512 | companion/prose | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-flash-512 | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-flash-512 | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-flash-512 | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-flash-512 | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-flash-512 | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-flash-512 | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-gated-flash-512 | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-adaptive-pplx | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-adaptive-pplx | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-adaptive-pplx | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-adaptive-pplx | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-adaptive-pplx | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-adaptive-pplx | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-adaptive-pplx | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-adaptive-pplx | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-adaptive-pplx | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-adaptive-pplx | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-adaptive-pplx | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-adaptive-pplx | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-adaptive-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-adaptive-luna | companion/borderless-plain | 4/0 | 3/4 | 0/0 | 3/4 | 0 |
+| pilot-adaptive-luna | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-adaptive-luna | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-adaptive-luna | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-adaptive-luna | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-adaptive-luna | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-adaptive-luna | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-adaptive-luna | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/sidebar | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-adaptive-luna | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-adaptive-luna | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-adaptive-luna | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-adaptive-luna | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-text-pplx | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-text-pplx | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-text-pplx | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-text-pplx | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-text-pplx | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-text-pplx | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-text-pplx | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-text-pplx | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-text-pplx | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-text-pplx | silver/two-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-text-pplx | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-text-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-text-luna | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-text-luna | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-text-luna | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-text-luna | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-text-luna | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-text-luna | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-text-luna | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/multilevel-table | 2/0 | 1/2 | 0/0 | 1/2 | 0 |
+| pilot-text-luna | silver/reading-order | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-text-luna | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-text-luna | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-luna | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-text-luna | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-text-flash | companion/borderless-plain | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-text-flash | companion/borderless-wrap | 4/0 | 0/4 | 0/0 | 0/4 | 0 |
+| pilot-text-flash | companion/prose | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-text-flash | companion/ruled-control | 2/0 | 0/2 | 0/0 | 0/2 | 0 |
+| pilot-text-flash | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-text-flash | silver/merged-table | 2/0 | 0/2 | 0/0 | 0/2 | 0 |
+| pilot-text-flash | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/multilevel-table | 2/0 | 0/2 | 0/0 | 0/2 | 0 |
+| pilot-text-flash | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-text-flash | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-text-flash | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| pilot-frontier-haiku | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-frontier-haiku | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-frontier-haiku | companion/prose | 2/0 | 0/0 | 2/2 | 0/2 | 0 |
+| pilot-frontier-haiku | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-haiku | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-frontier-haiku | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-haiku | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-haiku | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/three-column | 1/0 | 0/0 | 1/1 | 0/1 | 0 |
+| pilot-frontier-haiku | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-haiku | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-frontier-haiku | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-frontier-sonnet | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-frontier-sonnet | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-frontier-sonnet | companion/prose | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-frontier-sonnet | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-sonnet | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-frontier-sonnet | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-sonnet | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-sonnet | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-sonnet | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-frontier-sonnet | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-frontier-opus | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-frontier-opus | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-frontier-opus | companion/prose | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-frontier-opus | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-opus | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-frontier-opus | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-opus | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-frontier-opus | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-frontier-opus | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-frontier-opus | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-reading-pplx | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-reading-pplx | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-reading-pplx | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-gated-reading-pplx | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reading-pplx | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-reading-pplx | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reading-pplx | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reading-pplx | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-reading-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-reading-luna | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-reading-luna | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-reading-luna | companion/prose | 2/0 | 0/0 | 1/2 | 1/2 | 0 |
+| pilot-gated-reading-luna | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reading-luna | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-reading-luna | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reading-luna | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reading-luna | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reading-luna | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-reading-luna | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | companion/borderless-plain | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-reviewed-pplx | companion/borderless-wrap | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| pilot-gated-reviewed-pplx | companion/prose | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-reviewed-pplx | companion/ruled-control | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reviewed-pplx | silver/cropped-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/duplicate-overprint | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/footnotes | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/form-fields | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/headers-footers | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/math | 2/0 | 0/0 | 0/2 | 2/2 | 0 |
+| pilot-gated-reviewed-pplx | silver/merged-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reviewed-pplx | silver/mixed-panels | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/multilevel-table | 2/0 | 2/2 | 0/0 | 2/2 | 0 |
+| pilot-gated-reviewed-pplx | silver/reading-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/rotated-page | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/sidebar | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/three-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/two-column | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | silver/vector-noise | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | structure/table-borderless-rotate-90 | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| pilot-gated-reviewed-pplx | structure/table-wrapped-records | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-native-ocr | companion/borderless-plain | 6/0 | 0/6 | 0/0 | 0/6 | 0 |
+| full-native-ocr | companion/borderless-wrap | 6/0 | 0/6 | 0/0 | 0/6 | 0 |
+| full-native-ocr | companion/prose | 12/0 | 0/0 | 0/12 | 12/12 | 0 |
+| full-native-ocr | companion/ruled-control | 4/0 | 4/4 | 0/0 | 4/4 | 0 |
+| full-native-ocr | silver/cropped-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/duplicate-overprint | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/footnotes | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/form-fields | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/headers-footers | 10/0 | 0/0 | 0/10 | 10/10 | 0 |
+| full-native-ocr | silver/image-flow | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/image-inset | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/math | 40/0 | 0/0 | 0/40 | 40/40 | 0 |
+| full-native-ocr | silver/merged-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-native-ocr | silver/mixed-panels | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/multilevel-table | 5/0 | 5/5 | 0/0 | 5/5 | 0 |
+| full-native-ocr | silver/reading-order | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/rotated-page | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/sidebar | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/three-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/two-column | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | silver/vector-noise | 5/0 | 0/0 | 0/5 | 5/5 | 0 |
+| full-native-ocr | structure/accessible-actualtext | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/corpus-f1040 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/corpus-nics-background-checks-2015-11 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/corpus-pdfium-type3 | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/corpus-senate-expenditures | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/corpus-usrguide | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/footnotes-and-page-furniture | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-native-ocr | structure/image-only | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/images-and-vectors | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/links-and-outline | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/math-actualtext | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-native-ocr | structure/omml-equations | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/positioned-math | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-native-ocr | structure/rotated-columns | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-native-ocr | structure/rtl-visual-glyph-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/table-bordered | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-native-ocr | structure/table-borderless | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/table-borderless-aligned | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/table-borderless-rotate-180 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/table-borderless-rotate-270 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/table-borderless-rotate-90 | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/table-borderless-scanned | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/table-merged | 1/0 | 1/1 | 0/0 | 1/1 | 0 |
+| full-native-ocr | structure/table-wrapped-records | 1/0 | 0/1 | 0/0 | 0/1 | 0 |
+| full-native-ocr | structure/tagged-reading-order | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
+| full-native-ocr | structure/text-structure-and-literals | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-native-ocr | structure/two-column-order | 1/0 | 0/0 | 0/1 | 1/1 | 0 |
+| full-native-ocr | structure/unicode-cmap-and-emoji | 0/1 | 0/0 | 0/0 | 0/0 | 0 |
 
 </details>
 
@@ -383,9 +1074,9 @@ Incomplete frozen runs (not scored):
 
 No completed report exists for these frozen runs; they may be running or aborted. Result-file counts are progress evidence only. Accuracy, charges, wall/CPU and RSS remain unknown. Jobs not yet frozen by the runner are outside this observed inventory.
 
-| Run | Policy | Model | Planned pages | Result files | Source contract matches |
-|---|---|---|---:|---:|---|
-| pilot-flash-1024 | assembly | cloudflare/clef-flash | 32 | 27 | True |
+| Run | Policy | Model | Gate review model | Planned pages | Result files | Source contract matches |
+|---|---|---|---|---:|---:|---|
+| full-assembly-pplx | assembly | perplexity/pplx-decider-v1.1-27b | — | 181 | 1 | True |
 
 Measurement and frozen provenance:
 
@@ -399,3 +1090,29 @@ Measurement and frozen provenance:
 - `pilot-flash-256`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_run.py": "0e8ecb2c50ddecb2cc2f290b089b2bfe79ba0111f8e1f5db2f08deb08c37977c"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
 - `pilot-luna-256`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_run.py": "0e8ecb2c50ddecb2cc2f290b089b2bfe79ba0111f8e1f5db2f08deb08c37977c"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
 - `pilot-pplx-256`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_run.py": "0e8ecb2c50ddecb2cc2f290b089b2bfe79ba0111f8e1f5db2f08deb08c37977c"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-flash-1024`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "1e45acff39062373e618ac3dfef4d6fedb978800198c67a9b675a0d76daac5f5"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-luna-1024`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-pplx-1024`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-repair-flash-c1`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-repair-luna-c1`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-repair-pplx-c1`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-repair-flash-c3`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-repair-luna-c3`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-repair-pplx-c3`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "02c4edfb3338218a46f8b336072778a1a868a8a6d11bf5cde26361f438afec37"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-oriented-pplx-256`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-pplx-minimal`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-pplx-relational`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-luna-1024`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-flash-512`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-adaptive-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-adaptive-luna`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-text-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-text-luna`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-text-flash`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-frontier-haiku`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "09e26463afc4c90678ba834ce46b8b478d85046e82f2b06bd5b18738bddc91f3", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "ad24156e5a2d9832e52b765ed13356b236e48c1d7483e787f0795de6304cc6d2"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-frontier-sonnet`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "1f9bbaee008f3063a4c8bd927b36a094336f637c06aeec32a0b7425cfe1964f5"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-frontier-opus`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "5e679ff5fad00a534c9a30356c42c960a16c320936a127fab2d60a78af829ff7"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-reading-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "5e679ff5fad00a534c9a30356c42c960a16c320936a127fab2d60a78af829ff7"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-reading-luna`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "5e679ff5fad00a534c9a30356c42c960a16c320936a127fab2d60a78af829ff7"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `pilot-gated-reviewed-pplx`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "5e679ff5fad00a534c9a30356c42c960a16c320936a127fab2d60a78af829ff7"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
+- `full-native-ocr`: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses; frozen environment/code: `{"code_sha256": {"corpus_routes.py": "9ab3a774a835e21481e6e87d1bad03234eba16013737f483908d46e062ca6c40", "decision_evidence_designs.py": "b25041384f9c2ca313a499cf31f10dbcd314fccc05a01271d6351ae08f417f30", "pipeline_admission.py": "08e96bec64d965cc0edd5480e6d00c8be92cd59b25fb85d98052e4c734311069", "pipeline_assembly.py": "1a2eb3927e9d634f51a01715e05fc82c01be011770af08851e8306b7c5523471", "pipeline_frontier.py": "eb209bf91ffadbeb8079f0349d7fc346a1c39ed407f9eb03075a7815ecf87175", "pipeline_repair.py": "f02fa6a537000552d73e403db67aacd9a671a763a6361c13978cc9a67d15f025", "pipeline_routing.py": "6e9ae131dfb25c0004aed3949f1ce2ef1c598a20bf730b9fd1c9cbaec1de7f87", "pipeline_run.py": "1f5f92233fffb1309eca9d4f7f9b9e87f1c6647b6fab31f10797af4fa2d61189", "rolling_rows.py": "2a8546465a6279c67b73c6a63aaf078eebf39fd7fae92c02f1073a755d1cf884", "rolling_topology.py": "c08047e2a86d9af9f174d999ba2d51e7d755d896db370e0e1ed8e413724aedb1", "silver.py": "0a054a0c70f00418742f1279696baa154f386e9a1f8ea47d474dfa83555b17f1", "silver_structure.py": "2972d875718eeac6399962b4682469d85fbdf76caba5e8401ab3b2dddf2addb4"}, "concurrency": 1, "logical_cpus": 8, "platform": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44", "python": "3.14.7"}`. Overall wall includes API waiting; CPU and RSS cover the current process only. Remote GPU and separate stage resource totals are unmeasured.
