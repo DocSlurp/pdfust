@@ -78,3 +78,33 @@ Noto Sans for English/math and Noto Sans CJK for CJK. Earlier batches are retain
 for provenance. Strict scorer tests pin merged topology, NFC equivalence,
 percent spacing, subscripts, and unmatched predictions. Full model comparison
 and a new current-queue refresh await independently verified complete runs.
+
+## Current acquisition refresh
+
+The first six independently verified acquisition arms have matched five-page
+refreshes. Every current caption distinguishes actual detector inference size
+640/1024/1280 from detector input raster edge 1536 and transcription crop 1024.
+Font files, their SHA-256 digests, Pillow version and explicit renderer settings
+participate in batch identity and retained provenance. Negative verdict labels
+occupy their own line. `regional-TN.png` places a larger real annotated table
+crop beside its matched extracted table, retaining the original prediction ID.
+An extra predicted table has a red outline at its retained bbox; no box is
+invented for missing cells. Exact differences also retain extra prediction cells.
+
+| Verified acquisition arm | Immutable batch |
+| --- | --- |
+| Sonnet detector 640 | `31d909a4fca94ac578f5` |
+| Sonnet detector 1024 | `df68e524b590fcc84c29` |
+| Luna detector 1280 | `67df203e767cdb9a95a7` |
+| Ministral14 detector 640 | `dbdaee345922942646cc` |
+| Ministral14 detector 1280 | `1d311613ed5f6bcc948a` |
+| Gemma31 detector 640 | `d4d096e72e04bb64b8cc` |
+
+For dense-page inline review use each batch's
+`p1bfa52a41a5e15015698/regional-T0.png` as well as its full original. Sonnet 640
+misses all 26 newspaper tables; Sonnet 1024 returns five tables with 71/1036
+strict exact cells, 22 missing tables and one extra table. Its matched first
+region has four columns where the gold has three: the output separates the
+ranking number from the team name. These visible cells are mostly red because
+anchor positions differ, even where literal source information is retained.
+Neither treatment yields a complete newspaper table.

@@ -43,3 +43,13 @@ def test_unmatched_predictions_cannot_receive_green() -> None:
     marks = verdicts(target, [prediction], score_page(target, [prediction]))
     assert marks["input_tables"] == {}
     assert marks["output_cells"] == {0: {(0, 0, 1, 1): "failure"}}
+
+
+def test_extra_prediction_diagnostics_use_only_retained_geometry() -> None:
+    """An unmatched predicted region uses its actual box and remains red."""
+    prediction = {"row_count": 1, "col_count": 1, "values": [["A"]], "spans": [], "bbox": [1, 2, 3, 4]}
+    target = {"tables": []}
+    score = score_page(target, [prediction])
+    marks = verdicts(target, [prediction], score)
+    assert marks["extra_prediction_boxes"] == {0: [1, 2, 3, 4]}
+    assert differences(target, [prediction], score)[0]["reason"] == "extra unmatched predicted table"

@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
+from PIL import __version__ as pillow_version
 
 from bench.generalization_scoring import _cells, score_page
 from bench.silver import guard_path
@@ -29,6 +30,22 @@ DEFAULT_IDS = (
     "p27ec5aaca0dd08c90360",  # Negative page.
 )
 FONT = Path("/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc")
+LATIN_FONT = Path("/usr/share/fonts/noto/NotoSans-Regular.ttf")
+RENDER_SETTINGS = {
+    "raster_width": 1600,
+    "panel_width": 1800,
+    "grid_width": 940,
+    "maximum_grid_height": 12000,
+    "source_preview_box": [780, 1450],
+    "grid_preview_box": [970, 1450],
+    "source_table_zoom_box": [760, 1100],
+    "source_mask_alpha": 30,
+    "cell_font_size": 18,
+    "resampling": "Pillow BICUBIC default for RGB resize/thumbnail",
+    "format": "RGB PNG",
+    "pillow_version": pillow_version,
+    "colors": COLORS,
+}
 
 
 def digest(data: bytes) -> str:
@@ -46,7 +63,7 @@ def read(path: Path, receipts: dict[str, str]) -> dict[str, Any]:
 
 def font(size: int, value: str = "") -> ImageFont.FreeTypeFont:
     """Use a Unicode font suitable for the retained English or CJK text."""
-    path = FONT if any(ord(c) >= 0x2E80 for c in value) else Path("/usr/share/fonts/noto/NotoSans-Regular.ttf")
+    path = FONT if any(ord(c) >= 0x2E80 for c in value) else LATIN_FONT
     return ImageFont.truetype(str(path), size)
 
 
@@ -65,7 +82,13 @@ def verdicts(target: dict[str, Any], tables: list[dict[str, Any]], score: dict[s
             key: "success" if key in gold[i] and gold[i][key] == value else "failure"
             for key, value in actual[j].items()
         }
-    return {"input_tables": inputs, "output_cells": outputs}
+    paired_predictions = {pair["prediction"] for pair in score.get("matches", [])}
+    extra_boxes = {
+        i: table["bbox"]
+        for i, table in enumerate(tables)
+        if i not in paired_predictions and table.get("bbox") is not None
+    }
+    return {"input_tables": inputs, "output_cells": outputs, "extra_prediction_boxes": extra_boxes}
 
 
 def lines(draw: ImageDraw.ImageDraw, xy: tuple[int, int], value: str, width: int, size: int = 18) -> int:
@@ -86,7 +109,12 @@ def lines(draw: ImageDraw.ImageDraw, xy: tuple[int, int], value: str, width: int
     return y
 
 
-def output_grid(tables: list[dict[str, Any]], marks: dict[str, Any], width: int = 940) -> Image.Image:
+def output_grid(
+    tables: list[dict[str, Any]],
+    marks: dict[str, Any],
+    width: int = 940,
+    table_indexes: list[int] | None = None,
+) -> Image.Image:
     """Draw the actual extracted values and merged spans; these are schematic boxes."""
     face = font(18)
     layouts = []
@@ -102,7 +130,10 @@ def output_grid(tables: list[dict[str, Any]], marks: dict[str, Any], width: int 
             max_chars = max(1, int((col_width * cs - 14) / 18))
             chunks = textwrap.wrap(value, width=max_chars, replace_whitespace=False) or [""]
             wrapped[key] = chunks
-            heights[r] = max(heights[r], (len(chunks) * 24 + 12 + rs - 1) // rs)
+            required_height = len(chunks) * 24 + 12
+            available_height = sum(heights[r : r + rs])
+            if required_height > available_height:
+                heights[r] += required_height - available_height
         layouts.append((index, table, col_width, heights, wrapped))
         total_height += sum(heights) + 75
     if total_height > 12000:
@@ -114,9 +145,10 @@ def output_grid(tables: list[dict[str, Any]], marks: dict[str, Any], width: int 
     if not tables:
         lines(draw, (15, y), "No extracted tables. No inferred or invented output.", width - 30)
     for index, table, cw, heights, wrapped in layouts:
+        original_index = table_indexes[index] if table_indexes is not None else index
         draw.text(
             (15, y),
-            f"Prediction T{index}: {table['row_count']} rows x {table['col_count']} columns",
+            f"Prediction T{original_index}: {table['row_count']} rows x {table['col_count']} columns",
             font=face,
             fill="#15202b",
         )
@@ -174,6 +206,21 @@ def differences(target: dict[str, Any], tables: list[dict[str, Any]], score: dic
                     "reason": reason,
                 }
             )
+    matched_predictions = set(paired.values())
+    for i, table in enumerate(tables):
+        if i in matched_predictions:
+            continue
+        for key, value in sorted(_cells(table).items()):
+            result.append(
+                {
+                    "target_table": None,
+                    "prediction_table": i,
+                    "anchor": key,
+                    "expected": None,
+                    "actual": value,
+                    "reason": "extra unmatched predicted table",
+                }
+            )
     return result
 
 
@@ -215,17 +262,61 @@ def render_page(record: dict[str, Any], target: dict[str, Any], marks: dict[str,
             if i < 3:
                 crop = original.crop(tuple(round(v) for v in scaled))
                 crop.save(directory / f"source-table-{i}.png")
+        for i, box in marks["extra_prediction_boxes"].items():
+            scaled = tuple(v * original.width / rect.width for v in box)
+            color = COLORS["failure"]
+            draw.rectangle(scaled, outline=(*color, 255), width=5)
+            draw.text((scaled[0], scaled[1]), f"Extra prediction T{i}", font=font(20), fill=(*color, 255))
         marked = Image.alpha_composite(original.convert("RGBA"), overlay).convert("RGB")
         marked.save(directory / "input-overlay.png")
         return marked
 
 
-def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Path:
+def regional_views(
+    directory: Path, tables: list[dict[str, Any]], score: dict[str, Any], marks: dict[str, Any], label: str
+) -> None:
+    """Keep dense table source and extracted matrix text readable in separate panels."""
+    pairs = {pair["target"]: pair["prediction"] for pair in score.get("matches", [])}
+    for target_index in range(3):
+        path = directory / f"source-table-{target_index}.png"
+        if not path.exists():
+            continue
+        with Image.open(path) as original:
+            source = original.convert("RGB")
+        scale = min(760 / source.width, 1100 / source.height)
+        source = source.resize((round(source.width * scale), round(source.height * scale)))
+        prediction_index = pairs.get(target_index)
+        selected = [tables[prediction_index]] if prediction_index is not None else []
+        subset = {"output_cells": {0: marks["output_cells"][prediction_index]}} if selected else {"output_cells": {}}
+        grid = output_grid(selected, subset, table_indexes=[prediction_index] if prediction_index is not None else [])
+        panel = Image.new("RGB", (1800, max(source.height, grid.height) + 145), "#f5f7fa")
+        draw = ImageDraw.Draw(panel)
+        lines(
+            draw, (20, 10), f"Gold table T{target_index} source zoom | matched prediction {prediction_index}", 1760, 24
+        )
+        lines(
+            draw,
+            (20, 48),
+            "Actual source pixels; table-level verdict on input. Output cells use exact scorer identities.",
+            1760,
+        )
+        lines(draw, (20, 82), label, 1760, 16)
+        panel.paste(source, (20, 130))
+        color = COLORS[marks["input_tables"][target_index]]
+        draw.rectangle((20, 130, 20 + source.width, 130 + source.height), outline=color, width=4)
+        panel.paste(grid, (810, 130))
+        panel.save(directory / f"regional-T{target_index}.png")
+
+
+def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: PLR0912
     """Refresh a completed verified cohort once; identical provenance skips rendering."""
     if corpus.name != "natural16":
         raise ValueError("Initial diagnostics are restricted to the DEV natural16 cohort")
     started, cpu = time.monotonic(), time.process_time()
     receipts: dict[str, str] = {}
+    font_receipts = {str(path): digest(path.read_bytes()) for path in (FONT, LATIN_FONT)}
+    receipts.update(font_receipts)
+    renderer = {"sha256": digest(Path(__file__).read_bytes()), "settings": RENDER_SETTINGS, "fonts": font_receipts}
     evaluation = read(run_dir / "evaluation.json", receipts)
     evaluated = next(row for row in evaluation["runs"] if row["name"] == run_dir.name)
     if evaluated.get("evaluation_scope") != "complete pipeline":
@@ -261,9 +352,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             raise ValueError("Retained score differs from exact offline replay")
         pages.append((identifier, record, target, tables, retained, verdicts(target, tables, retained)))
     identity = digest(
-        json.dumps(
-            {"receipts": receipts, "ids": identifiers, "renderer": digest(Path(__file__).read_bytes())}, sort_keys=True
-        ).encode()
+        json.dumps({"receipts": receipts, "ids": identifiers, "renderer": renderer}, sort_keys=True).encode()
     )
     batch = guard_path(output.resolve()) / identity[:20]
     if (batch / "provenance.json").exists():
@@ -280,6 +369,12 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         diffs = differences(target, tables, score)
         (directory / "differences.json").write_text(json.dumps(diffs, indent=2) + "\n")
         difference_image(diffs).save(directory / "strict-differences.png")
+        label = (
+            f"DEV {run_dir.name} | model {frozen['config'].get('generation_model')} | "
+            f"detector inference {frozen['config'].get('detector_inference_size', 'unrecorded')} | "
+            f"raster edge {frozen['config'].get('detector_edge')} | crop {frozen['config'].get('image_edge')}"
+        )
+        regional_views(directory, tables, score, marks, label)
         panel_width = 1800
         source.thumbnail((780, 1450))
         grid.thumbnail((970, 1450))
@@ -296,7 +391,12 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             identity for table in tables for cell in table.get("cells", []) for identity in cell.get("source_ids", [])
         ]
         id_label = "Source IDs absent: model-transcribed cells" if not source_ids else f"Source IDs: {source_ids[:8]}"
-        lines(draw, (20, 102), id_label, panel_width - 40, 16)
+        if not tables:
+            id_label = "No extracted cell source IDs: empty table output"
+        if not target["tables"]:
+            id_label = f"Negative page: exact empty-output verdict = {score['exact_page']}; no physical mask exists."
+        lines(draw, (20, 80), label, panel_width - 40, 16)
+        lines(draw, (20, 108), id_label, panel_width - 40, 16)
         lines(
             draw,
             (20, 50),
@@ -305,13 +405,6 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             panel_width - 40,
             18,
         )
-        if not target["tables"]:
-            lines(
-                draw,
-                (20, 104),
-                f"Negative page: exact empty-output verdict = {score['exact_page']}. No physical mask exists.",
-                panel_width - 40,
-            )
         panel.paste(source, (20, 145))
         panel.paste(grid, (810, 145))
         panel.save(directory / "comparison.png")
@@ -331,7 +424,8 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         draw,
         (20, 58),
         f"Model {frozen['config'].get('generation_model')} | "
-        f"detector edge {frozen['config'].get('detector_edge')} | "
+        f"detector inference size {frozen['config'].get('detector_inference_size', 'unrecorded')} | "
+        f"raster edge {frozen['config'].get('detector_edge')} | "
         f"crop edge {frozen['config'].get('image_edge')} | complete pipeline, diagnostic only",
         1760,
         20,
@@ -362,6 +456,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
     provenance = {
         "batch_sha256": identity,
         "inputs": receipts,
+        "renderer": renderer,
         "run": str(run_dir.resolve()),
         "corpus": str(corpus.resolve()),
         "quality_scope": (
