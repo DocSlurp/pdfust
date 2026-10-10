@@ -6,6 +6,7 @@ import base64
 import io
 import json
 from collections import Counter
+from contextlib import nullcontext
 from html.parser import HTMLParser
 from pathlib import Path
 from types import SimpleNamespace
@@ -403,3 +404,96 @@ def test_adaptive_respects_source_only_action(tmp_path: Path, monkeypatch: pytes
         assert result["route"] == "assembly"
         assert calls == [True]
         assert images == [1024]
+
+
+@pytest.mark.parametrize("initial_empty", [False, True])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_ocr_only_attempts_empty_pages_when_enabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, initial_empty: bool, enabled: bool
+) -> None:
+    page = SimpleNamespace(rotation=0, rect=[0, 0, 100, 100])
+    words = [] if initial_empty else [(5, 5, 25, 15, "Native", 0, 0)]
+    calls = []
+    engine = object()
+    page.get_text = lambda _mode: words
+    page.find_tables = lambda **_kwargs: SimpleNamespace(tables=[])
+
+    def apply_ocr(*, dpi: int, engine: object) -> list:
+        calls.append((dpi, engine))
+        words.append((5, 5, 25, 15, "Recognized", 0, 0))
+        return [{"text": "Recognized", "bbox": [5, 5, 25, 15]}]
+
+    page.apply_ocr = apply_ocr
+    monkeypatch.setattr(pylopdf, "open", lambda **_kwargs: nullcontext([page]))
+    engine_calls = []
+    monkeypatch.setattr(runner, "ocr_engine", lambda: engine_calls.append(True) or engine)
+    settings = config("native")
+    settings["ocr_empty"] = enabled
+    result = runner.process(record(tmp_path), settings, tmp_path, None)
+    attempted = initial_empty and enabled
+    assert len(calls) == int(attempted)
+    assert len(engine_calls) == int(attempted)
+    if attempted:
+        assert calls == [(150, engine)]
+        assert result["ocr"]["recognized_regions"] == 1
+        assert result["ocr"]["threads"] == 4
+        assert result["ocr"]["dpi"] == 150
+        assert result["ocr"]["engine"] == "RTen native CPU"
+        assert result["ocr"]["wall_seconds"] >= 0
+        assert result["ocr"]["cpu_seconds"] >= 0
+        assert result["source"]["words"][0]["text"] == "Recognized"
+        assert result["source_conserved"]
+    else:
+        assert "ocr" not in result
+    assert result["status"] == ("unsupported_no_text" if initial_empty and not enabled else "ok")
+
+
+@pytest.mark.parametrize("opaque_id", ["empty-0", "empty-1", "empty-2"])
+def test_zero_recognition_remains_explicitly_unsupported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, opaque_id: str
+) -> None:
+    page = SimpleNamespace(
+        rotation=0,
+        rect=[0, 0, 100, 100],
+        get_text=lambda _mode: [],
+        find_tables=lambda **_kwargs: SimpleNamespace(tables=[]),
+        apply_ocr=lambda **_kwargs: [],
+    )
+    monkeypatch.setattr(pylopdf, "open", lambda **_kwargs: nullcontext([page]))
+    monkeypatch.setattr(runner, "ocr_engine", object)
+    row = record(tmp_path)
+    row["id"] = opaque_id
+    settings = config("native")
+    settings["ocr_empty"] = True
+    result = runner.process(row, settings, tmp_path, None)
+    assert result["status"] == "unsupported_no_text"
+    assert result["ocr"]["recognized_regions"] == 0
+    assert result["tables"] == []
+    assert result["calls"] == []
+    assert "source" not in result
+    assert not (tmp_path / f"{opaque_id}.md").exists()
+    assert not (tmp_path / f"{opaque_id}-structure.json").exists()
+
+
+@pytest.mark.parametrize("policy", ["adaptive", "gated"])
+def test_single_candidate_skips_hosted_decisions_without_fabricating_tables(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, policy: str
+) -> None:
+    monkeypatch.setattr(runner, "propose", lambda page: [native_state(page)])
+    monkeypatch.setattr(
+        pipeline_routing, "route", lambda *_args: {"action": "assemble", "image_edge": 512, "context_rows": 3}
+    )
+
+    def unexpected(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Single-candidate policy performed unnecessary hosted call or rendering")
+
+    monkeypatch.setattr(runner, "call", unexpected)
+    monkeypatch.setattr(runner, "image", unexpected)
+    result = runner.process(record(tmp_path, bordered=False), config(policy), tmp_path, object())
+    assert result["status"] == "ok"
+    assert result["route"] == "no_alternative"
+    assert result["calls"] == []
+    assert result["tables"] == []
+    assert result["source_conserved"]
+    assert set(result["unresolved_ids"]) == {w["id"] for w in result["source"]["words"]}
+    assert not (tmp_path / "opaque-page-request-0.json").exists()
