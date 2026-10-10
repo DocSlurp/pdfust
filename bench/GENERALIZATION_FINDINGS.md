@@ -7,6 +7,16 @@ exact native grids and spends inference only on regions that need it. The
 for arbitrary natural documents: dense-page detection, transcription and
 repeatability remain material gaps.
 
+The final fresh corrected Haiku hybrid produces 269/276 complete operational
+outputs, 170/249 reference-exact tables and 6,615/8,897 exact cells at 18.20
+output pages/minute and 6,977.17 pages/API USD. All 118 calls have positive reported
+charges totaling USD 0.0385543. It recovers all 156 authored tables and all 5,050
+authored cells, with no authored negative-page false positives. Natural64 still
+has only 14/93 complete tables and 1,565/3,847 exact cells, three atomic failures
+and two negative-page false positives. Four unsupported diagnostics remain.
+This fresh measurement is distinct from the paired offline correction below;
+the natural subset varies despite unchanged model input treatment.
+
 The executable entry point and retained artifact contract are described in
 [GENERALIZATION_USAGE.md](GENERALIZATION_USAGE.md). Detailed scores, failures,
 resource measurements, model usage and cost appear in

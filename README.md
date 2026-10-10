@@ -308,6 +308,7 @@ configuration was selected before running the additional natural pages.
 | Native grids + YOLO + Haiku source-ID matrix, 512 px | 270 | 166 | 6,329 | 136 | 9 | 12.64 | 2,116.13 |
 | Native grids + Haiku image crops, 1024 px, physical-order control | 268 | 157 | 6,604 | 129 | 1 | 18.33 | 6,743.87 |
 | Native grids + Sonnet image crops, 1024 px, physical-order control | 271 | 157 | 6,119 | 128 | 16 | 16.73 | 323.13 |
+| Native grids + Haiku image crops, 1024 px, corrected logical order, fresh run | 269 | **170** | **6,615** | **141** | 2 | 18.20 | 6,977.17 |
 
 The Haiku run costs USD 0.1275912 in reported API charges. It recovers 155/156
 authored tables and 11/93 natural tables, with eight authored and one natural
@@ -327,6 +328,14 @@ restores all twelve rotated tables: Haiku reaches **169/249 complete tables and
 6,863/8,897 exact cells**, and Sonnet reaches 169/249 and 6,378/8,897. All original
 failures and extra tables remain. These corrected quality counts reuse retained
 responses; they do not replace the original fresh-run throughput measurements.
+
+The subsequent fresh corrected Haiku run costs USD 0.0385543 and recovers all
+156 authored tables and all 5,050 authored cells, with no authored false positives.
+The 64 natural pages remain much harder: 14/93 complete tables and 1,565/3,847
+exact cells, with two negative-page false positives and three atomic failures.
+The four unsupported native diagnostics also remain failures. Its natural-cell
+count falls by 248 relative to the original physical-order run despite unchanged
+model input treatment; do not attribute response variation to native orientation.
 
 The matched full Sonnet hybrid costs USD 0.838664. It produces more operational
 outputs but fewer exact cells and more negative-page false positives than Haiku
