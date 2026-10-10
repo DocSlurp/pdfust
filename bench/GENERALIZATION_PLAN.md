@@ -109,3 +109,27 @@ characters, within the live PPLX 262,144-token context. Predeclare a bounded
 80,000-character readable-packet arm; keep the old default and complete evidence,
 never truncate. Separately test direct and admission-gated source-ID generation
 with an 8,192-token answer ceiling, recording truncations and complete costs.
+
+
+### Layer 2: density, OCR and direct transcription
+
+The fixed natural screen contains two dense newspaper pages with 39/53 tables.
+Keep all sixteen primary; use the remaining fourteen only as a labeled posthoc
+diagnostic. Predeclare whole versus overlapping 2x2 detector proposals, source-ID
+matrix assembly with 256/1024-word regions, and lossless array versus quarter-unit
+coordinate evidence. Boundary-crossing proposals retain explicit incompleteness;
+more detector boxes alone do not establish better extraction.
+
+Compare fixed 150/300 DPI sources, preserving recognition outputs and all costs.
+Higher word inventory alone is not OCR recall. Page display rotation is preserved
+for OCR; bounded four-angle trials are an opt-in treatment with measured total
+cost and abstention. Keep complete source admissions distinct from per-call OCR
+box limits. Original sources and outputs remain immutable.
+
+Add image-only Sonnet/Haiku transcription controls at fixed RGB JPEG90 1200 and
+2048 pixel edges. They emit table text and spans from pixels and are explicitly
+model-transcribed, table-only, with no claim of source conservation or complete
+prose extraction. Validate complete responses, retain provider refusals and charge
+every attempt. Compare against source-owned pipelines before selecting combinations.
+The initial Haiku anchor run was interrupted after four pages; retain its twelve
+missing pages and unresolved reservation, and run new controls with new identities.

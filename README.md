@@ -291,6 +291,31 @@ inspect them.
 
 ## Experimental relationship decisions (opt-in)
 
+The ongoing [P002 generalization study](bench/results/generalization-p002.md)
+expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
+annotated OmniDocBench page images, and 56 native-PDF diagnostics. A fixed
+16-page natural screen contains 53 tables and 2,333 reference cells; two dense
+newspaper pages contain 39 of those tables. It exposes substantially harder
+localization, OCR, and assembly failures than the earlier authored study.
+
+Verified natural-screen checkpoint (all 16 intended pages remain scored):
+
+| Configuration | Outputs / 16 | Complete tables / 53 | Exact text cells / 2,333 | Pages/min | Pages/API USD |
+|---|---:|---:|---:|---:|---:|
+| PPLX + selective Sonnet, regional geometry | 16 | 0 | 4 | 3.60 | 109.43 |
+| Pixel grids + PPLX + selective Sonnet | 16 | 0 | 92 | 3.91 | 111.17 |
+| Sonnet source-ID assembly, 512 px | 16 | 2 | 295 | 2.60 | 13.32 |
+| Haiku source-ID matrix, 512 px | 16 | 2 | 240 | 1.99 | 225.44 |
+
+These are exploratory serial runs with concurrent research workloads. Rates count
+complete emitted outputs and API charges, including failed calls; they do not
+count only correct tables. The detailed report includes topology, missing/extra
+tables, positive and negative pages, CPU/RAM, provider usage, and failures.
+Source-ID assembly preserves literal evidence but cannot repair missing OCR text.
+Image transcription is a separately labeled table-only comparator. No model is
+enabled by default, and public benchmark pretraining contamination is unknown.
+See the [plan](bench/GENERALIZATION_PLAN.md) and [corpus provenance](bench/GENERALIZATION_CORPUS.md).
+
 The [P001 complete-pipeline study](bench/results/pipeline-p001.md) now measures
 PDF input through source discovery, candidate assembly, model decisions, validated
 table JSON and Markdown. Its frozen DEV corpus has 181 pages: 168 with table

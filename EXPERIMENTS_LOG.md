@@ -1371,3 +1371,66 @@ At the first integration checkpoint 291 targeted CPU tests and Ruff pass. Source
 and report paths retain complete output ownership, literal cell values, exact
 Markdown reproduction, all-attempt costs, and separate positive/negative scores.
 Private main checkpoint 3ef1e4a was pushed; no public remote or package publication.
+
+
+### P002 layer 2: natural evidence, topology, and recovery (2026-10-10 04:12 UTC)
+
+The source-ID Sonnet arm completes all sixteen natural pages, recovers two complete
+tables on one exact positive page, ten exact topologies, and 295 exact text cells.
+It also produces seven extra tables and one negative false-positive page. The
+whitespace OCR treatment preserves recognized spaces but reduces aggregate exact
+text cells to 236 and has one invalid anchor collection. Keeping recognized spaces
+alone is insufficient. Compact matrix answers lower Sonnet charges from USD
+1.201256 to USD 0.966024 but lose structural/text coverage; two returned
+`content_filter` finishes are charged failures, not output-token truncations.
+Haiku matrices complete all sixteen pages for USD 0.0709715, with two complete
+tables, 240 text cells, three extras, and no negative false-positive pages.
+All rates and cohort denominators are in `bench/results/generalization-p002.md`.
+
+Posthoc density inspection finds 39/53 tables and 1972/2333 cells on two newspaper
+pages. Both remain in every primary score. Whole-page downsampling, OCR coverage,
+and fragmented candidate regions limit their recovery. CPU YOLO table proposals
+plus source-ID Sonnet improve text cells to 341 and reduce charges to USD 0.286868,
+with two complete tables and one provider refusal. Multi-scale 2x2 and 3x3 detector
+experiments preserve every source ID and retain boundary flags. More proposals
+also introduce fragments and overlapping ownership candidates; counts are not
+quality scores. Tiling and direct image transcription are separately frozen next
+arms. YOLO weights remain a research-only optional AGPL dependency.
+
+Raster contrast/polarity and bounded gap repair improve controlled shapes from
+7/22 to 19/22 but fail to improve complete natural tables and trigger inventory
+refusals on dense pages. Original baseline output equivalence holds on 46 inputs;
+the original detector remains default. Capacity row stitching offers ten joins
+without increasing complete natural candidate coverage; it remains outside the
+pipeline default. Lossless array evidence reduces packet bytes 15–16%; optional
+quarter-unit coordinates reduce bytes 57–58% with maximum 0.125-unit error. Those
+are serialization measurements, not token charges or model-quality results.
+
+Confirmed operational fixes: native merged spans now use retained slot anchors,
+covering all 1478 diagnostic native table slots; region processing handles the
+oversized source page. Full-r2 native coverage improves from 270/276 to 272/276,
+with identical 120 complete authored tables and zero natural-image tables. Four
+remaining diagnostics have no extracted or recognized text; their images and
+warnings remain visible. Page rotation is preserved for OCR by the new native-only
+normalization mode. Frozen orientation probes choose all sixteen construction
+angles correctly, with four-pass costs charged and uncertain choices abstaining.
+These authored probes do not establish a calibrated orientation probability.
+OCR admissions now distinguish 4096 recognized boxes per call from 65536 complete
+page words and a 4 MiB character boundary. Original 150/300 DPI dense observations
+are preserved; higher resolution more than doubles word inventory on one page
+while taking about 2.3–2.5 times longer. Accuracy is separately evaluated.
+
+The user interruption terminated the first Haiku anchor run after four pages.
+Twelve intended pages remain missing in that run, its whole-run resource data is
+unavailable, and one unresolved USD 0.30 reservation remains in the ledger. Fresh
+runs have distinct identities and no local response replay. At 04:12 UTC P002
+reported charges total USD 4.28593154, with USD 0.30 interrupted and USD 0.30 active
+reservations; this is a checkpoint, not final accounting. No GPU was rented or used.
+
+A resumed worker's scoped file listing also exposed the protected directory's
+AGENTS.md filename. No protected file contents, documents, or scores were read.
+This second filename-only procedural incident is documented alongside the first;
+subsequent workers receive explicit file paths and no broad file discovery.
+Tests, code snapshots, exact Markdown verification, and separate model-transcribed
+provenance remain required. Raw PDFs, images, requests, responses, and ledgers stay
+ignored locally. Only code and aggregate reports are pushed to private main.
