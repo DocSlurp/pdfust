@@ -1434,3 +1434,54 @@ subsequent workers receive explicit file paths and no broad file discovery.
 Tests, code snapshots, exact Markdown verification, and separate model-transcribed
 provenance remain required. Raw PDFs, images, requests, responses, and ledgers stay
 ignored locally. Only code and aggregate reports are pushed to private main.
+
+### P002 checkpoint: 2026-10-10 04:41 UTC
+
+Natural16 comparisons now include strict whole-page image transcription and
+matched YOLO matrix controls. Sonnet at 1200 pixels admits 15/16 outputs and
+recovers 3/53 complete tables, 299/2333 exact text anchors, no extra tables, and
+2/12 exact positive pages: 6.51 output pages/min and 106.65 pages/API USD at
+USD 0.140648. Haiku admits 13/16, recovers 2 complete tables and 245 anchors for
+USD 0.0085084, or 6.41 pages/min and 1527.90 pages/API USD. These are table-only,
+model-transcribed controls with zero source-conservation claims. Source-owned
+YOLO + Haiku costs USD 0.0234843 versus Sonnet's USD 0.286868, but returns 258
+rather than 341 exact text anchors and adds one negative-page false table. Both
+have two complete tables and one failed page. Failures and charges stay included.
+
+Whole-page 2048-pixel JPEG90 controls reject five requests before inference,
+including both dense newspapers; those results cannot answer whether larger images
+improve their extraction. A separately measured source-only codec comparison finds
+JPEG quality 50 fits all sixteen at the same 2048 dimensions. Quality 70 fits
+fourteen. New quality-50 runs and strict 1024-pixel detector crops are queued with
+fixed settings. No adaptive resize or silent retry is used. Crop verification
+replays all detector proposals and each raw response before exact Markdown checks.
+
+Fixed-edge CPU OCR tests on identical images embedded at physical scales 0.5/1/2
+produce identical pixels, text and normalized boxes at 2048 pixels. Fixed 150 DPI
+changes whitespace and geometry. These legible authored controls show encoding
+invariance, not an accuracy win: their text is recoverable in both arms. Detailed
+wall/CPU/RSS measurements and the row-major versus cell-center scoring distinction
+are retained in `bench/results/pipeline-ocr-scale-audit.md`.
+
+Frozen format-repair counterfactuals are rejected as a default. Authoritative
+Sonnet anchors improve 299 → 317 after clipping one out-of-range normalized bbox,
+without another complete table. Haiku stays at 245 anchors while padding a ragged
+row admits a false table on a negative page. The earlier auxiliary slot score is
+explicitly separate from the 2333-anchor primary protocol. Strict parsers remain
+unchanged. Detector containment fusion, row-wrap/column-track prompt variants,
+and shorter ordinal response indexes are new opt-in hypotheses with explicit
+source ownership and no reference-derived routing.
+
+The complete 276-page model-assisted Haiku expansion is running, with its choice
+fixed before those additional outcomes. CPU-only checks passed: 528 earlier
+pipeline/generalization tests, then 89 focused integration checks. The full suite
+had 3174 passes, 14 skips, two expected failures and twelve setup errors from an
+unconfigured mise rustc shim. Selecting the already installed rustc explicitly
+made all thirteen color-region tests pass; no system configuration was changed.
+Concurrent local test/audit workloads are part of this research environment and
+limit isolated latency comparisons.
+
+P002 has 529 reserved/returned attempts at this checkpoint, USD 4.97082344 in
+positive provider-reported charges, the preserved USD 0.30 interrupted reservation
+and USD 0.30 active reservation. Conservative P002 accounting is USD 5.57082344;
+reservations are not charges. No local GPU, remote GPU or rented host was used.
