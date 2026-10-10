@@ -32,7 +32,7 @@ INSTRUCTIONS = (
 )
 
 
-def _local_packet(menu: dict[str, Any], ids: list[str]) -> str:
+def _local_packet(menu: dict[str, Any], ids: list[str], image_viewport: list[float] | None = None) -> str:
     boundaries = [b for b in menu["boundaries"] if b["id"] in ids]
     observations, relevant = {}, set()
     tables = {t["table"]: t for t in menu["tables"]}
@@ -54,6 +54,17 @@ def _local_packet(menu: dict[str, Any], ids: list[str]) -> str:
         "scope": "Complete local rolling windows for these questions; indexes retain global identity. "
         "Source words outside these windows are unavailable here and remain unchanged in the retained full state.",
     }
+    if image_viewport is not None:
+        if (
+            not isinstance(image_viewport, list)
+            or len(image_viewport) != 4
+            or any(type(v) not in (int, float) or not math.isfinite(v) for v in image_viewport)
+            or image_viewport[0] >= image_viewport[2]
+            or image_viewport[1] >= image_viewport[3]
+        ):
+            raise ValueError("Invalid image display viewport")
+        packet["image_viewport"] = image_viewport
+        packet["image_coordinates"] = "Attached image covers this global display rectangle, not the whole page."
     text = json.dumps(packet, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
     if len(text.encode()) > MAX_PACKET_BYTES:
         raise ValueError("Complete local decision evidence exceeds admission; no truncation")
@@ -68,18 +79,26 @@ def _inline(url: str | None) -> None:
 
 
 def decision_batches(
-    page: dict[str, Any], state: dict[str, Any], model: str, url: str | None = None, *, max_questions: int = 16
+    page: dict[str, Any],
+    state: dict[str, Any],
+    model: str,
+    url: str | None = None,
+    *,
+    max_questions: int = 16,
+    image_viewport: list[float] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Return the complete frozen menu and local text-first typed decision bodies."""
     if type(max_questions) is not int or not 1 <= max_questions <= 16:
         raise ValueError("Native decisions require 1-16 questions per batch")
     _inline(url)
+    if image_viewport is not None and not url:
+        raise ValueError("Image viewport requires attached pixels")
     menu = build(page, state)
     ids = [b["id"] for b in menu["boundaries"]]
     batches = []
     for offset in range(0, len(ids), max_questions):
         selected = ids[offset : offset + max_questions]
-        text = _local_packet(menu, selected)
+        text = _local_packet(menu, selected, image_viewport)
         shared = [text, {"type": "image_url", "image_url": {"url": url, "detail": "high"}}] if url else text
         batches.append(
             {
@@ -179,6 +198,7 @@ def apply_decision_batches(
         if questions != expected_questions:
             raise ValueError("Modified native decision questions")
         shared = body["state"]
+        image_viewport = None
         if isinstance(shared, list):
             if len(shared) != 2 or not isinstance(shared[1], dict):
                 raise ValueError("Modified text-first native decision state")
@@ -194,7 +214,10 @@ def apply_decision_batches(
                 raise ValueError("Modified native decision image")
             _inline(image_url["url"])
             shared = shared[0]
-        if shared != _local_packet(menu, ids):
+            if isinstance(shared, str):
+                local = json.loads(shared)
+                image_viewport = local.get("image_viewport") if isinstance(local, dict) else None
+        if shared != _local_packet(menu, ids, image_viewport):
             raise ValueError("Modified local decision evidence")
         parsed.update(parse_decision_batch(body, result))
         seen.update(ids)
