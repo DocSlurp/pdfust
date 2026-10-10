@@ -28,6 +28,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-sonnet-2048-q50 | 16/16 | 0 | 2/12 | 7 | 20 | 622/2333 | 540/2333 | 11698/16640 | 19 | 2 | 9.69541 | 63.2871 | 0.252816 |
 | natural16-vision-haiku-2048-q50 | 14/16 | 2 | 2/12 | 2 | 9 | 261/2333 | 208/2333 | 15829/16640 | 10 | 4 | 12.4331 | 1190.19 | 0.0117628 |
 | natural16-vision-crops-sonnet-1024 | 16/16 | 0 | 3/12 | 5 | 25 | 1287/2333 | 982/2333 | 7864/16640 | 23 | 0 | 6.87782 | 69.4119 | 0.230508 |
+| natural16-vision-crops-haiku-1024 | 14/16 | 2 | 3/12 | 4 | 14 | 862/2333 | 687/2333 | 11089/16640 | 14 | 3 | 8.56503 | 1538.73 | 0.0090984 |
 
 ### natural16-whole-reviewed
 
@@ -644,6 +645,38 @@ Ledger attempts 19; reported USD subtotal 0.230508; missing reported charges 0; 
 
 Separate CPU detector worker: initialization wall 2.73209s, CPU 5.61704s; 16 per-page measurement entries, request CPU total 15.0211s; maximum sampled request RSS 1203773440 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-vision-crops-haiku-1024
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"invalid_table_geometry": 1, "invalid_table_topology": 1}`.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 416 |
+| remaining_fourteen | 4/14 | 3/10 | 271 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0090984 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 4 | 14 | 862/2333 | 11089/16640 | 0/4 |
+
+Whole-run wall 98.0732s; CPU 15.9637s; sampled RSS 347344896 bytes; verified output pages/min 8.56503; exact positive pages/min 1.83536. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0090984; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.86041s, CPU 5.93336s; 16 per-page measurement entries, request CPU total 14.2593s; maximum sampled request RSS 1202114560 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -1163,3 +1196,26 @@ pages remain primary; the dense/remaining split is posthoc. Complete tables
 and exact positive pages count different units: seven complete tables
 can coexist with only two exact positive pages. No reference text enters
 requests, source extraction or routing.
+
+## Matched Haiku crop control
+
+Haiku detector crops1024 retains 14/16 atomic outputs and 687/2333 exact
+cells, compared with 208 in its whole-page2048 JPEG50 control. Four
+complete tables occur on three exact positive pages, and fourteen tables
+have exact topology. Three extra tables all occur on dense positives;
+all four negative pages remain correct. The dense pair recovers 416 cells
+but no complete table; remaining fourteen recover 271 cells and four
+complete tables. Thirty-three of fifty-three reference tables remain missing.
+
+Two normal-stop crop responses fail strict parsing: an out-of-range
+normalized box and nonempty covered merge slots. Both pages contribute
+zero quality, including any successful earlier region. All nineteen
+provider charges remain included: USD 0.0090984, 8.57 operational pages/minute
+and 1538.73 operational pages/API USD. This is a table-only model transcription
+arm, with zero source-conserved pages and no page-prose claim.
+
+The matched crops improve both models' dense cell recovery. Haiku is cheaper
+and faster, while Sonnet retains all sixteen outputs, more exact topology
+(25 versus 14), more exact cells (982 versus 687), and zero extra tables.
+These are fixed DEV comparisons, without selecting responses or repairing
+boxes, merged spans, text, or detector coverage against references.
