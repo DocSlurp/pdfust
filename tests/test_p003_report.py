@@ -882,7 +882,9 @@ def test_reviewed_pre_count_runner_requires_exact_original_sixteen(monkeypatch: 
     }
     p003_report.verify_candidate_helpers(frozen)
     frozen["config"]["expected_pages"] = 16
-    p003_report.verify_candidate_helpers(frozen)
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)
+    del frozen["config"]["expected_pages"]
     frozen["records"].append({"id": "extra"})
     with pytest.raises(ValueError, match="candidate replay helper"):
         p003_report.verify_candidate_helpers(frozen)

@@ -252,7 +252,7 @@ def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
         if (
             name == "p003_candidate_run.py"
             and digest == "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d"
-            and frozen["config"].get("expected_pages", 16) == 16
+            and "expected_pages" not in frozen["config"]
             and len(frozen.get("records", [])) == 16
             and frozen["config"].get("campaign") == "P003"
             and frozen["config"].get("processor") == "p003_candidate_choice"
@@ -273,7 +273,6 @@ def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
                 "evidence_max_bytes",
                 "reviewed_parser_sha256",
                 "transport_concurrency",
-                "expected_pages",
             }
         ):
             continue  # Root reviewed e16332d: only explicit corpus-count run/main admission changes.
@@ -616,7 +615,7 @@ def verify_candidate_run(
     if (
         frozen["code_sha256"]["p003_candidate_run.py"]
         == "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d"
-        and expected_pages != 16
+        and (expected_pages != 16 or "expected_pages" in config)
     ):
         raise ValueError("Historical candidate runner admitted only complete natural16")
     reviewed = config.get("reviewed_parser_sha256", [])

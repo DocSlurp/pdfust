@@ -17,6 +17,7 @@ from bench import p003_header_proposals as headers
 from bench import p003_valid_regions_oracle as oracle
 from bench.generalization_report import load_corpus
 from bench.p003_report import strict_scores
+from bench.p003_reviewed_compatibility import reviewed_precount_helper
 from bench.silver import guard_path, sha
 
 
@@ -121,6 +122,13 @@ def analyze(
             name != "p003_header_proposals_prepare.py"
             and sha(Path(headers.__file__).with_name(name).read_bytes()) != digest
         ):
+            if name == "p003_candidate_run.py" and reviewed_precount_helper(
+                (directory / "code" / name).read_bytes(),
+                Path(headers.__file__).with_name(name).read_bytes(),
+                frozen["baseline_config"],
+                frozen["records"],
+            ):
+                continue
             raise ValueError("Current header replay helper differs from authenticated freeze")
     if frozen["external_trusted_code"] != baseline_trusted_code:
         raise ValueError("Embedded baseline map differs from external authority")
