@@ -6,7 +6,7 @@ import json
 import pytest
 from bench import remote_ambiguity_evidence as matrix
 from bench.remote_prompt_packets import _encode
-from tests.test_remote_prompt_sizes import fixture as fresh_fixture
+from test_remote_prompt_sizes import fixture as fresh_fixture
 
 
 def fixture(tmp_path, monkeypatch):

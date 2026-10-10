@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 from bench import remote_image_size_report as report
 from bench import remote_image_sizes as sizes
-from tests.test_remote_image_sizes import frozen  # noqa: F401 - shared CPU source-only fixture.
+from test_remote_image_sizes import frozen  # noqa: F401 - shared CPU source-only fixture.
 
 
 def _response(choice: str) -> dict[str, Any]:
