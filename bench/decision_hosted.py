@@ -42,6 +42,10 @@ REQUESTED_DECISION_MODELS = (
     "togethercomputer/tev1-4b-experimental",
     "inception/mercury-decide",
     "respan/span-01",
+    "cloudflare/clef-omni",
+    "microsoft/microsoft-decision-1",
+    "nace-ai/drex-v1.5",
+    "upstage/solar-decide",
 )
 DECISION_MODELS = (JEV, *REQUESTED_DECISION_MODELS)
 DEFAULT_MODELS = (
@@ -61,7 +65,18 @@ ANTHROPIC_BASELINE_MODELS = (
     "anthropic/claude-sonnet-5.5",
     "anthropic/claude-haiku-5.5",
 )
-MODELS = (*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS, *ANTHROPIC_BASELINE_MODELS)
+P003_CHAT_MODELS = (
+    "openai/gpt-6-luna",
+    "qwen/qwen3.5-9b",
+    "google/gemma-4-26b-a4b-it",
+    "google/gemma-4-31b-it",
+    "mistralai/ministral-8b-2512",
+    "mistralai/ministral-14b-2512",
+    "google/gemini-3.5-flash-lite",
+)
+MODELS = tuple(
+    dict.fromkeys((*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS, *ANTHROPIC_BASELINE_MODELS, *P003_CHAT_MODELS))
+)
 HOSTED_MODELS = (*MODELS, *EMBEDDING_MODELS)
 
 

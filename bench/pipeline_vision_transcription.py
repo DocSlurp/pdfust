@@ -48,7 +48,7 @@ def request(model: str, url: str, viewport: list[float], max_tokens: int = MAX_T
     """Build a bounded image-only chat request; viewport mapping remains local."""
     _viewport(viewport)
     if model not in MODELS:
-        raise ValueError("Model is outside the matched Anthropic 5.5 controls")
+        raise ValueError("Model is outside the admitted matched transcription controls")
     if type(max_tokens) is not int or not 1 <= max_tokens <= 65_536:
         raise ValueError("Output token admission exceeded")
     if not isinstance(url, str) or len(url) > MAX_IMAGE_URL_BYTES:

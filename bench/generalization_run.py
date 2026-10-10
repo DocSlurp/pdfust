@@ -318,8 +318,11 @@ def select_region(
         return candidates[0], info
     url, metadata = region_image(page, region["bbox"], config["image_edge"])
     info.update(metadata)
-    viewport = "Image viewport in global page coordinates: " + json.dumps(region["bbox"]) + ".\n" if url else ""
-    prompt = viewport + admission_packet(snapshot, premise="relational", pixels_available=bool(url))
+    gate_url = url if config.get("gate_image", True) else None
+    if "gate_image" in config:
+        info["gate_image"] = bool(gate_url)
+    viewport = "Image viewport in global page coordinates: " + json.dumps(region["bbox"]) + ".\n" if gate_url else ""
+    prompt = viewport + admission_packet(snapshot, premise="relational", pixels_available=bool(gate_url))
     if config.get("gate_row_evidence"):
         from bench.pipeline_row_context import context
 
@@ -329,12 +332,12 @@ def select_region(
         "prose": "This region contains prose, forms, formulas or other non-table content.",
         "unresolved": "Available source evidence cannot establish whether this region contains a table.",
     }
-    answer = _request(client, result, config, output, region["id"], prompt, choices, url)
+    answer = _request(client, result, config, output, region["id"], prompt, choices, gate_url)
     probabilities = sorted(answer.get("probabilities", {}).values(), reverse=True)
     if config.get("gate_review_model") and probabilities and probabilities[0] < baseline.GATE_REVIEW_SCORE:
         info["gate_primary"] = answer
         answer = _request(
-            client, result, config, output, region["id"], prompt, choices, url, model=config["gate_review_model"]
+            client, result, config, output, region["id"], prompt, choices, gate_url, model=config["gate_review_model"]
         )
     info["admission"] = answer
     if answer["choice"] != "table":
@@ -351,7 +354,7 @@ def select_region(
     else:
         evidence = packet(snapshot, candidates)
     prompt = viewport + evidence
-    answer = _request(client, result, config, output, region["id"], prompt, choices, url)
+    answer = _request(client, result, config, output, region["id"], prompt, choices, gate_url)
     info.update(route="selected", selection=answer)
     state = next((candidate for candidate in candidates if candidate["id"] == answer["choice"]), candidates[0])
     validate(snapshot, state)

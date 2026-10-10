@@ -98,6 +98,21 @@ def test_positive_provider_charge_wins_over_catalog_estimate() -> None:
     assert "langfuse.observation.metadata.catalog_estimated_usd" not in attrs
 
 
+def test_p003_changed_price_uses_telemetry_alias_without_changing_request() -> None:
+    body, result, entry = sample()
+    body["model"] = "cloudflare/clef-flash"
+    entry["tag"] = "P003/price-change"
+    _, payload = _payload(body, result, entry, {body["model"]: {"input": 0.038 / 1e6, "output": 0.0}})
+    attrs = attributes(payload)
+    assert attrs["langfuse.observation.model.name"] == "cloudflare/clef-flash@2026-10-10"
+    assert attrs["langfuse.observation.metadata.requested_model"] == "cloudflare/clef-flash"
+    assert body["model"] == "cloudflare/clef-flash"
+    assert attrs["langfuse.observation.metadata.catalog_estimated_usd"] == 100 * 0.038 / 1e6
+    entry["tag"] = "P002/historical"
+    _, payload = _payload(body, result, entry, {})
+    assert attributes(payload)["langfuse.observation.model.name"] == "cloudflare/clef-flash"
+
+
 def test_missing_charge_exports_complete_catalog_estimate_and_retains_reservation() -> None:
     body, result, entry = sample()
     del result["usage"]["cost"]

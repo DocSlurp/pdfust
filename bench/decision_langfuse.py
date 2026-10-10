@@ -297,6 +297,12 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
     if entry.get("gateway") == "vercel":
         model = "vercel/" + str(model)
         prices = {model: entry.get("catalog_rates", {})}
+    elif model == "cloudflare/clef-flash" and str(entry.get("tag", "")).startswith("P003/"):
+        # This deployment rejects date-versioned duplicate model names. Keep
+        # historical definitions intact and use a distinct telemetry-only name.
+        alias = "cloudflare/clef-flash@2026-10-10"
+        prices = {**prices, alias: prices.get(model, {})}
+        model = alias
     attributes = {
         "langfuse.trace.name": "pdf-master DEV decisions",
         "langfuse.trace.metadata.request_sha256": request_sha,
@@ -311,6 +317,7 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         },
         "langfuse.observation.output": {"answers": _safe_answers(result), "response_sha256": _sha(result)},
         "langfuse.observation.metadata.request_sha256": request_sha,
+        "langfuse.observation.metadata.requested_model": body.get("model", "unknown"),
         "langfuse.observation.metadata.cost_status": entry.get("cost_status", "unknown"),
         "langfuse.observation.metadata.provider_cost_reported": provided_cost is not None,
         "langfuse.environment": "development",

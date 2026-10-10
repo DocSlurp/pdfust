@@ -34,6 +34,7 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
         "generation_format": "indices", "generation_evidence": "arrays",
         "generation_prompt": "column_tracks", "generation_row_evidence": False,
         "gate_row_evidence": args.gate_row_evidence, "gate_review_model": None,
+        "gate_image": not args.text_gate,
         "answer_tokens": 2048, "raster_rules": False, "raster_edge": 1536,
         "detector_edge": 1536, "detector_tiles": "none", "detector_fusion": "none",
         "detector_residual": "retain", "detector_boundary": "retain",
@@ -60,6 +61,7 @@ def main() -> None:
     parser.add_argument("--image-edge", type=int, choices=(0, 128, 256, 400, 512, 768, 1024, 1200), default=512)
     parser.add_argument("--ocr-dpi", type=int, choices=(150, 300), default=300)
     parser.add_argument("--gate-row-evidence", action="store_true")
+    parser.add_argument("--text-gate", action="store_true", help="Omit gate pixels; keep generation image unchanged")
     parser.add_argument("--repeat-index", type=int, choices=(0, 1, 2), default=0)
     parser.add_argument("--order-seed", type=int, default=20261010)
     args = parser.parse_args()

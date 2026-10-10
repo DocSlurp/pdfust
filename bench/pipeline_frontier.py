@@ -11,10 +11,12 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
+from bench.decision_hosted import P003_CHAT_MODELS
+
 if TYPE_CHECKING:
     from collections.abc import Collection
 
-MODELS = tuple(f"anthropic/claude-{name}-5.5" for name in ("opus", "sonnet", "haiku"))
+MODELS = (*tuple(f"anthropic/claude-{name}-5.5" for name in ("opus", "sonnet", "haiku")), *P003_CHAT_MODELS)
 MAX_TOKENS = 1024
 
 
