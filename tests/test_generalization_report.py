@@ -1194,3 +1194,24 @@ def test_physical_hybrid_cannot_select_retained_orientation_evidence(
     write(tmp_path / "negative-result.json", prediction)
     with pytest.raises(ValueError, match="must not select orientation evidence"):
         verify_output(tmp_path, prediction, processor="hybrid")
+
+
+def test_original_source_order_requires_exact_frozen_render_dependency(fixture: dict[str, Any]) -> None:
+    frozen = deepcopy(fixture["frozen"])
+    frozen["config"]["source_order"] = "original"
+    for dependency in ("pipeline_regions.py", "generalization_run.py"):
+        data = (Path(module.__file__).parent / dependency).read_bytes()
+        (fixture["run"] / "code" / dependency).write_bytes(data)
+        frozen["code_sha256"][dependency] = sha(data)
+    with pytest.raises(ValueError, match=r"missing|required|Missing"):
+        verify_code(fixture["run"], frozen, processor="regions")
+    name = "pipeline_source_order.py"
+    data = (Path(module.__file__).parent / name).read_bytes()
+    (fixture["run"] / "code" / name).write_bytes(data)
+    frozen["code_sha256"][name] = sha(data)
+    verify_code(fixture["run"], frozen, processor="regions")
+    altered = data + b"\n# Unreviewed rendering edit.\n"
+    (fixture["run"] / "code" / name).write_bytes(altered)
+    frozen["code_sha256"][name] = sha(altered)
+    with pytest.raises(ValueError, match="original source-order"):
+        verify_code(fixture["run"], frozen, processor="regions")

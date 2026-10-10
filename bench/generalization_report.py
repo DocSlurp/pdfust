@@ -26,6 +26,7 @@ from bench.pipeline_layout_detector import _box
 from bench.pipeline_regions import compose, validate_composed
 from bench.pipeline_report import _render_markdown, _verify_markdown_renderer
 from bench.pipeline_scoring import score_dataset as authored_score_dataset
+from bench.pipeline_source_order import render_source
 from bench.pipeline_vision_transcription import markdown as vision_markdown
 from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, guard_path, sha
@@ -236,6 +237,11 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     row_evidence = any(frozen.get("config", {}).get(flag) for flag in ("generation_row_evidence", "gate_row_evidence"))
     if row_evidence:
         required |= {"pipeline_row_context.py", "pipeline_row_evidence.py"}
+    source_order = frozen.get("config", {}).get("source_order", "legacy")
+    if source_order not in {"legacy", "original"}:
+        raise ValueError("Unsupported frozen regional source order")
+    if source_order == "original":
+        required.add("pipeline_source_order.py")
     concurrent = frozen.get("config", {}).get("workers", 1) > 1
     concurrent_dependencies = {
         "decision_concurrent.py",
@@ -293,6 +299,14 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] != "identical" for name in ("pipeline_row_context.py", "pipeline_row_evidence.py")
     ):
         raise ValueError("Trusted source-derived row evidence differs from frozen code")
+    if source_order == "original" and comparison["pipeline_source_order.py"] != "identical":
+        raise ValueError("Trusted original source-order rendering differs from frozen code")
+    if (
+        source_order == "original"
+        and processor in {"regions", "hybrid"}
+        and comparison["generalization_run.py"] != "identical"
+    ):
+        raise ValueError("Original source order requires the exact current regional runner")
     if frozen.get("config", {}).get("generation_format") == "indices" and any(
         comparison.get(name) != "identical"
         for name in (
@@ -406,6 +420,15 @@ def _verify_orientation_runtime(frozen: dict[str, Any]) -> None:
             raise ValueError("Logical native orientation extraction/runtime fingerprint mismatch")
 
 
+def _source_order_mode(directory: Path) -> str:
+    frozen_path = directory / "frozen.json"
+    config = _read(frozen_path).get("config", {}) if frozen_path.is_file() else {}
+    mode = config.get("source_order", "legacy")
+    if mode not in {"legacy", "original"}:
+        raise ValueError("Unsupported frozen regional source order")
+    return mode
+
+
 def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[str, Any]:
     """Replay child artifacts, source-only detector exclusion and mixed composition."""
     ident = prediction["id"]
@@ -415,7 +438,9 @@ def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[s
         if child is not None:
             if not isinstance(child, dict) or child.get("id") != ident:
                 raise ValueError("Hybrid child identity differs from parent")
-            children[name] = verify_output(directory / name, child, processor=processor)
+            children[name] = verify_output(
+                directory / name, child, processor=processor, source_order=_source_order_mode(directory)
+            )
     native = prediction.get("native_result") or {}
     vision = prediction.get("vision_result") or {}
     if native.get("calls", []) != [] or prediction.get("calls", []) != vision.get("calls", []):
@@ -517,7 +542,9 @@ def _verify_multiscale_detection(prediction: dict[str, Any]) -> None:
         raise ValueError("Multiscale retained detector proposals differ from complete trusted raw replay")
 
 
-def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str) -> dict[str, Any]:
+def verify_output(
+    directory: Path, prediction: dict[str, Any], *, processor: str, source_order: str | None = None
+) -> dict[str, Any]:
     """Revalidate source ownership and exact retained Markdown for successful pages."""
     ident = prediction["id"]
     if not isinstance(ident, str) or Path(ident).name != ident or ident in {".", ".."}:
@@ -571,6 +598,9 @@ def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str
     if state["tables"] != prediction["tables"] or state["unresolved_ids"] != prediction["unresolved_ids"]:
         raise ValueError("Retained complete structure differs from report")
     if processor == "regions":
+        source_order = _source_order_mode(directory) if source_order is None else source_order
+        if source_order not in {"legacy", "original"}:
+            raise ValueError("Unsupported trusted regional source order")
         plan = {**prediction["region_plan"], "page_size": source["page_size"], "words": source["words"]}
         region_outputs = prediction["regions"]
         ids = [r["id"] for r in region_outputs]
@@ -586,7 +616,9 @@ def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str
         rendered = [
             (
                 min((order[i] for i in r["source_ids"]), default=len(order)),
-                _render_markdown(r["source"], states[r["id"]]),
+                _render_markdown(
+                    render_source(source, r) if source_order == "original" else r["source"], states[r["id"]]
+                ),
             )
             for r in plan["regions"]
         ]
