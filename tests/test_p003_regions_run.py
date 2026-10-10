@@ -54,6 +54,17 @@ def accepted(index: int, box: list[float], probability: float | None) -> dict[st
     return value
 
 
+def test_declared_small_area_policy_changes_conflict_order_without_geometry_changes() -> None:
+    values = [accepted(0, [10, 10, 200, 200], 0.99), accepted(1, [20, 20, 80, 80], 0.6)]
+    assert run.select_nonoverlapping(values)["selected_ids"] == ["r000"]
+    result = run.select_nonoverlapping(values, policy=run.SMALL_AREA_POLICY)
+    assert result["selected_ids"] == ["r001"]
+    assert result["conflicts"][0]["conflicts_with"] == ["r001"]
+    assert values[0]["bbox"] == [10, 10, 200, 200]
+    with pytest.raises(ValueError, match="Unknown overlap"):
+        run.select_nonoverlapping(values, policy="undeclared")
+
+
 def record(tmp_path: Path, *, rotation: int = 0) -> dict[str, Any]:
     with pylopdf.Document() as document:
         page = document.new_page(width=600, height=800)
@@ -318,6 +329,40 @@ def test_ordinary_yolo_control_bypasses_gate_in_separate_arm(tmp_path: Path, mon
     assert result["gate_regions"][0]["gate_status"] == "bypassed_ordinary_yolo"
     assert state["gate_requests"] == []
     assert len(state["transcriptions"]) == 1
+
+
+def test_union_runtime_keeps_source_inventory_and_gates_every_retained_candidate(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    state = setup(monkeypatch)
+
+    class Detector:
+        def detect(self, _pixels: bytes, *, viewport: list[float]) -> dict[str, Any]:
+            return {
+                "type": "result",
+                "device": "cpu",
+                "viewport": viewport,
+                "boxes": [{"label": "Table", "confidence": 0.9, "bbox": [10, 20, 100, 150]}],
+            }
+
+    result = run.process(
+        record(tmp_path),
+        configuration(
+            region_proposal_arm="yolo_fixed2", _layout_detector=Detector(), conflict_policy=run.SMALL_AREA_POLICY
+        ),
+        tmp_path,
+        object(),
+    )
+    assert result["status"] == "ok"
+    plan = result["proposal_plan"]
+    assert plan["diagnostics"]["raw_candidates"] == 3
+    assert plan["diagnostics"]["retained_candidates"] == 2
+    assert set(plan["input_plans"]) == {"yolo", "tracks_fixed2"}
+    assert state["proposal_settings"]["raster_grid"] == 2
+    assert len(state["gate_requests"]) == 2
+    assert len(state["transcriptions"]) == 2
+    assert result["conflict_selection"]["policy"] == run.SMALL_AREA_POLICY
+    assert len(plan["candidates"][0]["union_provenance"]) == 2
 
 
 def test_real_native_source_child_and_proposal_acquisition_without_inference(

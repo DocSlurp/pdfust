@@ -27,7 +27,7 @@ from bench.pipeline_frontier import translate
 from bench.pipeline_regions import _source
 from bench.silver import guard_path, sha, write_json
 
-ARMS = ("tracks_whole", "tracks_fixed2", "yolo")
+ARMS = ("tracks_whole", "tracks_fixed2", "yolo", "yolo_fixed2")
 GATE_CHOICES = {
     "table": "Visible repeated records and attributes form a relational table, even if a crop is partial.",
     "prose": "Region is prose, an aligned list, chart, page decoration, or other non-table content.",
@@ -41,6 +41,7 @@ GATE_INSTRUCTIONS = (
     "Do not accept aligned prose, lists or chart axes merely because they align."
 )
 CONFLICT_POLICY = "table_probability_then_proposal_order_nonoverlap"
+SMALL_AREA_POLICY = "small_area_then_probability"
 PROPOSAL_EDGE = 1536
 GATE_EDGE = 512
 TRANSCRIPTION_EDGE = 1024
@@ -67,7 +68,7 @@ def _configuration(config: dict[str, Any]) -> dict[str, Any]:
     ):
         if type(config.get(field, expected)) is not int or config.get(field, expected) != expected:
             raise ValueError("Region processor requires the declared fixed raster and serial settings")
-    if config.get("conflict_policy", CONFLICT_POLICY) != CONFLICT_POLICY:
+    if config.get("conflict_policy", CONFLICT_POLICY) not in (CONFLICT_POLICY, SMALL_AREA_POLICY):
         raise ValueError("Unknown frozen overlap conflict policy")
     if gate and (not isinstance(config.get("model"), str) or not config["model"]):
         raise ValueError("Semantic gate requires an exact model ID")
@@ -82,6 +83,8 @@ def gate_request(model: str, proposal: dict[str, Any], url: str | None) -> dict[
         key: proposal[key]
         for key in ("id", "bbox", "mechanisms", "evidence_records", "warnings", "capacity_window", "packet")
     }
+    if "union_provenance" in proposal:
+        evidence["union_provenance"] = proposal["union_provenance"]
     prompt = json.dumps(
         {"proposed_region": evidence, "semantic_status": "unverified", "source_ownership": "none"},
         separators=(",", ":"),
@@ -112,10 +115,12 @@ def _probability(answer: dict[str, Any]) -> float | None:
     return float(distribution["table"])
 
 
-def select_nonoverlapping(proposals: list[dict[str, Any]]) -> dict[str, Any]:
+def select_nonoverlapping(proposals: list[dict[str, Any]], *, policy: str = CONFLICT_POLICY) -> dict[str, Any]:
     """Choose among accepted boxes without merging, extending or relabeling them."""
     if not isinstance(proposals, list) or len(proposals) > 32:
         raise ValueError("Conflict selection exceeds the complete region admission")
+    if policy not in (CONFLICT_POLICY, SMALL_AREA_POLICY):
+        raise ValueError("Unknown overlap conflict policy")
     if len({proposal["id"] for proposal in proposals}) != len(proposals):
         raise ValueError("Duplicate snapshot-local proposal IDs")
     accepted = []
@@ -133,7 +138,14 @@ def select_nonoverlapping(proposals: list[dict[str, Any]]) -> dict[str, Any]:
             abstained.append(proposal["id"])
         else:
             negative.append(proposal["id"])
-    ranked = sorted(accepted, key=lambda item: (item[1] is None, -item[1] if item[1] is not None else 0, item[0]))
+
+    def rank(item: tuple[int, float | None]) -> tuple[Any, ...]:
+        probability = (item[1] is None, -item[1] if item[1] is not None else 0, item[0])
+        return (
+            (candidates._area(proposals[item[0]]["bbox"]), *probability) if policy == SMALL_AREA_POLICY else probability
+        )
+
+    ranked = sorted(accepted, key=rank)
     selected: list[int] = []
     conflicts = []
     for index, probability in ranked:
@@ -157,13 +169,17 @@ def select_nonoverlapping(proposals: list[dict[str, Any]]) -> dict[str, Any]:
             selected.append(index)
     selected.sort()  # Preserve declared proposal order for requests/composition.
     return {
-        "policy": CONFLICT_POLICY,
+        "policy": policy,
         "selected_ids": [proposals[index]["id"] for index in selected],
         "accepted_count": len(accepted),
         "conflicts": conflicts,
         "abstained_ids": abstained,
         "negative_ids": negative,
-        "ranking_scope": "Returned table probability when available, then proposal order; no calibration claim",
+        "ranking_scope": (
+            "Smallest unchanged box area, then returned table probability and proposal order; no calibration claim"
+            if policy == SMALL_AREA_POLICY
+            else "Returned table probability when available, then proposal order; no calibration claim"
+        ),
     }
 
 
@@ -310,14 +326,19 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
                 "viewport": viewport,
             }
             stage = "proposal"
-            if settings["arm"] == "yolo":
+            if settings["arm"] in ("yolo", "yolo_fixed2"):
                 detector = config.get("_layout_detector")
                 if detector is None:
                     raise ValueError("Ordinary YOLO proposal control needs the initialized CPU detector")
                 detection = detector.detect(pixels, viewport=viewport)
                 result["layout_detection"] = detection
                 plan = _yolo(detection, viewport, source)
-                if len(plan["candidates"]) > settings["candidate_cap"]:
+                if settings["arm"] == "yolo_fixed2":
+                    fixed2 = candidates.propose(
+                        source, image=image, max_candidates=settings["candidate_cap"], raster_grid=2
+                    )
+                    plan = candidates.union_plans(plan, fixed2, source, max_candidates=settings["candidate_cap"])
+                elif len(plan["candidates"]) > settings["candidate_cap"]:
                     raise ValueError("Ordinary YOLO control exceeds the declared cap; no subset selection")
             else:
                 plan = candidates.propose(
@@ -368,7 +389,9 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
                 finally:
                     proposal["gate_call_indexes"] = list(range(first, len(result["calls"])))
             stage = "conflict_selection"
-            selection = select_nonoverlapping(result["gate_regions"])
+            selection = select_nonoverlapping(
+                result["gate_regions"], policy=config.get("conflict_policy", CONFLICT_POLICY)
+            )
             result["conflict_selection"] = selection
             lookup = {proposal["id"]: proposal for proposal in result["gate_regions"]}
             selected = [lookup[ident] for ident in selection["selected_ids"]]

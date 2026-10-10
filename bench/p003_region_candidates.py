@@ -8,12 +8,14 @@ exclusive source ownership. A separate semantic gate must choose or abstain.
 # ruff: noqa: ANN401, EM101, TRY003, PLR2004, PLC0415
 from __future__ import annotations
 
+from copy import deepcopy
 from itertools import pairwise
 from statistics import median
 from typing import Any
 
 from bench.pipeline_dense_candidates import MAX_PIXELS, MAX_RULES, _lines
 from bench.pipeline_regions import _bands, _bounds, _box, _source
+from bench.silver import canonical, sha
 
 MAX_CANDIDATES = 64
 MAX_RAW_CANDIDATES = 2048
@@ -23,6 +25,75 @@ MAX_PACKET_WORDS = 256
 MAX_PACKET_CHARACTERS = 8000
 WINDOW_ROWS = (4, 8, 16, 32)
 PROTOCOL = "p003-region-candidates-v3"
+
+
+def union_plans(
+    yolo: dict[str, Any], fixed2: dict[str, Any], source: dict[str, Any], *, max_candidates: int = 32
+) -> dict[str, Any]:
+    """Alternate two source inventories, preserving first boxes and complete omissions."""
+    if type(max_candidates) is not int or not 1 <= max_candidates <= 32:
+        raise ValueError("Union candidate cap must be between one and 32")
+    inputs = {"yolo": deepcopy(yolo), "tracks_fixed2": deepcopy(fixed2)}
+    if any(len(plan["candidates"]) > 32 for plan in inputs.values()):
+        raise ValueError("Union input inventories exceed their complete admission")
+    words = _source({"page_size": source["page_size"], "words": source["words"]})["words"]
+    ranked = [
+        (arm, plan["candidates"][index])
+        for index in range(max((len(p["candidates"]) for p in inputs.values()), default=0))
+        for arm, plan in inputs.items()
+        if index < len(plan["candidates"])
+    ]
+    unique: list[dict[str, Any]] = []
+    for arm, original in ranked:
+        provenance = {
+            "arm": arm,
+            "proposal_id": original["id"],
+            "bbox": deepcopy(original["bbox"]),
+            "mechanisms": deepcopy(original["mechanisms"]),
+            "evidence_records": deepcopy(original["evidence_records"]),
+            "packet_sha256": sha(canonical(original["packet"])),
+        }
+        old = next(
+            (
+                p
+                for p in unique
+                if (intersection := _intersection(p["bbox"], original["bbox"]))
+                / (_area(p["bbox"]) + _area(original["bbox"]) - intersection)
+                >= 0.9
+            ),
+            None,
+        )
+        if old is None:
+            item = deepcopy(original)
+            item["union_provenance"] = [provenance]
+            unique.append(item)
+        else:
+            old["union_provenance"].append(provenance)
+            old["mechanisms"] = sorted({*old["mechanisms"], *original["mechanisms"]})
+            old["evidence_records"].extend(deepcopy(original["evidence_records"]))
+            old["warnings"] = sorted({*old["warnings"], *original["warnings"]})
+    retained = unique[:max_candidates]
+    for index, item in enumerate(retained):
+        item.update(id=f"r{index:03d}", packet=_packet(item, words))
+    return {
+        "protocol": "p003-yolo-fixed2-union-v1",
+        "input_plans": inputs,
+        "candidates": retained,
+        "source_word_count": len(words),
+        "diagnostics": {
+            "input_candidate_counts": {arm: len(plan["candidates"]) for arm, plan in inputs.items()},
+            "raw_candidates": len(ranked),
+            "deduplicated_candidates": len(unique),
+            "retained_candidates": len(retained),
+            "omitted_candidates": len(unique) - len(retained),
+            "candidate_cap": max_candidates,
+            "omitted_inventory": [
+                {"bbox": item["bbox"], "union_provenance": item["union_provenance"]} for item in unique[max_candidates:]
+            ],
+        },
+        "configuration": {"ranking": "YOLO/fixed2 alternating, YOLO first", "near_duplicate_iou": 0.9},
+        "source_ownership": "Overlapping proposals; no exclusive assignment or inferred cells",
+    }
 
 
 def _intersection(a: list[float], b: list[float]) -> float:

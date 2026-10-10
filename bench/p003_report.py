@@ -776,8 +776,13 @@ def verify_regions_output(
         }
         if prediction["proposal_image"] != expected_image:
             raise ValueError("Proposal image differs from independently rendered frozen PDF")
-        if settings["arm"] == "yolo":
+        if settings["arm"] in ("yolo", "yolo_fixed2"):
             plan = processor._yolo(prediction["layout_detection"], viewport, source)
+            if settings["arm"] == "yolo_fixed2":
+                fixed2 = candidates.propose(
+                    source, image=image, max_candidates=settings["candidate_cap"], raster_grid=2
+                )
+                plan = candidates.union_plans(plan, fixed2, source, max_candidates=settings["candidate_cap"])
         else:
             plan = candidates.propose(
                 source,
@@ -835,7 +840,9 @@ def verify_regions_output(
             } or response.get("replayed"):
                 raise ValueError("Gate call differs from retained fresh response")
             consumed_calls.update(indexes)
-        selection = processor.select_nonoverlapping(prediction["gate_regions"])
+        selection = processor.select_nonoverlapping(
+            prediction["gate_regions"], policy=config.get("conflict_policy", processor.CONFLICT_POLICY)
+        )
         if prediction["conflict_selection"] != selection or prediction["selected_region_count"] != len(
             selection["selected_ids"]
         ):

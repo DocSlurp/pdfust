@@ -24,6 +24,42 @@ def page(rows: int = 6, *, top: int = 20) -> dict[str, Any]:
     return {"page_size": [400, 1000], "words": words}
 
 
+def test_union_alternates_preserves_first_box_and_audits_dedup_and_omissions() -> None:
+    source = page()
+
+    def candidate(index: int, box: list[float], mechanism: str) -> dict[str, Any]:
+        item = {
+            "id": f"r{index:03d}",
+            "bbox": box,
+            "mechanisms": [mechanism],
+            "evidence_records": [{"mechanism": mechanism}],
+            "warnings": [],
+            "capacity_window": False,
+            "semantic_status": "proposal_only",
+        }
+        item["packet"] = regions._packet(item, source["words"])  # noqa: SLF001 - original source packet fixture.
+        return item
+
+    yolo = {
+        "candidates": [candidate(0, [10, 10, 100, 100], "yolo_table"), candidate(1, [200, 200, 300, 300], "yolo_table")]
+    }
+    fixed = {
+        "candidates": [
+            candidate(0, [11, 10, 101, 100], "ocr_aligned_tracks"),
+            candidate(1, [10, 300, 100, 400], "raster_rule_component"),
+        ]
+    }
+    before = deepcopy((yolo, fixed, source))
+    result = regions.union_plans(yolo, fixed, source, max_candidates=2)
+    assert (yolo, fixed, source) == before
+    assert [p["bbox"] for p in result["candidates"]] == [[10, 10, 100, 100], [200, 200, 300, 300]]
+    assert len(result["candidates"][0]["union_provenance"]) == 2
+    assert result["candidates"][0]["packet"] == yolo["candidates"][0]["packet"]
+    assert result["diagnostics"]["deduplicated_candidates"] == 3
+    assert result["diagnostics"]["omitted_candidates"] == 1
+    assert result["diagnostics"]["omitted_inventory"][0]["bbox"] == [10, 300, 100, 400]
+
+
 def open_grid() -> Image.Image:
     image = Image.new("RGB", (400, 400), "white")
     draw = ImageDraw.Draw(image)
