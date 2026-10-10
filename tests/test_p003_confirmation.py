@@ -12,17 +12,33 @@ from bench.silver import canonical, sha, write_json
 def source_manifest(tmp_path: Path) -> dict[str, Any]:
     pdf = tmp_path / "page.pdf"
     pdf.write_bytes(b"fixed source PDF bytes")
-    manifest = {"schema": 2, "identity_basis": confirmation.IDENTITY_BASIS,
-                "split": "DEV", "selection_sha256": "selected independently",
-                "pages": [{"id": "new-page", "pdf_path": str(pdf),
-                           "pdf_sha256": sha(pdf.read_bytes()), "page_number": 0,
-                           "cohort": "omnidoc"}]}
-    manifest["dataset_sha256"] = sha(canonical({
-        "schema": 2, "identity_basis": confirmation.IDENTITY_BASIS,
-        "selection_sha256": manifest["selection_sha256"],
-        "pages": [{key: value for key, value in page.items() if key != "pdf_path"}
-                  for page in manifest["pages"]],
-    }))
+    manifest = {
+        "schema": 2,
+        "identity_basis": confirmation.IDENTITY_BASIS,
+        "split": "DEV",
+        "selection_sha256": "selected independently",
+        "pages": [
+            {
+                "id": "new-page",
+                "pdf_path": str(pdf),
+                "pdf_sha256": sha(pdf.read_bytes()),
+                "page_number": 0,
+                "cohort": "omnidoc",
+            }
+        ],
+    }
+    manifest["dataset_sha256"] = sha(
+        canonical(
+            {
+                "schema": 2,
+                "identity_basis": confirmation.IDENTITY_BASIS,
+                "selection_sha256": manifest["selection_sha256"],
+                "pages": [
+                    {key: value for key, value in page.items() if key != "pdf_path"} for page in manifest["pages"]
+                ],
+            }
+        )
+    )
     return manifest
 
 
@@ -40,13 +56,21 @@ def test_source_identity_rejects_changed_metadata_and_pdf(tmp_path: Path) -> Non
 
 def test_natural_projection_preserves_spans_and_annotation_refusal() -> None:
     page = {"id": "new-page"}
-    provenance = {"source_id": "official.png", "category_counts": {"table": 1},
-                  "annotation_to_display": {"scale_x": .36, "scale_y": .36,
-                                            "offset_x": 0, "offset_y": 0, "rotation": 0}}
-    annotation = {"page_info": {"image_path": "official.png"}, "layout_dets": [{
-        "category_type": "table", "poly": [0, 0, 100, 0, 100, 200, 0, 200],
-        "html": '<table><tr><td colspan="2">Merged</td></tr><tr><td>A</td><td>B</td></tr></table>',
-    }]}
+    provenance = {
+        "source_id": "official.png",
+        "category_counts": {"table": 1},
+        "annotation_to_display": {"scale_x": 0.36, "scale_y": 0.36, "offset_x": 0, "offset_y": 0, "rotation": 0},
+    }
+    annotation = {
+        "page_info": {"image_path": "official.png"},
+        "layout_dets": [
+            {
+                "category_type": "table",
+                "poly": [0, 0, 100, 0, 100, 200, 0, 200],
+                "html": '<table><tr><td colspan="2">Merged</td></tr><tr><td>A</td><td>B</td></tr></table>',
+            }
+        ],
+    }
     reference = confirmation.natural_reference(page, provenance, annotation)
     assert reference["structural_scored"]
     assert reference["tables"][0]["bbox"] == [0, 0, 36, 72]
@@ -56,15 +80,22 @@ def test_natural_projection_preserves_spans_and_annotation_refusal() -> None:
 
 
 def test_attachment_rebuild_detects_changed_target_not_self_attested(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     manifest = source_manifest(tmp_path)
     annotation_path = tmp_path / "official.json"
     write_json(annotation_path, [{"page_info": {"image_path": "official.png"}, "layout_dets": []}])
-    provenance = [{"id": "new-page", "source_id": "official.png", "category_counts": {},
-                   "annotation_path": str(annotation_path), "annotation_sha256": sha(annotation_path.read_bytes()),
-                   "annotation_to_display": {"scale_x": .36, "scale_y": .36,
-                                             "offset_x": 0, "offset_y": 0, "rotation": 0}}]
+    provenance = [
+        {
+            "id": "new-page",
+            "source_id": "official.png",
+            "category_counts": {},
+            "annotation_path": str(annotation_path),
+            "annotation_sha256": sha(annotation_path.read_bytes()),
+            "annotation_to_display": {"scale_x": 0.36, "scale_y": 0.36, "offset_x": 0, "offset_y": 0, "rotation": 0},
+        }
+    ]
     write_json(tmp_path / "manifest.json", manifest)
     write_json(tmp_path / "private-provenance.json", provenance)
     write_json(tmp_path / "construction-targets.json", {"dataset_sha256": manifest["dataset_sha256"], "pages": []})

@@ -35,12 +35,16 @@ def validate_identity(manifest: dict[str, Any]) -> str:
     ids = [page["id"] for page in pages]
     if not pages or len(ids) != len(set(ids)):
         raise ValueError("Confirmation source IDs must be unique")
-    identity = sha(canonical({
-        "schema": 2,
-        "identity_basis": IDENTITY_BASIS,
-        "selection_sha256": manifest["selection_sha256"],
-        "pages": [{key: value for key, value in page.items() if key != "pdf_path"} for page in pages],
-    }))
+    identity = sha(
+        canonical(
+            {
+                "schema": 2,
+                "identity_basis": IDENTITY_BASIS,
+                "selection_sha256": manifest["selection_sha256"],
+                "pages": [{key: value for key, value in page.items() if key != "pdf_path"} for page in pages],
+            }
+        )
+    )
     if identity != manifest["dataset_sha256"]:
         raise ValueError("Confirmation source identity changed")
     for page in pages:
@@ -69,13 +73,22 @@ def natural_reference(page: dict[str, Any], provenance: dict[str, Any], annotati
         if len(poly) < 8 or len(poly) % 2:
             raise ValueError("Invalid selected table polygon")
         for table in parsed["tables"]:
-            table["bbox"] = [min(poly[::2]) * 0.36, min(poly[1::2]) * 0.36,
-                             max(poly[::2]) * 0.36, max(poly[1::2]) * 0.36]
+            table["bbox"] = [
+                min(poly[::2]) * 0.36,
+                min(poly[1::2]) * 0.36,
+                max(poly[::2]) * 0.36,
+                max(poly[1::2]) * 0.36,
+            ]
             _cells(table)
             tables.append(table)
-    return {"id": page["id"], "structural_scored": not errors, "tables": tables,
-            "annotation_errors": errors, "annotation_source_sha256": sha(canonical(annotation)),
-            "reference_basis": "selected official HTML and polygons, projected by frozen source transform"}
+    return {
+        "id": page["id"],
+        "structural_scored": not errors,
+        "tables": tables,
+        "annotation_errors": errors,
+        "annotation_source_sha256": sha(canonical(annotation)),
+        "reference_basis": "selected official HTML and polygons, projected by frozen source transform",
+    }
 
 
 def build_targets(directory: Path) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -121,8 +134,7 @@ def build_targets(directory: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             raise ValueError("Unexpected confirmation cohort")
     if set(authored) != {page["id"] for page in manifest["pages"] if page["cohort"] == "authored"}:
         raise ValueError("Construction reference inventory differs")
-    return manifest, {"schema": 2, "identity_basis": IDENTITY_BASIS,
-                      "dataset_sha256": identity, "pages": targets}
+    return manifest, {"schema": 2, "identity_basis": IDENTITY_BASIS, "dataset_sha256": identity, "pages": targets}
 
 
 def attach_targets(directory: Path) -> dict[str, Any]:
@@ -132,11 +144,16 @@ def attach_targets(directory: Path) -> dict[str, Any]:
     if path.exists() and read(path) != targets:
         raise ValueError("Existing confirmation references differ; refusing overwrite")
     write_json(path, targets)
-    receipt = {"schema": 1, "scope": "independent scorer-only reference attachment",
-               "dataset_sha256": manifest["dataset_sha256"], "source_sha256": SOURCE_HASHES,
-               "targets_sha256": sha(path.read_bytes()), "pages": len(targets["pages"]),
-               "structurally_scored_pages": sum(page["structural_scored"] for page in targets["pages"]),
-               "tables": sum(len(page["tables"]) for page in targets["pages"])}
+    receipt = {
+        "schema": 1,
+        "scope": "independent scorer-only reference attachment",
+        "dataset_sha256": manifest["dataset_sha256"],
+        "source_sha256": SOURCE_HASHES,
+        "targets_sha256": sha(path.read_bytes()),
+        "pages": len(targets["pages"]),
+        "structurally_scored_pages": sum(page["structural_scored"] for page in targets["pages"]),
+        "tables": sum(len(page["tables"]) for page in targets["pages"]),
+    }
     write_json(directory / "target-attachment.json", receipt)
     return receipt
 
