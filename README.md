@@ -360,18 +360,23 @@ cells; includes the original 16 pages) narrow the quality gap:
 | Haiku source IDs, OCR300 | 62 | 11 | 1,309 | 11 | 2.69 | 1,013.32 |
 | GPT-6 Luna, 1024 px crops | 63 | 12 | 1,348 | 0 | 5.54 | 1,985.15 |
 | Sonnet 5.5, 1024 px crops | 64 | 14 | 1,839 | 4 | 3.20 | 140.43 |
+| Opus 5.5, 1024 px crops | 62 | 15 | 1,617 | 3 | 6.40 | 72.36 |
 | Haiku 5.5, 1024 px crops, explicit matrix | 58 | 12 | 1,333 | 0 | 3.65 | 2,229.64 |
 | Haiku source IDs, fixed OCR edge 2048 px | 63 | 10 | 1,125 | 11 | 2.35 | 1,051.69 |
+| Haiku source IDs, fixed OCR edge 3072 px | 62 | 12 | 1,204 | 15 | 2.57 | 1,009.50 |
 
 All retain 64 pages in quality denominators. Ordinal and Luna produce no table
 false positives on the 24 negative pages; Sonnet produces one. Sonnet recovers
-more cells and complete tables, at substantially higher API cost. The ordinal run has two raster-admission
+the most strict cells here; Opus completes one more table but recovers fewer
+cells and costs more per usable page. The ordinal run has two raster-admission
 failures; Luna has one invalid rectangular-matrix response. Rates count usable
 outputs under concurrent load, with full generation costs and unpriced local
 compute. This broader DEV sample is not held-out confirmation.
 The explicit-matrix Haiku run has six failed pages; the fixed-edge OCR run
 has one failed page and one negative-page false positive. Changing acquisition
-resolution improves admission in this comparison but reduces cell quality.
+resolution improves admission in the 2048 px comparison but reduces cell quality.
+The 3072 px run and Opus each have two failed pages. Different shared-load
+conditions make these elapsed rates unsuitable for a causal model-speed ranking.
 
 The completed [57-arm image and decision screen](bench/results/p003-mixed-evidence.md)
 finds 1,087 strict cells / 5 complete tables at 128 px RGB, versus 981 / 5 at
@@ -403,6 +408,31 @@ retain all measured scores, failed compositions, costs, CPU/RAM and provider
 cache coverage. A [fresh 48-page source-frozen sample](bench/results/p003-confirmation-corpus.md)
 contains 32 additional natural pages from distinct known document parents and
 16 new synthetic layouts. Its confirmation results are pending.
+
+CPU acquisition studies isolate another bottleneck: original detector regions
+exclude enough literal characters to make 1,066 of 2,333 reference cells
+impossible to reconstruct from those regions; full-page source reduces that
+count to 74. Character availability is only a necessary condition, not an
+extraction score. [Source analysis](bench/results/p003-source-availability-analysis.md)
+and [fixed gutter controls](bench/results/p003-fullsource-tracks-analysis.md)
+retain the failures: nine whole-page gutter treatments recover at most 14 strict
+cells and no complete tables.
+
+Changing only YOLO26m's internal input size, on the same 16 frozen page rasters:
+
+| Detector size | Matched / 53 tables at IoU ≥ 0.5 | Missed / extra | Negative pages with false proposals / 4 | Detector wall seconds | Detector CPU seconds | Peak worker RSS GiB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 640 px | 14 | 39 / 5 | 3 | 5.72 | 11.13 | 1.31 |
+| 1024 px | 16 | 37 / 8 | 1 | 13.73 | 26.97 | 1.36 |
+| 1280 px | 23 | 30 / 14 | 0 | 21.28 | 41.89 | 1.48 |
+
+These are detection scores, not recovered cells or full extraction throughput.
+CPU inference uses two threads; initialization and raster preparation are
+separate. Larger input also loses some smaller-size proposals.
+[All IoU thresholds and source coverage](bench/results/p003-yolo-resolution-analysis.md)
+are reported. The follow-on CPU structure study freezes all 80 proposals and
+432 full-page placement outputs before reference scoring.
+
 
 Source-owned geometry remains substantially weaker: the best tested CPU table
 structure placement recovers 204 strict cells and three complete tables, with
