@@ -1,5 +1,8 @@
 """Independent P003 metric, accounting and paired-evaluation contracts."""
 
+# Lazy imports keep repair-only dependencies scoped to replay tests.
+# ruff: noqa: PLC0415
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -146,3 +149,191 @@ def test_paired_image_changes_are_explicit() -> None:
     assert result["gate_image_configuration_equal"] is False
     assert result["request_image_hash_sets_equal"] is False
     assert result["treatment_changes"]["gate_image"] == [True, False]
+
+
+def incremental_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Keep renderer semantics stubbed while exercising authenticated repair replay."""
+    from bench import generalization_report
+    from bench.decision_p003_native import apply_decision_batches, decision_batches
+    from bench.decision_p003_offline import synthetic
+    from bench.silver import write_json
+
+    monkeypatch.setattr(generalization_report, "verify_output", lambda *_args, **_kwargs: {"operational": True})
+    baseline = tmp_path / "baseline"
+    baseline.mkdir()
+    (baseline / "code").mkdir()
+    (baseline / "code" / "fixture.py").write_bytes(b"# independently trusted test source\n")
+    baseline_config = {"processor": "regions", "source_order": "original"}
+    records = [{"id": "p", "pdf_path": "/source.pdf", "pdf_sha256": "pdf", "page_number": 0}]
+    page, state = synthetic(3)
+    region = {"id": "r", "source": page, "state": state}
+    original = {
+        "id": "p",
+        "status": "ok",
+        "source": page,
+        "region_plan": {"regions": [{"id": "r", "source": page}]},
+        "regions": [region],
+        "tables": state["tables"],
+        "unresolved_ids": [],
+        "source_conserved": True,
+        "calls": [],
+        "wall_seconds": 10,
+        "cpu_seconds": 20,
+    }
+    original_report = {
+        "config": baseline_config,
+        "results": [original],
+        "metrics": {"wall_seconds": 10},
+        "ledger_attempts": 0,
+        "effective_usd": 0,
+        "cost_bases": {},
+    }
+    original_frozen = {
+        "config": baseline_config,
+        "records": records,
+        "manifest_sha256": "manifest",
+        "code_sha256": {"fixture.py": sha((baseline / "code" / "fixture.py").read_bytes())},
+    }
+    write_json(baseline / "report.json", original_report)
+    write_json(baseline / "frozen.json", original_frozen)
+    write_json(baseline / "p-result.json", original)
+    write_json(baseline / "p-structure.json", state)
+    (baseline / "p.md").write_text("baseline output\n")
+    hashes = {
+        name: sha((baseline / name).read_bytes())
+        for name in ("report.json", "frozen.json", "p-result.json", "p-structure.json", "p.md")
+    }
+    hashes["code/fixture.py"] = sha((baseline / "code/fixture.py").read_bytes())
+    menu, bodies = decision_batches(page, state, "typesafe/jev-1.13")
+    responses = [
+        {
+            "answers": {
+                ident: {
+                    "type": "choice",
+                    "choice": "join",
+                    "probabilities": {"join": 0.9, "split": 0.1, "unresolved": 0},
+                    "confidence": 0.1,
+                }
+                for ident in body["questions"]
+            }
+        }
+        for body in bodies
+    ]
+    updated, audit = apply_decision_batches(page, state, menu, bodies, responses)
+    write_json(tmp_path / "p-r-boundary-menu.json", menu)
+    calls = []
+    for index, (body, response) in enumerate(zip(bodies, responses, strict=True)):
+        write_json(tmp_path / f"p-r-boundary-{index}-request.json", body)
+        write_json(tmp_path / f"p-r-boundary-{index}-response.json", {"entry": {"id": index}, "result": response})
+        calls.append({"entry": {"id": index}, "region_id": "r", "batch_index": index, "replayed": False})
+    write_json(tmp_path / "p-r-updated-state.json", updated)
+    prediction = {
+        **deepcopy(original),
+        "tables": updated["tables"],
+        "regions": [{**region, "state": updated}],
+        "repair_status": "completed",
+        "repair_calls": calls,
+        "repair_errors": [],
+        "baseline_provenance": {
+            "result_sha256": hashes["p-result.json"],
+            "status": "ok",
+            "calls": [],
+            "source_order": "original",
+            "wall_seconds": 10,
+            "cpu_seconds": 20,
+        },
+        "repair_regions": [
+            {"id": "r", "original_state": state, "repair_status": "completed", "updated_state": updated, "audit": audit}
+        ],
+    }
+    module_root = Path(__file__).resolve().parents[1] / "bench"
+    frozen = {
+        "config": {
+            "model": "typesafe/jev-1.13",
+            "baseline_source_order": "original",
+            "minimum_join": 0.8,
+            "minimum_margin": 0.25,
+        },
+        "records": records,
+        "manifest_sha256": "manifest",
+        "code_sha256": {
+            name: sha((module_root / name).read_bytes())
+            for name in ("decision_p003_boundaries.py", "decision_p003_native.py")
+        },
+        "baseline": {
+            "copied_directory": "baseline",
+            "original_config": baseline_config,
+            "source_order": "original",
+            "file_sha256": hashes,
+        },
+    }
+    report = {"baseline_report": original_report, "results": [prediction]}
+    return report, frozen
+
+
+def test_incremental_replay_uses_responses_and_rejects_invented_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bench.p003_report import verify_incremental_run
+
+    report, frozen = incremental_fixture(tmp_path, monkeypatch)
+    trusted = {"fixture.py": sha((tmp_path / "baseline/code/fixture.py").read_bytes())}
+    summary, verified = verify_incremental_run(tmp_path, report, frozen, trusted)
+    assert verified["p"]["operational"]
+    assert summary["resources"]["wall_seconds"] == 10
+    altered = deepcopy(report)
+    altered["results"][0]["repair_regions"][0]["updated_state"]["tables"][0]["values"][0][0] = "invented"
+    with pytest.raises(ValueError, match="independently decoded"):
+        verify_incremental_run(tmp_path, altered, frozen, trusted)
+    (tmp_path / "baseline/p.md").write_text("changed baseline\n")
+    with pytest.raises(ValueError, match="baseline bytes changed"):
+        verify_incremental_run(tmp_path, report, frozen, trusted)
+
+
+def test_complete_incremental_runner_replays_renderer_and_copied_requests(tmp_path: Path) -> None:
+    from bench import p003_boundary_run
+    from bench.p003_report import verify_incremental_run
+    from bench.silver import write_json
+    from test_p003_boundary_run import MockClient, baseline, configuration
+
+    original_directory = tmp_path / "original"
+    baseline(original_directory)
+    import json
+
+    original_frozen = json.loads((original_directory / "frozen.json").read_bytes())
+    original_report = json.loads((original_directory / "report.json").read_bytes())
+    original_report["config"] = deepcopy(original_frozen["config"])
+    original_names = (
+        "pipeline_run.py",
+        "pipeline_assembly.py",
+        "generalization_run.py",
+        "pipeline_regions.py",
+        "pipeline_source_order.py",
+    )
+    module_root = Path(__file__).resolve().parents[1] / "bench"
+    code = original_directory / "code"
+    code.mkdir()
+    authenticated = {}
+    for name in original_names:
+        data = (module_root / name).read_bytes()
+        (code / name).write_bytes(data)
+        authenticated[name] = sha(data)
+    original_frozen["code_sha256"] = authenticated
+    write_json(original_directory / "frozen.json", original_frozen)
+    write_json(original_directory / "report.json", original_report)
+    write_json(original_directory / "p0-request-0.json", {"model": "synthetic-baseline", "state": "literal source"})
+    write_json(original_directory / "p0-response-0.json", {"synthetic": True})
+    output = tmp_path / "repaired"
+    p003_boundary_run.run(original_directory, output, configuration(), MockClient(tmp_path))
+    report = json.loads((output / "report.json").read_bytes())
+    frozen = json.loads((output / "frozen.json").read_bytes())
+    summary, verified = verify_incremental_run(output, report, frozen, authenticated)
+    assert summary["original_request_artifacts"] == 1
+    assert summary["original_response_artifacts"] == 1
+    assert verified["p0"]["operational"]
+    assert report["results"][0]["tables"][0]["row_count"] == 2
+    assert report["pages_per_minute"] is None
+    (output / "baseline/p0-request-0.json").write_text("{}")
+    with pytest.raises(ValueError, match="baseline bytes changed"):
+        verify_incremental_run(output, report, frozen, authenticated)

@@ -1,7 +1,7 @@
 """Offline P003 evaluation of frozen DEV decision treatments and matched repeats."""
 
 # Artifact observations are heterogeneous; validation occurs at the file boundary.
-# ruff: noqa: EM101, TRY003, C901, PLR0912, PLR2004, EM102, PLC0415, S311
+# ruff: noqa: EM101, TRY003, C901, PLR0912, PLR2004, EM102, PLC0415, S311, PLR0913
 from __future__ import annotations
 
 import argparse
@@ -108,6 +108,174 @@ def verify_archive(directory: Path, frozen: dict[str, Any], trusted: dict[str, s
     return checked
 
 
+def verify_incremental_run(
+    directory: Path,
+    report: dict[str, Any],
+    frozen: dict[str, Any],
+    baseline_trusted_code: dict[str, str] | None,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """Replay atomic repairs and independently authenticate the historical baseline."""
+    from bench.decision_p003_native import apply_decision_batches
+    from bench.generalization_report import verify_output
+
+    config = frozen["config"]
+    attestation = frozen["baseline"]
+    if attestation.get("copied_directory") != "baseline":
+        raise ValueError("Incremental evaluation requires the complete copied baseline")
+    baseline = guard_path(directory / "baseline")
+    original_report = _read(baseline / "report.json")
+    original_frozen = _read(baseline / "frozen.json")
+    if original_report["config"] != original_frozen["config"]:
+        raise ValueError("Historical baseline report and frozen config differ")
+    if report.get("baseline_report") != original_report or attestation["original_config"] != original_frozen["config"]:
+        raise ValueError("Copied baseline report or original config differs from provenance")
+    if (
+        original_frozen["records"] != frozen["records"]
+        or original_frozen["manifest_sha256"] != frozen["manifest_sha256"]
+    ):
+        raise ValueError("Incremental inventory differs from original frozen intended inputs")
+    source_order = original_frozen["config"].get("source_order", "legacy")
+    if config.get("baseline_source_order") != source_order or attestation.get("source_order") != source_order:
+        raise ValueError("Incremental repair changed baseline source order")
+    verify_archive(baseline, original_frozen, baseline_trusted_code)
+    original_predictions = {p["id"]: p for p in original_report["results"]}
+    if len(original_predictions) != len(original_report["results"]):
+        raise ValueError("Duplicate baseline prediction IDs")
+    required = {"report.json", "frozen.json"}
+    for ident, prediction in original_predictions.items():
+        if Path(ident).name != ident or ident in {".", ".."}:
+            raise ValueError("Unsafe baseline page ID")
+        required.add(f"{ident}-result.json")
+        if prediction.get("status") == "ok":
+            required |= {f"{ident}-structure.json", f"{ident}.md"}
+        required |= {f"{ident}-request-{step}.json" for step, _call in enumerate(prediction.get("calls", []))}
+    hashes = attestation["file_sha256"]
+    required |= {f"code/{name}" for name in original_frozen["code_sha256"]}
+    allowed = {"report.json", "frozen.json"} | {
+        f"{r['id']}{suffix}" for r in frozen["records"] for suffix in ("-result.json", "-structure.json", ".md")
+    }
+    allowed |= {f"code/{name}" for name in original_frozen["code_sha256"]}
+    prefixes = tuple(f"{r['id']}-" for r in frozen["records"])
+    for name in hashes:
+        if (
+            Path(name).name == name
+            and name.startswith(prefixes)
+            and name.endswith(".json")
+            and ("-request" in name or "-response" in name)
+        ):
+            allowed.add(name)
+    if not required <= hashes.keys() or not hashes.keys() <= allowed:
+        raise ValueError("Incomplete or unexpected baseline attestation inventory")
+    for name, digest in hashes.items():
+        if sha(guard_path(baseline / name).read_bytes()) != digest:
+            raise ValueError("Copied baseline bytes changed")
+    for prediction in original_predictions.values():
+        verify_output(baseline, prediction, processor="regions", source_order=source_order)
+    for name in ("decision_p003_boundaries.py", "decision_p003_native.py"):
+        path = Path(__file__).parent / name
+        if sha(path.read_bytes()) != frozen["code_sha256"].get(name):
+            raise ValueError("Repair replay helper differs from independently authenticated archived semantics")
+    verified = {}
+    for prediction in report["results"]:
+        ident = prediction["id"]
+        original = original_predictions.get(ident)
+        if original is None:
+            raise ValueError("Repair lacks a retained original baseline prediction")
+        for key in ("source", "region_plan", "calls", "wall_seconds", "cpu_seconds"):
+            if prediction.get(key) != original.get(key):
+                raise ValueError(f"Repair changed immutable baseline evidence: {key}")
+        provenance = prediction["baseline_provenance"]
+        for key, expected in (
+            ("result_sha256", hashes[f"{ident}-result.json"]),
+            ("status", original["status"]),
+            ("calls", original.get("calls", [])),
+            ("source_order", source_order),
+            ("wall_seconds", original.get("wall_seconds")),
+            ("cpu_seconds", original.get("cpu_seconds")),
+        ):
+            if provenance.get(key) != expected:
+                raise ValueError("Baseline result provenance differs from immutable originals")
+        repair_status = prediction["repair_status"]
+        if repair_status == "completed":
+            old_regions = {r["id"]: r for r in original["regions"]}
+            region_sources = {r["id"]: r["source"] for r in original["region_plan"]["regions"]}
+            repairs = prediction["repair_regions"]
+            if len(repairs) != len(old_regions) or {r["id"] for r in repairs} != set(old_regions):
+                raise ValueError("Completed repair must retain every original region")
+            rebuilt = {}
+            for region in repairs:
+                region_id = region["id"]
+                old = old_regions[region_id]
+                if region["original_state"] != old["state"]:
+                    raise ValueError("Repair changed original region state provenance")
+                if region["repair_status"] == "not_applicable":
+                    rebuilt[region_id] = old["state"]
+                    continue
+                if region["repair_status"] != "completed":
+                    raise ValueError("Completed page retains an incomplete region repair")
+                menu = _read(directory / f"{ident}-{region_id}-boundary-menu.json")
+                calls = sorted(
+                    (c for c in prediction["repair_calls"] if c["region_id"] == region_id),
+                    key=lambda c: c["batch_index"],
+                )
+                if [c["batch_index"] for c in calls] != list(range(len(calls))):
+                    raise ValueError("Incomplete or duplicate retained repair batches")
+                bodies, responses = [], []
+                for call in calls:
+                    stem = f"{ident}-{region_id}-boundary-{call['batch_index']}"
+                    body = _read(directory / f"{stem}-request.json")
+                    response = _read(directory / f"{stem}-response.json")
+                    if body["model"] != config["model"] or response.get("replayed") or call.get("replayed"):
+                        raise ValueError("Repair response uses wrong model or a replayed call")
+                    if call["entry"] != response["entry"]:
+                        raise ValueError("Repair call provenance differs from retained provider response")
+                    bodies.append(body)
+                    responses.append(response["result"])
+                updated, audit = apply_decision_batches(
+                    region_sources[region_id],
+                    old["state"],
+                    menu,
+                    bodies,
+                    responses,
+                    minimum_join=config["minimum_join"],
+                    minimum_margin=config["minimum_margin"],
+                )
+                if updated != region["updated_state"] or canonical(audit) != canonical(region["audit"]):
+                    raise ValueError("Repair region differs from independently decoded model responses")
+                if _read(directory / f"{ident}-{region_id}-updated-state.json") != updated:
+                    raise ValueError("Retained updated region state changed")
+                rebuilt[region_id] = updated
+            expected_regions = [{**r, "state": rebuilt[r["id"]]} for r in original["regions"]]
+            if prediction["regions"] != expected_regions:
+                raise ValueError("Repaired region inventory differs from atomic replay")
+        elif repair_status in {"not_applicable", "failed_retained_baseline", "baseline_failed_skipped"}:
+            for key in ("tables", "regions", "unresolved_ids", "status", "source_conserved"):
+                if prediction.get(key) != original.get(key):
+                    raise ValueError("Fallback or skipped repair changed complete baseline outcome")
+            for suffix in ("-structure.json", ".md"):
+                name = f"{ident}{suffix}"
+                if name in hashes and sha(guard_path(directory / name).read_bytes()) != hashes[name]:
+                    raise ValueError("Atomic fallback bytes differ from baseline")
+        else:
+            raise ValueError("Unknown repair status")
+        verified[ident] = verify_output(directory, prediction, processor="regions", source_order=source_order)
+    return {
+        "report_sha256": hashes["report.json"],
+        "frozen_sha256": hashes["frozen.json"],
+        "costs": costs(original_report),
+        "resources": original_report.get("metrics", {}),
+        "status_counts": dict(Counter(p["repair_status"] for p in report["results"])),
+        "repair_error_pages": sum(bool(p.get("repair_errors")) for p in report["results"]),
+        "original_request_artifacts": sum("-request" in name for name in hashes),
+        "original_response_artifacts": sum("-response" in name for name in hashes),
+        "original_response_scope": "Only retained raw response artifacts can be audited; original call summaries "
+        "do not establish availability of every historical raw provider response",
+        "scope": (
+            "Original pipeline work is immutable historical provenance; incremental repairs use retained artifacts"
+        ),
+    }, verified
+
+
 def score_run(
     directory: Path,
     corpus: Path,
@@ -115,6 +283,7 @@ def score_run(
     manifest_path: Path | None = None,
     cohort: str | None = None,
     trusted_code: dict[str, str] | None = None,
+    baseline_trusted_code: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Validate existing runner artifacts without calling inference or executing archives."""
     # The existing offline verifier reconstructs source ownership and Markdown.
@@ -155,14 +324,29 @@ def score_run(
         required |= {"generalization_hybrid_run.py", "pipeline_hybrid_composition.py"}
     elif processor in {"vision", "vision_regions", "vision_multiscale"}:
         required = {"generalization_vision_run.py", "pipeline_vision_transcription.py"}
+    elif processor == "p003_boundary_repair":
+        required |= {
+            "p003_boundary_run.py",
+            "decision_p003_boundaries.py",
+            "decision_p003_native.py",
+            "pipeline_regions.py",
+        }
     elif processor != "whole":
         raise ValueError("Unsupported frozen processor")
     if not required <= code.keys():
         raise ValueError("Frozen code lacks required processor dependencies")
+    incremental = processor == "p003_boundary_repair"
+    baseline_provenance, repair_verified = (
+        verify_incremental_run(directory, report, frozen, baseline_trusted_code) if incremental else (None, {})
+    )
     artifacts = []
     operational = 0
     for prediction in predictions:
-        verified = verify_output(directory, prediction, processor=processor)
+        verified = (
+            repair_verified[prediction["id"]]
+            if incremental
+            else verify_output(directory, prediction, processor=processor)
+        )
         operational += int(verified["operational"])
         record = {
             "id": prediction["id"],
@@ -202,7 +386,8 @@ def score_run(
     scoring = strict_scores(reference_pages, scoring_predictions)
     audits = []
     request_images = []
-    for request in sorted(directory.glob("**/*-request-*.json")):
+    request_paths = set(directory.glob("**/*-request-*.json")) | set(directory.glob("**/*-request.json"))
+    for request in sorted(request_paths):
         body = _read(request)
         audit = audit_model_body(body)
         stack = [body]
@@ -225,7 +410,7 @@ def score_run(
         if not audit["explicit_reference_fields_absent"]:
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
-    accounting = costs(report)
+    accounting = costs(report["incremental_repair"] if incremental else report)
     metrics = dict(report.get("metrics", {}))
     if report.get("layout_detector_initialization") is not None:
         metrics["layout_detector_worker"] = {
@@ -249,6 +434,8 @@ def score_run(
         errors["missing"] += len(expected) - len(predictions)
     return {
         "name": directory.name,
+        "evaluation_scope": "incremental repair on retained artifacts" if incremental else "complete pipeline",
+        "baseline_provenance": baseline_provenance,
         "dataset_sha256": manifest["dataset_sha256"],
         "manifest_sha256": frozen["manifest_sha256"],
         "report_sha256": sha((directory / "report.json").read_bytes()),
@@ -280,10 +467,22 @@ def score_run(
                 )
             )
         ),
-        "pages_per_minute": _rate(operational, metrics.get("wall_seconds"), 60),
-        "intended_pages_per_minute": _rate(len(expected), metrics.get("wall_seconds"), 60),
-        "pages_per_api_usd": _rate(operational, accounting["effective_api_usd"]),
-        "exact_positive_pages_per_minute": _rate(
+        "pages_per_minute": None if incremental else _rate(operational, metrics.get("wall_seconds"), 60),
+        "intended_pages_per_minute": None if incremental else _rate(len(expected), metrics.get("wall_seconds"), 60),
+        "pages_per_api_usd": None if incremental else _rate(operational, accounting["effective_api_usd"]),
+        "incremental_attempted_pages_per_minute": _rate(
+            sum(p["incremental_repair"]["attempted"] for p in predictions), metrics.get("wall_seconds"), 60
+        )
+        if incremental
+        else None,
+        "incremental_attempted_pages_per_api_usd": _rate(
+            sum(p["incremental_repair"]["attempted"] for p in predictions), accounting["effective_api_usd"]
+        )
+        if incremental
+        else None,
+        "exact_positive_pages_per_minute": None
+        if incremental
+        else _rate(
             sum(p.get("exact_page", False) and p.get("positive_page", False) for p in scoring["pages"]),
             metrics.get("wall_seconds"),
             60,
@@ -447,7 +646,11 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             "",
             f"## {run['name']}",
             "",
-            f"Dataset `{run['dataset_sha256']}`; manifest `{run['manifest_sha256']}`; report `{run['report_sha256']}`.",
+            (
+                f"Evaluation scope: {run.get('evaluation_scope', 'complete pipeline')}.\n\n"
+                f"Dataset `{run['dataset_sha256']}`; manifest `{run['manifest_sha256']}`; "
+                f"report `{run['report_sha256']}`."
+            ),
             "",
             "Positive-page macro recall: `" + json.dumps(run["positive_macro"], sort_keys=True) + "`.",
             "",
@@ -459,6 +662,22 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             "",
             "All-attempt API accounting: `" + json.dumps(run["costs"], sort_keys=True) + "`.",
         ]
+    for run in runs:
+        if run.get("baseline_provenance") is not None:
+            lines += [
+                "",
+                "Historical baseline provenance: `" + json.dumps(run["baseline_provenance"], sort_keys=True) + "`.",
+                "",
+                "Incremental repair processing rate (attempted repair pages, not fresh pipeline outputs): `"
+                + json.dumps(
+                    {
+                        key: run.get(key)
+                        for key in ("incremental_attempted_pages_per_minute", "incremental_attempted_pages_per_api_usd")
+                    },
+                    sort_keys=True,
+                )
+                + "`.",
+            ]
     return "\n".join(lines) + "\n"
 
 
@@ -469,7 +688,18 @@ def main() -> None:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--cohort")
     parser.add_argument("--run", type=Path, action="append", required=True)
-    parser.add_argument("--trusted-code", type=Path)
+    parser.add_argument(
+        "--trusted-code",
+        type=Path,
+        action="append",
+        help="Authenticated digest snapshot; repeat once per --run when source versions differ",
+    )
+    parser.add_argument(
+        "--baseline-trusted-code",
+        type=Path,
+        action="append",
+        help="Authenticated historical baseline snapshot; one shared or one per --run",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown", type=Path)
     parser.add_argument(
@@ -480,10 +710,27 @@ def main() -> None:
     parser.add_argument("--repeat-summary", action="store_true", help="Summarize identical treatment repetitions")
     parser.add_argument("--paired", action="store_true", help="Compare exactly two source-matched decision runs")
     args = parser.parse_args()
-    trusted = _read(args.trusted_code) if args.trusted_code else None
+
+    def snapshots(paths: list[Path] | None) -> list[dict[str, str] | None]:
+        if not paths:
+            return [None] * len(args.run)
+        if len(paths) not in {1, len(args.run)}:
+            parser.error("Trusted code options require one shared snapshot or exactly one snapshot per --run")
+        values = [_read(path) for path in paths]
+        return values * len(args.run) if len(values) == 1 else values
+
+    trusted = snapshots(args.trusted_code)
+    baseline_trusted = snapshots(args.baseline_trusted_code)
     runs = [
-        score_run(p, args.corpus, manifest_path=args.manifest, cohort=args.cohort, trusted_code=trusted)
-        for p in args.run
+        score_run(
+            p,
+            args.corpus,
+            manifest_path=args.manifest,
+            cohort=args.cohort,
+            trusted_code=code,
+            baseline_trusted_code=baseline_code,
+        )
+        for p, code, baseline_code in zip(args.run, trusted, baseline_trusted, strict=True)
     ]
     comparison = None
     if args.paired:

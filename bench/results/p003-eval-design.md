@@ -176,7 +176,7 @@ repeat distributions. Root-authenticated digest snapshots must be captured from
 reviewed sources before runs; copying the artifact's own `code_sha256` into the
 trusted file does not establish independent trust.
 
-Validation: ten focused CPU-only Python tests and Ruff pass. An actual retained
+Validation: twelve focused CPU-only Python tests and Ruff pass. An actual retained
 P002 sixteen-page invocation verifies complete source/Markdown artifacts and
 writes the ignored `pipeline-p003/eval-smoke.json`. No requests, GPU workload or
 paid inference were performed by this evaluation task.
@@ -215,3 +215,36 @@ require explicit operator semantic review via
 `--reviewed-repeat-code-changes`; authentication alone does not establish
 unchanged treatment semantics. Paired reports separately expose gate-image
 configuration differences and actual serialized request image hash inventories.
+
+## Incremental retained-state repair verification
+
+`processor="p003_boundary_repair"` is evaluated as repair on retained source
+artifacts. Historical baseline report, frozen inventory, code, results,
+structures, Markdown and all retained request/response JSON are copied with
+hash attestations. Every historical returned call must have its original request
+body. Only retained raw response artifacts can be audited; the first fresh source
+control stores request bodies and call summaries but no standalone raw response
+JSON, which remains an explicit limitation.
+
+The evaluator authenticates baseline code separately using
+`--baseline-trusted-code`, verifies original and repaired source/plan/call/timing
+lineage, re-decodes every completed region from its native request/menu/provider
+response, and compares the independently recomposed complete source-owned output
+and exact Markdown. Current local repair replay helpers must match the
+independently authenticated repair archive; archived Python is never executed.
+Failed atomic repair preserves the complete original output and remains
+`status="ok"` when that baseline was valid, with separate repair errors.
+Original errors remain errors and skipped repairs remain explicit.
+
+Fresh full-pipeline pages/min and pages/API USD are undefined for this processor.
+Incremental attempted-repair-pages/min and pages/API USD have explicit names and
+include only its new attempts and measured repair interval. Historical baseline
+cost/resources are separate provenance, never charged again as fresh work. A
+complete synthetic runner-to-JSON-to-evaluator test verifies actual source
+ownership, exact rendering, native response replay and request-copy integrity;
+changing a copied request or fabricated updated cell is rejected. No provider
+request is made by those tests.
+
+Multiple source versions can be authenticated in one report by repeating
+`--trusted-code` once per `--run`; a single shared snapshot also remains valid.
+Historical baseline snapshots accept the same shared/per-run convention.

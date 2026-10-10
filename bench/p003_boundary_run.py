@@ -347,8 +347,17 @@ def run(
             for suffix in ("-result.json", "-structure.json", ".md")
             if (baseline_directory / f"{identifier}{suffix}").exists()
         )
+    # Preserve the original request/image leakage audit, including failed attempts.
+    page_prefixes = tuple(f"{_identifier(record['id'])}-" for record in records)
+    requests = set(baseline_directory.glob("*-request*.json"))
+    responses = set(baseline_directory.glob("*-response*.json"))
+    for path in sorted(requests | responses):
+        if not path.name.startswith(page_prefixes):
+            raise ValueError("Baseline request or response belongs to an unknown intended page")
+        guard_path(path)
+        names.append(path.name)
     for name in names:
-        data = (baseline_directory / name).read_bytes()
+        data = guard_path(baseline_directory / name).read_bytes()
         hashes[name] = sha(data)
         (copied / name).write_bytes(data)
     if original_frozen.get("code_sha256"):
