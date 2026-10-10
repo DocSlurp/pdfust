@@ -254,3 +254,17 @@ page ordering, all errors/costs and whole-run wall/CPU/RSS. Reserve and settle
 under a cross-process lock; perform HTTP and Langfuse outside it. Run this only
 after the legacy serial queue drains. Start no paid experiment after 07:00 UTC;
 skip queued arms whose fixed allowance no longer fits the campaign window.
+
+At 05:45 UTC, add one combined source-owned hypothesis if time permits: whitespace
+OCR300, compact array evidence, ordinal output indexes, static column-track
+instructions and a 512-pixel image. The earlier controls separately improved the
+available literal vocabulary, output admission or dense-page placement. Their
+combination may still lose smaller-page accuracy or fail input admission. Evaluate
+all sixteen fixed pages, not only the prior misses, and label the multiple changed
+factors rather than attributing any gain to one technique. This arm uses no row
+reference, family label or outcome-derived per-page routing.
+
+The four-worker control is moved into the pause between hybrid runs while a
+confirmed no-source-word table/footer ordering bug is fixed. No legacy serial
+request overlaps it. The 768-pixel crop control follows during that same pause;
+completed runs will be removed from the later queue rather than repeated.
