@@ -1,8 +1,12 @@
 # Acquisition and auxiliary32 DEV comparison
 
-Checkpoint: 29/32 independently verified arms. The frozen plan contains 13 complete generation, 9 structure-admission and 10 geometry-diagram arms. Pending arms remain visible below. All quality counts use 16 pages, 53 tables, 2333 reference cells and 4 negative pages. This is the established DEV screen, separate from fresh confirmation 48.
+All 32/32 completed arms independently verified. The frozen plan contains 13 complete generation, 9 structure-admission and 10 geometry-diagram arms. All quality counts use 16 pages, 53 tables, 2333 reference cells and 4 negative pages. This is the established DEV screen, separate from fresh confirmation 48.
 Generation arms include acquisition and transcription. Admission arms retain only model-admitted source-owned TATR tables; rejected, unresolved or failed pages receive no historical table credit. Diagram arms count independently selected complete disjoint crops, including valid partial predictions on operational error pages. Duplicate, unresolved and failed crops receive zero credit; conflicting positive crops are all refused. No cross-model fallback or retry is credited.
 Single runs are observations, with no confidence interval or repeat estimate available for these arms. Diagram instructions explicitly identify artificial geometry-only pixels, so comparison against source pixels changes evidence framing as well as pixels. Large cell-count differences can be concentrated in dense pages. No fresh confirmation result selected these configurations.
+
+Observed generation strict counts vary by model: Luna 640/1024/1280 gives 290/807/290; Sonnet 292/362/291; Haiku matrix 373/295/295. These single-run differences combine proposal inventory changes with stochastic transcription. Luna1024 recovers 533 cells on one dense page while its other 14-page score falls to 274 from 290, and predicts 9 extra positive-page tables.
+
+PPLX admission text/128/512 gives 119/204/204 strict cells, 1/3/3 complete tables and 0 negative FP. Its diagram filled 128/400/512 gives 224/818/782 strict cells; outline 128/400/512 gives 908/193/193. Diagram evidence is artificial and changes prompt framing; these outcomes do not establish a causal resize advantage. LunaDec diagram arms return 16 valid abstentions each, receiving 0 quality credit.
 
 ## Complete generation
 
@@ -12,7 +16,7 @@ Single runs are observations, with no confidence interval or repeat estimate ava
 | acquisition-luna-yolo640-crop1024-r0-c3 | verified | 290 | 290 | 361 | 3 | 39 | 0 | 0 | 1 | 2 | 0.01290183 | 3.374 | 1162.626 |
 | acquisition-luna-yolo1024-crop1024-r0-c3 | verified | 807 | 820 | 1127 | 3 | 31 | 9 | 0 | 2 | 2 | 0.01614232 | 2.521 | 867.285 |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | verified | 290 | 290 | 359 | 4 | 40 | 0 | 0 | 2 | 3 | 0.02486862 | 1.641 | 562.958 |
-| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | running; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | verified | 373 | 386 | 422 | 2 | 40 | 2 | 0 | 2 | 2 | 0.00900450 | 6.262 | 1554.778 |
 | acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | verified | 295 | 295 | 463 | 3 | 38 | 2 | 1 | 2 | 2 | 0.00993910 | 4.895 | 1408.578 |
 | acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | verified | 295 | 295 | 359 | 2 | 40 | 0 | 0 | 2 | 2 | 0.02436380 | 2.558 | 574.623 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | verified | 292 | 292 | 361 | 3 | 39 | 0 | 0 | 1 | 2 | 0.22463800 | 5.293 | 66.774 |
@@ -30,7 +34,7 @@ Rate is operational usable pages/minute for complete generation, intended retain
 
 | Run | Status | Strict | Text | Structure | Complete | Missing | Extra | Negative FP pages | Score errors | Exact positive pages | USD | Rate | Scope units/APIUSD |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| admission-pplx-detector05-edge0-r0-c3 | completed; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| admission-pplx-detector05-edge0-r0-c3 | verified | 119 | 121 | 267 | 1 | 41 | 0 | 0 | 0 | 0 | 0.00361310 | 15.376 | 4428.330 |
 | admission-pplx-detector05-edge128-r0-c3 | verified | 204 | 206 | 352 | 3 | 39 | 0 | 0 | 0 | 2 | 0.00368338 | 17.244 | 4343.836 |
 | admission-pplx-detector05-edge512-r0-c3 | verified | 204 | 206 | 350 | 3 | 40 | 0 | 0 | 0 | 2 | 0.00370026 | 15.613 | 4324.020 |
 | admission-lunadec-detector05-edge0-r0-c3 | verified | 185 | 187 | 315 | 2 | 42 | 0 | 0 | 0 | 1 | 0.00999040 | 14.089 | 1601.537 |
@@ -49,7 +53,7 @@ Rate is operational usable pages/minute for complete generation, intended retain
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | diagram-pplx-filled-128-r0-c3 | verified | 224 | 235 | 292 | 0 | 44 | 3 | 0 | 7 | 0 | 0.00066222 | 28.353 | 24161.155 |
 | diagram-pplx-filled-512-r0-c3 | verified | 782 | 782 | 938 | 1 | 35 | 0 | 0 | 8 | 0 | 0.00067808 | 24.338 | 23596.036 |
-| diagram-pplx-filled-400-r0-c3 | completed; unverified | — | — | — | — | — | — | — | — | — | — | — | — |
+| diagram-pplx-filled-400-r0-c3 | verified | 818 | 829 | 961 | 1 | 35 | 3 | 0 | 9 | 0 | 0.00066636 | 20.231 | 24011.045 |
 | diagram-pplx-outline-128-r0-c3 | verified | 908 | 919 | 1078 | 1 | 33 | 3 | 0 | 7 | 0 | 0.00066222 | 18.473 | 24161.155 |
 | diagram-pplx-outline-400-r0-c3 | verified | 193 | 204 | 227 | 0 | 47 | 3 | 0 | 8 | 0 | 0.00066636 | 23.623 | 24011.045 |
 | diagram-pplx-outline-512-r0-c3 | verified | 193 | 204 | 227 | 0 | 47 | 3 | 0 | 8 | 0 | 0.00067808 | 18.169 | 23596.036 |
@@ -65,10 +69,12 @@ Rate is operational usable pages/minute for complete generation, intended retain
 
 | Run | Native outcome counts | Attempted questions | Operational failed pages | Complete crop pages | Partial crop pages | USD basis | Scope rate per APIUSD |
 |---|---|---:|---:|---:|---:|---|---:|
+| admission-pplx-detector05-edge0-r0-c3 | reject=4, retain=14, unresolved=1 | 19 | 0 | — | — | provider-reported USD | 4428.330 |
 | admission-pplx-detector05-edge128-r0-c3 | reject=2, retain=16, unresolved=1 | 19 | 0 | — | — | provider-reported USD | 4343.836 |
 | admission-pplx-detector05-edge512-r0-c3 | reject=4, retain=15 | 19 | 0 | — | — | provider-reported USD | 4324.020 |
 | diagram-pplx-filled-128-r0-c3 | not_applicable_duplicates=3, selected=9, unresolved=7 | 16 | 9 | 7 | 2 | provider-reported USD | 24161.155 |
 | diagram-pplx-filled-512-r0-c3 | not_applicable_duplicates=3, selected=7, unresolved=9 | 16 | 11 | 5 | 3 | provider-reported USD | 23596.036 |
+| diagram-pplx-filled-400-r0-c3 | not_applicable_duplicates=3, selected=7, unresolved=9 | 16 | 11 | 5 | 2 | provider-reported USD | 24011.045 |
 | diagram-pplx-outline-128-r0-c3 | not_applicable_duplicates=3, selected=9, unresolved=7 | 16 | 9 | 7 | 2 | provider-reported USD | 24161.155 |
 | diagram-pplx-outline-400-r0-c3 | not_applicable_duplicates=3, selected=6, unresolved=10 | 16 | 12 | 4 | 4 | provider-reported USD | 24011.045 |
 | diagram-pplx-outline-512-r0-c3 | not_applicable_duplicates=3, selected=6, unresolved=10 | 16 | 12 | 4 | 4 | provider-reported USD | 23596.036 |
@@ -89,10 +95,12 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 
 | Run | Dense2 strict /1972 | Other14 strict /361 | Positive macro strict recall |
 |---|---:|---:|---:|
+| admission-pplx-detector05-edge0-r0-c3 | 0 | 119 | 0.254 |
 | admission-pplx-detector05-edge128-r0-c3 | 0 | 204 | 0.420 |
 | admission-pplx-detector05-edge512-r0-c3 | 0 | 204 | 0.420 |
 | diagram-pplx-filled-128-r0-c3 | 103 | 121 | 0.213 |
 | diagram-pplx-filled-512-r0-c3 | 691 | 91 | 0.213 |
+| diagram-pplx-filled-400-r0-c3 | 794 | 24 | 0.129 |
 | diagram-pplx-outline-128-r0-c3 | 794 | 114 | 0.248 |
 | diagram-pplx-outline-400-r0-c3 | 103 | 90 | 0.139 |
 | diagram-pplx-outline-512-r0-c3 | 103 | 90 | 0.139 |
@@ -109,6 +117,7 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 | acquisition-luna-yolo640-crop1024-r0-c3 | 0 | 290 | 0.570 |
 | acquisition-luna-yolo1024-crop1024-r0-c3 | 533 | 274 | 0.557 |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 0 | 290 | 0.570 |
+| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | 123 | 250 | 0.472 |
 | acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | 22 | 273 | 0.508 |
 | acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | 0 | 295 | 0.589 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 0 | 292 | 0.616 |
@@ -124,10 +133,12 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 
 | Run | Effective APIUSD | Original reported subtotal USD | Missing reported attempts | Retained basis |
 |---|---:|---:|---:|---|
+| admission-pplx-detector05-edge0-r0-c3 | 0.00361310 | 0.00361310 | 0 | provider-reported USD |
 | admission-pplx-detector05-edge128-r0-c3 | 0.00368338 | 0.00368338 | 0 | provider-reported USD |
 | admission-pplx-detector05-edge512-r0-c3 | 0.00370026 | 0.00370026 | 0 | provider-reported USD |
 | diagram-pplx-filled-128-r0-c3 | 0.00066222 | 0.00066222 | 0 | provider-reported USD |
 | diagram-pplx-filled-512-r0-c3 | 0.00067808 | 0.00067808 | 0 | provider-reported USD |
+| diagram-pplx-filled-400-r0-c3 | 0.00066636 | 0.00066636 | 0 | provider-reported USD |
 | diagram-pplx-outline-128-r0-c3 | 0.00066222 | 0.00066222 | 0 | provider-reported USD |
 | diagram-pplx-outline-400-r0-c3 | 0.00066636 | 0.00066636 | 0 | provider-reported USD |
 | diagram-pplx-outline-512-r0-c3 | 0.00067808 | 0.00067808 | 0 | provider-reported USD |
@@ -144,6 +155,7 @@ The same two previously declared dense DEV pages contain 1972/2333 cells; the ot
 | acquisition-luna-yolo640-crop1024-r0-c3 | 0.01290183 | 0.00000000 | 0 | provider-reported BYOK upstream plus gateway USD |
 | acquisition-luna-yolo1024-crop1024-r0-c3 | 0.01614232 | 0.00000000 | 0 | provider-reported BYOK upstream plus gateway USD |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 0.02486862 | 0.00000000 | 0 | provider-reported BYOK upstream plus gateway USD |
+| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | 0.00900450 | 0.00900450 | 0 | provider-reported USD |
 | acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | 0.00993910 | 0.00993910 | 0 | provider-reported USD |
 | acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | 0.02436380 | 0.02436380 | 0 | provider-reported USD |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 0.22463800 | 0.22463800 | 0 | provider-reported USD |
@@ -159,14 +171,16 @@ Operational failure counts are separate from scorer errors: valid complete crops
 
 ## Resources and provenance
 
-All arms are contended, with per-arm transport cap 3 and a shared paid-request cap 3. Parent CPU is process_time, RSS is sampled every 100 ms. Separate detector-worker CPU/RSS is reported where available; peaks are not summed. No GPU workload was used. Historical preprocessing/inference costs are excluded from incremental arms.
+All arms are contended, with per-arm transport cap 3 and a shared paid-request cap 3. Parent CPU is process_time, RSS is sampled every 100 ms. Separate detector-worker CPU/RSS is reported where available; peaks are not summed. Worker columns sum only retained measured initialization/request intervals and show the maximum retained sample; omitted intervals remain unmeasured. No GPU workload was used. Historical preprocessing/inference costs are excluded from incremental arms.
 
 | Run | Execution wall s | Parent CPU s | Parent RSS MiB | Prepare CPU s | Detector worker CPU s | Worker peak MiB | Report SHA prefix |
 |---|---:|---:|---:|---:|---:|---:|---|
+| admission-pplx-detector05-edge0-r0-c3 | 62.435 | 26.382 | 219.605 | 31.918 | unmeasured | unmeasured | f33e302da37b |
 | admission-pplx-detector05-edge128-r0-c3 | 55.672 | 27.511 | 218.703 | 31.121 | unmeasured | unmeasured | def871f53c25 |
 | admission-pplx-detector05-edge512-r0-c3 | 61.487 | 26.982 | 220.781 | 31.329 | unmeasured | unmeasured | 39f2c9a46b7d |
 | diagram-pplx-filled-128-r0-c3 | 33.859 | 22.500 | 173.551 | unmeasured | unmeasured | unmeasured | adc011aba823 |
 | diagram-pplx-filled-512-r0-c3 | 39.445 | 24.184 | 152.602 | unmeasured | unmeasured | unmeasured | 9927f2b87c66 |
+| diagram-pplx-filled-400-r0-c3 | 47.452 | 23.036 | 176.371 | unmeasured | unmeasured | unmeasured | b8a663ba0b20 |
 | diagram-pplx-outline-128-r0-c3 | 51.969 | 21.779 | 173.234 | unmeasured | unmeasured | unmeasured | f39703b9c4df |
 | diagram-pplx-outline-400-r0-c3 | 40.638 | 23.139 | 149.465 | unmeasured | unmeasured | unmeasured | 44cf8c334c50 |
 | diagram-pplx-outline-512-r0-c3 | 52.838 | 22.023 | 172.203 | unmeasured | unmeasured | unmeasured | d156378e0cae |
@@ -183,6 +197,7 @@ All arms are contended, with per-arm transport cap 3 and a shared paid-request c
 | acquisition-luna-yolo640-crop1024-r0-c3 | 266.754 | 42.731 | 402.766 | unmeasured | 38.295 | 1124.793 | aec8ead7a643 |
 | acquisition-luna-yolo1024-crop1024-r0-c3 | 333.169 | 48.312 | 409.453 | unmeasured | 59.748 | 1342.840 | cdbc8d14b79b |
 | acquisition-luna-yolo1280-crop1024-r0-c3 | 511.804 | 67.823 | 389.703 | unmeasured | 85.763 | 1376.164 | a737190c53c6 |
+| acquisition-haiku-matrix-yolo640-crop1024-r0-c3 | 134.144 | 37.142 | 408.496 | unmeasured | 25.215 | 1139.996 | 4c35a1b0deba |
 | acquisition-haiku-matrix-yolo1024-crop1024-r0-c3 | 171.596 | 49.972 | 405.992 | unmeasured | 65.528 | 1269.461 | d7130a76e259 |
 | acquisition-haiku-matrix-yolo1280-crop1024-r0-c3 | 328.331 | 73.614 | 385.176 | unmeasured | 100.058 | 1411.090 | 26c4f8ee1063 |
 | acquisition-sonnet-yolo640-crop1024-r0-c3 | 170.031 | 37.908 | 390.012 | unmeasured | 24.566 | 1122.324 | 5fb427c1fb00 |
