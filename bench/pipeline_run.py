@@ -49,7 +49,8 @@ def runtime_fingerprints() -> dict[str, Any]:
     for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial"):
         module = importlib.import_module(name)
         if module.__file__ is None:
-            raise ValueError(f"Extraction module has no fingerprintable file: {name}")
+            message = f"Extraction module has no fingerprintable file: {name}"
+            raise ValueError(message)
         path = Path(module.__file__)
         modules[name] = {"filename": path.name, "sha256": sha(path.read_bytes())}
     return {"package_versions": versions, "extraction_modules": modules}
@@ -265,6 +266,10 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                 config["policy"] in {"cascade", "gated", "adaptive"} and native["tables"]
             )
             candidates = propose(snapshot) if needs_proposals else [native]
+            if needs_proposals and config.get("column_consensus"):
+                from bench.pipeline_column_consensus import propose as propose_columns
+
+                candidates = propose_columns(snapshot, candidates)
             state = native
             result["candidates"] = candidates
             result["source"] = snapshot
@@ -354,7 +359,13 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
                     choices["unresolved"] = (
                         "No complete candidate faithfully represents the page; retain all source words outside tables."
                     )
-                    request = body(config["model"], packet(snapshot, candidates), choices, url)
+                    if config.get("compact_packet"):
+                        from bench.pipeline_compact_packet import packet as compact_packet
+
+                        prompt = compact_packet(snapshot, candidates)
+                    else:
+                        prompt = packet(snapshot, candidates)
+                    request = body(config["model"], prompt, choices, url)
                     step = len(result["calls"])
                     write_json(output / f"{record['id']}-request-{step}.json", request)
                     response = call(client, request, f"P001/{config['run_id']}/{record['id']}/{step}")
@@ -409,6 +420,8 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "corpus_routes.py",
                 "silver_structure.py",
                 "silver.py",
+                *(["pipeline_column_consensus.py"] if config.get("column_consensus") else []),
+                *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
             )
         },
         "runtime": runtime_fingerprints(),
@@ -481,6 +494,8 @@ def main() -> None:
     parser.add_argument("--ocr-empty", action="store_true")
     parser.add_argument("--gate-premise", choices=("minimal", "relational", "reading_order"), default="relational")
     parser.add_argument("--gate-review-model", choices=CHAT_MODELS)
+    parser.add_argument("--column-consensus", action="store_true")
+    parser.add_argument("--compact-packet", action="store_true")
     parser.add_argument("--pilot", action="store_true")
     parser.add_argument("--order-seed", type=int, default=20261009)
     args = parser.parse_args()
@@ -497,6 +512,8 @@ def main() -> None:
         "ocr_empty": args.ocr_empty,
         "gate_premise": args.gate_premise,
         "gate_review_model": args.gate_review_model,
+        "column_consensus": args.column_consensus,
+        "compact_packet": args.compact_packet,
     }
     result = run(args.manifest, args.output, config)
     print(json.dumps({k: v for k, v in result.items() if k != "results"}, indent=2))

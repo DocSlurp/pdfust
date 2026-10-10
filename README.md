@@ -298,6 +298,15 @@ structure references and 13 diagnostic pages. See the [experiment contract](benc
 for the 32-page balanced pilot, resource measurements, cost rules and limitations.
 These results are exploratory; general prose, math and form semantics are not gold-scored.
 
+The experimental path normalizes page rotation, extracts positioned words and
+vector rules, applies CPU OCR when no text is available, and keeps validated
+native grids. On remaining pages it asks whether a table exists before selecting
+a complete source-derived assembly. Optional independent review checks uncertain
+admission decisions. Every accepted output validates cell spans and assigns each
+extracted word exactly once to a cell or remaining prose. Merged spans are emitted
+as HTML tables inside Markdown. The [reproduction commands and offline demo](bench/PIPELINE_EXPERIMENTS.md#reproduce-the-complete-path)
+show PDF input through final Markdown and JSON; no hosted model is enabled by default.
+
 The private DEV experiments below ask hosted models to group **two selected
 source-text chunks**. They evaluate word boundaries and description-row
 ownership on small authored controls; they do not measure complete PDF

@@ -162,9 +162,9 @@ def propose(page: dict[str, Any], existing: list[dict[str, Any]]) -> list[dict[s
                     by_band.setdefault(part["band"], []).append(part)
                 seeds = [(band, ps) for band, ps in by_band.items() if 2 <= len(ps) <= MAX_COLUMNS][:MAX_SEEDS]
                 hypotheses = [_table(region, band, ps, mode=mode, rolling=rolling) for band, ps in seeds]
-                hypotheses = [t for t in hypotheses if t is not None]
-                if hypotheses:
-                    tables.append(max(hypotheses, key=lambda t: sum(len(c["source_ids"]) for c in t["cells"])))
+                admitted = [t for t in hypotheses if t is not None]
+                if admitted:
+                    tables.append(max(admitted, key=lambda t: sum(len(c["source_ids"]) for c in t["cells"])))
                     added = True
             if not added:
                 continue

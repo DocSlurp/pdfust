@@ -198,3 +198,25 @@ alternatives using observed centers/edges and header geometry. It must retain
 existing candidates, use no reference strings or fixture identities, and remain
 a hypothesis for a model to select rather than force a table from aligned prose.
 Compare it only as a distinct proposal version, preserving the original wave.
+
+The next complete-corpus layer separates treatments before combining them:
+
+- Vector-first PPLX cascade supplies the previously declared geometry-only routing
+  control, without the independent admission question.
+- PPLX gating with column-consensus alternatives tests proposal reachability.
+- PPLX gating with a compact assembly packet tests whether exact source/ownership
+  references reduce duplicated evidence without losing selection quality.
+- Repeat compact PPLX gating without images to test whether the pilot's geometry
+  and text result survives the broad corpus. The compact prompt describes images
+  conditionally, and admission explicitly records their availability.
+- Column consensus plus compact packets plus conditional Sonnet review combines
+  the fixes to different observed failure stages. Compare a direct Sonnet arm
+  using the same augmented candidates and compact evidence as well.
+- A conditional Haiku review arm tests whether the admission subtask needs the
+  more expensive Sonnet reviewer. All review calls and failures count.
+
+Compact packets preserve full source text, IDs, geometry and candidate topology;
+they may replace repeated cell text with source-ID references, but cannot truncate
+evidence or round coordinates. Record remaining admission refusals. Each run
+freezes these optional settings and implementation hashes. Original full-corpus
+runs remain unchanged and are reported alongside these DEV-selected derivatives.

@@ -1173,3 +1173,34 @@ with native baseline, final JSON/Markdown and source ownership. Source and raw
 outputs remain ignored artifacts. Three worktrees independently audit candidate
 gaps, paired-input fairness and output integrity. Targeted validation at this
 checkpoint: 207 CPU tests passed; new pipeline modules pass Ruff and strict mypy.
+
+P001 full-corpus checkpoint: model-only normalized PPLX assembly recovered 34/35
+positive tables but produced tables on 27/133 negative pages (140/168 exact scored
+pages). Independent relational admission retained 34/35 positives and reduced
+negative false positives to four (163/168 exact). Adding a second reading-order
+view worsened this to nine false positives. Luna's 1024-pixel gate retained 34/35
+with six false positives; Flash/512 retained 22/35 with five. The adaptive local
+repair route retained 28/35 with 30 false-positive pages. Speed and cheap calls
+do not compensate for these quality losses.
+
+Conditional Sonnet review completed the full cohort at 34/35 positives and zero
+negative false positives: 167/168 exact scored pages, 178/181 operational outputs,
+12 Sonnet reviews and 78 PPLX calls. Its positive provider charges total
+USD 0.10731194; complete output rates are 72.38 pages/minute and 1,658.72 pages/USD.
+The three operational failures are diagnostic-only (two pages without recognized
+text and one malformed native span grid). The remaining scored miss has correct
+OCR strings but no exact baseline placement alternative. These are correlated
+authored DEV results, not generalization estimates.
+
+The independent gap audit found 21/27 wrong direct-assembly selections had top
+choice scores at least 0.8. In contrast, the separate admission task exposes the
+prose ambiguity more usefully. Choice scores remain task-dependent, uncalibrated
+signals. Gate review is assessed by resulting extraction quality, not confidence.
+
+Three worktrees produced another experiment layer: optional source-only column
+consensus (complete candidate ceiling rises from 34/35 to 35/35), lossless compact
+packets (one of three formerly oversized diagnostic assembly packets now fits),
+and stricter Markdown/report verification. Original candidates and configurations
+remain retained. The new options are separately frozen and tested before combined
+arms. At this checkpoint 240 targeted CPU tests pass; all 12 pipeline modules
+pass strict mypy and Ruff. No local GPU or rented host is used.
