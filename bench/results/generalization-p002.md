@@ -1922,9 +1922,12 @@ macro recall is 56.06% cells and 20.83% complete tables. Every frozen runtime
 dependency matches trusted current bytes, and verified Markdown uses renderer v2.
 
 The standalone Haiku1024 crop comparator recovered 687 cells in a different fresh
-response sample, with its own two strict failures. The Sonnet request identity
-audit above demonstrates how identical input requests can yield substantial
-page-atomic quality differences; this Haiku result likewise cannot isolate a
-causal hybrid-versus-transcription quality effect. The separately frozen full276
+response sample, with its own two strict failures. An additional source-only audit
+finds all sixteen proposal sets and crop descriptors identical, all nineteen
+independently verified retained request hashes identical, and zero native exclusions.
+It is retained at `regions-audit/hybrid-haiku-request-identity.json`. Thus both
+Haiku and Sonnet comparisons involve identical image-only input requests; fresh
+response variation and atomic failure prevent a causal hybrid-versus-transcription
+quality attribution. The separately frozen full276
 hybrid expansion will test broader coverage without changing the natural16
 references, admissions, or parser.
