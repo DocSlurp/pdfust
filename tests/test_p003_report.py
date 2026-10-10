@@ -1,7 +1,7 @@
 """Independent P003 metric, accounting and paired-evaluation contracts."""
 
 # Lazy imports keep repair-only dependencies scoped to replay tests.
-# ruff: noqa: PLC0415
+# ruff: noqa: PLC0415, SLF001
 
 from __future__ import annotations
 
@@ -337,3 +337,98 @@ def test_complete_incremental_runner_replays_renderer_and_copied_requests(tmp_pa
     (output / "baseline/p0-request-0.json").write_text("{}")
     with pytest.raises(ValueError, match="baseline bytes changed"):
         verify_incremental_run(output, report, frozen, authenticated)
+
+
+def test_region_verifier_replays_source_prerequisite_raster_and_empty_yolo(
+    tmp_path: Path,
+) -> None:
+    from bench import p003_regions_run as processor
+    from bench import pipeline_vision_transcription as transcription
+    from bench.p003_report import verify_regions_output
+    from bench.silver import write_json
+    from test_p003_boundary_run import baseline
+    from test_p003_regions_run import record
+
+    import pylopdf
+
+    source_record = record(tmp_path)
+    source_record["id"] = "p0"
+    _record, child = baseline(tmp_path / "native")
+    child["calls"] = []
+    child["original_rotation"] = 0
+    child["source"]["page_size"] = [600, 800]
+    child["region_plan"]["page_size"] = [600, 800]
+    child["region_plan"]["regions"][0]["source"]["page_size"] = [600, 800]
+    write_json(tmp_path / "native/p0-result.json", child)
+    config = {
+        "campaign": "P003",
+        "run_id": "test",
+        "region_proposal_arm": "yolo",
+        "gate_enabled": False,
+        "source_order": "original",
+    }
+    settings = processor._configuration(config)
+    source = {key: child["source"][key] for key in ("page_size", "words")}
+    with pylopdf.open(source_record["pdf_path"]) as document:
+        page = document[0]
+        viewport = list(page.rect)
+        pixels = page.render(
+            scale=processor.PROPOSAL_EDGE / max(page.rect.width, page.rect.height), background=(255, 255, 255)
+        )
+        # The PDF fixture is 600 x 800: fixed1536 rendering gives 1152 x 1536.
+        image = {"edge": 1536, "size": [1152, 1536], "sha256": sha(pixels), "viewport": viewport}
+    plan = processor._yolo({"boxes": [], "device": "cpu", "type": "result", "viewport": viewport}, viewport, source)
+    prediction = {
+        "id": "p0",
+        "status": "ok",
+        "native_child": child,
+        "source": source,
+        "settings": settings,
+        "proposal_arm": "yolo",
+        "viewport": viewport,
+        "original_rotation": 0,
+        "proposal_image": image,
+        "layout_detection": {"boxes": [], "device": "cpu", "type": "result", "viewport": viewport},
+        "proposal_plan": plan,
+        "proposal_count": 0,
+        "gate_regions": [],
+        "conflict_selection": processor.select_nonoverlapping([]),
+        "selected_region_count": 0,
+        "transcription_regions": [],
+        "calls": [],
+        "route": "p003_decision_regions",
+        "processor": "p003_regions",
+        "source_conserved": False,
+        "text_provenance": transcription.PROVENANCE,
+        "output_scope": "table_only",
+        "output_atomic": True,
+        "coverage": "unverified",
+        "unresolved_ids": [],
+        "tables": [],
+    }
+    from bench.generalization_vision_regions import compose
+
+    write_json(tmp_path / "p0-proposals.json", plan)
+    state = compose([], viewport)
+    write_json(tmp_path / "p0-structure.json", state)
+    (tmp_path / "p0.md").write_text(transcription.markdown(state))
+    write_json(tmp_path / "p0-result.json", prediction)
+    module_root = Path(__file__).resolve().parents[1] / "bench"
+    frozen = {
+        "config": config,
+        "code_sha256": {
+            name: sha((module_root / name).read_bytes())
+            for name in (
+                "p003_regions_run.py",
+                "p003_region_candidates.py",
+                "generalization_vision_regions.py",
+                "pipeline_vision_transcription.py",
+            )
+        },
+    }
+    assert verify_regions_output(tmp_path, prediction, frozen, source_record)["operational"]
+    malformed = deepcopy(prediction)
+    malformed["proposal_image"]["sha256"] = "changed pixels"
+    write_json(tmp_path / "p0-result.json", malformed)
+    with pytest.raises(ValueError, match="independently rendered"):
+        verify_regions_output(tmp_path, malformed, frozen, source_record)

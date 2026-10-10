@@ -176,7 +176,7 @@ repeat distributions. Root-authenticated digest snapshots must be captured from
 reviewed sources before runs; copying the artifact's own `code_sha256` into the
 trusted file does not establish independent trust.
 
-Validation: twelve focused CPU-only Python tests and Ruff pass. An actual retained
+Validation: thirteen focused CPU-only Python tests and Ruff pass. An actual retained
 P002 sixteen-page invocation verifies complete source/Markdown artifacts and
 writes the ignored `pipeline-p003/eval-smoke.json`. No requests, GPU workload or
 paid inference were performed by this evaluation task.
@@ -248,3 +248,27 @@ request is made by those tests.
 Multiple source versions can be authenticated in one report by repeating
 `--trusted-code` once per `--run`; a single shared snapshot also remains valid.
 Historical baseline snapshots accept the same shared/per-run convention.
+
+## Source-proposal gated crop verification
+
+The `p003_regions` processor remains table-only model transcription, with
+`source_conserved=False` and unverified complete-page coverage. Source child
+interpretation must first produce a complete independently replayable source-owned
+output. The evaluator then renders the immutable PDF at the fixed proposal
+scale, verifies image bytes, regenerates tracks/fixed2 proposals from source and
+pixels (or replays ordinary YOLO proposal selection from retained detections),
+checks complete gate inventories and exact gate source/image request bodies,
+replays the declared probability/overlap selection, and verifies the exact
+accepted crop inventory. Fixed transcription rasters/JPEG crops and request
+hash/admission metadata must match; each retained raw response is parsed strictly,
+and complete crop composition and exact table-only Markdown are reconstructed.
+Failures expose no partial tables and stay in all denominators. Unsupported
+frozen helper semantics are rejected rather than executing archived Python.
+
+This independent verification performs bounded CPU PDF rendering and image
+encoding. Its elapsed/CPU/RSS belong to offline evaluation, not to hosted run
+throughput, and no OCR or remote request is repeated. A synthetic source-owned
+child plus real frozen PDF raster test verifies the entire empty-YOLO path and
+rejects altered proposal image hashes. The retained source fixture is synthetic
+input; that test does not claim correspondence with visible text in the blank
+PDF raster.

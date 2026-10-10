@@ -1,7 +1,7 @@
 """Offline P003 evaluation of frozen DEV decision treatments and matched repeats."""
 
 # Artifact observations are heterogeneous; validation occurs at the file boundary.
-# ruff: noqa: EM101, TRY003, C901, PLR0912, PLR2004, EM102, PLC0415, S311, PLR0913
+# ruff: noqa: EM101, TRY003, C901, PLR0912, PLR2004, EM102, PLC0415, S311, PLR0913, SLF001
 from __future__ import annotations
 
 import argparse
@@ -276,6 +276,215 @@ def verify_incremental_run(
     }, verified
 
 
+def verify_regions_output(
+    directory: Path, prediction: dict[str, Any], frozen: dict[str, Any], record: dict[str, Any]
+) -> dict[str, Any]:
+    """Replay source proposals, actual gate evidence and strict atomic crop outputs."""
+    import io
+
+    from PIL import Image
+
+    import pylopdf
+    from bench import generalization_vision_regions as crops
+    from bench import p003_region_candidates as candidates
+    from bench import p003_regions_run as processor
+    from bench import pipeline_vision_transcription as transcription
+    from bench.generalization_report import verify_output
+
+    ident, config = prediction["id"], frozen["config"]
+    if Path(ident).name != ident or ident in {".", ".."}:
+        raise ValueError("Unsafe page ID")
+    if _read(directory / f"{ident}-result.json") != prediction:
+        raise ValueError("Per-page result differs from complete report")
+    if prediction.get("status") != "ok":
+        if prediction.get("tables"):
+            raise ValueError("Failed region page exposes partial tables")
+        return {"operational": False, "conserved": False}
+    for name in (
+        "p003_regions_run.py",
+        "p003_region_candidates.py",
+        "generalization_vision_regions.py",
+        "pipeline_vision_transcription.py",
+    ):
+        if frozen["code_sha256"].get(name) != sha((Path(__file__).parent / name).read_bytes()):
+            raise ValueError("Unsupported frozen region replay helper version")
+    expected_labels = {
+        "route": "p003_decision_regions",
+        "processor": "p003_regions",
+        "source_conserved": False,
+        "text_provenance": transcription.PROVENANCE,
+        "output_scope": "table_only",
+        "output_atomic": True,
+        "coverage": "unverified",
+        "unresolved_ids": [],
+    }
+    if any(prediction.get(key) != value for key, value in expected_labels.items()):
+        raise ValueError("Region output mislabels source ownership, coverage or transcription scope")
+    child = prediction["native_child"]
+    if child.get("status") != "ok" or child.get("calls"):
+        raise ValueError("Native source child must complete without hosted calls")
+    verify_output(directory / "native", child, processor="regions", source_order=config.get("source_order", "legacy"))
+    source = {key: child["source"][key] for key in ("page_size", "words")}
+    if prediction["source"] != source:
+        raise ValueError("Proposal source differs from verified native child")
+    settings = processor._configuration(config)
+    if prediction["settings"] != settings or prediction["proposal_arm"] != settings["arm"]:
+        raise ValueError("Retained proposal settings differ from frozen treatment")
+    data = guard_path(Path(record["pdf_path"])).read_bytes()
+    if sha(data) != record["pdf_sha256"]:
+        raise ValueError("Frozen proposal PDF changed")
+    with pylopdf.open(stream=data) as document:
+        page = document[record["page_number"]]
+        viewport = list(page.rect)
+        if prediction["viewport"] != viewport or prediction["original_rotation"] != page.rotation:
+            raise ValueError("Proposal display geometry or page rotation changed")
+        pixels = page.render(
+            scale=processor.PROPOSAL_EDGE / max(page.rect.width, page.rect.height), background=(255, 255, 255)
+        )
+        with Image.open(io.BytesIO(pixels)) as rendered:
+            image = rendered.convert("RGB")
+        expected_image = {
+            "edge": processor.PROPOSAL_EDGE,
+            "size": list(image.size),
+            "sha256": sha(pixels),
+            "viewport": viewport,
+        }
+        if prediction["proposal_image"] != expected_image:
+            raise ValueError("Proposal image differs from independently rendered frozen PDF")
+        if settings["arm"] == "yolo":
+            plan = processor._yolo(prediction["layout_detection"], viewport, source)
+        else:
+            plan = candidates.propose(
+                source,
+                image=image,
+                max_candidates=settings["candidate_cap"],
+                raster_grid=2 if settings["arm"] == "tracks_fixed2" else 0,
+            )
+        if (
+            canonical(plan) != canonical(prediction["proposal_plan"])
+            or _read(directory / f"{ident}-proposals.json") != prediction["proposal_plan"]
+        ):
+            raise ValueError("Proposal inventory differs from complete source-only replay")
+        if prediction["proposal_count"] != len(plan["candidates"]) or len(prediction["gate_regions"]) != len(
+            plan["candidates"]
+        ):
+            raise ValueError("Gate inventory omits or adds a source proposal")
+        consumed_calls = set()
+        for proposal, gate in zip(plan["candidates"], prediction["gate_regions"], strict=True):
+            if any(gate.get(key) != value for key, value in proposal.items()) or gate["page_viewport"] != viewport:
+                raise ValueError("Gate changed its source-only proposal evidence")
+            if not settings["gate_enabled"]:
+                if gate["gate_status"] != "bypassed_ordinary_yolo" or gate["gate_answer"] != {"choice": "table"}:
+                    raise ValueError("Ungated YOLO control contains a semantic gate outcome")
+                continue
+            url = None
+            if settings["gate_image"]:
+                url, metadata = crops._crop(image, viewport, proposal["bbox"], processor.GATE_EDGE, 90)
+                if gate["gate_image"] != metadata:
+                    raise ValueError("Gate crop pixels or display extent changed")
+            body = processor.gate_request(config["model"], proposal, url)
+            path = directory / f"{ident}-gate-request-{proposal['id']}.json"
+            if _read(path) != body:
+                raise ValueError("Gate request differs from reconstructed source/image evidence")
+            metadata = {
+                "model": body["model"],
+                "body_sha256": sha(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()),
+                "image_supplied": url is not None,
+            }
+            response = _read(directory / f"{ident}-gate-response-{proposal['id']}.json")
+            if (
+                gate["gate_request"] != metadata
+                or gate["gate_status"] != "ok"
+                or response["answer"] != gate["gate_answer"]
+            ):
+                raise ValueError("Gate response/provenance differs from accepted choice")
+            indexes = gate["gate_call_indexes"]
+            if len(indexes) != 1 or indexes[0] in consumed_calls:
+                raise ValueError("Gate calls are duplicate or incomplete")
+            call = prediction["calls"][indexes[0]]
+            if call != {
+                **response,
+                "kind": "region_gate",
+                "status": "ok",
+                "proposal_id": proposal["id"],
+            } or response.get("replayed"):
+                raise ValueError("Gate call differs from retained fresh response")
+            consumed_calls.update(indexes)
+        selection = processor.select_nonoverlapping(prediction["gate_regions"])
+        if prediction["conflict_selection"] != selection or prediction["selected_region_count"] != len(
+            selection["selected_ids"]
+        ):
+            raise ValueError("Accepted gate probabilities or overlap selection changed")
+        selected = {p["id"]: p for p in prediction["gate_regions"]}
+        regions = prediction["transcription_regions"]
+        if len(regions) != len(selection["selected_ids"]):
+            raise ValueError("Transcription omits an accepted crop or adds a rejected proposal")
+        if regions:
+            pixels = page.render(
+                scale=(processor.RENDER_EDGE - 1) / max(page.rect.width, page.rect.height), background=(255, 255, 255)
+            )
+            with Image.open(io.BytesIO(pixels)) as rendered:
+                image = rendered.convert("RGB")
+            if prediction["transcription_image"] != {
+                "edge_cap": processor.RENDER_EDGE,
+                "size": list(image.size),
+                "sha256": sha(pixels),
+            }:
+                raise ValueError("Transcription raster differs from frozen PDF render")
+        for index, (proposal_id, region) in enumerate(zip(selection["selected_ids"], regions, strict=True)):
+            if (
+                region["status"] != "ok"
+                or region["index"] != index
+                or region["request_index"] != index
+                or region["proposal_id"] != proposal_id
+                or region["viewport"] != selected[proposal_id]["bbox"]
+            ):
+                raise ValueError("Selected crop inventory changed")
+            url, metadata = crops._crop(image, viewport, region["viewport"], processor.TRANSCRIPTION_EDGE, 90)
+            if region["image"] != metadata:
+                raise ValueError("Transcription crop pixels changed")
+            body = transcription.request(
+                config.get("generation_model", "anthropic/claude-haiku-5.5"),
+                url,
+                region["viewport"],
+                max_tokens=config.get("generation_tokens", 16384),
+            )
+            if _read(directory / f"{ident}-request-{index}.json") != body:
+                raise ValueError("Transcription request differs from selected image evidence")
+            encoded = json.dumps(body, separators=(",", ":")).encode()
+            request_metadata = {
+                "body_sha256": sha(encoded),
+                "body_bytes": len(encoded),
+                "max_body_bytes": 750000,
+                "model": body["model"],
+                "max_tokens": body["max_tokens"],
+                "replay": False,
+            }
+            if region["request"] != request_metadata:
+                raise ValueError("Transcription request hash/admission metadata changed")
+            indexes = region["call_indexes"]
+            if len(indexes) != 1 or indexes[0] in consumed_calls:
+                raise ValueError("Crop call inventory is duplicate or incomplete")
+            if prediction["calls"][indexes[0]].get("kind") != "vision_transcription" or prediction["calls"][
+                indexes[0]
+            ].get("replayed"):
+                raise ValueError("Crop response is not a fresh transcription call")
+            consumed_calls.update(indexes)
+            if _read(directory / f"{ident}-response-{index}.json") != region["transcription_response"]:
+                raise ValueError("Raw transcription response differs from retained crop response")
+            parsed = transcription.parse(region["transcription_response"], region["viewport"])
+            if parsed["tables"] != region["tables"]:
+                raise ValueError("Crop tables differ from strict raw response parsing")
+        if consumed_calls != set(range(len(prediction["calls"]))):
+            raise ValueError("Successful region page contains unattributed calls")
+    state = crops.compose(regions, viewport)
+    if _read(directory / f"{ident}-structure.json") != state or state["tables"] != prediction["tables"]:
+        raise ValueError("Whole-page table output differs from complete crop composition")
+    if guard_path(directory / f"{ident}.md").read_bytes() != transcription.markdown(state).encode():
+        raise ValueError("Table-only Markdown differs from trusted exact rendering")
+    return {"operational": True, "conserved": False}
+
+
 def score_run(
     directory: Path,
     corpus: Path,
@@ -324,6 +533,13 @@ def score_run(
         required |= {"generalization_hybrid_run.py", "pipeline_hybrid_composition.py"}
     elif processor in {"vision", "vision_regions", "vision_multiscale"}:
         required = {"generalization_vision_run.py", "pipeline_vision_transcription.py"}
+    elif processor == "p003_regions":
+        required |= {
+            "p003_regions_run.py",
+            "p003_region_candidates.py",
+            "pipeline_vision_transcription.py",
+            "generalization_vision_regions.py",
+        }
     elif processor == "p003_boundary_repair":
         required |= {
             "p003_boundary_run.py",
@@ -342,11 +558,16 @@ def score_run(
     artifacts = []
     operational = 0
     for prediction in predictions:
-        verified = (
-            repair_verified[prediction["id"]]
-            if incremental
-            else verify_output(directory, prediction, processor=processor)
-        )
+        if processor == "p003_regions":
+            verified = verify_regions_output(
+                directory, prediction, frozen, next(r for r in records if r["id"] == prediction["id"])
+            )
+        else:
+            verified = (
+                repair_verified[prediction["id"]]
+                if incremental
+                else verify_output(directory, prediction, processor=processor)
+            )
         operational += int(verified["operational"])
         record = {
             "id": prediction["id"],
