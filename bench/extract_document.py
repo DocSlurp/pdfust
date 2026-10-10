@@ -20,6 +20,7 @@ MODES = ("native", "hybrid-haiku", "hybrid-sonnet")
 MAX_PAGES = 4096
 DEFAULT_MAX_PAGES = 128
 MAX_PDF_BYTES = 64 * 1024 * 1024
+MAX_COMBINED_BYTES = 64 * 1024 * 1024
 
 
 def _invoke(command: list[str], log: Path) -> int:
@@ -32,7 +33,43 @@ def _invoke(command: list[str], log: Path) -> int:
     return completed.returncode
 
 
-def extract(
+def _provenance(row: dict[str, Any], mode: str) -> dict[str, Any]:
+    """Describe retained literal/transcribed ownership without inventing labels."""
+    tables = row.get("tables", [])
+    labels = [table.get("text_provenance") for table in tables]
+    explicit = row.get("text_provenance")
+    native_validated = row.get("source_conserved") is True and (
+        mode == "native" or (
+            row.get("accounting_complete") is True and row.get("source_inventory_complete") is True
+            and all(value == "native-source" for value in labels)
+        )
+    )
+    if "model-transcribed" in labels:
+        native_remaining = "native-source" in labels or bool(row.get("unresolved_ids"))
+        label = (
+            explicit if isinstance(explicit, str) and ("model-transcribed" in explicit or "mixed" in explicit)
+            else "mixed native/OCR source-owned and model-transcribed" if native_remaining
+            else "model-transcribed tables"
+        )
+    elif isinstance(explicit, str) and explicit and (native_validated or "model-transcribed" in explicit):
+        label = explicit
+    elif native_validated:
+        label = "native/OCR source-owned"
+    else:
+        label = "unverified"
+    return {
+        "text_provenance": label,
+        "table_text_provenance": [
+            {"table_index": i, "text_provenance": table.get("text_provenance"),
+             "source_conserved": table.get("source_conserved")}
+            for i, table in enumerate(tables)
+        ],
+        "accounting_complete": row.get("accounting_complete"),
+        "source_inventory_complete": row.get("source_inventory_complete"),
+    }
+
+
+def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact refusal remain explicit.
     pdf: Path, output: Path, *, mode: str = "native", pages: list[int] | None = None,
     max_pages: int = DEFAULT_MAX_PAGES,
 ) -> dict[str, Any]:
@@ -52,6 +89,8 @@ def extract(
         raise ValueError("Experimental document input exceeds 64 MiB")
     with pylopdf.open(stream=data) as document:
         page_count = len(document)
+    if (pages is None and page_count > max_pages) or (pages is not None and len(pages) > max_pages):
+        raise ValueError("Requested page count exceeds max_pages admission")
     if pages is not None and (
         not pages or any(type(page) is not int or not 0 <= page < page_count for page in pages)
         or len(set(pages)) != len(pages)
@@ -96,7 +135,8 @@ def extract(
     report_path = pipeline / "report.json"
     report = json.loads(report_path.read_text()) if report_path.exists() else {}
     predictions = {row["id"]: row for row in report.get("results", [])}
-    summary, fragments = [], []
+    summary: list[dict[str, Any]] = []
+    fragments: list[str | Path] = []
     for record in records:
         ident, page = record["id"], record["page_number"]
         row = predictions.get(ident, {})
@@ -106,7 +146,7 @@ def extract(
         item = {
             "id": ident, "page_number": page, "status": "ok" if successful else "error",
             "source_conserved": row.get("source_conserved", False) if successful else False,
-            "text_provenance": row.get("text_provenance", "native/OCR source-owned") if successful else "unavailable",
+            **(_provenance(row, mode) if successful else {"text_provenance": "unavailable"}),
             "result": str((pipeline / f"{ident}-result.json").relative_to(output)),
         }
         fragments.append(f"## Page {page + 1}\n\n")
@@ -114,7 +154,7 @@ def extract(
             item.update(
                 markdown=str(markdown_path.relative_to(output)), structure=str(structure_path.relative_to(output))
             )
-            fragments.append(markdown_path.read_text() + "\n\n")
+            fragments.extend([markdown_path, "\n\n"])
         else:
             reason = row.get("error_type", "MissingCompletePageOutput")
             item["error_type"] = reason
@@ -135,14 +175,33 @@ def extract(
         "layout_detector_initialization": report.get("layout_detector_initialization"),
         "wrapper_dispatch_wall_seconds": time.perf_counter() - started,
         "measurement_scope": "pipeline_resources measures runner child process; detector worker separate; "
-        "dispatch wall includes child startup; wrapper CPU/RSS unmeasured",
+        "dispatch wall includes child startup and aggregation; wrapper CPU/RSS unmeasured",
         "local_gpu_used": False,
+        "combined_max_bytes": MAX_COMBINED_BYTES,
+        "combined_markdown_complete": True,
     }
     status_line = (
         f"Status: {result['status']}; {len(requested)} of {page_count} source pages requested, "
         f"{result['successful_pages']} successfully extracted.\n\n"
     )
-    (output / "document.md").write_text("# PDF extraction\n\n" + status_line + "".join(fragments))
+    heading = "# PDF extraction\n\n" + status_line
+    total_bytes = len(heading.encode()) + sum(
+        fragment.stat().st_size if isinstance(fragment, Path) else len(fragment.encode()) for fragment in fragments
+    )
+    if total_bytes > MAX_COMBINED_BYTES:
+        result.update(
+            status="partial", complete=False, combined_markdown_complete=False,
+            combined_output_error="CombinedMarkdownSizeLimit", combined_requested_bytes=total_bytes,
+        )
+        combined = (
+            "# PDF extraction\n\nStatus: partial. Combined Markdown exceeds its UTF-8 size limit. "
+            "Complete individual page artifacts remain retained; see document.json.\n"
+        )
+    else:
+        combined = heading + "".join(
+            fragment.read_text() if isinstance(fragment, Path) else fragment for fragment in fragments
+        )
+    (output / "document.md").write_text(combined)
     write_json(output / "document.json", result)
     return result
 

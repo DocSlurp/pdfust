@@ -203,6 +203,9 @@ Use `--page 0 --page 2` for an explicit zero-based subset. The default admits up
 128 requested pages; `--max-pages` can explicitly increase that bound through
 4,096. Larger whole documents require an explicit subset or raised admission.
 Inputs are bounded to 64 MiB, and an existing output directory is refused.
+Combined Markdown has a separate 64 MiB UTF-8 cap, checked before reading/concatenating
+page Markdown. Refusal marks the document partial with an explicit combined-output
+error; individual complete page artifacts remain intact.
 
 `document.md` combines requested pages in physical page order with visible failure
 placeholders. `document.json` distinguishes complete document output from partial
@@ -211,7 +214,7 @@ subset remains a partial document. The CLI exits 2 for partial output. The uniqu
 child directory retains the original runner's frozen manifest/config/code, complete
 page Markdown/structures/results, requests/responses, costs and resource report;
 `pipeline.log` retains startup or dispatch failures. Wrapper dispatch wall includes
-child startup; pipeline CPU/RSS measures the runner child, and detector worker
+child startup and aggregation; pipeline CPU/RSS measures the runner child, and detector worker
 measurements remain separate. Wrapper CPU/RSS is unmeasured.
 
 The explicit paid modes `--mode hybrid-haiku` and `--mode hybrid-sonnet` delegate to
