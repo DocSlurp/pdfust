@@ -198,6 +198,7 @@ def safe_http_error(error: urllib.error.HTTPError) -> dict[str, Any]:  # noqa: C
         "locations": [],
         "body_admission": "unavailable",
         "items_limited": False,
+        "reason_categories": [],
     }
     try:
         raw = error.read(MAX_ERROR_BYTES + 1)
@@ -228,6 +229,35 @@ def safe_http_error(error: urllib.error.HTTPError) -> dict[str, Any]:  # noqa: C
                 candidates.extend(record for record in records[:MAX_ERROR_ITEMS] if isinstance(record, dict))
     diagnostic["items_limited"] |= len(candidates) > MAX_ERROR_ITEMS
     for record in candidates[:MAX_ERROR_ITEMS]:
+        # Retain only fixed categories, never provider messages or echoed inputs.
+        # These are diagnostic hints, not established root causes.
+        for message_field in ("message", "detail", "error", "reason"):
+            message_value = record.get(message_field)
+            if not isinstance(message_value, str):
+                continue
+            message_lower = message_value.lower()
+            patterns = {
+                "context_limit_mentioned": (
+                    r"(?:context|input|prompt|sequence).{0,60}(?:too long|exceed|maximum|max_len|token limit)"
+                    r"|(?:too many|maximum).{0,30}tokens"
+                ),
+                "image_support_mentioned": (
+                    r"(?:image|vision|multimodal).{0,60}(?:unsupported|not support|invalid)"
+                    r"|(?:unsupported|not support).{0,40}(?:image|vision|multimodal)"
+                ),
+                "rate_limit_mentioned": r"rate.?limit|too many requests",
+                "credits_or_quota_mentioned": r"insufficient.{0,20}(?:credit|balance)|quota|payment required",
+                "authentication_mentioned": r"unauthorized|invalid.{0,15}(?:api.key|token)|authentication",
+                "schema_validation_mentioned": (
+                    r"validation|schema|missing.{0,30}(?:field|parameter)|invalid.{0,30}(?:parameter|field|type)"
+                ),
+                "model_availability_mentioned": (
+                    r"model.{0,60}(?:not found|not available|unavailable|not supported)|no.{0,20}(?:provider|endpoint)"
+                ),
+            }
+            for category, pattern in patterns.items():
+                if re.search(pattern, message_lower) and category not in diagnostic["reason_categories"]:
+                    diagnostic["reason_categories"].append(category)
         for field in ("error_type", "type", "code"):
             value = record.get(field)
             if isinstance(value, str) and value in ERROR_TYPES and value not in diagnostic["error_types"]:

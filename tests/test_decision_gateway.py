@@ -348,6 +348,27 @@ def test_error_diagnostic_payload_and_list_work_are_bounded() -> None:
     assert "secret" not in json.dumps(result)
 
 
+def test_error_diagnostic_categories_are_fixed_hints_without_message_content() -> None:
+    from io import BytesIO  # noqa: PLC0415
+
+    from bench.decision_gateway import safe_http_error  # noqa: PLC0415
+
+    cases = [
+        ("Input exceeds maximum token limit: secret-source", "context_limit_mentioned"),
+        ("This model does not support images: secret-source", "image_support_mentioned"),
+        ("Rate limit exceeded: secret-source", "rate_limit_mentioned"),
+        ("Invalid API key secret-credential", "authentication_mentioned"),
+        ("Insufficient credits secret-account", "credits_or_quota_mentioned"),
+    ]
+    for message, expected in cases:
+        error = urllib.error.HTTPError(
+            ENDPOINT, 422, "secret", Message(), BytesIO(json.dumps({"error": {"message": message}}).encode())
+        )
+        result = safe_http_error(error)
+        assert expected in result["reason_categories"]
+        assert "secret" not in json.dumps(result)
+
+
 def test_gateway_failure_persists_safe_diagnostics_without_retry(
     client: GatewayDecisionClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
