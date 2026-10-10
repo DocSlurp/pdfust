@@ -103,7 +103,7 @@ class Client:
 
 
 def baseline(
-    directory: Path, value: str, *, color: str = "white", failed: bool = False
+    directory: Path, value: str, *, color: str = "white", failed: bool = False, provider_name: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
     directory.mkdir()
     url, data = pixels(color)
@@ -118,6 +118,8 @@ def baseline(
         "transcription_response": provider(value),
     }
     body = transcription.request("anthropic/claude-haiku-5.5", url, crop_bounds, 8192)
+    if provider_name:
+        body["provider"] = {"only": [provider_name], "allow_fallbacks": False, "require_parameters": True}
     crop["request"] = {"body_sha256": sha(json.dumps(body, separators=(",", ":")).encode())}
     crop["tables"] = transcription.parse(crop["transcription_response"], crop_bounds)["tables"]
     records, results = [], []
@@ -176,7 +178,7 @@ def baseline(
     write_json(
         directory / "frozen.json",
         {
-            "config": {"processor": "vision_regions"},
+            "config": {"processor": "vision_regions", "generation_provider": provider_name},
             "records": records,
             "manifest_sha256": "natural16-sources",
             "code_sha256": trusted,
@@ -185,7 +187,7 @@ def baseline(
     write_json(
         directory / "report.json",
         {
-            "config": {"processor": "vision_regions"},
+            "config": {"processor": "vision_regions", "generation_provider": provider_name},
             "results": results,
             "effective_usd": 12.0,
             "calls": 16,
@@ -199,10 +201,13 @@ def config(**extra: Any) -> dict[str, Any]:  # noqa: ANN401
     return {"run_hosted": True, "image_edge": 0, "model": "typesafe/jev-1.13", "seed": 7, **extra}
 
 
-def test_authenticated_matched_pool_exact_candidate_and_separate_cost(tmp_path: Path) -> None:
+@pytest.mark.parametrize("provider_name", [None, "anthropic"])
+def test_authenticated_matched_pool_exact_candidate_and_separate_cost(
+    tmp_path: Path, provider_name: str | None,
+) -> None:
     first, second = tmp_path / "first", tmp_path / "second"
-    _, original, trust0 = baseline(first, "first")
-    _, _, trust1 = baseline(second, "second")
+    _, original, trust0 = baseline(first, "first", provider_name=provider_name)
+    _, _, trust1 = baseline(second, "second", provider_name=provider_name)
     prior_bytes = (first / "p0-structure.json").read_bytes()
     client = Client(tmp_path)
     output = tmp_path / "ranked"

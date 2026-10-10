@@ -237,6 +237,11 @@ def process(
                 body = _read(inputs[baseline_index] / f"{identifier}-request-{crop['request_index']}.json")
                 url, image_bytes = _crop_bytes(body)
                 expected_body = transcription.request(body["model"], url, crop["viewport"], body["max_tokens"])
+                provider = _read(inputs[baseline_index] / "frozen.json")["config"].get("generation_provider")
+                if provider:
+                    expected_body["provider"] = {
+                        "only": [provider], "allow_fallbacks": False, "require_parameters": True,
+                    }
                 encoded_body = json.dumps(expected_body, separators=(",", ":")).encode()
                 if body != expected_body or sha(encoded_body) != crop["request"]["body_sha256"]:
                     raise ValueError("Retained generation request differs from strict original request")
