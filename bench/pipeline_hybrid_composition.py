@@ -20,7 +20,7 @@ from bench.pipeline_vision_transcription import markdown as vision_markdown
 
 MAX_TABLES = 32
 MAX_SLOTS = 4096
-RULES = {
+RULES_V1 = {
     "version": 1,
     "native_geometry": "Full retained vector grid bounds; never owned text bounds",
     "replacement": "Supersede only fully contained words; keep crossing and outside words",
@@ -28,6 +28,16 @@ RULES = {
     "ordering": "Retained word order; table anchor at first owned/superseded word, geometry fallback",
     "failure": "Validated native baseline is diagnostic only; no complete hybrid output",
     "limits": {"tables": MAX_TABLES, "aggregate_slots": MAX_SLOTS, "words": 65536, "source_characters": 4194304},
+}
+
+RULES = {
+    **RULES_V1,
+    "version": 2,
+    "renderer_version": 2,
+    "ordering": (
+        "Retained source anchors first; unowned tables use next geometric source anchor; "
+        "ties use display y/x then insertion order"
+    ),
 }
 
 
@@ -56,7 +66,7 @@ def _native_html(table: dict[str, Any]) -> str:
     return "\n".join(text)
 
 
-def _render(
+def _render_v1(
     source: dict[str, Any], tables: list[dict[str, Any]], prose: list[str], superseded: dict[int, list[str]]
 ) -> str:
     lookup = {w["id"]: w for w in source["words"]}
@@ -91,7 +101,58 @@ def _render(
     return "\n\n".join(text for _, text in sorted(entries)) + "\n"
 
 
-def _baseline(source: dict[str, Any], state: dict[str, Any], viewport: list[float]) -> dict[str, Any]:
+def _render_v2(
+    source: dict[str, Any], tables: list[dict[str, Any]], prose: list[str], superseded: dict[int, list[str]]
+) -> str:
+    lookup = {w["id"]: w for w in source["words"]}
+    order = {ident: i for i, ident in enumerate(lookup)}
+    # Geometry is a display-space fallback, not inferred logical reading order.
+    entries: list[tuple[int, float, float, int, str]] = []
+    for index, table in enumerate(tables):
+        if table["text_provenance"] == PROVENANCE:
+            markup = vision_markdown({"tables": [table], "text_provenance": PROVENANCE, "source_conserved": False})
+            ids = superseded[index]
+
+        else:
+            markup = _native_html(table)
+            ids = _owned([table])
+        fallback = next(
+            (
+                i
+                for i, w in enumerate(source["words"])
+                if (w["bbox"][1], w["bbox"][0]) >= (table["bbox"][1], table["bbox"][0])
+            ),
+            len(order),
+        )
+        entries.append(
+            (min((order[i] for i in ids), default=fallback), table["bbox"][1], table["bbox"][0], len(entries), markup)
+        )
+    lines: dict[tuple[Any, ...], list[str]] = {}
+    for ident in prose:
+        word = lookup[ident]
+        line = tuple(word.get("line", [round(word["bbox"][1], 1)]))
+        lines.setdefault(line, []).append(ident)
+    for ids in lines.values():
+        y, x = min((lookup[i]["bbox"][1], lookup[i]["bbox"][0]) for i in ids)
+        markup = "<p>" + html.escape(" ".join(lookup[i]["text"] for i in ids)) + "</p>"
+        entries.append((min(order[i] for i in ids), y, x, len(entries), markup))
+    return "\n\n".join(entry[-1] for entry in sorted(entries, key=lambda entry: entry[:4])) + "\n"
+
+
+def _render(
+    source: dict[str, Any],
+    tables: list[dict[str, Any]],
+    prose: list[str],
+    superseded: dict[int, list[str]],
+    render_version: int,
+) -> str:
+    renderer = _render_v1 if render_version == 1 else _render_v2
+    return renderer(source, tables, prose, superseded)
+
+
+def _baseline(
+    source: dict[str, Any], state: dict[str, Any], viewport: list[float], render_version: int = 2
+) -> dict[str, Any]:
     vectors = source.get("vector_candidates", [])
     if not isinstance(vectors, list) or len(vectors) > MAX_TABLES:
         raise ValueError("Native grid inventory admission exceeded")
@@ -142,7 +203,7 @@ def _baseline(source: dict[str, Any], state: dict[str, Any], viewport: list[floa
         "source_conserved": True,
         "source_inventory_complete": True,
         "accounting_complete": True,
-        "markdown": _render(source, tables, prose, {}),
+        "markdown": _render(source, tables, prose, {}, render_version),
     }
 
 
@@ -235,22 +296,28 @@ def markdown(composed: dict[str, Any]) -> str:
     return composed["markdown"]
 
 
-def compose(source: dict[str, Any], native_state: dict[str, Any], transcription: dict[str, Any]) -> dict[str, Any]:
+def compose(
+    source: dict[str, Any], native_state: dict[str, Any], transcription: dict[str, Any], *, render_version: int = 2
+) -> dict[str, Any]:
     """Compose atomically; replacement text has provenance but never original source IDs.
 
     Invalid source/native state raises before any output. A rejected transcription
     returns status abstained and a native baseline artifact labeled diagnostic only.
     Strict transcription uses pipeline_vision_transcription.parse canonical output.
+    Version 1 is explicit historical verification only; callers select it from a
+    trusted frozen module hash, never from source or model-controlled fields.
     """
+    if type(render_version) is not int or render_version not in (1, 2):
+        raise ValueError("Unknown hybrid renderer version")
     clean = sanitize_vectors(source)
     size = clean["page_size"]
     viewport = list(_viewport([0, 0, *size] if len(size) == 2 else size))
-    baseline = _baseline(clean, native_state, viewport)
+    baseline = _baseline(clean, native_state, viewport, render_version)
     result = {
         "status": "ok",
         "route": "hybrid_composition",
         "viewport": viewport,
-        "rules": deepcopy(RULES),
+        "rules": deepcopy(RULES_V1 if render_version == 1 else RULES),
         "diagnostics": [],
     }
     try:
@@ -312,7 +379,7 @@ def compose(source: dict[str, Any], native_state: dict[str, Any], transcription:
             "source_inventory_complete": True,
             "accounting_complete": True,
             "crossing_words_retained": crossing,
-            "markdown": _render(clean, tables, prose, superseded),
+            "markdown": _render(clean, tables, prose, superseded, render_version),
         }
     except (ValueError, TypeError, KeyError, IndexError) as error:
         return {
