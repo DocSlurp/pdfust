@@ -569,7 +569,7 @@ def test_cost_overlay_rejects_incomplete_or_changed_evidence(tmp_path: Path, mut
         verify_cost_reconciliation(run, sidecar, ledger)
 
 
-@pytest.mark.parametrize("mode", ["selected", "abstain", "duplicate", "malformed"])
+@pytest.mark.parametrize("mode", ["selected", "selected_pinned", "abstain", "duplicate", "malformed"])
 def test_candidate_verifier_replays_complete_pools_and_atomic_fallback(tmp_path: Path, mode: str) -> None:
     import json
 
@@ -578,8 +578,12 @@ def test_candidate_verifier_replays_complete_pools_and_atomic_fallback(tmp_path:
     from test_p003_candidate_run import Client, baseline, config
 
     first, second = tmp_path / "first", tmp_path / "second"
-    _, _, trust0 = baseline(first, "first")
-    _, _, trust1 = baseline(second, "first" if mode == "duplicate" else "second")
+    _, _, trust0 = baseline(first, "first", provider_name="example" if mode == "selected_pinned" else None)
+    _, _, trust1 = baseline(
+        second,
+        "first" if mode == "duplicate" else "second",
+        provider_name="example" if mode == "selected_pinned" else None,
+    )
     output = tmp_path / "ranked"
     report = runner.run(
         [first, second],

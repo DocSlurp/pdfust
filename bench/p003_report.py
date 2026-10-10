@@ -530,6 +530,13 @@ def verify_candidate_run(
                 body = _read(copied / f"{ident}-request-{crop['request_index']}.json")
                 url, pixels = runner._crop_bytes(body)
                 expected_body = transcription.request(body["model"], url, crop["viewport"], body["max_tokens"])
+                provider = _read(copied / "frozen.json")["config"].get("generation_provider")
+                if provider:
+                    expected_body["provider"] = {
+                        "only": [provider],
+                        "allow_fallbacks": False,
+                        "require_parameters": True,
+                    }
                 if (
                     body != expected_body
                     or sha(json.dumps(expected_body, separators=(",", ":")).encode()) != crop["request"]["body_sha256"]
