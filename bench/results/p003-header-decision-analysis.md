@@ -1,10 +1,10 @@
-# P003 factorized header decisions: all20 frozen treatments
+# P003 factorized header decisions: all 20 frozen treatments
 
 All 20 predeclared model/evidence/image treatments passed independent source-pool and native-receipt replay. Their 80 answers are valid typed choices or valid abstentions, with no malformed responses, transport errors, repeated requests or observed model substitution. Primary model-selected quality ranges from zero to 180 strict cells and zero complete tables. The factorized menus concern four hypothetical tables on one previously failed generation page; unaffected historical tables receive no model credit. This is existing natural16 DEV analysis, separate from fresh48 confirmation.
 
-Every quality row retains all 16 pages, 53 reference tables, 2,333 cells and four negative pages. Complete tables are zero for all20 and negative false-positive pages are zero for all20. Wrong positive-page hypotheses can still create extra tables. The four menus have3/3/3/5 finite alternatives, exact whole literal content and no generated correction; full and disclosed local-header evidence and pixels0/128/512 were frozen before answers. No settings or pools were changed after scoring.
+Every quality row retains all 16 pages, 53 reference tables, 2,333 cells and four negative pages. Complete tables are zero for all 20 and negative false-positive pages are zero for all 20. Wrong positive-page hypotheses can still create extra tables. The four menus have 3/3/3/5 finite alternatives, exact whole literal content and no generated correction; full and disclosed local-header evidence and pixels 0/128/512 were frozen before answers. No settings or pools were changed after scoring.
 
-| Model | Evidence | Pixels | Strict /2333 | Text | Structure | Missing / extra | Chosen / abstained /4 | Effective selected tables | Primary page errors /16 |
+| Model | Evidence | Pixels | Strict / 2,333 | Text | Structure | Missing / extra | Chosen / abstained / 4 | Effective selected tables | Primary page errors / 16 |
 | --- | --- | ---: | ---: | ---: | ---: | --- | --- | ---: | --- |
 | pplx-decider-v1.1-27b | full | 0 | 0 | 0 | 144 | 51 / 1 | 3 / 1 | 3 | 0 / 16 |
 | pplx-decider-v1.1-27b | full | 128 | 0 | 0 | 144 | 51 / 1 | 3 / 1 | 3 | 0 / 16 |
@@ -27,9 +27,9 @@ Every quality row retains all 16 pages, 53 reference tables, 2,333 cells and fou
 | jev-1.13 | full | 0 | 180 | 180 | 389 | 50 / 1 | 4 / 0 | 4 | 0 / 16 |
 | jev-1.13 | local_header | 0 | 0 | 0 | 24 | 52 / 0 | 1 / 3 | 1 | 0 / 16 |
 
-Page errors describe incomplete selected composition. They do not reclassify a valid native abstention as malformed output or a transport failure. For example, both Luna text treatments contain four valid abstentions and no selected tables. A valid chosen hypothesis is also not necessarily correct: many image treatments retain all four native choices but still score at most180strict cells and no complete table. Partial disjoint complete hypotheses remain primary predictions; overlapping positive participants are excluded together. Fixed/combined historical outputs remain separate provenance.
+Page errors describe incomplete selected composition. They do not reclassify a valid native abstention as malformed output or a transport failure. For example, both Luna text treatments contain four valid abstentions and no selected tables. A valid chosen hypothesis is also not necessarily correct: many image treatments retain all four native choices but still score at most 180 strict cells and no complete table. Partial disjoint complete hypotheses remain primary predictions; overlapping positive participants are excluded together. Fixed/combined historical outputs remain separate provenance.
 
-| Model / evidence / pixels | Effective API USD | Accounting basis | Attempts | Question attempts/min | Questions/APIUSD | Incremental parent wall / CPU s | Sampled parent RSS MiB |
+| Model / evidence / pixels | Effective API USD | Accounting basis | Attempts | Question attempts/min | Questions/API USD | Incremental parent wall / CPU s | Sampled parent RSS MiB |
 | --- | ---: | --- | ---: | ---: | ---: | --- | ---: |
 | pplx-decider-v1.1-27b / full / 0 | 0.00010096 | provider-reported USD | 4 | 14.21632 | 39619.65 | 16.882 / 5.219 | 223.86 |
 | pplx-decider-v1.1-27b / full / 128 | 0.00010724 | provider-reported USD | 4 | 28.68243 | 37299.52 | 8.367 / 5.117 | 227.26 |
@@ -52,7 +52,7 @@ Page errors describe incomplete selected composition. They do not reclassify a v
 | jev-1.13 / full / 0 | 0.000243138 | provider-reported USD | 4 | 17.88091 | 16451.56 | 13.422 / 5.230 | 252.17 |
 | jev-1.13 / local_header / 0 | 0.000135198 | provider-reported USD | 4 | 15.65813 | 29586.24 | 15.328 / 5.467 | 226.47 |
 
-All costs include the four attributed attempts. Luna decision charges are labeled catalog estimates from reported tokens/rates and preserve reported provider zero; the other rows use positive provider-reported charges. No invoice claim is made. Rates are question attempts over incremental contended execution (transport concurrency3), not successful decisions or fresh full-pipeline pages. Parent RSS is sampled every100ms and is separate from historical generation/pool preparation; no worker/inference cost is silently included. Full-pipeline pages/min and pages/APIUSD remain undefined.
+All costs include the four attributed attempts. Luna decision charges are labeled catalog estimates from reported tokens/rates and preserve reported provider zero; the other rows use positive provider-reported charges. No invoice claim is made. Rates are question attempts over incremental contended execution (transport concurrency 3), not successful decisions or fresh full-pipeline pages. Parent RSS is sampled every 100 ms and is separate from historical generation/pool preparation; no worker/inference cost is silently included. Full-pipeline pages/min and pages/API USD remain undefined.
 
 | Model / evidence / pixels | Returned/all attempts | Provider read tokens | Provider write tokens | Missing read/write counters | All-attempt coverage |
 | --- | --- | --- | --- | --- | --- |
@@ -79,7 +79,7 @@ All costs include the four attributed attempts. Luna decision charges are labele
 
 Cache columns use retained provider-reported counters over unique fresh ledger entries; absent counters are unknown, and no local replay or cache hit is inferred from speed/cost.
 
-Independent verification authenticated outer33-file Git maps and independently supplied pool/header/generation maps, reconstructed all80source-only candidate request bodies and eight source images before responses, validated exact transmitted insertion-order wire hashes/model/tag/index, decoded raw finite choice probabilities and abstentions, compared each selected complete table/state/rendered Markdown, and checked partial/no-question/failure accounting. All ignored evaluation records retain complete quality/resource/provenance receipts. No new API calls, credentials, protected heldout access, GPU or fresh48-derived tuning occurred.
+Independent verification authenticated outer 33-file Git maps and independently supplied pool/header/generation maps, reconstructed all 80 source-only candidate request bodies and eight source images before responses, validated exact transmitted insertion-order wire hashes/model/tag/index, decoded raw finite choice probabilities and abstentions, compared each selected complete table/state/rendered Markdown, and checked partial/no-question/failure accounting. All ignored evaluation records retain complete quality/resource/provenance receipts. No new API calls, credentials, protected heldout access, GPU or fresh48-derived tuning occurred.
 
 | Run | Verified report SHA-256 |
 | --- | --- |
