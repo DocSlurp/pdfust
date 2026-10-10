@@ -2030,7 +2030,7 @@ The next frozen successor contains 48 independent synthetic relation treatments:
 
 A three-second snapshot of the active acquisition queue measured 159.3% of one CPU core, 1,688.8 MiB summed live RSS and five processes on an eight-logical-CPU machine. This is not a sustained utilization claim and excludes agent workloads. Shared JSON accounting still limits short-request throughput; increasing occupied workers alone did not improve the matched capacity test. Root is keeping preprocessing, protocol validation and independent scoring active rather than adding automatic retries.
 
-## P003 official postprocessing and visible failure inspection, 2026-10-10 23:59 UTC
+## P003 official postprocessing and visible failure inspection, 2026-10-10 23:51 UTC
 
 Independent replay of all 144 official Table Transformer postprocessing states completes before DEV scoring. These states reuse the same 80 retained model forwards and source-owned words across nine fixed acquisition-size/threshold treatments. At threshold 0.5, official postprocessing recovers 263 / 382 / 569 strict cells at detector inputs 640 / 1024 / 1280, versus 204 / 193 / 438 for the prior maximum-overlap decoder. Each completes three of 53 tables. The 1280 treatment also produces ten extra tables on positive pages, with no negative-page false positives. Two 640 treatments reproduce an upstream ValueError on one dense page; the complete failed page receives no partial credit. All outcomes and matched deltas are in `bench/results/p003-official-tatr-analysis.md`. The full postprocessing pass takes 217.616 seconds wall, 216.582 CPU seconds and 384.684 MiB sampled peak RSS, excluding source verification and earlier inference.
 
