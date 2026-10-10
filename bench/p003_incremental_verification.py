@@ -98,6 +98,19 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         digest = frozen["code_sha256"].get(name)
         uniform_config = frozen["config"]
         if (
+            name == "p003_topology_run.py"
+            and digest in {
+                "d40fc7789a2644e1ea85e38b2adc2d6d2c9a6c2e5b897b24a69215f4adb53165",
+                "dcad1cc35f0a9d2b756e00e3bb9d5c2866829871bb2b770aee55a797988159b5",
+            }
+            and uniform_config.get("run_hosted") is True
+            and uniform_config.get("prepare_only") is False
+            and uniform_config.get("image", True) is True
+            and uniform_config.get("boundary_words", "strict") == "strict"
+            and set(uniform_config) <= historical_config_keys
+        ):
+            continue  # Root reviewed exact hosted strict defaults; original failures remain failures.
+        if (
             name in {"p003_topology_run.py", "p003_topology_geometry.py"}
             and uniform_config.get("chunked_inventory", False) is False
             and uniform_config.get("crossed_tables", "strict") == "strict"

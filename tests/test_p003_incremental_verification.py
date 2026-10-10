@@ -21,13 +21,18 @@ class AttributedClient(Client):
 
     def request(self, body: dict, **options: object) -> dict:
         """Attach a digest to the isolated fake response."""
-        response = super().request(body, **options)
+        fixture_body = {**body, "state": [body["state"]]} if isinstance(body["state"], str) else body
+        response = super().request(fixture_body, **options)
         response["entry"]["request_sha256"] = sha(json.dumps(body, separators=(",", ":")).encode())
         return response
 
 
 @pytest.mark.parametrize("prepare", [True, False])
-def test_topology_replay_authenticated_prepare_and_complete_output(tmp_path: Path, *, prepare: bool) -> None:
+@pytest.mark.parametrize("chunked", [False, True])
+@pytest.mark.parametrize("image", [False, True])
+def test_topology_replay_authenticated_prepare_and_complete_output(
+    tmp_path: Path, *, prepare: bool, chunked: bool, image: bool
+) -> None:
     source, topology = tmp_path / "source", tmp_path / "topology"
     source_trust, topology_trust = archives(source, topology)
     # The synthetic historical calls have no real body; retain an explicit test
@@ -41,7 +46,12 @@ def test_topology_replay_authenticated_prepare_and_complete_output(tmp_path: Pat
         source_trust,
         topology_trust,
         output,
-        config(prepare_only=prepare, run_hosted=not prepare),
+        config(
+            prepare_only=prepare,
+            run_hosted=not prepare,
+            image=image,
+            **({"chunked_inventory": True, "topology_evidence": "neighbors"} if chunked else {}),
+        ),
         None if prepare else AttributedClient(tmp_path),
     )
     frozen = json.loads((output / "frozen.json").read_bytes())
@@ -53,7 +63,10 @@ def test_topology_replay_authenticated_prepare_and_complete_output(tmp_path: Pat
         verify_topology(output, report, frozen, None)
     question = output / "p0-topology-0-row-0-request.json"
     body = json.loads(question.read_bytes())
-    body["state"][0] = "Tampered literal source context"
+    if isinstance(body["state"], str):
+        body["state"] = "Tampered literal source context"
+    else:
+        body["state"][0] = "Tampered literal source context"
     write_json(question, body)
     with pytest.raises(ValueError, match="question changed"):
         verify_topology(output, report, frozen, trust)
