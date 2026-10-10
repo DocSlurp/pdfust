@@ -75,6 +75,7 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                     "p003_topology_source": ("incremental_ownership", "topology_calls"),
                     "p003_structure_admission": ("incremental_admission", "decision_results"),
                     "p003_geometry_diagram": ("incremental_selection", "decision_results"),
+                    "p003_header_decision": ("incremental_header_selection", "decision_results"),
                 }.get(report["config"].get("processor"), (None, "calls"))
                 measured_calls = [call for page in report["results"] for call in page.get(call_key, [])]
                 attempt_scope = report[incremental_key] if incremental_key else report

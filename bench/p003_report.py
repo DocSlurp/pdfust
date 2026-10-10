@@ -612,10 +612,10 @@ def verify_candidate_run(
     expected_pages = config.get("expected_pages", 16)
     if type(expected_pages) is not int or not 1 <= expected_pages <= 512 or len(frozen["records"]) != expected_pages:
         raise ValueError("Candidate frozen corpus differs from explicit complete expected-pages admission")
-    if (
-        frozen["code_sha256"]["p003_candidate_run.py"]
-        == "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d"
-        and (expected_pages != 16 or "expected_pages" in config)
+    if frozen["code_sha256"][
+        "p003_candidate_run.py"
+    ] == "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d" and (
+        expected_pages != 16 or "expected_pages" in config
     ):
         raise ValueError("Historical candidate runner admitted only complete natural16")
     reviewed = config.get("reviewed_parser_sha256", [])
@@ -1208,6 +1208,13 @@ def score_run(
         required |= {"p003_structure_admission_run.py", "p003_structure_admission.py", "p003_structure_geometry.py"}
     elif processor == "p003_geometry_diagram":
         required = {"p003_geometry_diagram_run.py", "p003_geometry_diagram.py", "p003_candidate_choice.py"}
+    elif processor == "p003_header_decision":
+        required = {
+            "p003_header_decision_run.py",
+            "p003_header_packets.py",
+            "p003_header_packets_prepare.py",
+            "p003_header_proposals.py",
+        }
     elif processor == "p003_gate":
         required |= {"p003_gate_run.py", "p003_gate_image.py", "p003_gate_packet.py", "pipeline_regions.py"}
     elif processor != "whole":
@@ -1221,8 +1228,15 @@ def score_run(
         "p003_gate",
         "p003_structure_admission",
         "p003_geometry_diagram",
+        "p003_header_decision",
     }
-    if processor == "p003_geometry_diagram":
+    if processor == "p003_header_decision":
+        from bench.p003_header_decision_verification import verify_header_decision
+
+        baseline_provenance, repair_verified = verify_header_decision(
+            directory, report, frozen, incremental_trusted_code
+        )
+    elif processor == "p003_geometry_diagram":
         from bench.p003_geometry_diagram_verification import verify_geometry_diagram
 
         baseline_provenance, repair_verified = verify_geometry_diagram(
@@ -1258,6 +1272,7 @@ def score_run(
         "p003_gate": "incremental_gate",
         "p003_structure_admission": "incremental_admission",
         "p003_geometry_diagram": "incremental_selection",
+        "p003_header_decision": "incremental_header_selection",
     }.get(processor, "incremental_repair")
     artifacts = []
     operational = 0
@@ -1304,7 +1319,11 @@ def score_run(
     if report.get("complete_output_pages", operational) != operational:
         raise ValueError("Report complete output count differs from independently verified count")
     scoring_predictions = deepcopy(predictions)
-    if processor == "p003_geometry_diagram":
+    if processor == "p003_header_decision":
+        from bench.p003_header_decision_verification import quality_predictions
+
+        scoring_predictions = quality_predictions(report)
+    elif processor == "p003_geometry_diagram":
         from bench.p003_geometry_diagram_verification import quality_predictions
 
         scoring_predictions = quality_predictions(report)
@@ -1314,7 +1333,7 @@ def score_run(
     reference_pages = [p for p in targets["pages"] if p["id"] in intended]
     scoring = strict_scores(reference_pages, scoring_predictions)
     confirmed = confirmed_candidate_predictions(report)
-    if processor == "p003_geometry_diagram":
+    if processor in {"p003_geometry_diagram", "p003_header_decision"}:
         confirmed = scoring_predictions
     confirmed_scoring = strict_scores(reference_pages, confirmed) if confirmed is not None else None
     completed_ownership = successful_ownership_predictions(report)
@@ -1346,12 +1365,12 @@ def score_run(
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
     attempt_report = report[incremental_key] if incremental else report
-    if processor in {"p003_structure_admission", "p003_geometry_diagram"}:
+    if processor in {"p003_structure_admission", "p003_geometry_diagram", "p003_header_decision"}:
         attempt_report = attempt_report["charges"]
     accounting = costs(attempt_report)
     attempt_entries = attempt_report.get("entries", [])
     metrics = dict(report.get("metrics", {}))
-    if processor in {"p003_structure_admission", "p003_geometry_diagram"}:
+    if processor in {"p003_structure_admission", "p003_geometry_diagram", "p003_header_decision"}:
         metrics = {
             **report[incremental_key]["metrics"],
             "preprocessing": report.get("preprocessing"),
@@ -1374,7 +1393,7 @@ def score_run(
     )
     errors = Counter(
         p.get("selection_status", "unclassified")
-        if processor == "p003_geometry_diagram"
+        if processor in {"p003_geometry_diagram", "p003_header_decision"}
         else p.get("error_category", p.get("error", "unclassified"))
         for p in predictions
         if p.get("status") != "ok"
@@ -1384,7 +1403,9 @@ def score_run(
     return {
         "name": directory.name,
         "evaluation_scope": (
-            "incremental synthetic geometry-diagram selection, no baseline credit; partial selected crops retained"
+            "incremental factorized header selection, no fixed historical credit; partial selected tables retained"
+            if processor == "p003_header_decision"
+            else "incremental synthetic geometry-diagram selection, no baseline credit; partial selected crops retained"
             if processor == "p003_geometry_diagram"
             else "incremental pure structure admission, no baseline credit"
             if processor == "p003_structure_admission"
@@ -1418,6 +1439,17 @@ def score_run(
             "scope": "Selected complete disjoint crops retained on operationally incomplete pages; conflicts zero",
         }
         if processor == "p003_geometry_diagram"
+        else {
+            "decision_status_counts": report["decision_status_counts"],
+            "attempted_question_count": report["attempted_question_count"],
+            "selected_header_count": sum(p["effective_selected_header_count"] for p in predictions),
+            "selected_table_count": sum(p["model_credited_table_count"] for p in predictions),
+            "fixed_historical_table_count": sum(p["fixed_historical_table_count"] for p in predictions),
+            "operational_failed_pages": len(expected) - operational,
+            "baseline_credit": False,
+            "scope": "Selected complete header hypotheses only; fixed and combined states are historical diagnostics",
+        }
+        if processor == "p003_header_decision"
         else None,
         "decision_evidence": decision_evidence(report),
         "decision_confirmed_quality": {
@@ -1499,12 +1531,12 @@ def score_run(
         "incremental_selection_questions_per_minute": _rate(
             report.get("attempted_question_count", 0), metrics.get("wall_seconds"), 60
         )
-        if processor == "p003_geometry_diagram"
+        if processor in {"p003_geometry_diagram", "p003_header_decision"}
         else None,
         "incremental_selection_questions_per_api_usd": _rate(
             report.get("attempted_question_count", 0), accounting["effective_api_usd"]
         )
-        if processor == "p003_geometry_diagram"
+        if processor in {"p003_geometry_diagram", "p003_header_decision"}
         else None,
         "incremental_admission_intended_pages_per_minute": _rate(len(expected), metrics.get("wall_seconds"), 60)
         if processor == "p003_structure_admission"
