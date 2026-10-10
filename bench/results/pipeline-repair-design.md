@@ -171,3 +171,43 @@ selection call after the declared first matrix. Five tests verify complete sourc
 geometry, exclusion of prior options and metadata, identical paired evidence,
 literal handling of instruction-like source text, malformed-source refusal and
 admission limits. Ruff and strict mypy pass; no paid study was performed here.
+
+## Offline complete-pipeline demonstration
+
+`python -m bench.pipeline_demo --run <retained-run-directory> --page <opaque-id>
+--output bench/results/pdf-master-artifacts/<new-demo-directory>` builds an
+ignored offline viewer. `--image-edge 512|1024` selects its whole-page raster;
+1,024 is the default. The generator loads only the frozen source records, a
+completed page result, its selected structure and retained Markdown. It verifies
+the source PDF SHA-256 against the frozen record, validates final ownership,
+and reconstructs the native vector state from retained source geometry. It
+makes no model requests and reads no credentials. Output must be a new directory
+inside the checkout's ignored artifact tree.
+
+The HTML puts the complete input raster beside rendered selected Markdown, with
+literal Markdown, native state, final JSON/source ownership and provenance
+available below. It includes a verified local `source.pdf` download. A result
+marked `rotation_normalized` causes the displayed input page to be rendered at
+rotation zero, matching pipeline extraction, while original rotation remains
+in provenance. All image bytes are embedded in the HTML; no CDN is used.
+
+Markdown rendering uses `markdown_it` followed by an explicit HTML allowlist.
+Static table tags and bounded numeric `rowspan`/`colspan` survive, preserving
+merged cells emitted by the pipeline. All other attributes are discarded;
+unknown tags become escaped literal text. Images, links and autolinks inside
+Markdown are disabled. JSON, literal Markdown, provenance and page labels are
+HTML-escaped before embedding. A content security policy permits only embedded
+image data and the viewer's inline style; there is no JavaScript. Three focused
+tests verify adversarial source/model markup remains inert and cannot fetch,
+ordinary Markdown tables render, and sanitized merged-table spans survive.
+
+A tangible smoke artifact was generated from the first completed source-only
+selection satisfying no observed vector grid, nonempty final tables and at
+least four rows, in opaque-ID order. The chosen page was
+`p16e14ea079d4c7949923` from the retained `pilot-pplx-512` run. This selection used
+no scoring references and makes no quality claim. The resulting viewer was
+64,969 bytes and rendered at a 1,024-pixel edge. Generation took 0.119 seconds
+wall, 0.104 seconds process CPU and 99,553,280 bytes lifetime peak self RSS,
+measured using `perf_counter`, `process_time` and Linux self `getrusage`; scope
+was one sequential CPU process with no sampling. Ruff, strict mypy and the
+three focused tests passed. Raw HTML, PDF and model artifacts remain ignored.
