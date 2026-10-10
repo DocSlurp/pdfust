@@ -205,6 +205,7 @@ def verify_cost_reconciliation(directory: Path, sidecar_path: Path, ledger_path:
 
 
 ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER = "a22e4b5a5b88da313946f2c91a845f67207399d9c71464e5590b10c2c9b7765d"
+ROOT_REVIEWED_DIFF_CANDIDATE_RUNNER = "eb5156fff571f7d784b28f5f68a366cf83a507ed7e6ace296d2c0cb451b15ba6"
 
 
 def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
@@ -219,7 +220,14 @@ def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
         digest = frozen["code_sha256"].get(name)
         if digest == sha((Path(__file__).parent / name).read_bytes()):
             continue
-        if name == "p003_candidate_run.py" and mode == "whole" and digest == ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER:
+        if (
+            name == "p003_candidate_run.py"
+            and frozen["config"].get("image_edge", 512) in {0, 256, 512, 768, 1024}
+            and (
+                digest == ROOT_REVIEWED_DIFF_CANDIDATE_RUNNER
+                or (mode == "whole" and digest == ROOT_REVIEWED_WHOLE_CANDIDATE_RUNNER)
+            )
+        ):
             continue
         raise ValueError("Unsupported frozen candidate replay helper version: " + name)
 

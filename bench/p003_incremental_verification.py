@@ -34,9 +34,18 @@ def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
         "source_conserved",
         "transport_concurrency",
         "boundary_words",
+        "image",
     }
     for name in names:
         digest = frozen["code_sha256"].get(name)
+        if (
+            name == "p003_topology_ownership.py"
+            and frozen["config"].get("image", True) is True
+            and frozen["config"].get("boundary_words", "strict") == "strict"
+            and set(frozen["config"]) <= historical_config_keys
+            and digest == "9f5211f1051d6b39e43f0b4d8fcd0be06a52caee613b1c0b9fa80e39a3271ef8"
+        ):
+            continue  # Root reviewed the exact image-default bodies, criteria and collect semantics.
         if (
             name == "p003_topology_run.py"
             and frozen["config"].get("boundary_words", "strict") == "strict"
