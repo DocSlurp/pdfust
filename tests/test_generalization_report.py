@@ -13,6 +13,7 @@ from bench.generalization_report import (
     _bounds,
     _costs,
     _evaluate,
+    _model_breakdown,
     _ratio,
     load_corpus,
     markdown_report,
@@ -307,3 +308,46 @@ def test_reviewed_history_allows_runner_changes_but_requires_validator_ast(
     module.TRUSTED_HISTORICAL_CODE["pipeline_regions.py"][sha(altered)] = "reviewed-but-incompatible"
     with pytest.raises(ValueError, match="AST"):
         verify_code(f["run"], frozen, processor="regions")
+
+
+def test_actual_models_and_cache_presence_do_not_follow_default_config() -> None:
+    returned = [
+        {
+            "entry": {"requested_model": "sonnet", "provider_reported_usd": 0.1, "accounted_usd": 0.1},
+            "usage": {"input_tokens": 100, "cache_read_input_tokens": 20},
+        },
+        {
+            "entry": {"requested_model": "sonnet", "provider_reported_usd": 0, "accounted_usd": 0.01},
+            "usage": {"input_tokens": 50, "cache_read_input_tokens": 0},
+        },
+        {"entry": {"requested_model": "sonnet"}, "usage": {}},
+    ]
+    predictions = [{"id": "p", "calls": returned}]
+    audits = [{"path": f"p-request-{i}.json", "model": "sonnet"} for i in range(4)]
+    breakdown = _model_breakdown(predictions, audits)
+    model = breakdown["models"]["sonnet"]
+    assert model["retained_request_bodies"] == 4
+    assert model["returned_calls"] == 3
+    cache = model["usage"]["cache_read_input_tokens"]
+    assert cache["reported_positive"] == 1
+    assert cache["reported_zero"] == 1
+    assert cache["missing_or_invalid"] == 1
+    assert cache["known_subtotal"] == 20
+    assert cache["complete_total"] is None
+    assert model["usage"]["cache_creation_input_tokens"]["missing_or_invalid"] == 3
+    assert model["returned_provider_reported_usd"]["known_subtotal"] == 0.1
+    assert model["returned_provider_reported_usd"]["complete_total"] is None
+
+
+def test_progress_groups_reject_mixed_dataset_identities(fixture: dict[str, Any]) -> None:
+    f = fixture
+    report = score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
+    other = deepcopy(report)
+    other["dataset_sha256"] = "different frozen dataset"
+    with pytest.raises(ValueError, match="different frozen datasets"):
+        module.protocol_report({"one protocol": [report, other]})
+    text = module.protocol_report({"protocol A": [report], "protocol B": [other]}, pending=["pending run"])
+    assert "## protocol A" in text
+    assert "## protocol B" in text
+    assert "pending run" in text
+    assert "Exact positive pages" in text

@@ -30,6 +30,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
         "a5bc281951becd59633a78d00bdeae125405789e09b3368617ff85ecbd191b26": "7395782",
+        "3945a5efaace0c02d80866460e32f67d7f2acb1c9c35500376a32edf0f151f38": "6afe326",
     },
     "pipeline_regions.py": {
         "66c6ec07d91753ec9a8885124e18a3d0a64f929be5f29682e1050ea826894d2a": "83bd9a6",
@@ -121,6 +122,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     required = {"pipeline_run.py", "pipeline_assembly.py"}
     if processor == "regions":
         required |= {"pipeline_regions.py", "generalization_run.py"}
+        if frozen.get("config", {}).get("assembly_method") in {"generate", "gated_generate"}:
+            required.add("pipeline_generation.py")
     if not required <= hashes.keys():
         raise ValueError("Frozen code lacks required verifier dependencies")
     for name, digest in hashes.items():
@@ -277,6 +280,80 @@ def _costs(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+USAGE_FIELDS = (
+    "prompt_tokens",
+    "completion_tokens",
+    "input_tokens",
+    "output_tokens",
+    "cache_read_input_tokens",
+    "cache_creation_input_tokens",
+    "prompt_tokens_details.cached_tokens",
+    "input_tokens_details.cached_tokens",
+)
+
+
+def _numeric_observations(values: list[Any]) -> dict[str, Any]:
+    valid = [
+        v for v in values if not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v) and v >= 0
+    ]
+    return {
+        "observations": len(values),
+        "reported_positive": sum(v > 0 for v in valid),
+        "reported_zero": sum(v == 0 for v in valid),
+        "missing_or_invalid": len(values) - len(valid),
+        "known_subtotal": sum(valid) if valid else None,
+        "complete_total": sum(valid) if len(valid) == len(values) and values else None,
+    }
+
+
+def _usage_value(usage: dict[str, Any], field: str) -> object:
+    value: object = usage
+    for component in field.split("."):
+        if not isinstance(value, dict) or component not in value:
+            return None
+        value = value[component]
+    return value
+
+
+def _model_breakdown(predictions: list[dict[str, Any]], audits: list[dict[str, Any]]) -> dict[str, Any]:
+    """Keep body model identity distinct from configuration and ledger totals."""
+    requests = {a["path"]: a.get("model", "unknown") for a in audits}
+    request_counts = Counter(requests.values())
+    calls: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    discrepancies = []
+    for prediction in predictions:
+        for step, call in enumerate(prediction.get("calls", [])):
+            body_model = requests.get(f"{prediction['id']}-request-{step}.json", "unknown")
+            entry_model = call.get("entry", {}).get("requested_model")
+            if entry_model is not None and entry_model != body_model:
+                discrepancies.append({"page": prediction["id"], "step": step, "body": body_model, "entry": entry_model})
+            calls[body_model].append(call)
+    models = {}
+    for model in request_counts.keys() | calls.keys():
+        returned = calls[model]
+        entries = [c.get("entry", {}) for c in returned]
+        models[model] = {
+            "retained_request_bodies": request_counts[model],
+            "returned_calls": len(returned),
+            "returned_provider_reported_usd": _numeric_observations([e.get("provider_reported_usd") for e in entries]),
+            "returned_accounted_usd": _numeric_observations([e.get("accounted_usd") for e in entries]),
+            "returned_cost_bases": dict(Counter(e.get("cost_status", "unknown") for e in entries)),
+            "usage": {
+                field: _numeric_observations([_usage_value(c.get("usage", {}), field) for c in returned])
+                for field in USAGE_FIELDS
+            },
+        }
+    return {
+        "models": models,
+        "request_entry_model_discrepancies": discrepancies,
+        "scope": "Retained request bodies and returned calls, including calls on failed pages. "
+        "Per-model charges are returned-call subtotals; all-attempt charges remain ledger-authoritative. "
+        "A request body can represent multiple transport attempts; "
+        "no missing usage/cache field is imputed zero. "
+        "Provider cache fields are reported literally; there is no local inference cache.",
+    }
+
+
 def score_run(
     directory: Path, manifest_path: Path, manifest: dict[str, Any], targets: dict[str, Any]
 ) -> dict[str, Any]:
@@ -330,10 +407,18 @@ def score_run(
         owner = body_path.name.rsplit("-request-", 1)[0]
         if owner not in expected:
             raise ValueError("Retained request belongs to an unknown page")
-        audit = audit_model_body(_read(body_path))
+        body = _read(body_path)
+        audit = audit_model_body(body)
         if not audit["explicit_reference_fields_absent"]:
             raise ValueError("Explicit reference fields in retained model body")
-        request_audits.append({"path": body_path.name, "sha256": sha(body_path.read_bytes()), **audit})
+        request_audits.append(
+            {
+                "path": body_path.name,
+                "sha256": sha(body_path.read_bytes()),
+                "model": body.get("model", "unknown"),
+                **audit,
+            }
+        )
     positive_targets = [t for t in private if t.get("structural_scored", True) and t.get("tables")]
     negative_targets = [t for t in private if t.get("structural_scored", True) and not t.get("tables")]
     positive = _evaluate(positive_targets, [by_id[t["id"]] for t in positive_targets if t["id"] in by_id])["totals"]
@@ -394,6 +479,17 @@ def score_run(
         },
         "code_verification": code,
         "request_body_audits": request_audits,
+        "actual_model_breakdown": _model_breakdown(predictions, request_audits),
+        "model_configuration": {
+            k: config.get(k)
+            for k in (
+                "policy",
+                "assembly_method",
+                "model",
+                "gate_review_model",
+                "generation_model",
+            )
+        },
         "comparison_caveats": [
             "Authored DEV silver and independently annotated natural tables are reported separately.",
             "Pilot/full runs and different OCR/rotation/region policies are not matched causal comparisons.",
@@ -463,6 +559,22 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             "All-attempt API accounting: `" + json.dumps(run["costs"], sort_keys=True) + "`.",
             "",
         ]
+        lines += [
+            "",
+            "Model configuration: `" + json.dumps(run["model_configuration"], sort_keys=True) + "`.",
+            "",
+            "| Actual request model | Retained bodies | Returned calls | Returned reported USD subtotal |",
+            "|---|---:|---:|---:|",
+        ]
+        breakdown = run["actual_model_breakdown"]
+        for model, values in breakdown["models"].items():
+            subtotal = values["returned_provider_reported_usd"]["known_subtotal"]
+            lines.append(
+                f"| {model} | {values['retained_request_bodies']} | {values['returned_calls']} | {_fmt(subtotal)} |"
+            )
+            cache = {k: v for k, v in values["usage"].items() if "cache" in k}
+            lines += ["", f"Provider cache fields for `{model}`: `" + json.dumps(cache, sort_keys=True) + "`.", ""]
+        lines += ["", breakdown["scope"], ""]
         positive, negative = run["positive"], run["negative"]
         lines += [
             "",
@@ -482,6 +594,148 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             "",
         ]
         lines += ["- " + caveat for caveat in run["comparison_caveats"]]
+    return "\n".join(lines) + "\n"
+
+
+def protocol_report(protocols: dict[str, list[dict[str, Any]]], *, pending: list[str] | None = None) -> str:
+    """Keep reviewed protocol datasets separate in a compact progress artifact."""
+    lines = [
+        "# P002 natural-PDF generalization progress",
+        "",
+        (
+            "Only completed runs with verified frozen sources, complete retained states, exact Markdown "
+            "and source ownership appear below. Missing/error pages remain in every scored denominator. "
+            "Protocol groups use different frozen datasets and must not be pooled into one quality score."
+        ),
+        "",
+    ]
+    for label, runs in protocols.items():
+        identities = {r["dataset_sha256"] for r in runs}
+        if len(identities) > 1:
+            raise ValueError("A progress protocol cannot combine different frozen datasets")
+        lines += ["## " + label, "", "Dataset SHA-256: `" + next(iter(identities), "unmeasured") + "`.", ""]
+        lines += [
+            (
+                "| Run | Verified / intended | Errors | Exact positive pages | Complete tables | Exact topology | "
+                "Structure cells / expected | Exact text cells | Text edits / reference chars | IoU >= 0.5 tables | "
+                "Extra tables | Effective API USD |"
+            ),
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for r in runs:
+            s, positive = r["scores"], r["positive"]
+            cells = f"{s.get('correct_structure_cells', 0)}/{s.get('expected_cells', 0)}"
+            edits = f"{s.get('text_edit_distance', 0)}/{s.get('reference_characters', 0)}"
+            values = [
+                r["name"],
+                f"{r['operational_pages']}/{r['intended_pages']}",
+                r["all_errors"],
+                f"{positive.get('exact_page', 0)}/{positive['scored_pages']}",
+                s.get("complete_tables", 0),
+                s.get("exact_table_spans", 0),
+                cells,
+                s.get("correct_text_cells", 0),
+                edits,
+                s.get("localized_tables_iou_ge_0_5", 0),
+                s.get("false_positive_tables", 0),
+                r["costs"]["effective_usd"],
+            ]
+            lines.append("| " + " | ".join(_fmt(v) for v in values) + " |")
+        for r in runs:
+            lines += ["", "### " + r["name"], ""]
+            config = r["config"]
+            method = config.get("assembly_method", "select" if config.get("policy") == "gated" else "native")
+            lines += [
+                (
+                    f"Policy `{config.get('policy')}`; assembly `{method}`; configured gate/selector "
+                    f"`{config.get('model', 'unmeasured')}`; review `{config.get('gate_review_model', 'unmeasured')}`; "
+                    f"generation `{config.get('generation_model', 'unmeasured')}`. "
+                    "Actual request models are listed below; "
+                    "a configured default does not prove it was called."
+                ),
+                "",
+                (
+                    "| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | "
+                    "Cached prompt observations: positive / zero / missing |"
+                ),
+                "|---|---:|---:|---:|---:|",
+            ]
+            for model, data in r["actual_model_breakdown"]["models"].items():
+                cache = data["usage"]["prompt_tokens_details.cached_tokens"]
+                subtotal = data["returned_provider_reported_usd"]["known_subtotal"]
+                lines.append(
+                    f"| {model} | {data['retained_request_bodies']} | {data['returned_calls']} | {_fmt(subtotal)} | "
+                    f"{cache['reported_positive']} / {cache['reported_zero']} / {cache['missing_or_invalid']} |"
+                )
+            if not r["actual_model_breakdown"]["models"]:
+                lines.append("| No retained remote requests | 0 | 0 | unmeasured | unmeasured |")
+            lines += [
+                "",
+                (
+                    "Per-model usage/cost are returned-call observations, including calls on failed pages. "
+                    "All-attempt ledger costs in the summary include failures; per-model failed-attempt charges "
+                    "remain unattributed when unavailable. Provider cache fields are literal observations, "
+                    "with absent fields marked missing and no local inference cache."
+                ),
+                "",
+                (
+                    "| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | "
+                    "Text edits / reference chars | Negative false-positive pages |"
+                ),
+                "|---|---:|---:|---:|---:|---:|---:|",
+            ]
+            for cohort, s in r["groups"]["cohort"].items():
+                lines.append(
+                    f"| {cohort} | {s['pages']}/{s['scored_pages']} | {s.get('complete_tables', 'unscored')} | "
+                    f"{s.get('exact_table_spans', 'unscored')} | "
+                    f"{s.get('correct_structure_cells', 'unscored')}/{s.get('expected_cells', 'unscored')} | "
+                    f"{s.get('text_edit_distance', 'unscored')}/{s.get('reference_characters', 'unscored')} | "
+                    f"{s.get('false_positive_page', 'unscored')}/{s.get('negative_page', 'unscored')} |"
+                )
+            m, costs = r["resources"], r["costs"]
+            lines += [
+                "",
+                (
+                    f"Whole-run wall {_fmt(m.get('wall_seconds'))}s; CPU {_fmt(m.get('cpu_seconds'))}s; "
+                    f"sampled RSS {_fmt(m.get('peak_sampled_rss_bytes'))} bytes; "
+                    f"verified output pages/min {_fmt(r['pages_per_minute'])}; "
+                    f"exact positive pages/min {_fmt(r['exact_positive_pages_per_minute'])}. "
+                    f"Measurement: {m.get('measurement', 'unmeasured')}. "
+                    f"Per-run concurrency {_fmt(r['frozen_runtime'].get('concurrency'))}; "
+                    f"logical CPUs {_fmt(r['frozen_runtime'].get('logical_cpus'))}."
+                ),
+                "",
+                (
+                    f"Ledger attempts {_fmt(costs['ledger_attempts'])}; reported USD subtotal "
+                    f"{_fmt(costs['provider_reported_subtotal_usd'])}; missing reported charges "
+                    f"{_fmt(costs['missing_provider_charge_count'])}; cost bases `{json.dumps(costs['cost_bases'])}`. "
+                    f"Reservation amount {_fmt(costs['reservation_usd'])}; "
+                    f"estimate amount {_fmt(costs['estimated_usd'])}."
+                ),
+                "",
+            ]
+    if pending:
+        lines += ["## Pending completed reports", "", *["- " + name for name in pending], ""]
+    lines += [
+        "## Interpretation",
+        "",
+        (
+            "Exact topology and character edits separate structural assembly from text agreement. "
+            "Text edits are positional table text errors, not independent raster OCR CER; character "
+            "inventory observations are diagnostics only. Low IoU >= 0.1 correspondences are not "
+            "detection recall or AP. The stricter localization count uses IoU >= 0.5; legacy prediction "
+            "boxes derive from owned text extents and can lie inside annotated table borders."
+        ),
+        "",
+        (
+            "Negative-page empty outputs can be exact without recovering a positive table. "
+            "Authored DEV silver, independently annotated Omni pages, and unscored native diagnostics "
+            "remain separate. A protocol screen is a predeclared DEV experiment, not a heldout estimate. "
+            "Runs with different packet, OCR, generation, image or region settings are not isolated "
+            "causal comparisons. Concurrent background workloads may affect timings."
+        ),
+        "",
+    ]
     return "\n".join(lines) + "\n"
 
 
