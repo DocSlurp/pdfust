@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import importlib
 import json
 import math
 from collections import Counter, defaultdict
@@ -14,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from bench import pipeline_hybrid_composition as hybrid
+from bench import pipeline_native_orientation as orientation
 from bench.generalization_run import sanitize_vectors
 from bench.generalization_scoring import audit_model_body, normalize_text, score_dataset, score_page
 from bench.generalization_vision_multiscale import RULES as MULTISCALE_RULES
@@ -32,6 +34,7 @@ LOCALIZATION_IOU = 0.5
 NATURAL_SCREEN_PAGES = 16
 CONCURRENT_VISION_WORKERS = 4
 HYBRID_LEGACY_RENDERER_SHA256 = "6e1edda5cd94b675611e30cef8c228f87968c3b9ffdf8f9b7b135d544e18ae68"
+HYBRID_PHYSICAL_RUNNER_SHA256 = "7d15c3032bd1d532c5ee590ad121861c3d0fe3519422cb12cb8b4892bc9f04de"
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 
@@ -196,6 +199,12 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             "pipeline_layout_detector.py",
         }
     if processor == "hybrid":
+        orientation_mode = frozen.get("config", {}).get("native_table_orientation", "physical")
+        if orientation_mode not in {"physical", "logical"}:
+            raise ValueError("Unsupported frozen native table orientation")
+        if orientation_mode == "logical":
+            required.add("pipeline_native_orientation.py")
+            _verify_orientation_runtime(frozen)
         required |= {
             "generalization_hybrid_run.py",
             "pipeline_hybrid_composition.py",
@@ -257,6 +266,13 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     if concurrent and any(comparison[name] != "identical" for name in concurrent_dependencies):
         raise ValueError("Trusted concurrent request accounting differs from frozen code")
     historical_helpers = {}
+    if processor == "hybrid" and comparison["generalization_hybrid_run.py"] != "identical":
+        if (
+            hashes["generalization_hybrid_run.py"] != HYBRID_PHYSICAL_RUNNER_SHA256
+            or frozen.get("config", {}).get("native_table_orientation", "physical") != "physical"
+        ):
+            raise ValueError("Unreviewed historical hybrid runner or logical orientation")
+        historical_helpers["generalization_hybrid_run.py"] = "reviewed physical runner before 14dbc99"
     helper_name = "generalization_vision_regions.py"
     if helper_name in required and comparison[helper_name] != "identical":
         reviewed = TRUSTED_HISTORICAL_CODE[helper_name].get(hashes[helper_name])
@@ -379,6 +395,17 @@ def _hybrid_render_version(directory: Path, frozen: dict[str, Any] | None = None
     return 2
 
 
+def _verify_orientation_runtime(frozen: dict[str, Any]) -> None:
+    """Require exact installed extraction and baseline-orientation implementation."""
+    recorded = frozen.get("runtime", {}).get("extraction_modules", {})
+    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial", "pylopdf._markdown"):
+        module = importlib.import_module(name)
+        path = Path(module.__file__) if module.__file__ is not None else None
+        expected = {"filename": path.name, "sha256": sha(path.read_bytes())} if path is not None else None
+        if expected is None or recorded.get(name) != expected:
+            raise ValueError("Logical native orientation extraction/runtime fingerprint mismatch")
+
+
 def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[str, Any]:
     """Replay child artifacts, source-only detector exclusion and mixed composition."""
     ident = prediction["id"]
@@ -422,7 +449,27 @@ def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[s
     ):
         raise ValueError("Hybrid detector exclusion differs from trusted native geometry replay")
     transcription = _read(directory / "vision" / f"{ident}-structure.json")
-    rebuilt = hybrid.compose(source, native_state, transcription, render_version=_hybrid_render_version(directory))
+    frozen_path = directory / "frozen.json"
+    frozen = _read(frozen_path) if frozen_path.is_file() else {}
+    if frozen.get("config", {}).get("native_table_orientation", "physical") == "logical":
+        _verify_orientation_runtime(frozen)
+        record = next((r for r in frozen["records"] if r["id"] == ident), None)
+        if record is None:
+            raise ValueError("Logical orientation lacks a frozen original source record")
+        data = guard_path(Path(record["pdf_path"])).read_bytes()
+        if sha(data) != record["pdf_sha256"]:
+            raise ValueError("Original source PDF changed before orientation replay")
+        with importlib.import_module("pylopdf").open(stream=data) as document:
+            evidence = orientation.evidence(document[record["page_number"]], native_boxes)
+        if evidence != prediction.get("native_orientation_evidence"):
+            raise ValueError("Native orientation evidence differs from exact original PDF replay")
+        if _hybrid_render_version(directory, frozen) != 2:  # noqa: PLR2004
+            raise ValueError("Logical orientation requires the current renderer")
+        rebuilt = orientation.compose(source, native_state, transcription, evidence)
+    else:
+        if "native_orientation_evidence" in prediction:
+            raise ValueError("Physical hybrid output must not select orientation evidence")
+        rebuilt = hybrid.compose(source, native_state, transcription, render_version=_hybrid_render_version(directory))
     if rebuilt.get("status") != "ok" or rebuilt != prediction.get("composition"):
         raise ValueError("Hybrid composition differs from trusted complete replay")
     if _read(directory / f"{ident}-structure.json") != rebuilt:

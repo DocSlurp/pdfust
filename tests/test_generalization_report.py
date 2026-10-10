@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import io
 import json
 from copy import deepcopy
@@ -704,7 +705,9 @@ def test_fusion_configuration_requires_exact_trusted_selection_module(fixture: d
         verify_code(f["run"], frozen, processor="whole")
 
 
-def hybrid_prediction(directory: Path, monkeypatch: pytest.MonkeyPatch, *, model_table: bool = False) -> dict[str, Any]:
+def hybrid_prediction(
+    directory: Path, monkeypatch: pytest.MonkeyPatch, *, model_table: bool = False, logical: bool = False
+) -> dict[str, Any]:
     with pylopdf.Document() as document:
         page = document.new_page(width=600, height=800)
         page.insert_text((20, 40), "Literal source prose")
@@ -751,6 +754,7 @@ def hybrid_prediction(directory: Path, monkeypatch: pytest.MonkeyPatch, *, model
             "layout_detector": "yolo",
             "_layout_detector": detector,
             "generation_model": "anthropic/claude-sonnet-5.5",
+            "native_table_orientation": "logical" if logical else "physical",
         },
         directory,
         None,
@@ -1145,3 +1149,48 @@ def test_hybrid_current_renderer_ignores_data_requested_legacy_version(fixture: 
     frozen["code_sha256"]["pipeline_hybrid_composition.py"] = sha(data)
     frozen["config"]["render_version"] = 1
     assert _hybrid_render_version(f["run"], frozen) == 2
+
+
+def test_logical_hybrid_recomputes_original_pdf_evidence_and_exact_runtime(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prediction = hybrid_prediction(tmp_path, monkeypatch, logical=True)
+    modules = {}
+    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial", "pylopdf._markdown"):
+        imported = importlib.import_module(name)
+        assert imported.__file__ is not None
+        path = Path(imported.__file__)
+        modules[name] = {"filename": path.name, "sha256": sha(path.read_bytes())}
+    pdf = tmp_path / "input.pdf"
+    frozen: dict[str, Any] = {
+        "config": {"native_table_orientation": "logical"},
+        "runtime": {"extraction_modules": modules},
+        "records": [{"id": "negative", "pdf_path": str(pdf), "pdf_sha256": sha(pdf.read_bytes()), "page_number": 0}],
+        "code_sha256": {
+            "pipeline_hybrid_composition.py": sha(
+                (Path(module.__file__).parent / "pipeline_hybrid_composition.py").read_bytes()
+            )
+        },
+    }
+    write(tmp_path / "frozen.json", frozen)
+    assert verify_output(tmp_path, prediction, processor="hybrid") == {"operational": True, "conserved": True}
+    tampered = deepcopy(prediction)
+    tampered["native_orientation_evidence"]["original_rotation"] = 90
+    write(tmp_path / "negative-result.json", tampered)
+    with pytest.raises(ValueError, match="exact original PDF replay"):
+        verify_output(tmp_path, tampered, processor="hybrid")
+    write(tmp_path / "negative-result.json", prediction)
+    del frozen["runtime"]["extraction_modules"]["pylopdf._markdown"]
+    write(tmp_path / "frozen.json", frozen)
+    with pytest.raises(ValueError, match="runtime fingerprint mismatch"):
+        verify_output(tmp_path, prediction, processor="hybrid")
+
+
+def test_physical_hybrid_cannot_select_retained_orientation_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    prediction = hybrid_prediction(tmp_path, monkeypatch)
+    prediction["native_orientation_evidence"] = {"tables": []}
+    write(tmp_path / "negative-result.json", prediction)
+    with pytest.raises(ValueError, match="must not select orientation evidence"):
+        verify_output(tmp_path, prediction, processor="hybrid")
