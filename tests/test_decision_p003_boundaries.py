@@ -146,7 +146,9 @@ def test_parser_rejects_duplicate_keys_and_truncation() -> None:
         return {"choices": [{"finish_reason": finish, "message": {"content": text}}]}
 
     assert (
-        boundary.parse(completion(json.dumps({"t0b0": {"join": 0.9, "split": 0.1, "unresolved": 0}})))["t0b0"]["join"]
+        boundary.parse(completion(json.dumps({"answers": {"t0b0": {"join": 0.9, "split": 0.1, "unresolved": 0}}})))[
+            "t0b0"
+        ]["join"]
         == 0.9
     )
     with pytest.raises(ValueError, match="complete completion"):

@@ -126,3 +126,56 @@ for a plain tiny Python process whose post-exec VmHWM was 10,592 KiB. The tool
 launcher appears to preserve pre-exec RSS in that counter; it is labeled separately
 and is not presented as the replay peak. Hosted inference, model quality and
 provider charges are unmeasured/not applicable here.
+
+## Native typed decision transport
+
+`bench/decision_p003_native.py` adds the preferred native decision-endpoint arm.
+`decision_batches(page, state, model, url=None, max_questions=16)` returns the
+original complete frozen menu and a list of bodies in the existing pipeline
+`model/state/questions` format. Every body has at most sixteen exact boundary-ID
+questions with `type="choice"` and `split/join/unresolved` criteria. Its shared
+state is literal text followed by an optional high-detail inline image. Text
+contains only the union of the batch's complete local rolling windows and their
+relevant words, with original global word indexes retained. It does not resend
+the whole table inventory or complete page word evidence on every call.
+
+```python
+from bench.decision_p003_native import decision_batches, apply_decision_batches
+
+menu, bodies = decision_batches(source_page, validated_state, model, inline_region_image)
+# Root reserves and retains each request/result through the shared hosted client.
+# Submit no calls when bodies is empty. No intermediate state is materialized.
+updated_state, audit = apply_decision_batches(
+    source_page, validated_state, menu, bodies, retained_provider_results
+)
+```
+
+`parse_decision_batch(body, result)` validates actual typed responses of the form:
+
+```json
+{"answers":{"t0b0":{"type":"choice","choice":"join","probabilities":{"split":0.10,"join":0.89,"unresolved":0.00},"confidence":0.123}}}
+```
+
+It checks exact batch IDs, exact declared probability options, finite [0,1]
+values, and an argmax declared choice. As in `decision_choice`, independently
+rounded probabilities may differ from unit mass by at most 0.015 + 1e-9. The
+parser normalizes that admitted rounding drift for the unchanged decoder while
+retaining `raw_probabilities`, `normalization_delta`, and `raw_confidence`.
+Confidence is provenance only and never alters selection. No scores are claimed
+calibrated. The full batch union must cover every boundary exactly once; duplicate
+batches, modified questions/evidence, missing responses, or any failed response
+raise before decoding. Original inputs remain unchanged and no partial successful
+state is returned.
+
+The chat control remains available, now wrapping its score mapping under the sole
+`answers` field so the shared client's answer-count accounting can read it. Its
+strict schema and parser require that envelope. Chat responses retain the tighter
+0.001 score-mass tolerance; native rounded responses are normalized before they
+reach the same decoder.
+
+Five additional native-transport tests cover sixteen-question batching with local
+evidence, actual typed choice payloads, rounding/raw-confidence provenance,
+atomic failure, exact IDs, question limits, modified evidence, native-grid bypass,
+gold invariance, and the chat `answers` accounting envelope. Together with the
+original boundary tests and existing repair/stitch controls, **40 tests pass**.
+No inference or additional profiling was performed for this transport follow-up.
