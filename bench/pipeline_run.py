@@ -552,6 +552,7 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                 *(["pipeline_column_consensus.py"] if config.get("column_consensus") else []),
                 *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
+                *(["pipeline_source_order.py"] if config.get("source_order") == "original" else []),
                 *(
                     ["pipeline_row_context.py", "pipeline_row_evidence.py"]
                     if config.get("generation_row_evidence") or config.get("gate_row_evidence")
