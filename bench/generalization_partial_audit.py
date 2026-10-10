@@ -1,7 +1,7 @@
 """Reproduce fixed offline partial salvage and its source-only review gallery."""
 
 # Frozen artifacts use heterogeneous schemas; no provider client is constructed.
-# ruff: noqa: EM101, EM102, TRY003, C901, PLC0415
+# ruff: noqa: EM101, EM102, TRY003, C901, PLC0415, PLR0912
 from __future__ import annotations
 
 import argparse
@@ -28,6 +28,11 @@ CONTROLS = (
     "natural16-vision-haiku-2048-q50",
     "natural16-vision-haiku-2048-q50-workers4",
 )
+MULTISCALE_CONTROLS = (
+    "natural16-vision-multiscale-sonnet-1024",
+    "natural16-vision-multiscale-haiku-1024",
+)
+ALLOWED_CONTROLS = CONTROLS + MULTISCALE_CONTROLS
 DENSE_IDS = {"p1bfa52a41a5e15015698", "p98d10ef50dee4b24506a"}
 EXPECTED_PAGES = 16
 BASELINE_KEYS = (
@@ -118,8 +123,14 @@ def gallery(manifest: dict[str, Any], partials: list[dict[str, Any]], output: Pa
     return {"path": str(output / "index.html"), "pages": len(images), "source_images": images}
 
 
-def audit(root: Path, output: Path, *, with_gallery: bool = False) -> dict[str, Any]:
+def audit(
+    root: Path, output: Path, *, with_gallery: bool = False, controls: tuple[str, ...] = CONTROLS
+) -> dict[str, Any]:
     """Read only explicit fixed inputs; attest report identity before salvage/scoring."""
+    if not controls or len(set(controls)) != len(controls) or any(c not in ALLOWED_CONTROLS for c in controls):
+        raise ValueError("Requires unique explicitly named retained controls")
+    if with_gallery and "natural16-hybrid-sonnet-1024" not in controls:
+        raise ValueError("Hybrid review gallery requires its explicit retained control")
     root, output = guard_path(root), guard_path(output)
     started, cpu = time.perf_counter(), time.process_time()
     hashes: dict[str, str] = {}
@@ -138,7 +149,7 @@ def audit(root: Path, output: Path, *, with_gallery: bool = False) -> dict[str, 
         raise ValueError("Requires all sixteen unique intended pages")
     gold = _index(targets["pages"], ids, "targets")
     runs = []
-    for name in CONTROLS:
+    for name in controls:
         report_path = root / name / "report.json"
         report = load(report_path)
         evaluated = load(root / name / "verified-evaluation.json")
@@ -172,7 +183,19 @@ def audit(root: Path, output: Path, *, with_gallery: bool = False) -> dict[str, 
             partial = salvage(descriptors, viewport)
             quarantines.update(q["code"] for q in partial["quarantined"])
             partials.append(
-                {"id": identifier, "baseline_status": parent["status"], "vision_status": vision["status"], **partial}
+                {
+                    "id": identifier, "baseline_status": parent["status"], "vision_status": vision["status"],
+                    "baseline_proposal_count": vision.get("proposal_count"),
+                    "baseline_calls": vision.get("calls", []),
+                    "baseline_region_inventory": [
+                        {**{key: region.get(key) for key in
+                            ("index", "request_index", "viewport", "detector_box", "status", "call_indexes")},
+                         "request_present": region.get("request") is not None,
+                         "response_present": region.get("transcription_response") is not None}
+                        for region in vision.get("transcription_regions", [])
+                    ],
+                    **partial,
+                }
             )
             # Scorer-only projection; processor outputs retain status partial.
             score_predictions.append({"id": identifier, "status": "ok", "tables": partial["tables"]})
@@ -239,8 +262,11 @@ def main() -> None:
     parser.add_argument("--artifact-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--gallery", action="store_true")
+    parser.add_argument("--control", choices=ALLOWED_CONTROLS, action="append",
+                        help="Explicit named retained control; repeat to compare (default historical five)")
     args = parser.parse_args()
-    result = audit(args.artifact_root, args.output, with_gallery=args.gallery)
+    result = audit(args.artifact_root, args.output, with_gallery=args.gallery,
+                   controls=tuple(args.control) if args.control else CONTROLS)
     print(
         json.dumps(
             {
