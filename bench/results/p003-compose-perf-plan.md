@@ -32,3 +32,37 @@ Reproduction: run `python -m bench.p003_compose_perf --input <official-tatr-post
 isolated compose-perf worktree, using the main workspace's existing virtualenv.
 Raw observations and profiles belong under ignored P003 `compose-perf-v1`; the separate
 confirmation, if earned, uses `compose-perf-confirmation-v1`. No paid compute is used.
+
+## Screen and separate-process confirmation
+
+All 144 outputs match exactly in every uninstrumented pass and both diagnostic
+profiles, including the two frozen page-error states. Five tests retain duplicate
+ownership refusal, overlap refusal, page-atomic errors, distinct repeated literals
+and a deliberate skipped-work sentinel that fails the output oracle.
+
+| Process | Implementation | Median composition wall s | Median CPU s | CPU min–max s | Process peak RSS MiB |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Screen | Original | 1.4375 | 1.4264 | 1.4081–1.5069 | 189.36 |
+| Screen | Cached membership set | 0.2563 | 0.2552 | 0.2273–0.2748 | 189.41 |
+| Confirmation | Original | 1.5006 | 1.4916 | 1.4530–1.6095 | 193.84 |
+| Confirmation | Cached membership set | 0.3239 | 0.3160 | 0.2797–0.3332 | 193.88 |
+
+The fresh process confirms a 4.72-fold reduction in this composition CPU interval,
+about 1.18 CPU seconds saved across all 144 states. Its apparent effect on the prior
+216.58-second entire postprocessing pass would be only about 0.54% if additive;
+that is an estimate across different measurements, not a measured full-pass gain.
+The unchanged row/column postprocessor remains the main optimization opportunity.
+RSS high-water levels accumulate within each process and do not establish a
+candidate-specific allocation increase of the displayed difference.
+
+cProfile separately shows the composition function's self time falling while
+source validation remains. Its threading/sampler inclusive times overlap, so they
+are not interpreted as a partition of wall time. Only uninstrumented calls enter
+the table. Six passes per process are paired repeated measures; this is two
+process sessions, not hundreds of independent PDF benchmarks.
+
+Verdict: accept the exact-output data-structure reuse as an isolated experimental
+helper. Keep the pinned original helper unchanged because current independent
+replays require its historical code identity. This modest absolute saving does not
+justify interrupting active inference or redesigning the pipeline. All raw results
+and diagnostic profiles remain under the two ignored directories declared above.
