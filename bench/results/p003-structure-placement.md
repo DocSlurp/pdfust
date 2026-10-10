@@ -23,3 +23,16 @@ The retained geometry inference measured 9.04 seconds wall, 15.96 seconds CPU, a
 There is one frozen geometry inference per crop, shared across thresholds, and one placement pass per treatment. No repeat variability or confidence interval is established.
 
 `bench.p003_structure_evaluation` verifies and scores explicitly named geometry, placement, corpus, and baseline trust paths. Detailed per-page scores and resource records remain in the ignored placement artifact's `evaluation.json`.
+
+Six additional source-only qualifier treatments were frozen separately and all 96 outputs replayed before scoring. They reuse the same raw geometry and crop inventory; these are alternatives, not repeated independent inferences.
+
+| Structure threshold | Qualifier placement | Strict cells | Text cells | Structure cells | Complete tables | Missing / extra tables | Negative FP pages | Errors |
+| --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: |
+| .3 | height-adaptive | 191 | 193 | 347 | 3 | 39 / 3 | 3 | 0 |
+| .3 | physical row consensus | 189 | 191 | 347 | 3 | 39 / 3 | 3 | 0 |
+| .5 | height-adaptive | 204 | 206 | 352 | 3 | 39 / 3 | 3 | 0 |
+| .5 | physical row consensus | 202 | 204 | 352 | 3 | 39 / 3 | 3 | 0 |
+| .7 | height-adaptive | 202 | 204 | 349 | 3 | 39 / 3 | 3 | 0 |
+| .7 | physical row consensus | 200 | 202 | 349 | 3 | 39 / 3 | 3 | 0 |
+
+Height-adaptive placement matches the original maximum-overlap/center scores; row consensus loses two strict cells at each threshold. Neither fixes the three negative-page false positives. The complete source and explicit unresolved IDs remain conserved. Qualifier runtime was 3.15 seconds wall and 3.13 seconds CPU for all six treatments. The reported 526.52 MiB process-lifetime peak RSS includes earlier authentication/imports, excludes a dedicated sampling window, and cannot establish isolated qualifier memory use. Historical OCR/generation and original structure-inference costs remain separate.

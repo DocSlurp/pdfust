@@ -47,7 +47,12 @@ def verify_placements(
 
     directory, geometry_directory = guard_path(directory), guard_path(geometry_directory)
     frozen, report = read(directory / "frozen.json"), read(directory / "report.json")
-    required = {"p003_structure_place.py", "p003_structure_geometry.py", "pipeline_assembly.py", "pipeline_repair.py"}
+    helper_name = "p003_structure_place.py"
+    if "p003_structure_qualifiers.py" in frozen["code_sha256"]:
+        from bench import p003_structure_qualifiers as placement
+
+        helper_name = "p003_structure_qualifiers.py"
+    required = {helper_name, "p003_structure_geometry.py", "pipeline_assembly.py", "pipeline_repair.py"}
     if set(frozen["code_sha256"]) != required:
         raise ValueError("Incomplete trusted placement helper inventory")
     for name, digest in frozen["code_sha256"].items():
