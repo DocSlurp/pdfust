@@ -20,7 +20,7 @@ from collections import Counter
 from contextlib import ExitStack
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from bench.decision_hosted import ARTIFACTS, ROOT, DecisionClient, accounted_cost
 from bench.decision_oplog_run import parse_choice
@@ -30,6 +30,9 @@ from bench.pipeline_frontier import parse as parse_chat
 from bench.pipeline_frontier import translate
 from bench.pipeline_native_tables import observed_table
 from bench.silver import guard_path, sha, write_json
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 MODELS = ("perplexity/pplx-decider-v1.1-27b", "cloudflare/clef-flash", "openai/gpt-6-luna-decisions", *CHAT_MODELS)
 POLICIES = ("native", "native_text", "assembly", "cascade", "repair", "adaptive", "gated")
@@ -427,6 +430,22 @@ def process(  # noqa: PLR0912 - explicitly retain each experimental route and fa
     return result
 
 
+def _processor(name: str | None) -> Callable[..., dict[str, Any]]:
+    """Resolve only explicitly registered experiment processors."""
+    if name in (None, "whole"):
+        return process
+    modules = {
+        "regions": "generalization_run",
+        "vision": "generalization_vision_run",
+        "vision_regions": "generalization_vision_regions",
+        "vision_multiscale": "generalization_vision_multiscale",
+        "hybrid": "generalization_hybrid_run",
+    }
+    if name not in modules:
+        raise ValueError("Unknown pipeline processor")
+    return importlib.import_module("bench." + modules[name]).process
+
+
 def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, Any]:
     """Freeze code/source/config before any calls; reference loading is a separate command."""
     campaign = config.get("campaign", "P001")
@@ -436,25 +455,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
         raise ValueError("Select only one optional packet encoding")
     if (config.get("retry_failed_index") is None) != (config.get("retry_reason") is None):
         raise ValueError("An explicit retry requires both a ledger index and an investigation reason")
-    processor = process
-    if config.get("processor") == "regions":
-        from bench.generalization_run import process as region_process
-
-        processor = region_process
-    elif config.get("processor") == "vision":
-        from bench.generalization_vision_run import process as vision_process
-
-        processor = vision_process
-    elif config.get("processor") == "vision_regions":
-        from bench.generalization_vision_regions import process as vision_region_process
-
-        processor = vision_region_process
-    elif config.get("processor") == "hybrid":
-        from bench.generalization_hybrid_run import process as hybrid_process
-
-        processor = hybrid_process
-    elif config.get("processor") not in (None, "whole"):
-        raise ValueError("Unknown pipeline processor")
+    processor = _processor(config.get("processor"))
     manifest = json.loads(guard_path(manifest_path).read_bytes())
     if manifest.get("split") != "DEV":
         raise ValueError("Pipeline requires explicit DEV sources")
@@ -514,12 +515,17 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 ),
                 *(
                     ["generalization_vision_run.py", "pipeline_vision_transcription.py"]
-                    if config.get("processor") in ("vision", "vision_regions", "hybrid")
+                    if config.get("processor") in ("vision", "vision_regions", "vision_multiscale", "hybrid")
                     else []
                 ),
                 *(
                     ["generalization_vision_regions.py", "pipeline_layout_detector.py"]
-                    if config.get("processor") in ("vision_regions", "hybrid")
+                    if config.get("processor") in ("vision_regions", "vision_multiscale", "hybrid")
+                    else []
+                ),
+                *(
+                    ["generalization_vision_multiscale.py", "pipeline_layout_tiles.py", "pipeline_layout_fusion.py"]
+                    if config.get("processor") == "vision_multiscale"
                     else []
                 ),
                 *(
