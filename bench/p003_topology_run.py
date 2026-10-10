@@ -341,12 +341,14 @@ def process_page(
                     info["rows"].append(f"{stem}-row-{i}")
                 continue
             if config.get("geometry_only"):
-                audit = geometry.place(crop["snapshot"])
+                audit = geometry.place(crop["snapshot"], band_mode=config.get("band_mode", "uniform"))
                 states[crop["id"]] = audit["state"]
                 write_json(output / f"{stem}-geometry-audit.json", audit)
                 write_json(output / f"{stem}-updated-state.json", audit["state"])
                 info["status"] = "staged"
-                info["placement_mechanism"] = "uniform_geometry"
+                info["placement_mechanism"] = (
+                    "source_band_geometry" if config.get("band_mode") == "source" else "uniform_geometry"
+                )
                 continue
             responses = []
             for i, body in enumerate(crop["row_bodies"]):
@@ -498,6 +500,10 @@ def run(
         raise ValueError("Choose exactly one explicit hosted, preparation, geometry, or transcript mode")
     if config.get("transcript_replay") and client is None:
         raise ValueError("Transcript replay requires an injected offline exact-body transport")
+    if config.get("band_mode", "uniform") not in {"uniform", "source"} or (
+        config.get("band_mode") == "source" and not config.get("geometry_only")
+    ):
+        raise ValueError("Source bands require explicit geometry-only treatment")
     if config.get("boundary_words", "strict") not in {"strict", "residual"}:
         raise ValueError("Unknown boundary word treatment")
     transport = config.get("transport_concurrency", 1)
@@ -547,6 +553,7 @@ def run(
         CODE_FILES
         + (("p003_topology_geometry.py",) if config.get("geometry_only") else ())
         + (("p003_topology_replay.py",) if config.get("transcript_replay") else ())
+        + (("p003_spatial_bands.py",) if config.get("band_mode") == "source" else ())
     ):
         data = (root / name).read_bytes()
         (output / "code" / name).write_bytes(data)
@@ -655,6 +662,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", choices=ownership.DECISION_MODELS, required=True)
     parser.add_argument("--text-only", action="store_true")
+    parser.add_argument("--band-mode", choices=("uniform", "source"), default="uniform")
     parser.add_argument("--boundary-words", choices=("strict", "residual"), default="strict")
     parser.add_argument("--max-questions", type=int, choices=range(1, 17), default=16)
     parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
@@ -667,6 +675,8 @@ def main() -> None:
     config = {
         k: getattr(args, k) for k in ("model", "max_questions", "run_hosted", "prepare_only", "reviewed_parser_sha256")
     }
+    if args.band_mode == "source":
+        config["band_mode"] = "source"
     if args.text_only:
         config["image"] = False
     if args.geometry_only:

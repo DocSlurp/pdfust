@@ -88,3 +88,22 @@ def test_residual_region_order_can_differ_from_global_source_order(tmp_path: Pat
     states = work["states"]
     states[work["crops"][0]["id"]] = geometry.place(work["crops"][0]["snapshot"])["state"]
     assert runner.compose(work["plan"], states)["unresolved_ids"] == ["z", "a"]
+
+
+def test_source_bands_are_explicit_and_uniform_control_stays_unchanged(tmp_path: Path) -> None:
+    original, topology = fixtures(tmp_path / "source", tmp_path / "topology")
+    work = runner.prepare_page(
+        original, topology, tmp_path / "topology", {"generation_provider": "anthropic"}, config()
+    )
+    snapshot = work["crops"][0]["snapshot"]
+    uniform = geometry.place(snapshot)
+    adaptive = geometry.place(snapshot, band_mode="source")
+    assert geometry.place(snapshot, band_mode="uniform") == uniform
+    assert "band_mode" not in uniform["geometry_policy"]
+    assert adaptive["geometry_policy"]["band_mode"] == "source"
+    assert len(adaptive["geometry_policy"]["bands"]) == 1
+    assert adaptive["geometry_policy"]["bands"][0]["y_edges"] != [0, 100 / 3, 200 / 3, 100]
+    assert adaptive["snapshot_sha256"] == uniform["snapshot_sha256"]
+    assert sorted(a["source_id"] for a in adaptive["assignments"]) == sorted(
+        a["source_id"] for a in uniform["assignments"]
+    )

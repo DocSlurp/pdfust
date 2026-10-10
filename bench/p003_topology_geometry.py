@@ -4,13 +4,14 @@ Overlap and distance scores are geometry heuristics, never model probabilities.
 No image analysis or literal transcription is performed.
 """
 
-# ruff: noqa: SLF001
+# ruff: noqa: SLF001, EM101, TRY003
 from __future__ import annotations
 
 import math
 from copy import deepcopy
 from typing import Any
 
+from bench import p003_spatial_bands as bands
 from bench import p003_topology_ownership as ownership
 
 MIN_OVERLAP = 0.8
@@ -22,11 +23,14 @@ def _intersection(a: list[float], b: list[float]) -> float:
     return max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]))
 
 
-def place(plan: ownership.Plan) -> dict[str, Any]:
+def place(plan: ownership.Plan, *, band_mode: str = "uniform") -> dict[str, Any]:
     """Rank every anchor and atomically retain one literal-word owner or abstain."""
+    if band_mode not in {"uniform", "source"}:
+        raise ValueError("Unknown geometric band mode")
     packet = ownership._packet(plan)
     source, tables = packet["source"], deepcopy(packet["topology"]["canonical"])
     anchors = []
+    band_receipts = []
     for t, table in enumerate(tables):
         merged = {(s["row"], s["column"]): s for s in table["spans"]}
         table["spans"] = [
@@ -38,13 +42,23 @@ def place(plan: ownership.Plan) -> dict[str, Any]:
         table["cells"] = [{"source_ids": [], "role": "unknown"} for _ in table["cells"]]
         x0, y0, x1, y1 = table["bbox"]
         width, height = (x1 - x0) / table["col_count"], (y1 - y0) / table["row_count"]
+        edges = (
+            bands.derive(source["words"], table)
+            if band_mode == "source"
+            else {
+                "x_edges": [x0 + i * width for i in range(table["col_count"] + 1)],
+                "y_edges": [y0 + i * height for i in range(table["row_count"] + 1)],
+            }
+        )
+        if band_mode == "source":
+            band_receipts.append(edges)
         for span in table["spans"]:
             r, c = span["row"], span["column"]
             box = [
-                x0 + c * width,
-                y0 + r * height,
-                x0 + (c + span["column_span"]) * width,
-                y0 + (r + span["row_span"]) * height,
+                edges["x_edges"][c],
+                edges["y_edges"][r],
+                edges["x_edges"][c + span["column_span"]],
+                edges["y_edges"][r + span["row_span"]],
             ]
             anchors.append((f"t{t}r{r}c{c}", t, r * table["col_count"] + c, box))
     unresolved, outside, assignments = [], [], []
@@ -107,7 +121,10 @@ def place(plan: ownership.Plan) -> dict[str, Any]:
         "abstained_ids": unresolved,
         "assignments": assignments,
         "geometry_policy": {
-            "grid": "uniform subdivision of frozen topology bbox",
+            "grid": "uniform subdivision of frozen topology bbox"
+            if band_mode == "uniform"
+            else "source inferred row bands and column gutters",
+            **({"band_mode": "source", "bands": band_receipts} if band_mode == "source" else {}),
             "min_overlap": MIN_OVERLAP,
             "min_margin": MIN_MARGIN,
             "distance_weight": DISTANCE_WEIGHT,
