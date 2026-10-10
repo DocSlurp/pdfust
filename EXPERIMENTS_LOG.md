@@ -1919,7 +1919,7 @@ First independently verified selector results: 128 px palette achieves 1,086 str
 
 Gateway d1 image and Laya text stop on their first actual requests (HTTP 400 and 422 respectively); each has two bypass-only operational pages, fourteen circuit-related failures, no returned decisions, unknown charges and a retained USD 0.30 reservation. Their schema/availability diagnosis is separate from quality. A bounded diagnostic change now stores fixed reason categories without provider messages or echoed source data; categories are hints, not established causes.
 
-## P003 broader corpus and spatial mechanisms, 2026-10-10 21:10 UTC
+## P003 broader corpus and spatial mechanisms, 2026-10-10 20:59 UTC
 
 Fresh natural64 baselines retain 64 intended pages, 93 tables and 3,847 cell anchors. Luna returns 63 usable pages, 1,348 strict anchors, 1,358 text anchors, 1,731 structure anchors and 12 complete tables, with zero extra tables and zero negative-page false positives. Ordinal OCR300 returns 62 usable pages, 1,309 strict anchors, 1,329 text anchors, 1,806 structure anchors and 11 complete tables, with 11 extra tables but zero negative-page false positives. Full-generation rates are 5.54 pages/min and 1,985.15 pages/API USD for Luna; 2.69 and 1,013.32 for ordinal, under concurrent load. This broader DEV set includes the original 16 pages and is not held out.
 
