@@ -323,8 +323,23 @@ Selected natural-screen comparisons (all 16 intended pages remain scored):
 | Haiku source-ID matrix, 512 px | 16 | 2 | 240 | 1.99 | 225.44 |
 | YOLO + Sonnet source-ID matrix, 512 px | 15 | 2 | 341 | 3.89 | 52.29 |
 | YOLO + Haiku source-ID matrix, 512 px | 15 | 2 | 258 | 3.24 | 638.72 |
+| YOLO + Haiku, OCR300 + arrays + 1024 px | 15 | 3 | 387 | 2.60 | 903.47 |
 | Sonnet whole-page image transcription, 1200 px | 15 | 3 | 299 | 6.51 | 106.65 |
 | Haiku whole-page image transcription, 1200 px | 13 | 2 | 245 | 6.41 | 1,527.90 |
+| Opus whole-page image transcription, 2048 px JPEG50 | 16 | 3 | 300 | 6.84 | 34.59 |
+| Sonnet whole-page image transcription, 2048 px JPEG50 | 16 | 7 | 540 | 9.70 | 63.29 |
+| Sonnet detector-crop transcription, 1024 px JPEG90 | 16 | **5** | **982** | 6.88 | 69.41 |
+| Haiku detector-crop transcription, 1024 px JPEG90 | 14 | **4** | **687** | 8.57 | **1,538.73** |
+
+Both cropped configurations beat the measured whole-page Opus configuration in
+complete tables and exact cells at lower API cost. This compares complete input
+strategies, not model ability on identical images. Sonnet crops produce no extra
+tables; Haiku crops produce three on dense positive pages and fail two pages
+strict output validation. Opus produces six extras on dense positives. None of
+these three configurations produces a table on the four negative pages.
+Supplementary positive-page macro exact-cell recall is 66.97% for Sonnet crops,
+52.90% for Haiku crops and 62.01% for Opus whole-page input. Thus Haiku's higher
+micro cell count does not establish a win under equal page weighting.
 
 These are exploratory serial runs with concurrent research workloads. Rates count
 complete emitted outputs and API charges, including failed calls; they do not
@@ -334,9 +349,12 @@ Source-ID assembly preserves literal evidence but cannot repair missing OCR text
 Image transcription is a separately labeled table-only comparator. No model is
 enabled by default, and public benchmark pretraining contamination is unknown.
 The [source inventory audit](bench/results/p002-source-inventory-ceilings.md)
-finds that even an optimistic rearrangement of existing OCR words can form only
-1,194/2,333 reference cells under the literal source-assembly rules. Both OCR and
-assembly need improvement. The [stage profile](bench/results/pipeline-native-fastpath.md)
+finds that even an optimistic rearrangement of standard OCR words can form only
+1,194/2,333 reference cells under the literal source-assembly rules. Whitespace
+OCR at 300 DPI raises this bound to 1,880; actual assembly recovers 387. Both OCR
+and assembly need improvement. A fixed 2048-pixel OCR edge reduces dense pages
+to about 90–94 DPI and lowers the bound; pixel caps must account for text density.
+The [stage profile](bench/results/pipeline-native-fastpath.md)
 attributes 62.83% of page wall time to API calls, 29.07% to source extraction
 including OCR, and 6.37% to layout detection. Parent and worker CPU/RAM are
 reported separately; GPU use is unmeasured for hosted inference.
