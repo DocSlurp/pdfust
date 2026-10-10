@@ -10,6 +10,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from copy import deepcopy
+from itertools import pairwise
 from statistics import median
 from typing import Any
 
@@ -83,17 +84,26 @@ def _bands(words: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
     return bands
 
 
-def _geometric_parts(words: list[dict[str, Any]]) -> list[tuple[list[dict[str, Any]], str]]:
+def _geometric_parts(words: list[dict[str, Any]]) -> list[tuple[list[dict[str, Any]], str]]:  # noqa: C901
     """Prefer empty vertical bands, then one sustained wide horizontal corridor."""
     if not words:
         return []
     height = median(max(1, w["bbox"][3] - w["bbox"][1]) for w in words)
     bands = _bands(words)
+    band_bounds = [(min(w["bbox"][1] for w in band), max(w["bbox"][3] for w in band)) for band in bands]
+    gaps = [
+        following[0] - previous[1]
+        for previous, following in pairwise(band_bounds)
+        if following[0] > previous[1]
+    ]
+    # Sparse table leading can exceed several glyph heights. Compare against
+    # observed whitespace as well, so ordinary rows stay in one work unit.
+    gap_threshold = max(2.5 * height, 2.5 * median(gaps)) if gaps else 2.5 * height
     groups: list[list[dict[str, Any]]] = []
     bottom = float("-inf")
     for band in bands:
         top = min(w["bbox"][1] for w in band)
-        if not groups or top - bottom > 2.5 * height:
+        if not groups or top - bottom > gap_threshold:
             groups.append([])
         groups[-1].extend(band)
         bottom = max(bottom, *(w["bbox"][3] for w in band))
@@ -110,10 +120,25 @@ def _geometric_parts(words: list[dict[str, Any]]) -> list[tuple[list[dict[str, A
         if gap >= max(6 * height, 0.16 * width):
             candidates.append((gap, index))
         right = max(right, word["bbox"][2])
-    for _, index in sorted(candidates, reverse=True):
+
+    def widest_internal_gap(part: list[dict[str, Any]]) -> float:
+        edge = min(w["bbox"][0] for w in part)
+        widest = 0.0
+        for word in sorted(part, key=lambda w: w["bbox"][0]):
+            widest = max(widest, word["bbox"][0] - edge)
+            edge = max(edge, word["bbox"][2])
+        return widest
+
+    for gap, index in sorted(candidates, reverse=True):
         left, right_words = ordered[:index], ordered[index:]
-        if min(len(_bands(left)), len(_bands(right_words))) >= 3 and all(
-            _bounds(part)[2] - _bounds(part)[0] >= 4 * height for part in (left, right_words)
+        sides = (_bands(left), _bands(right_words))
+        # A normal table has repeated comparable column gaps. Independent
+        # blocks need a stronger intervening corridor and sustained width,
+        # rather than one unusually wide heading on an otherwise tiny column.
+        if (
+            min(map(len, sides)) >= 3
+            and all(median(_bounds(band)[2] - _bounds(band)[0] for band in side) >= 4 * height for side in sides)
+            and gap > 1.8 * max(widest_internal_gap(left), widest_internal_gap(right_words))
         ):
             return [(left, "wide_gutter"), (right_words, "wide_gutter")]
     return [(words, "unsplit")]

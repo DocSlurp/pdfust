@@ -13,11 +13,12 @@ to the page raster. Cropping does not translate or renumber any source.
    borderless table or nearby prose. Word centers must have one unique native
    cell owner; ambiguous words remain residual. Native input values, roles,
    annotations and filenames never enter proposals.
-2. Split residual source first at empty vertical gaps greater than 2.5 median
-   glyph heights. Within each vertically connected block, split at the widest
+2. Split residual source first at empty vertical gaps greater than both 2.5 median
+   glyph heights and 2.5 times the typical positive inter-band whitespace. Within each vertically connected block, split at the widest
    globally empty horizontal corridor only when it is at least six heights and
    16% of the block width, with at least three physical bands and a four-height
-   content width on each side. Physical-band clustering permits half a median
+   median physical-band content width on each side. The corridor must also
+   exceed the largest internal globally empty corridor by a factor of 1.8. Physical-band clustering permits half a median
    height of OCR drift and does not chain drift transitively.
 3. If these geometry splits still exceed the configured budget, retain whole
    physical bands in bounded chunks. A single oversized band is partitioned by
@@ -64,7 +65,7 @@ false positives remain decision-gate work. Empty pages compose to empty results.
 
 ## CPU verification
 
-35 Python tests across region decomposition, existing assembly and existing
+39 Python tests across region decomposition, existing assembly and existing
 column consensus passed. The new region suite covers two native grids plus a
 borderless block and prose, a merged native cell, 6000-word dense input above the
 old packet/source limits, side-by-side and vertically separated blocks, OCR
@@ -91,3 +92,65 @@ cross-region table stitching. Those gaps are visible in boundary metadata and
 must be reported alongside any pipeline quality results. Native table assignment
 reuses the existing word-by-cell intersection procedure; high-cardinality grids
 need profiling before making performance claims.
+
+
+## Frozen P002 authored audit and measured correction
+
+The frozen P002 manifest contains 156 authored pages, with 156 expected tables
+including separately labeled OCR carriers. This CPU audit performs no OCR and
+uses native extraction only. Private construction targets enter scoring after
+literal source extraction and candidate generation; neither their boxes nor
+family labels enter the region proposer. Complete-table equality checks dimensions,
+normalized literal values and full span topology. A region-wise target-aware
+selection is composed and validated to measure attainable candidate coverage;
+this is an oracle diagnostic, not deployment quality or a learned decision gate.
+A separate candidate-pool count takes each signature's maximum multiplicity
+within a region, then sums across regions before matching target multiplicities.
+The first provisional pool count did not sum duplicate signatures across regions;
+its underestimated count is retained in the raw `before` audit and superseded by
+`before-corrected` below.
+
+Acceptance was exact source conservation, no new errors, no regression in
+complete-table coverage across authored slices, and recovery of avoidable splits.
+The minimal full-page proposal arm remains a reference. Baseline and every
+sequential treatment are retained under the ignored
+`bench/results/pdf-master-artifacts/pipeline-p002/regions-audit/` directory.
+
+| Arm | Complete candidate tables / 156 | Validated oracle-composed complete tables | Authored pages with split target tables | Wall / CPU seconds |
+| --- | ---: | ---: | ---: | ---: |
+| Native tables only | 108 | 108 | n/a | included in runs |
+| Full-page assembly plus column consensus | 132 | 132 | n/a | included in runs |
+| Initial regions, corrected pool metric | 116 | 116 | 16 | 4.228 / 4.128 |
+| Relative vertical whitespace only | 116 | 116 | 16 | 4.895 / 4.772 |
+| Relative whitespace plus corridor contrast | 132 | 132 | 0 | 5.600 / 5.110 |
+| Frozen combined-treatment confirmation | 132 | 132 | 0 | 5.356 / 5.152 |
+
+The original absolute threshold severed ordinary 33-point rows containing
+8-point glyphs. Adding typical inter-band whitespace preserved those rows, but
+then exposed a second failure: wide table column gaps were mistaken for
+independent blocks. Requiring the proposed corridor to exceed internal corridors
+and requiring sustained median content width fixes both causes without names,
+family conditions or target-derived thresholds. The combined treatment recovers
+16 complete tables: eight borderless and eight residual tables on mixed pages.
+No other authored slice loses complete-table coverage. Missing remaining tables
+are outside this region correction's coverage: rotated construction targets and
+OCR-only carriers still require separate extraction/normalization work.
+
+All 156 pages retain valid source conservation and have zero split/proposal or
+region-candidate errors in these audits. The same frozen sources were reused
+for matched comparisons, avoiding extraction warm/cold differences; the initial
+uncached run is separately retained (10.860 wall / 10.759 CPU seconds). RSS is
+process peak from `resource.getrusage(SELF)`, 427412 KiB in screening runs
+and 489980 KiB in the separate frozen confirmation run. Wall uses
+`perf_counter`, CPU uses `process_time`; one CPU-only process, no workers or
+subprocesses, no RSS sampling. These timings include source-cache reads, native,
+full-page and region proposals, scoring, and report writes. They measure audit
+cost, not an extraction-speed improvement. Shared-host background load and one
+screening run per arm plus one combined confirmation do not support a precise performance comparison.
+
+Rerun with the root Python environment and the region worktree on `PYTHONPATH`:
+`python bench/results/pdf-master-artifacts/pipeline-p002/regions-audit/audit.py <arm>`.
+The harness, per-page sources, before/after page reports and summary JSON remain
+ignored. Four regression cases cover sparse leading with three, four and five
+regular table columns and independently separated two-column tables. The existing
+side-by-side, OCR-drift and source-conservation tests still pass.

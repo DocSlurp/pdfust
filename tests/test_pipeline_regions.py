@@ -158,3 +158,30 @@ def test_empty_page_is_complete_without_regions() -> None:
     plan = split(page())
     assert plan["regions"] == []
     assert compose(plan, {})["unresolved_ids"] == []
+
+
+@pytest.mark.parametrize("columns", [3, 4, 5])
+def test_sparse_leading_and_repeated_column_gaps_preserve_one_table_region(columns: int) -> None:
+    source = page()
+    for row in range(5):
+        for column in range(columns):
+            add_word(source, 10 + column * 110, 20 + row * 33, f"value {row} {column}", width=45)
+            source["words"][-1]["bbox"][3] = 28 + row * 33
+    add_word(source, 10, 700, "Footer")
+    plan = split(source)
+    table_regions = [r for r in plan["regions"] if any(w["bbox"][1] < 200 for w in r["source"]["words"])]
+    assert len(table_regions) == 1
+    assert len(table_regions[0]["source_ids"]) == columns * 5
+    assert all_unresolved(plan)["unresolved_ids"] == [w["id"] for w in source["words"]]
+
+
+def test_side_by_side_multicolumn_tables_keep_their_internal_gutters() -> None:
+    source = page()
+    for row in range(5):
+        for block_x in (10, 330):
+            for column in range(2):
+                add_word(source, block_x + column * 70, 20 + row * 20, width=35)
+    plan = split(source)
+    assert len(plan["regions"]) == 2
+    assert all(r["boundary"] == "wide_gutter" for r in plan["regions"])
+    assert all(len(r["source_ids"]) == 10 for r in plan["regions"])
