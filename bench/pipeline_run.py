@@ -445,6 +445,10 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
         from bench.generalization_vision_run import process as vision_process
 
         processor = vision_process
+    elif config.get("processor") == "vision_regions":
+        from bench.generalization_vision_regions import process as vision_region_process
+
+        processor = vision_region_process
     elif config.get("processor") not in (None, "whole"):
         raise ValueError("Unknown pipeline processor")
     manifest = json.loads(guard_path(manifest_path).read_bytes())
@@ -500,7 +504,12 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
                 *(
                     ["generalization_vision_run.py", "pipeline_vision_transcription.py"]
-                    if config.get("processor") == "vision"
+                    if config.get("processor") in ("vision", "vision_regions")
+                    else []
+                ),
+                *(
+                    ["generalization_vision_regions.py", "pipeline_layout_detector.py"]
+                    if config.get("processor") == "vision_regions"
                     else []
                 ),
             )
