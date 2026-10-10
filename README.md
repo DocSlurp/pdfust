@@ -467,11 +467,30 @@ finds 438 strict cells at 1280 px versus 204 at 640 px with matched threshold
 scores, including losses and unresolved overlaps, remain published.
 
 
-Source-owned geometry remains substantially weaker: the best tested CPU table
-structure placement recovers 204 strict cells and three complete tables, with
-false tables on three of four negative pages. Whole-page and residual-crop
-variants do worse. [All geometry results](bench/results/p003-structure-acquisition.md)
-remain published alongside the [next experiment hypotheses](bench/results/p003-council-next-layer.md).
+Reusing those exact predictions with the pinned official Table Transformer
+postprocessor improves cell recovery without another inference call:
+
+| Internal detector size | Threshold | Previous strict cells / 2,333 | Official strict cells / 2,333 | Complete tables / 53 | Extra tables | Negative pages with false tables / 4 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 640 px | 0.5 | 204 | 263 | 3 | 3 | 3 |
+| 1024 px | 0.5 | 193 | 382 | 3 | 7 | 1 |
+| 1280 px | 0.5 | 438 | 569 | 3 | 10 | 0 |
+
+This remains weak complete-table recovery. All nine fixed treatments, including
+two page-level postprocessing failures, are in the
+[independent official-postprocessor comparison](bench/results/p003-official-tatr-analysis.md).
+The nine-treatment pass took 217.62 seconds wall, 216.58 CPU seconds and
+384.68 MiB sampled peak RSS. Acquisition and prior model inference are excluded;
+these are postprocessing measurements, not fresh pages per minute or dollar.
+[Earlier geometry results](bench/results/p003-structure-acquisition.md) remain
+published alongside the [next experiment hypotheses](bench/results/p003-council-next-layer.md).
+
+The [visual review workflow](bench/P003_VISUAL_REVIEW.md) retains actual input
+pages, table-level source masks, extracted cell grids and exact mismatch details.
+Green marks strict matches; red marks strict mismatches, which can include
+representation differences such as Unicode subscripts versus reference LaTeX.
+Original unmarked images remain available locally. Scores are unchanged by
+visual review, and raw document artifacts are excluded from Git.
 
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering
