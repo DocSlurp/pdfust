@@ -497,3 +497,88 @@ def test_single_candidate_skips_hosted_decisions_without_fabricating_tables(
     assert result["source_conserved"]
     assert set(result["unresolved_ids"]) == {w["id"] for w in result["source"]["words"]}
     assert not (tmp_path / "opaque-page-request-0.json").exists()
+
+
+@pytest.mark.parametrize(
+    "probabilities",
+    [
+        {"table": 0.7, "prose": 0.2, "unresolved": 0.1},
+        {"table": 0.55, "prose": 0.4, "unresolved": 0.05},
+    ],
+)
+@pytest.mark.parametrize("review_choice", ["prose", "table"])
+def test_uncertain_gate_review_is_independent_and_uses_distinct_requests(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, probabilities: dict, review_choice: str
+) -> None:
+    requests = []
+    primary = {"choice": "table", "probabilities": probabilities, "diagnostic": "PRIMARY_ANSWER_ONLY_SECRET"}
+
+    def decision(_client: object, request: dict, tag: str) -> dict:
+        requests.append((request, tag))
+        if len(requests) == 1:
+            return {"answer": primary}
+        if len(requests) == 2:
+            return {"answer": {"choice": review_choice}}
+        return {"answer": {"choice": "unresolved"}}
+
+    monkeypatch.setattr(runner, "call", decision)
+    settings = config("gated")
+    settings.update(image_edge=0, gate_review_model="anthropic/claude-sonnet-5.5")
+    row = record(tmp_path, bordered=False)
+    row.update(family="REFERENCE_ONLY_SECRET", expected="REFERENCE_ONLY_SECRET")
+    result = runner.process(row, settings, tmp_path, object())
+    assert result["status"] == "ok"
+    assert result["gate_review"]["primary_answer"] == primary
+    assert result["admission_choice"] == review_choice
+    expected_calls = 2 if review_choice == "prose" else 3
+    assert len(requests) == expected_calls
+    primary_request, review_request = requests[0][0], requests[1][0]
+    assert review_request["model"] == settings["gate_review_model"]
+    assert review_request["messages"][-1]["role"] == "user"
+    assert review_request["messages"][-1]["content"] == primary_request["state"]
+    assert json.loads(review_request["messages"][1]["content"])["questions"] == primary_request["questions"]
+    assert "PRIMARY_ANSWER_ONLY_SECRET" not in json.dumps(review_request)
+    assert "REFERENCE_ONLY_SECRET" not in json.dumps(review_request)
+    for step in range(expected_calls):
+        assert requests[step][1].endswith(f"/{step}")
+        saved = json.loads((tmp_path / f"opaque-page-request-{step}.json").read_text())
+        assert saved == requests[step][0]
+    assert not (tmp_path / f"opaque-page-request-{expected_calls}.json").exists()
+    if review_choice == "prose":
+        assert result["route"] == "gated_out"
+        assert result["tables"] == []
+    else:
+        assert "c0" in requests[2][0]["questions"]["q0"]["criteria"]
+    assert result["source_conserved"]
+
+
+@pytest.mark.parametrize(
+    "probabilities",
+    [
+        {"table": 0.95, "prose": 0.04, "unresolved": 0.01},
+        {"table": 0.8, "prose": 0.1, "unresolved": 0.1},
+        {"table": 0.95},
+    ],
+)
+def test_strong_gate_score_skips_review(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, probabilities: dict) -> None:
+    requests = []
+
+    def decision(_client: object, request: dict, tag: str) -> dict:
+        requests.append((request, tag))
+        return (
+            {"answer": {"choice": "table", "probabilities": probabilities}}
+            if len(requests) == 1
+            else {"answer": {"choice": "unresolved"}}
+        )
+
+    monkeypatch.setattr(runner, "call", decision)
+    settings = config("gated")
+    settings.update(image_edge=0, gate_review_model="anthropic/claude-sonnet-5.5")
+    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, object())
+    assert result["status"] == "ok"
+    assert len(requests) == 2
+    assert all(request["model"] == settings["model"] for request, _tag in requests)
+    assert "gate_review" not in result
+    assert result["source_conserved"]
+    assert "c0" in requests[1][0]["questions"]["q0"]["criteria"]
+    assert not (tmp_path / "opaque-page-request-2.json").exists()
