@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import math
 import os
@@ -57,7 +58,8 @@ def discover_regions(
     if len(native) > MAX_WORDS:
         raise ValueError("Native geometry collection exceeds admission")
     page = _box(page_size)
-    candidates, rejected = [], []
+    candidates: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
     if len(placements) > 4096:
         raise ValueError("Image placement collection exceeds admission")
     for index, placement in enumerate(placements):
@@ -76,7 +78,7 @@ def discover_regions(
         for j, b in enumerate(candidates)
         if i != j and _intersects(a["bbox"], b["bbox"])
     }
-    regions = []
+    regions: list[dict[str, Any]] = []
     for index, candidate in enumerate(candidates):
         if index in overlaps:
             rejected.append({"placement": candidate["placement"], "reason": "overlapping_image_placements"})
@@ -91,7 +93,7 @@ def whitespace_projection(recognized: list[dict[str, Any]]) -> list[dict[str, An
     """Ablation only: split whitespace tokens using explicitly approximate geometry."""
     import re
 
-    output = []
+    output: list[dict[str, Any]] = []
     for line, word in enumerate(recognized):
         text, box = word["text"], word["bbox"]
         for token in re.finditer(r"\S+", text):
@@ -150,6 +152,7 @@ def extract(
     if mode == "empty" and native:
         diagnostics["status"] = "skipped_existing_native_text"
         return {"source": source, "diagnostics": diagnostics}
+    regions: list[dict[str, Any]]
     if mode == "empty":
         if _pixels(size, dpi) > MAX_EMPTY_PIXELS:
             raise ValueError("Complete empty-page raster exceeds 64M pixel admission")
@@ -176,15 +179,20 @@ def extract(
             raise ValueError("Selected-page clone changed display geometry")
         if Counter(_key(word) for word in _native_words(owned[0])) != Counter(_key(word) for word in native):
             raise ValueError("Selected-page clone changed native text inventory")
-        recognized = []
+        recognized: list[dict[str, Any]] = []
         for region in regions:
             words = owned[0].get_text_ocr(dpi=dpi, engine=engine, clip=None if mode == "empty" else region["bbox"])
-            for word in words:
-                box = _box(list(word["bbox"]))
+            for ocr_word in words:
+                box = _box(list(ocr_word["bbox"]))
                 if any(_intersects(box, word["bbox"]) for word in native):
                     raise ValueError("OCR recognized box intersects retained native text")
                 recognized.append(
-                    {"id": f"r{len(recognized)}", "bbox": box, "text": word["text"], "confidence": word["confidence"]}
+                    {
+                        "id": f"r{len(recognized)}",
+                        "bbox": box,
+                        "text": ocr_word["text"],
+                        "confidence": ocr_word["confidence"],
+                    }
                 )
         if len(recognized) > MAX_WORDS:
             raise ValueError("Complete recognized source exceeds admission")
@@ -259,9 +267,7 @@ class Measurement:
 
     def __enter__(self) -> Any:
         """Start process-only accounting and RSS sampling."""
-        import psutil
-
-        self.process = psutil.Process()
+        self.process = importlib.import_module("psutil").Process()
         self.samples = [self.process.memory_info().rss]
         self.stop = threading.Event()
 
