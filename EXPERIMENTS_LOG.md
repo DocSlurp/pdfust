@@ -1533,3 +1533,49 @@ full mypy passes on 218 source files. At this checkpoint P002 has 632 attempts,
 USD 5.09574214 positive provider-reported charges and the preserved USD 0.30
 interruption reservation. Active reservations are transient and reported by the
 live ledger. Local work remains CPU-only; no host is rented.
+
+### P002 checkpoint: 2026-10-10 05:36 UTC
+
+The strongest natural16 exact-cell result is now Sonnet with fixed 1024-pixel
+YOLO crops: 982/2,333 exact anchors, 5/53 complete tables, all sixteen outputs,
+no extra tables, 6.88 output pages/min and 69.41 pages/API USD. Haiku crops recover
+687 anchors and four complete tables, with fourteen admitted pages, 8.57 pages/min
+and 1,538.73 pages/API USD. Two malformed Haiku pages fail atomically. Whole-page
+2048-pixel JPEG50 Opus returns 300 anchors and three complete tables at 6.84
+pages/min and 34.59 pages/API USD. Sonnet crops beat that Opus configuration on
+both micro exact-cell count and positive-page macro recall; Haiku crops beat its
+micro count but lose on page-weighted recall (52.90% versus 62.01%). These are
+single DEV runs, not a general model ranking.
+
+Matched source-owned Haiku prompt controls expose a density tradeoff. Repeated
+column-track instructions increase exact anchors from 258 to 332, remove the
+negative false table and admit all sixteen pages, but lose 27 anchors on the
+remaining fourteen pages while gaining 101 on the dense pair. Row-wrap wording
+falls to 231 anchors. Short ordinal identifiers admit all sixteen and recover
+311 anchors, retaining one negative false table. Complete-table recovery stays
+at two for each control. No reference-derived per-page selector is introduced.
+
+A frozen placement-free complete-string diagnostic consumes duplicate strings
+once and keeps every failure in the denominator. Sonnet crop inventory rises
+from 982 exact-position anchors to an optimistic 1,146 when placement is ignored;
+Opus whole-page rises from 300 to 599. Every gain is on the two dense pages.
+Even this optimistic inventory misses more than half of all reference anchors,
+so placement repair alone cannot solve the coverage/transcription deficit.
+See `bench/results/p002-cell-inventory.md`; this diagnostic supplies no inference
+context or fitted repair rule.
+
+Multiscale detector crops, larger JPEG50 crops, the matched 768/512/400-pixel
+crop sweep, generation/gate row-context arms, semantic negative filtering and
+native/image hybrids remain explicit independent runs in the bounded serial
+queue. Four-worker whole-page Haiku is a final separate throughput control;
+mocked thread/process races have proved atomic cumulative and wave admission,
+unique reservations and preservation of failed settlements. It must run after
+legacy serial requests, and overlapping per-call CPU time must not be summed.
+
+The complete CPU-only suite now passes: 3,430 passed, 14 skipped and two expected
+failures. Mypy passes on 226 source files. The rustc shim setup issue is resolved
+for these tests by selecting the installed compiler per command. No local GPU
+or rented host is used. At 05:36 UTC, P002 has 828 attempts and USD 6.1845728 in
+positive reported charges, plus the preserved USD 0.30 interrupted reservation
+and USD 0.30 active reservation: USD 6.7845728 conservative accounting. Raw
+artifacts remain local; only code, protocols and aggregate reports are pushed.

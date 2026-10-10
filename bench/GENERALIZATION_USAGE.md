@@ -15,7 +15,7 @@ p002="$PWD/bench/results/pdf-master-artifacts/pipeline-p002"
 repro_id=$(date -u +%Y%m%dT%H%M%SZ)
 ```
 
-Existing inputs are `$p002/manifest.json` and
+Existing inputs are `$p002/corpus-r2/manifest.json` and
 `$p002/screens/natural16/manifest.json`. They contain absolute source PDF paths,
 page numbers and hashes. Moving the checkout does not relocate those PDFs.
 Inference explicitly projects records to `id`, `pdf_path`, `pdf_sha256` and
@@ -51,7 +51,7 @@ The native full baseline uses the settings of `native-regional-full-r2`:
 
 ```sh
 .venv/bin/python -m bench.generalization_run \
-  --manifest "$p002/manifest.json" --output "$p002/repro-$repro_id-native-full" \
+  --manifest "$p002/corpus-r2/manifest.json" --output "$p002/repro-$repro_id-native-full" \
   --policy native --rotation-mode always --ocr-dpi 150 --ocr-source legacy
 ```
 
@@ -72,7 +72,7 @@ The full276 YOLO/Haiku matrix arm uses these settings:
 
 ```sh
 .venv/bin/python -m bench.generalization_run \
-  --manifest "$p002/manifest.json" --output "$p002/repro-$repro_id-full276-haiku" \
+  --manifest "$p002/corpus-r2/manifest.json" --output "$p002/repro-$repro_id-full276-haiku" \
   --policy gated --assembly-method generate --generation-model anthropic/claude-haiku-5.5 \
   --generation-format matrix --generation-evidence objects --generation-tokens 8192 \
   --image-edge 512 --region-words 1024 --region-characters 16000 \
@@ -138,7 +138,7 @@ separate from the immutable run directory:
   --corpus "$p002/screens/natural16" --run "$p002/natural16-generate-sonnet" \
   --output "$p002/repro-$repro_id-natural16-evaluation"
 .venv/bin/python -m bench.generalization_report \
-  --corpus "$p002" --run "$p002/full276-yolo-matrix-haiku-512" \
+  --corpus "$p002/corpus-r2" --run "$p002/full276-yolo-matrix-haiku-512" \
   --output "$p002/repro-$repro_id-full276-evaluation"
 .venv/bin/python -m bench.generalization_demo \
   --manifest "$p002/screens/natural16/manifest.json" \

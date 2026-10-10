@@ -224,3 +224,33 @@ mocked races before any paid integration. The active paid queue remains serial.
 The native-only detector shortcut remains unintegrated because its measured
 eligible subset is empty. These performance hypotheses must preserve quality and
 report actual whole-run elapsed time instead of summed overlapping latency.
+
+### Layer 6: coverage, matched pixel sweeps and measured concurrency
+
+Before their runs, freeze multiscale proposals as a 1536-pixel whole-page view
+plus four overlapping tiles from a 3072-pixel source render, followed by fixed
+larger-containment fusion. Retain all raw proposals and transform evidence;
+transcribe every accepted crop using the existing strict 1024-pixel JPEG90
+contract. Compare both Sonnet and Haiku to their whole-detector crop controls.
+More proposals must earn quality gains without overlap, negative-page or atomic
+failure regressions. Do not select a detector configuration from a page's gold.
+
+Separately compare 2048-pixel JPEG50 crops for both models to 1024-pixel JPEG90.
+This deliberately changes resolution and encoding together and cannot isolate
+which caused an effect. The Haiku 768/512/400-pixel JPEG90 sweep does isolate
+crop edge with the same original detector proposals, source render and prompt.
+All sixteen intended pages and all charges remain in every report.
+
+Queue full276 native/image hybrids for Haiku and, if enough campaign time remains,
+Sonnet. Keep the 16-page pilot and additional DEV pages separately visible. The
+full expansion tests whether keeping native grids avoids paying for already
+solved cells while image crops improve natural pages. It is not a hidden
+confidence-based cascade and has no protected-set confirmation.
+
+The concurrency prototype passed mocked thread and independent-process budget
+races. Its only paid integration is an explicit four-worker whole-page Haiku
+2048-pixel JPEG50 run against the serial control. Keep fresh calls, deterministic
+page ordering, all errors/costs and whole-run wall/CPU/RSS. Reserve and settle
+under a cross-process lock; perform HTTP and Langfuse outside it. Run this only
+after the legacy serial queue drains. Start no paid experiment after 07:00 UTC;
+skip queued arms whose fixed allowance no longer fits the campaign window.

@@ -302,7 +302,7 @@ The first fixed 276-page expansion compares 249 reference tables across 220
 scored pages; another 56 native-PDF pages are operational diagnostics. The
 configuration was selected before running the additional natural pages.
 
-| Configuration | Outputs / 276 | Complete tables / 249 | Exact text cells | Exact positive pages / 172 | Negative false-positive pages / 48 | Pages/min | Pages/API USD |
+| Configuration | Outputs / 276 | Complete tables / 249 | Exact text cells / 8,897 | Exact positive pages / 172 | Negative false-positive pages / 48 | Pages/min | Pages/API USD |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Native regional extraction + CPU OCR | 272 | 120 | 4,258 | 96 | 0 | 36.78 | No API calls |
 | Native grids + YOLO + Haiku source-ID matrix, 512 px | 270 | 166 | 6,329 | 136 | 9 | 12.64 | 2,116.13 |
@@ -348,6 +348,10 @@ tables, positive and negative pages, CPU/RAM, provider usage, and failures.
 Source-ID assembly preserves literal evidence but cannot repair missing OCR text.
 Image transcription is a separately labeled table-only comparator. No model is
 enabled by default, and public benchmark pretraining contamination is unknown.
+Image-transcribed text has no source-conservation guarantee. Whole-page JPEG90
+at 2048 pixels refused five requests before inference; JPEG50 at that edge admitted
+all sixteen inputs. Their observed rates therefore include different coverage,
+not just a change in model speed or image resolution.
 The [source inventory audit](bench/results/p002-source-inventory-ceilings.md)
 finds that even an optimistic rearrangement of standard OCR words can form only
 1,194/2,333 reference cells under the literal source-assembly rules. Whitespace
