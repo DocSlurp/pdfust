@@ -26,9 +26,15 @@ SYSTEM = (
 )
 
 
-def request(source: dict[str, Any], model: str, **kwargs: Any) -> dict[str, Any]:
+def request(
+    source: dict[str, Any],
+    model: str,
+    url: str | None = None,
+    viewport: list[float] | tuple[float, ...] | None = None,
+    max_tokens: int = 4096,
+) -> dict[str, Any]:
     """Keep identical source evidence while replacing the verbose anchor answer."""
-    body = anchors.request(source, model, **kwargs)
+    body = anchors.request(source, model, url, viewport, max_tokens)
     body["messages"][0]["content"] = SYSTEM
     cell = {"type": "array", "maxItems": 4096, "items": {"type": "string"}}
     row = {"type": "array", "minItems": 1, "maxItems": 4096, "items": cell}
