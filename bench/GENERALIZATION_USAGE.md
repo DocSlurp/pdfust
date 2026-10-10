@@ -214,6 +214,15 @@ Combined Markdown has a separate 64 MiB UTF-8 cap, checked before reading/concat
 page Markdown. Refusal marks the document partial with an explicit combined-output
 error; individual complete page artifacts remain intact.
 
+Native mode preserves the PDF's display rotation and creates `corrected-native/`
+sidecars using the actual table baselines for logical rows, columns and spans.
+Original source words and line metadata determine prose order. The child runner's
+physical outputs remain unchanged, while `document.json` links both versions.
+The exact correction helper copies and runtime fingerprints are retained under
+`native-correction-runtime/`; correction wall/CPU are measured separately from
+the child pipeline, with wrapper RSS explicitly unmeasured. A correction failure
+marks that page failed rather than silently using the known physical-order output.
+
 `document.md` combines requested pages in physical page order with visible failure
 placeholders. `document.json` distinguishes complete document output from partial
 output and separately records whether every requested page succeeded. A successful

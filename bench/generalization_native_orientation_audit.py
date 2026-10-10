@@ -15,7 +15,7 @@ from typing import Any
 import pylopdf
 from bench import pipeline_native_orientation as orientation
 from bench.generalization_scoring import score_dataset
-from bench.silver import sha, write_json
+from bench.silver import guard_path, sha, write_json
 
 RUNS = ("full276-hybrid-haiku-1024", "full276-hybrid-sonnet-1024")
 
@@ -24,6 +24,7 @@ def replay(root: Path, run_name: str) -> dict[str, Any]:
     """Recompose all 276 pages, preserving failed pages and every model table."""
     if run_name not in RUNS:
         raise ValueError("Unsupported retained control")
+    root = guard_path(root)
     start, cpu = time.perf_counter(), time.process_time()
     inputs: dict[str, str] = {}
 
@@ -110,8 +111,11 @@ def main() -> None:
     parser.add_argument("--run", choices=RUNS, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    output = guard_path(args.output)
+    if output.exists():
+        raise FileExistsError("Audit output must be new; preserve retained evidence")
     result = replay(args.artifact_root, args.run)
-    write_json(args.output, result)
+    write_json(output, result)
     print(json.dumps({"baseline": result["baseline"]["totals"], "logical": result["logical"]["totals"],
                       "resources": result["resources"]}, indent=2))
 
