@@ -24,6 +24,25 @@ if TYPE_CHECKING:
     from bench.decision_hosted import DecisionClient
 
 MAX_RASTER_EDGE = 2400
+PROMPT_HINTS = {
+    "base": "",
+    "row_wrap": (
+        "\nRow-boundary audit: compare each physical line with both neighboring lines across every column. "
+        "A continuation may belong to the preceding cell when its indent, leading and neighboring occupied cells "
+        "support wrapping. A simultaneous restart of values in independent columns supports a new record. "
+        "Neither a blank leading cell nor a number alone proves either interpretation. Preserve blank cells and "
+        "multi-line headers; do not collapse distinct records just because their first column is empty. "
+        "Return the same strict JSON only."
+    ),
+    "column_tracks": (
+        "\nColumn-track audit: establish recurring left-aligned text tracks and right-aligned value tracks "
+        "from the complete region before placing words in rows. Use horizontal overlap, repeated gutters and "
+        "cross-row consistency together; nearest-neighbor distance alone can cross a column boundary. "
+        "Keep merged headers anchored over their supported columns. Treat aligned prose and decorative grids "
+        "as non-tables unless their content has repeated record/attribute relationships. "
+        "Return the same strict JSON only."
+    ),
+}
 
 
 def ocr_resolution(page_size: list[float], config: dict[str, Any]) -> tuple[float, dict[str, Any]]:
@@ -195,6 +214,10 @@ def generate_region(
         max_tokens=config.get("generation_tokens", 8192),
         evidence_format=config.get("generation_evidence", "objects"),
     )
+    prompt_style = config.get("generation_prompt", "base")
+    if prompt_style not in PROMPT_HINTS:
+        raise ValueError("Unknown source assembly prompt style")
+    body["messages"][0]["content"] += PROMPT_HINTS[prompt_style]
     step = len(result["calls"])
     write_json(output / f"{result['id']}-request-{step}.json", body)
     began, cpu = time.perf_counter(), time.process_time()
@@ -513,6 +536,7 @@ def main() -> None:
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
     parser.add_argument("--generation-format", choices=("anchors", "matrix"), default="anchors")
     parser.add_argument("--generation-evidence", choices=("objects", "arrays", "quarter"), default="objects")
+    parser.add_argument("--generation-prompt", choices=tuple(PROMPT_HINTS), default="base")
     parser.add_argument("--raster-rules", action="store_true")
     parser.add_argument("--raster-edge", type=int, choices=(1024, 1536, 2048), default=1536)
     parser.add_argument("--layout-detector", choices=("none", "yolo"), default="none")
