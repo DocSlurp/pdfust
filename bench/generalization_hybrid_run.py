@@ -73,7 +73,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     markdown_path.unlink(missing_ok=True)
     try:
         if (
-            config.get("campaign", "P002") != "P002"
+            config.get("campaign", "P002") not in {"P002", "P003"}
             or config.get("policy", "gated") != "gated"
             or config.get("layout_detector") != "yolo"
             or config.get("image_edge", 1024) != 1024

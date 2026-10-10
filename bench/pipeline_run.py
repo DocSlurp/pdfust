@@ -186,7 +186,7 @@ def call(
 ) -> dict[str, Any]:
     """Root-only serial metering, fresh transmission, separate persistent wave cap."""
     campaign = tag.split("/", 1)[0]
-    if campaign not in {"P001", "P002"}:
+    if campaign not in {"P001", "P002", "P003"}:
         raise ValueError("Unknown complete-pipeline campaign")
     ledger = json.loads(client.ledger.read_bytes())
     spent = sum(
@@ -481,7 +481,7 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
     """Freeze code/source/config before any calls; reference loading is a separate command."""
     workers = _workers(config)
     campaign = config.get("campaign", "P001")
-    if campaign not in {"P001", "P002"}:
+    if campaign not in {"P001", "P002", "P003"}:
         raise ValueError("Unknown complete-pipeline campaign")
     if config.get("compact_packet") and config.get("readable_packet"):
         raise ValueError("Select only one optional packet encoding")
@@ -521,6 +521,7 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                 "pipeline_admission.py",
                 "pipeline_frontier.py",
                 "decision_hosted.py",
+                *(["research_policy.py", "p003_run.py"] if campaign == "P003" else []),
                 *(
                     ["decision_concurrent.py", "decision_gateway.py", "decision_langfuse.py", "reprice_model_rates.py"]
                     if workers == VISION_WORKERS else []

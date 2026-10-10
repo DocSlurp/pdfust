@@ -93,7 +93,11 @@ def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default
     if client is None:
         raise ValueError("Vision transcription requires the coordinated metered client")
     previous = _ledger(client)
-    spent = sum(accounted_cost(row["accounted_usd"]) for row in previous if row.get("tag", "").startswith("P002/"))
+    campaign = config.get("campaign", "P002")
+    spent = sum(
+        accounted_cost(row["accounted_usd"])
+        for row in previous if row.get("tag", "").startswith(campaign + "/")
+    )
     reservation = 1.0 if body["model"] == "anthropic/claude-opus-5.5" else 0.30
     if config.get("workers", 1) == baseline.VISION_WORKERS:
         from bench.decision_concurrent import ConcurrentDecisionClient
@@ -101,8 +105,9 @@ def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default
         if not isinstance(client, ConcurrentDecisionClient):
             raise ValueError("Concurrent vision requires atomic shared wave admission")
     elif spent + reservation > baseline.WAVE_LIMIT:
-        raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
-    tag = f"P002/{config['run_id']}/{result['id']}/vision/{request_index}"
+        message = f"{campaign} reservation would exceed its USD 50 wave cap"
+        raise RuntimeError(message)
+    tag = f"{campaign}/{config['run_id']}/{result['id']}/vision/{request_index}"
     before_indexes = {row["index"] for row in previous if "index" in row}
     began, cpu = time.perf_counter(), time.process_time()
     try:
@@ -167,8 +172,8 @@ def process(
     }
     stage = "input"
     try:
-        if config.get("campaign", "P002") != "P002":
-            raise ValueError("Vision control belongs to the P002 campaign")
+        if config.get("campaign", "P002") not in {"P002", "P003"}:
+            raise ValueError("Vision control requires an authorized generalization campaign")
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Frozen source PDF hash changed")

@@ -199,7 +199,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     stage = "config"
     try:
         if (
-            config.get("campaign", "P002") != "P002"
+            config.get("campaign", "P002") not in {"P002", "P003"}
             or config.get("layout_detector") != "yolo"
             or config.get("_layout_detector") is None
             or config.get("detector_tiles", "2x2") != "2x2"

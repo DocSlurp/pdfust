@@ -187,7 +187,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     stage = "input"
     try:
         if (
-            config.get("campaign", "P002") != "P002"
+            config.get("campaign", "P002") not in {"P002", "P003"}
             or type(config.get("image_edge", CROP_EDGE)) is not int
             or config.get("image_edge", CROP_EDGE) not in CROP_EDGES
             or type(config.get("jpeg_quality", JPEG_QUALITY)) is not int

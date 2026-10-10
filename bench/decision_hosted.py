@@ -21,8 +21,8 @@ from bench.decision_evidence import project_case
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "bench/results/pdf-master-artifacts/decisions"
-CAMPAIGN_LIMIT = 148.0
-TOTAL_LIMIT = 150.0
+CAMPAIGN_LIMIT = 198.0
+TOTAL_LIMIT = 200.0
 PRIOR_RENTAL = 0.684
 RESERVATION = 0.30
 MAX_BODY_BYTES = 32_000
@@ -414,6 +414,9 @@ class DecisionClient:
             if charged + reservation_usd > CAMPAIGN_LIMIT or prior + charged + reservation_usd > TOTAL_LIMIT:
                 message = "request reservation would exceed campaign or cumulative authorized spend"
                 raise RuntimeError(message)
+            from bench.research_policy import admit_wave  # noqa: PLC0415 - independent paid-admission boundary.
+
+            admit_wave(ledger, tag, reservation_usd)
             index = len(ledger["requests"])
             entry = {
                 "index": index,

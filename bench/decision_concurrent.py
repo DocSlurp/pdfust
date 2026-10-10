@@ -26,7 +26,7 @@ from bench import decision_hosted as hosted
 from bench.decision_gateway import safe_http_error
 
 MAX_INFLIGHT = 8
-WAVE_LIMITS = {"P001": 50.0, "P002": 50.0}
+WAVE_LIMITS = {"P001": 50.0, "P002": 50.0, "P003": 50.0}
 SETTLEMENT_FIELDS = {
     "response_file",
     "response_prefix_file",
@@ -69,7 +69,7 @@ class ConcurrentDecisionClient:
         if not waves or any(
             k not in WAVE_LIMITS or hosted.accounted_cost(v) > WAVE_LIMITS[k] or v <= 0 for k, v in waves.items()
         ):
-            raise ValueError("Wave limits must tighten the existing P001/P002 caps")
+            raise ValueError("Wave limits must tighten the existing P001/P002/P003 caps")
         self._client = client
         self.root, self.directory, self.ledger = client.root, client.directory, client.ledger
         self.policy: dict[str, Any] = {"max_inflight": max_inflight, "wave_limits_usd": deepcopy(waves)}
@@ -135,6 +135,9 @@ class ConcurrentDecisionClient:
                 or wave_charged + reservation > self.policy["wave_limits_usd"][wave]
             ):
                 raise RuntimeError("Reservation exceeds atomic campaign, cumulative or wave cap")
+            from bench.research_policy import admit_wave  # noqa: PLC0415 - same shared locked wave policy.
+
+            admit_wave(ledger, tag, reservation)
             index = len(entries)
             entry = {
                 "index": index,

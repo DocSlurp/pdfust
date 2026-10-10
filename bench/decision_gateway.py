@@ -472,6 +472,9 @@ class GatewayDecisionClient(hosted.DecisionClient):
             ):
                 message = "Gateway reservation exceeds shared campaign or cumulative authorized spend"
                 raise RuntimeError(message)
+            from bench.research_policy import admit_wave  # noqa: PLC0415 - same shared locked wave policy.
+
+            admit_wave(ledger, tag, reservation_usd)
             index = len(ledger["requests"])
             entry = {
                 "index": index,

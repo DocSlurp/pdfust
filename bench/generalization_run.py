@@ -176,7 +176,8 @@ def _request(
         request["max_tokens"] = config["answer_tokens"]
     step = len(result["calls"])
     write_json(output / f"{result['id']}-request-{step}.json", request)
-    response = baseline.call(client, request, f"P002/{config['run_id']}/{result['id']}/{region_id}/{step}")
+    campaign = config.get("campaign", "P002")
+    response = baseline.call(client, request, f"{campaign}/{config['run_id']}/{result['id']}/{region_id}/{step}")
     result["calls"].append(response)
     return response["answer"]
 
@@ -206,11 +207,16 @@ def generate_region(
     if client is None:
         raise ValueError("Generative assembly requires the coordinated metered client")
     ledger = json.loads(client.ledger.read_bytes())
-    spent = sum(accounted_cost(e["accounted_usd"]) for e in ledger["requests"] if e.get("tag", "").startswith("P002/"))
+    campaign = config.get("campaign", "P002")
+    spent = sum(
+        accounted_cost(e["accounted_usd"])
+        for e in ledger["requests"] if e.get("tag", "").startswith(campaign + "/")
+    )
     generation_model = config.get("generation_model", "anthropic/claude-sonnet-5.5")
     reservation = 1.0 if generation_model == "anthropic/claude-opus-5.5" else 0.30
     if spent + reservation > baseline.WAVE_LIMIT:
-        raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
+        message = f"{campaign} reservation would exceed its USD 50 wave cap"
+        raise RuntimeError(message)
     body = request(
         generation_source,
         generation_model,
@@ -237,7 +243,7 @@ def generate_region(
     began, cpu = time.perf_counter(), time.process_time()
     response = client.request(
         body,
-        tag=f"P002/{config['run_id']}/{result['id']}/{region_id}/{step}",
+        tag=f"{campaign}/{config['run_id']}/{result['id']}/{region_id}/{step}",
         max_body_bytes=750_000,
         replay=False,
         reservation_usd=reservation,

@@ -50,6 +50,12 @@ overview.
   a separate USD 50 ceiling. Keep a shared persistent ledger, per-wave
   limits and pre-request reservations. Preserve prior charges and unresolved
   reservations; only root coordinates paid inference across experiment agents.
+- On 2026-10-10 the user authorized another USD 50 and eight hours for decision
+  model research (P003), raising the cumulative cap to **USD 200**. P003 has its
+  own USD 50 ceiling, starting at 18:27 UTC and ending at 02:27 UTC on October 11.
+  Stop new paid admissions at 02:12 UTC to leave time for validation and reporting.
+  Preserve the prior USD 44.9319455668 conservative accounting baseline, including
+  unresolved reservations; it is not all confirmed spending.
 - Keep local checks CPU-only by default. On 2026-10-08 the user explicitly
   authorized bounded local-GPU benchmark comparisons where acceleration matters.
   Verify GPU health first; record matched CPU/GPU quality, wall/CPU time, peak
