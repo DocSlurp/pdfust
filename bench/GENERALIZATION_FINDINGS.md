@@ -63,12 +63,18 @@ for review without relabeling failed pages as complete.
 - **Detection can dominate the miss count.** The whole-page detector proposes
   nothing on one dense newspaper page containing 26 reference tables. A stronger
   placement prompt cannot recover a region that was never submitted. Multiscale
-  detection is a separate experiment, not a gold-informed per-page fallback.
+  detection produces ten Table proposals there; Haiku recovers 161 exact cells
+  on that page. Across all sixteen pages, however, it falls from 687 to 581 exact
+  cells and from four to two complete tables relative to ordinary crops. Sonnet
+  acquires those proposals but fails atomic geometry validation. Detection gains
+  and complete extraction gains must therefore be reported separately.
 - **Small images have a measurable tradeoff.** Matched Haiku crop edges
   400/512/768/1024 recover 225/290/403/687 exact cells on natural16. The first
   three complete all sixteen page attempts; 1024 has two atomic failures.
   Dense-page gains account for most of the difference. Larger is not a universal
-  winner across completeness, cost and text accuracy.
+  winner across completeness, cost and text accuracy. The combined 2048/JPEG50
+  crop controls recover 292 Sonnet and 268 Haiku cells; neither improves on its
+  1024/JPEG90 control in these fresh runs. This changes encoding and edge together.
 - **Fresh responses vary substantially.** Three Haiku controls have identical
   proposals, crop descriptors and all nineteen request hashes, but recover
   687/289/732 exact cells with 14/14/15 successful pages. Do not attribute these
@@ -83,6 +89,12 @@ for review without relabeling failed pages as complete.
   12.43 serial, with different fresh-response outcomes. Atomic reservations and
   whole-run resource measurements are required; summing overlapping page times
   is invalid. Detector/OCR/hybrid concurrency remains unmeasured.
+- **Partial evidence has value and still needs review.** The unchanged isolated
+  table validator recovers 320 additional exact cells from failed multiscale
+  Sonnet pages, but admits three extra tables. Its original complete-page score
+  and two failures remain unchanged. See the
+  [all-page partial audit](results/p002-multiscale-partial.md); these artifacts
+  are not new successful pages or provider cache hits.
 
 ## Which configuration to use for the next iteration
 
