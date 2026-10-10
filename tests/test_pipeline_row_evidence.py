@@ -70,3 +70,18 @@ def test_duplicate_identity_and_complete_admission_are_not_repaired(monkeypatch:
     monkeypatch.setattr("bench.pipeline_row_evidence.MAX_PACKET_BYTES", 50)
     with pytest.raises(ValueError, match="Complete row evidence"):
         build(source())
+
+
+def test_uniform_scale_preserves_normalized_features_and_original_geometry() -> None:
+    data = source()
+    initial = build(data)
+    for word in data["words"]:
+        word["bbox"] = [value * 2 for value in word["bbox"]]
+    data["page_size"] = [value * 2 for value in data["page_size"]]
+    scaled = build(data)
+    assert scaled["em_proxy"] == initial["em_proxy"] * 2
+    for before, after in zip(initial["rows"], scaled["rows"], strict=True):
+        assert before["gaps_em"] == after["gaps_em"]
+        assert before["start_tracks"] == after["start_tracks"]
+        assert before["adjacent"] == after["adjacent"]
+    assert scaled["words"][0][2] == data["words"][0]["bbox"]
