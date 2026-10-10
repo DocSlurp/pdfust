@@ -10,10 +10,12 @@ from typing import Any
 
 from bench import pipeline_run
 from bench.decision_hosted import DECISION_MODELS
+from bench.pipeline_frontier import MODELS as CHAT_MODELS
 from bench.silver import guard_path
 
 PRESETS = ("ordinal", "gated_ordinal", "hybrid", "vision_regions", "p003_regions")
 HYBRID_EDGE = 1024
+P003_TRANSPORT_CONCURRENCY = 3
 
 
 def configuration(args: argparse.Namespace) -> dict[str, Any]:
@@ -23,6 +25,7 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
         "order_seed": args.order_seed, "policy": "gated", "workers": 1,
         "model": args.model, "generation_model": args.generation_model,
         "generation_provider": args.generation_provider,
+        "transcription_representation": args.transcription_representation,
         "generation_tokens": 8192, "image_edge": args.image_edge,
         "layout_detector": "yolo", "ocr_empty": True, "ocr_dpi": args.ocr_dpi,
         "ocr_edge": 0, "ocr_mode": "empty", "ocr_orientation": "fixed",
@@ -42,6 +45,8 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
         "detector_residual": "retain", "detector_boundary": "retain",
         "repeat_index": args.repeat_index, "preset": args.preset,
     }
+    if args.transport_concurrency == P003_TRANSPORT_CONCURRENCY:
+        config["transport_concurrency"] = 3
     if args.preset == "gated_ordinal":
         config["assembly_method"] = "gated_generate"
         config.update(gate_packet=args.gate_packet, gate_instructions=args.gate_instructions)
@@ -73,9 +78,12 @@ def main() -> None:
         "--model", choices=(*DECISION_MODELS, "convaiinnovations/laya", "convaiinnovations/laya-free"),
         default="perplexity/pplx-decider-v1.1-27b",
     )
-    parser.add_argument("--generation-model", choices=pipeline_run.CHAT_MODELS, default="anthropic/claude-haiku-5.5")
+    parser.add_argument("--generation-model", choices=CHAT_MODELS, default="anthropic/claude-haiku-5.5")
     parser.add_argument(
         "--generation-provider", help="Exact serving provider; disable fallbacks and require schema support",
+    )
+    parser.add_argument(
+        "--transcription-representation", choices=("legacy", "matrix_strict", "atomic_cells"), default="legacy",
     )
     parser.add_argument("--image-edge", type=int, choices=(0, 128, 256, 400, 512, 768, 1024, 1200), default=512)
     parser.add_argument("--ocr-dpi", type=int, choices=(150, 300), default=300)
@@ -92,6 +100,7 @@ def main() -> None:
         "--region-proposal-arm", choices=("tracks_whole", "tracks_fixed2", "yolo"), default="tracks_whole",
     )
     parser.add_argument("--ungated-regions", action="store_true")
+    parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
     parser.add_argument("--repeat-index", type=int, choices=(0, 1, 2), default=0)
     parser.add_argument("--order-seed", type=int, default=20261010)
     args = parser.parse_args()
@@ -101,6 +110,10 @@ def main() -> None:
         parser.error("Source proposal treatments use fixed 1024 px transcription crops")
     if args.ungated_regions and (args.preset != "p003_regions" or args.region_proposal_arm != "yolo"):
         parser.error("Only the source-proposal YOLO control may disable its gate")
+    if args.transcription_representation != "legacy" and args.preset not in {"vision_regions", "hybrid"}:
+        parser.error("Nonlegacy transcription representations require vision_regions or hybrid")
+    if args.transport_concurrency == P003_TRANSPORT_CONCURRENCY and args.gate_provider != "openrouter":
+        parser.error("Transport concurrency three requires OpenRouter")
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     report = pipeline_run.run(guard_path(args.manifest), guard_path(args.output), configuration(args))
     print(json.dumps({k: v for k, v in report.items() if k != "results"}, indent=2))

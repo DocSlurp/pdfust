@@ -22,6 +22,7 @@ from bench.generalization_vision_multiscale import RULES as MULTISCALE_RULES
 from bench.generalization_vision_multiscale import replay as multiscale_replay
 from bench.generalization_vision_regions import compose as vision_regions_compose
 from bench.generalization_vision_regions import proposals as vision_region_proposals
+from bench.generalization_vision_regions import transcription_parse, transcription_request
 from bench.pipeline_layout_detector import _box
 from bench.pipeline_regions import compose, validate_composed
 from bench.pipeline_report import _render_markdown, _verify_markdown_renderer
@@ -69,6 +70,7 @@ TRUSTED_HISTORICAL_CODE = {
         "6043f2e9590d8caeb0262223b6fd0a48a737b75685c11b0f346cd9ec140f4ac4": "01273f1",
     },
     "generalization_vision_regions.py": {
+        "7ebafcad7872e73ad08a8e7acf789b582556c3d52f87732f31e291f9f929405f": "4de6318 reviewed legacy crop composition",
         "a47235e0aad3c1789d460c924f273865cb911fb75fec4fb36a0f5eb39ad5d802": "3abf651",
         "a4dbfc283488edd60ee3877e5acb74de1e9263626d567ef5d73a719810339325": "fc49724",
         "d6a481f585c8baf09eca6d724b1f0311c1a02ce8c1fe9e3371dd16a99ea4154a": "be05820",
@@ -93,7 +95,13 @@ def _vision_region_validation_ast(source: bytes) -> str:
     """Fingerprint strict crop selection/composition independently of image controls."""
     selected: list[ast.stmt] = []
     found = set()
-    for node in ast.parse(source).body:
+    tree = ast.parse(source)
+    if any(isinstance(n, ast.FunctionDef) and n.name == "_compose_legacy" for n in tree.body):
+        tree.body = [n for n in tree.body if not (isinstance(n, ast.FunctionDef) and n.name == "compose")]
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef) and node.name == "_compose_legacy":
+                node.name = "compose"
+    for node in tree.body:
         if isinstance(node, ast.FunctionDef) and node.name in VISION_REGION_FUNCTIONS:
             selected.append(node)
             found.add(node.name)
@@ -183,6 +191,11 @@ def load_corpus(directory: Path) -> tuple[dict[str, Any], dict[str, Any]]:
 def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> dict[str, Any]:
     """Hash archive bytes without importing or executing artifact Python."""
     hashes = frozen["code_sha256"]
+    representation = frozen.get("config", {}).get("transcription_representation", "legacy")
+    if representation not in {"legacy", "matrix_strict", "atomic_cells"}:
+        raise ValueError("Unknown frozen transcription representation")
+    if representation != "legacy" and processor not in {"vision_regions", "hybrid"}:
+        raise ValueError("Unsupported frozen transcription representation processor")
     local = Path(__file__).parent
     comparison = {}
     required = (
@@ -190,6 +203,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         if processor in {"vision", "vision_regions", "vision_multiscale"}
         else {"pipeline_run.py", "pipeline_assembly.py"}
     )
+    if representation != "legacy":
+        required.add("p003_transcription_design.py")
     if processor in {"vision_regions", "vision_multiscale"}:
         required.add("generalization_vision_regions.py")
     if processor == "vision_multiscale":
@@ -271,6 +286,10 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         )
     if concurrent and any(comparison[name] != "identical" for name in concurrent_dependencies):
         raise ValueError("Trusted concurrent request accounting differs from frozen code")
+    if representation != "legacy" and any(comparison[n] != "identical" for n in (
+        "p003_transcription_design.py", "generalization_vision_regions.py", "pipeline_vision_transcription.py",
+    )):
+        raise ValueError("Trusted transcription representation helpers differ from frozen code")
     historical_helpers = {}
     if processor == "hybrid" and comparison["generalization_hybrid_run.py"] != "identical":
         if (
@@ -307,7 +326,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         and comparison["generalization_run.py"] != "identical"
     ):
         raise ValueError("Original source order requires the exact current regional runner")
-    if frozen.get("config", {}).get("generation_format") == "indices" and any(
+    if processor in {"regions", "hybrid"} and frozen.get("config", {}).get("generation_format") == "indices" and any(
         comparison.get(name) != "identical"
         for name in (
             "pipeline_index_matrix_generation.py",
@@ -424,12 +443,14 @@ def _source_order_mode(directory: Path) -> str:
     frozen_path = directory / "frozen.json"
     config = _read(frozen_path).get("config", {}) if frozen_path.is_file() else {}
     mode = config.get("source_order", "legacy")
-    if mode not in {"legacy", "original"}:
+    if not isinstance(mode, str) or mode not in {"legacy", "original"}:
         raise ValueError("Unsupported frozen regional source order")
     return mode
 
 
-def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[str, Any]:
+def _verify_hybrid_output(
+    directory: Path, prediction: dict[str, Any], *, config: dict[str, Any],
+) -> dict[str, Any]:
     """Replay child artifacts, source-only detector exclusion and mixed composition."""
     ident = prediction["id"]
     children = {}
@@ -439,7 +460,7 @@ def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[s
             if not isinstance(child, dict) or child.get("id") != ident:
                 raise ValueError("Hybrid child identity differs from parent")
             children[name] = verify_output(
-                directory / name, child, processor=processor, source_order=_source_order_mode(directory)
+                directory / name, child, processor=processor, source_order=_source_order_mode(directory), config=config
             )
     native = prediction.get("native_result") or {}
     vision = prediction.get("vision_result") or {}
@@ -542,8 +563,46 @@ def _verify_multiscale_detection(prediction: dict[str, Any]) -> None:
         raise ValueError("Multiscale retained detector proposals differ from complete trusted raw replay")
 
 
+
+def _verify_transcription_requests(
+    directory: Path, prediction: dict[str, Any], config: dict[str, Any],
+) -> None:
+    """Authenticate the treatment against actual bodies, including failed pages."""
+    representation = config.get("transcription_representation", "legacy")
+    if representation not in {"legacy", "matrix_strict", "atomic_cells"}:
+        raise ValueError("Unknown frozen transcription representation")
+    if prediction.get("transcription_representation", "legacy") != representation:
+        raise ValueError("Prediction representation differs from frozen treatment")
+    for region in prediction.get("transcription_regions", []):
+        if region.get("transcription_representation", "legacy") != representation:
+            raise ValueError("Region representation differs from frozen treatment")
+        # Existing legacy archives did not retain this treatment's body seam.
+        if representation == "legacy":
+            continue
+        metadata = region.get("request")
+        if metadata is None and region.get("status") == "not_requested":
+            continue
+        if not isinstance(metadata, dict) or metadata.get("transcription_representation") != representation:
+            raise ValueError("Request representation differs from frozen treatment")
+        body = _read(directory / f"{prediction['id']}-request-{region['request_index']}.json")
+        try:
+            url = body["messages"][1]["content"][0]["image_url"]["url"]
+        except (KeyError, IndexError, TypeError) as error:
+            raise ValueError("Missing transcription request pixels") from error
+        rebuilt = transcription_request(
+            config["generation_model"], url, region["viewport"],
+            max_tokens=config.get("generation_tokens", 16384), representation=representation,
+        )
+        if config.get("generation_provider"):
+            rebuilt["provider"] = {"only": [config["generation_provider"]], "allow_fallbacks": False,
+                                   "require_parameters": True}
+        encoded = json.dumps(rebuilt, separators=(",", ":")).encode()
+        if body != rebuilt or metadata.get("body_sha256") != sha(encoded) or metadata.get("body_bytes") != len(encoded):
+            raise ValueError("Actual transcription body differs from frozen representation")
+
 def verify_output(
-    directory: Path, prediction: dict[str, Any], *, processor: str, source_order: str | None = None
+    directory: Path, prediction: dict[str, Any], *, processor: str, source_order: str | None = None,
+    config: dict[str, Any] | None = None
 ) -> dict[str, Any]:
     """Revalidate source ownership and exact retained Markdown for successful pages."""
     ident = prediction["id"]
@@ -552,8 +611,14 @@ def verify_output(
     retained = _read(directory / f"{ident}-result.json")
     if retained != prediction:
         raise ValueError("Per-page retained result differs from report")
+    if config is None:
+        frozen_path = directory / "frozen.json"
+        config = _read(frozen_path).get("config", {}) if frozen_path.is_file() else {}
+    representation = config.get("transcription_representation", "legacy")
     if processor == "hybrid":
-        return _verify_hybrid_output(directory, prediction)
+        return _verify_hybrid_output(directory, prediction, config=config)
+    if processor == "vision_regions":
+        _verify_transcription_requests(directory, prediction, config)
     if prediction.get("status") != "ok":
         return {"operational": False, "conserved": False}
     state = _read(directory / f"{ident}-structure.json")
@@ -582,9 +647,11 @@ def verify_output(
                 {key: region[key] for key in proposal_fields} for region in selected
             ]:
                 raise ValueError("Vision regions differ from complete retained detector proposals")
-            rebuilt = vision_regions_compose(regions, prediction["viewport"])
+            rebuilt = vision_regions_compose(regions, prediction["viewport"], representation=representation)
             for region in regions:
-                parsed = vision_parse(region["transcription_response"], region["viewport"])
+                parsed = transcription_parse(
+                    region["transcription_response"], region["viewport"], representation=representation,
+                )
                 if parsed["tables"] != region.get("tables"):
                     raise ValueError("Vision region tables differ from reparsed retained response")
         else:
@@ -934,7 +1001,7 @@ def score_run(
             derived_boxes += sum("bbox" in t for t in state["tables"])
     scored = _evaluate(private, scoring_predictions)
     by_id, by_target = {p["id"]: p for p in scoring_predictions}, {t["id"]: t for t in private}
-    verified_outputs = [verify_output(directory, p, processor=processor) for p in predictions]
+    verified_outputs = [verify_output(directory, p, processor=processor, config=config) for p in predictions]
     operational = sum(output["operational"] for output in verified_outputs)
     conserved = sum(output["conserved"] for output in verified_outputs)
     groups: dict[str, Any] = {}

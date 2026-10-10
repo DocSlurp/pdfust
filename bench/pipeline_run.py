@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from bench.decision_hosted import ARTIFACTS, ROOT, DecisionClient, accounted_cost
 from bench.decision_oplog_run import parse_choice
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 MODELS = ("perplexity/pplx-decider-v1.1-27b", "cloudflare/clef-flash", "openai/gpt-6-luna-decisions", *CHAT_MODELS)
 POLICIES = ("native", "native_text", "assembly", "cascade", "repair", "adaptive", "gated")
 VISION_WORKERS = 4
+P003_TRANSPORT_CONCURRENCY = 3
 VISION_MAX_TOKENS = 16384
 WAVE_LIMIT = 50.0
 GATE_REVIEW_SCORE = 0.8
@@ -451,7 +452,7 @@ def _processor(name: str | None) -> Callable[..., dict[str, Any]]:
     }
     if name not in modules:
         raise ValueError("Unknown pipeline processor")
-    return importlib.import_module("bench." + modules[name]).process
+    return cast("Callable[..., dict[str, Any]]", importlib.import_module("bench." + modules[name]).process)
 
 
 def _workers(config: dict[str, Any]) -> int:
@@ -483,9 +484,21 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
 ) -> dict[str, Any]:
     """Freeze code/source/config before any calls; reference loading is a separate command."""
     workers = _workers(config)
+    representation = config.get("transcription_representation", "legacy")
+    if representation not in ("legacy", "matrix_strict", "atomic_cells"):
+        raise ValueError("Unknown transcription representation")
+    if representation != "legacy" and config.get("processor") not in {"vision_regions", "hybrid"}:
+        raise ValueError("Nonlegacy transcription requires vision_regions or hybrid")
     campaign = config.get("campaign", "P001")
     if campaign not in {"P001", "P002", "P003"}:
         raise ValueError("Unknown complete-pipeline campaign")
+    transport_concurrency = config.get("transport_concurrency", 1)
+    if type(transport_concurrency) is not int or transport_concurrency not in (1, 3):
+        raise ValueError("Transport concurrency must be one or three")
+    if transport_concurrency == P003_TRANSPORT_CONCURRENCY and (
+        campaign != "P003" or workers != 1 or config.get("gate_provider", "openrouter") != "openrouter"
+    ):
+        raise ValueError("Transport concurrency three requires P003 OpenRouter with one local worker")
     if config.get("compact_packet") and config.get("readable_packet"):
         raise ValueError("Select only one optional packet encoding")
     if (config.get("retry_failed_index") is None) != (config.get("retry_reason") is None):
@@ -532,6 +545,7 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                     ["decision_concurrent.py", "decision_gateway.py", "decision_langfuse.py", "reprice_model_rates.py"]
                     if workers == VISION_WORKERS else []
                 ),
+                *(["decision_concurrent.py"] if transport_concurrency == P003_TRANSPORT_CONCURRENCY else []),
                 "rolling_rows.py",
                 "rolling_topology.py",
                 "decision_evidence_designs.py",
@@ -570,6 +584,7 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                     if config.get("generation_row_evidence") or config.get("gate_row_evidence")
                     else []
                 ),
+                *(["p003_transcription_design.py"] if representation != "legacy" else []),
                 *(
                     ["generalization_vision_run.py", "pipeline_vision_transcription.py"]
                     if config.get("processor") in (
@@ -611,15 +626,22 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
         "concurrency": workers,
         "local_replay": False,
     }
+    if transport_concurrency == P003_TRANSPORT_CONCURRENCY:
+        frozen.update(transport_concurrency=3, performance_scope="contended parallel arms; not serial throughput")
     write_json(output / "frozen.json", frozen)
     (output / "code").mkdir()
     for name in frozen["code_sha256"]:
         (output / "code" / name).write_bytes((ROOT / "bench" / name).read_bytes())
     serial_client = DecisionClient() if config["policy"] not in {"native", "native_text"} else None
     if campaign == "P003" and serial_client is not None:
-        from bench.p003_client import P003DecisionClient
+        if transport_concurrency == P003_TRANSPORT_CONCURRENCY:
+            from bench.p003_client import P003ConcurrentClient
 
-        serial_client = P003DecisionClient()
+            serial_client = P003ConcurrentClient(ROOT)
+        else:
+            from bench.p003_client import P003DecisionClient
+
+            serial_client = P003DecisionClient()
     client: DecisionClient | ConcurrentDecisionClient | None = serial_client
     if workers == VISION_WORKERS:
         from bench.decision_concurrent import ConcurrentDecisionClient
@@ -699,6 +721,9 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
         "results": results,
         "layout_detector_initialization": detector_initialization,
     }
+    if transport_concurrency == P003_TRANSPORT_CONCURRENCY:
+        report.update(transport_concurrency=3, performance_scope="contended parallel arms; not serial throughput")
+        report["metrics"]["performance_scope"] = report["performance_scope"]
     if workers == VISION_WORKERS:
         report["metrics"].update(
             measurement_scope="whole-run parent process across four threads; primary CPU/RSS/wall",
