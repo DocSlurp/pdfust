@@ -306,12 +306,32 @@ configuration was selected before running the additional natural pages.
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Native regional extraction + CPU OCR | 272 | 120 | 4,258 | 96 | 0 | 36.78 | No API calls |
 | Native grids + YOLO + Haiku source-ID matrix, 512 px | 270 | 166 | 6,329 | 136 | 9 | 12.64 | 2,116.13 |
+| Native grids + Haiku image crops, 1024 px, physical-order control | 268 | 157 | 6,604 | 129 | 1 | 18.33 | 6,743.87 |
 
 The Haiku run costs USD 0.1275912 in reported API charges. It recovers 155/156
 authored tables and 11/93 natural tables, with eight authored and one natural
 negative-page false positives. Four unsupported diagnostics and two truncated
 responses remain failures. These results support further gated and hybrid
 experiments; they do not establish reliable extraction across natural PDFs.
+
+The image-crop hybrid costs USD 0.0397398 and recovers 1,813/3,847 natural
+reference cells, versus 1,299 for source-ID assembly. Its physical-order control
+also exposes a native-table rotation bug: all twelve authored rotated tables
+lose logical cell ordering. Every other authored family is exact. These raw
+scores retain that regression; a separately labeled correction must verify
+reading direction without changing the model's evidence or inventing cell text.
+
+To process a document with retained Markdown, structured output, page failures
+and provenance, use the [experimental document CLI](bench/GENERALIZATION_USAGE.md):
+
+```sh
+.venv/bin/python -m bench.extract_document /absolute/path/document.pdf --output /new/output/directory
+```
+
+The default runs locally on CPU. Explicit `--mode hybrid-haiku` or
+`--mode hybrid-sonnet` enables metered hosted image transcription under the
+project ledger. Model-transcribed tables remain labeled separately from
+source-owned cells; partial documents retain visible page failures.
 
 Selected natural-screen comparisons (all 16 intended pages remain scored):
 

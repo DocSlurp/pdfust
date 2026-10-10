@@ -278,3 +278,23 @@ before it if the time allowance fits, to broaden evidence on the crop approach a
 observe another fresh natural16 response set. The smaller-image sweep and derived
 row-context comparisons remain separate controls. Any arms that cannot fit before
 the deadline must be listed as deferred, without implying a measured verdict.
+
+### Layer 7: logical orientation and document delivery
+
+The full276 Haiku hybrid exposes one isolated native regression: all twelve
+rotated authored tables retain physical matrix order, while native extraction
+and source-ID assembly already normalize reading direction. A generated 2-by-2
+table reproduces the issue at 90, 180 and 270 degrees. Correct native-table cell
+coordinates, spans and source-owned text using the actual character-weighted
+baseline direction within each table, matching the core Markdown convention.
+Do not infer orientation from page rotation alone; counterrotated content and
+mixed headings are required controls. Preserve physical detector exclusions,
+original source state and all model requests. Keep the existing physical-order
+configuration as an explicit frozen control.
+
+First replay the exact retained full276 outputs locally with this deterministic
+correction, retaining every original error and charge. Label corrected quality
+as an offline assembly audit, with no new inference or throughput claim. Only a
+fresh run may establish end-to-end corrected performance. The single-document
+CLI should select logical orientation once it passes regression tests, and keep
+page failures, provenance and source-accounting limits in its combined output.
