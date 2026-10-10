@@ -118,7 +118,7 @@ def test_empty_proposals_emit_empty_tables_with_unverified_coverage_and_no_reque
 
 
 def test_table_class_and_fixed_confidence_only_proposals() -> None:
-    detection = {
+    detection: dict[str, Any] = {
         "type": "result",
         "device": "cpu",
         "viewport": [0, 0, 600, 800],
