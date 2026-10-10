@@ -108,3 +108,41 @@ def test_repeat_summary_keeps_worst_and_best_without_selection() -> None:
     runs[2]["config"] = {"model": "changed"}
     with pytest.raises(ValueError, match="identical treatment"):
         repeat_summary(runs)
+
+
+def test_repeat_administration_and_defaults_do_not_change_treatment() -> None:
+    left, right = matched_run("r0", [1, 2]), matched_run("r1", [2, 3])
+    left["config"] = {"run_id": "r0", "repeat_index": 0, "order_seed": 1, "model": "gate", "image_edge": 512}
+    right["config"] = {
+        "run_id": "r1",
+        "repeat_index": 1,
+        "order_seed": 2,
+        "model": "gate",
+        "image_edge": 512,
+        "gate_image": True,
+        "source_order": "legacy",
+    }
+    for run in (left, right):
+        run["scores"] = {"strict_exact_cells": sum(p["strict_exact_cells"] for p in run["page_scores"])}
+    assert repeat_summary([left, right])["administrative_fields"][1]["order_seed"] == 2
+    for field, value in (("model", "different_gate"), ("image_edge", 1024), ("gate_image", False)):
+        changed = deepcopy(right)
+        changed["config"][field] = value
+        with pytest.raises(ValueError, match="identical treatment"):
+            repeat_summary([left, changed])
+    right["code_sha256"] = {"helper.py": "new"}
+    with pytest.raises(ValueError, match="operator semantic review"):
+        repeat_summary([left, right])
+    assert repeat_summary([left, right], reviewed_code_changes=True)["operator_reviewed_code_changes"]
+
+
+def test_paired_image_changes_are_explicit() -> None:
+    left, right = matched_run("a", [1, 2]), matched_run("b", [2, 3])
+    left["config"] = {"gate_image": True}
+    right["config"] = {"gate_image": False}
+    left["request_image_inventory"] = [{"data_url_sha256": ["image"]}]
+    right["request_image_inventory"] = []
+    result = paired_comparison(left, right, samples=10)
+    assert result["gate_image_configuration_equal"] is False
+    assert result["request_image_hash_sets_equal"] is False
+    assert result["treatment_changes"]["gate_image"] == [True, False]

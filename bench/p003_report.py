@@ -201,13 +201,44 @@ def score_run(
     reference_pages = [p for p in targets["pages"] if p["id"] in intended]
     scoring = strict_scores(reference_pages, scoring_predictions)
     audits = []
+    request_images = []
     for request in sorted(directory.glob("**/*-request-*.json")):
-        audit = audit_model_body(_read(request))
+        body = _read(request)
+        audit = audit_model_body(body)
+        stack = [body]
+        image_hashes = []
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
+            elif isinstance(node, str) and node.startswith("data:image/"):
+                image_hashes.append(sha(node.encode()))
+        request_images.append(
+            {
+                "path": str(request.relative_to(directory)),
+                "model": body.get("model"),
+                "data_url_sha256": sorted(image_hashes),
+            }
+        )
         if not audit["explicit_reference_fields_absent"]:
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
     accounting = costs(report)
-    metrics = report.get("metrics", {})
+    metrics = dict(report.get("metrics", {}))
+    if report.get("layout_detector_initialization") is not None:
+        metrics["layout_detector_worker"] = {
+            "initialization": report["layout_detector_initialization"],
+            "requests": [
+                {"id": p["id"], "metrics": p[key]["metrics"]}
+                for p in predictions
+                for key in ("layout_detector", "layout_detection")
+                if isinstance(p.get(key), dict) and "metrics" in p[key]
+            ],
+            "scope": "Separate CPU worker subprocess; parent process CPU/RSS excludes worker. "
+            "Do not sum RSS peaks or overlapping parent per-page CPU intervals.",
+        }
     source_fingerprint = sha(
         canonical(sorted([{k: a[k] for k in ("id", "source_sha256")} for a in artifacts], key=lambda a: a["id"]))
     )
@@ -231,11 +262,15 @@ def score_run(
         "scores": scoring["totals"],
         "page_scores": scoring["pages"],
         "positive_macro": scoring["positive_macro"],
+        "exact_positive_pages": sum(
+            p.get("exact_page", False) and p.get("positive_page", False) for p in scoring["pages"]
+        ),
         "costs": accounting,
         "resources": metrics,
         "code_sha256": code,
         "artifacts": artifacts,
         "request_audits": audits,
+        "request_image_inventory": request_images,
         "source_fingerprint": source_fingerprint,
         "source_inventory_pages": sum(a["source_sha256"] is not None for a in artifacts),
         "detector_evidence_fingerprint": sha(
@@ -274,8 +309,25 @@ def paired_comparison(left: dict[str, Any], right: dict[str, Any], *, samples: i
         raise ValueError("Bootstrap requires pages and positive sample count")
     rng = random.Random(3003)
     totals = sorted(sum(rng.choices(deltas, k=len(deltas))) for _ in range(samples))
+    left_config, right_config = treatment_config(left.get("config", {})), treatment_config(right.get("config", {}))
+    changes = {
+        key: [left_config.get(key), right_config.get(key)]
+        for key in left_config.keys() | right_config.keys()
+        if left_config.get(key) != right_config.get(key)
+    }
+
+    def image_inventory(run: dict[str, Any]) -> list[str]:
+        return sorted(
+            {digest for record in run.get("request_image_inventory", []) for digest in record["data_url_sha256"]}
+        )
+
     return {
         "left": left["name"],
+        "treatment_changes": changes,
+        "gate_image_configuration_equal": left_config["gate_image"] == right_config["gate_image"],
+        "request_image_hash_sets_equal": image_inventory(left) == image_inventory(right),
+        "image_scope": "Serialized data-URL assets across actual requests; routing changes may change request "
+        "inventory. Source/detector equality alone does not prove gate pixel equality.",
         "right": right["name"],
         "strict_exact_cell_delta": sum(deltas),
         "paired_page_bootstrap_95_interval": [
@@ -296,7 +348,15 @@ def paired_comparison(left: dict[str, Any], right: dict[str, Any], *, samples: i
     }
 
 
-def repeat_summary(runs: list[dict[str, Any]]) -> dict[str, Any]:
+def treatment_config(config: dict[str, Any]) -> dict[str, Any]:
+    """Normalize documented defaults and remove only declared run administration."""
+    normalized = {key: value for key, value in config.items() if key not in {"run_id", "repeat_index", "order_seed"}}
+    normalized.setdefault("gate_image", True)
+    normalized.setdefault("source_order", "legacy")
+    return normalized
+
+
+def repeat_summary(runs: list[dict[str, Any]], *, reviewed_code_changes: bool = False) -> dict[str, Any]:
     """Keep fresh-repeat variation visible without treating pages as hosted repeats."""
     if not runs:
         raise ValueError("Repeat summary requires runs")
@@ -304,13 +364,19 @@ def repeat_summary(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "dataset_sha256",
         "manifest_sha256",
         "cohort",
-        "config",
         "source_fingerprint",
         "detector_evidence_fingerprint",
     )
     for run in runs[1:]:
-        if any(run[key] != runs[0][key] for key in fields):
+        if any(run[key] != runs[0][key] for key in fields) or treatment_config(run["config"]) != treatment_config(
+            runs[0]["config"]
+        ):
             raise ValueError("Repeat summary requires identical treatment, inputs and retained evidence")
+    code_identical = len({sha(canonical(run.get("code_sha256", {}))) for run in runs}) == 1
+    if not code_identical and not reviewed_code_changes:
+        raise ValueError(
+            "Repeat code snapshots differ; independent authentication plus operator semantic review required"
+        )
     metrics = {}
     for key in ("strict_exact_cells", "complete_tables", "false_positive_page", "all_page_errors"):
         values = [r["scores"].get(key, 0) for r in runs]
@@ -324,6 +390,14 @@ def repeat_summary(runs: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "runs": [r["name"] for r in runs],
         "repeat_count": len(runs),
+        "administrative_fields": [
+            {"name": run["name"], **{key: run["config"].get(key) for key in ("run_id", "repeat_index", "order_seed")}}
+            for run in runs
+        ],
+        "code_snapshots_identical": code_identical,
+        "operator_reviewed_code_changes": reviewed_code_changes,
+        "code_semantics_scope": "Every snapshot independently authenticated; digest variation is visible and "
+        "requires operator review before attributing variation only to fresh model responses",
         "metrics": metrics,
         "scope": "Fresh complete run repetitions of one fixed treatment; no best-repeat selection. "
         "Small repeat count does not establish calibrated confidence.",
@@ -398,6 +472,11 @@ def main() -> None:
     parser.add_argument("--trusted-code", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--markdown", type=Path)
+    parser.add_argument(
+        "--reviewed-repeat-code-changes",
+        action="store_true",
+        help="Attest operator review of authenticated source changes for repeat comparability",
+    )
     parser.add_argument("--repeat-summary", action="store_true", help="Summarize identical treatment repetitions")
     parser.add_argument("--paired", action="store_true", help="Compare exactly two source-matched decision runs")
     args = parser.parse_args()
@@ -413,7 +492,9 @@ def main() -> None:
         comparison = paired_comparison(*runs)
     output = guard_path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    repeats = repeat_summary(runs) if args.repeat_summary else None
+    repeats = (
+        repeat_summary(runs, reviewed_code_changes=args.reviewed_repeat_code_changes) if args.repeat_summary else None
+    )
     write_json(output, {"schema": 1, "runs": runs, "paired": comparison, "repeats": repeats})
     if args.markdown:
         markdown = markdown_report(runs)

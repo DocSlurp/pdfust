@@ -45,7 +45,7 @@ must remain attached to actual calls. A configured default model is not proof of
 an actual request.
 
 Use three fresh repeat blocks on natural16. Alternate or deterministically
-shuffle treatment order by block; keep page order fixed, record the actual order,
+shuffle treatment order by block; declare page order seeds in advance, record actual order,
 and retain every response and refusal. No local response cache substitutes for a
 fresh hosted response. Source preprocessing and detector assets may be reused
 with hashes. All blocks retain errors, incomplete dense pages and negative
@@ -176,7 +176,42 @@ repeat distributions. Root-authenticated digest snapshots must be captured from
 reviewed sources before runs; copying the artifact's own `code_sha256` into the
 trusted file does not establish independent trust.
 
-Validation: eight focused CPU-only Python tests and Ruff pass. An actual retained
+Validation: ten focused CPU-only Python tests and Ruff pass. An actual retained
 P002 sixteen-page invocation verifies complete source/Markdown artifacts and
 writes the ignored `pipeline-p003/eval-smoke.json`. No requests, GPU workload or
 paid inference were performed by this evaluation task.
+
+## First fresh source-owned control
+
+The root-authenticated `b773d57.json` source snapshot independently verifies
+`screen-ordinal-ocr300-512-r0`: all sixteen complete outputs, zero errors,
+3/53 complete tables, 384/2333 strict span-aware cells, 397 P002 text-only cells,
+2/12 exact positive pages, zero negative false-positive pages and one extra table.
+There are 38 missing tables. This fresh observation is one repeat, not a
+confidence estimate or a matched improvement claim.
+
+| Run | Outputs | Complete tables | Strict cells | Negative FP | Errors | Pages/min | Pages/API USD | API USD |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ordinal OCR300 / 512 r0 | 16/16 | 3/53 | 384/2333 | 0/4 | 0 | 2.45528 | 786.972 | 0.0203311 |
+
+Run parent processing took 390.9945 wall and 777.3788 CPU seconds, with
+748,339,200 bytes sampled peak parent RSS. The report measurement is
+`psutil.Process` every 100 ms plus `process_time`; separate detector-worker
+measurements remain attached and are excluded from parent CPU/RSS. All eighteen
+API attempts have positive reported charges, without estimates or reservations.
+
+The offline replay itself used one CPU reporter subprocess: 0.9604 wall seconds,
+0.9562 user-plus-system CPU seconds, 98,212 KiB peak RSS including imports.
+Tools were `time.perf_counter` and kernel `resource.RUSAGE_CHILDREN`; RSS is the
+kernel process high-water mark, not sampled. No inference call was made by the
+evaluator. Raw verification stays at the ignored control's `evaluation.json`.
+
+Repeat configuration checks ignore only `run_id`, `repeat_index` and
+`order_seed`; their original observations remain in the summary. All treatment
+settings, including gate model and image edge, must match. The documented
+implicit `gate_image=True` and `source_order="legacy"` defaults normalize to
+explicit equivalents. Different authenticated code snapshots remain visible and
+require explicit operator semantic review via
+`--reviewed-repeat-code-changes`; authentication alone does not establish
+unchanged treatment semantics. Paired reports separately expose gate-image
+configuration differences and actual serialized request image hash inventories.
