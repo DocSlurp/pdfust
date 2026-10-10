@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -33,7 +34,7 @@ from bench.pipeline_report import _render_markdown
 from bench.pipeline_vision_transcription import markdown as vision_markdown
 from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, sha
-from tests.test_generalization_vision_multiscale import Detector, record
+from PIL import Image
 
 import pylopdf
 
@@ -962,8 +963,19 @@ def test_positive_macro_missing_page_contributes_zero() -> None:
 
 
 def multiscale_prediction(directory: Path) -> dict[str, Any]:
-    config = {"campaign": "P002", "layout_detector": "yolo", "_layout_detector": Detector(boxes=False)}
-    return multi.process(record(directory), config, directory / "output", None)
+    def detect(payload: bytes, *, viewport: list[float]) -> dict[str, Any]:
+        with Image.open(io.BytesIO(payload)) as image:
+            size = list(image.size)
+        return {"type": "result", "device": "cpu", "viewport": viewport, "image_size": size, "boxes": []}
+
+    with pylopdf.Document() as document:
+        document.new_page(width=100, height=100)
+        data = document.tobytes()
+    pdf = directory / "source.pdf"
+    pdf.write_bytes(data)
+    record = {"id": "test", "pdf_path": str(pdf), "pdf_sha256": sha(data), "page_number": 0}
+    config = {"campaign": "P002", "layout_detector": "yolo", "_layout_detector": SimpleNamespace(detect=detect)}
+    return multi.process(record, config, directory / "output", None)
 
 
 def test_multiscale_replays_complete_raw_acquisition_before_crop_output(tmp_path: Path) -> None:
