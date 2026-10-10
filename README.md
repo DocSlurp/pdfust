@@ -366,12 +366,29 @@ failures; Luna has one invalid rectangular-matrix response. Rates count usable
 outputs under concurrent load, with full generation costs and unpriced local
 compute. This broader DEV sample is not held-out confirmation.
 
-Smaller-image candidate selection remains promising: PPLX at 128 px with a
-16-color palette recovers 1,086 strict cells / 4 complete tables on the original
-16 pages; 400 px RGB JPEG, RGB PNG, and palette runs each recover 1,081 / 5.
-These are single runs using the frozen Luna/Sonnet pool. Repeats, blank/blur
-controls, and candidate-order changes test whether the image benefit persists.
-Their incremental selection rates exclude both original generations.
+The completed [57-arm image and decision screen](bench/results/p003-mixed-evidence.md)
+finds 1,087 strict cells / 5 complete tables at 128 px RGB, versus 981 / 5 at
+512–768 px and 685 / 4 at 1024–1200 px. These are retained pipeline scores:
+abstentions can leave original candidate output in place. Most of the smaller
+image's gain comes from one dense page, so it needs fresh confirmation.
+
+The [repeat and blank-image audit](bench/results/p003-current-queue-audit.md)
+separates quality actually supported by model choices. Abstained or failed
+crops receive no model credit; all 16 pages, 53 tables and 2,333 cells remain
+in the denominators.
+
+| PPLX selector treatment | Model-confirmed strict cells | Complete tables | Selected / abstained calls | Incremental pages/min | Incremental pages/API USD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 128 px RGB, fresh repeat | **984** | **5** | 15 / 1 | 4.83 | 26,746 |
+| 128 px blank-image control | 11 | 0 | 2 / 14 | 3.94 | 26,746 |
+
+These rates count retained-page processing, including no-question and abstained
+pages, under six contending host jobs and three paid transports. Both original
+candidate generations are excluded. They are neither complete extraction rates
+nor counts of fully decided pages. Each model is evaluated separately; transport
+failures do not trigger another model. A [fresh 48-page source-frozen sample](bench/results/p003-confirmation-corpus.md)
+contains 32 additional natural pages from distinct known document parents and
+16 new synthetic layouts. Its confirmation results are pending.
 
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering
