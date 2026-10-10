@@ -119,7 +119,7 @@ def test_transcription_failure_is_page_atomic(kind: str) -> None:
 
 
 def test_native_exclusion_preserves_raw_response_and_other_classes() -> None:
-    detection = {
+    detection: dict[str, Any] = {
         "boxes": [
             {"label": "Table", "bbox": [40, 40, 80, 80], "confidence": 0.9},
             {"label": "Table", "bbox": [50, 10, 90, 50], "confidence": 0.8},
@@ -149,7 +149,7 @@ def test_sanitize_ignores_gold_and_annotations_without_mutating_source() -> None
 
 
 def test_complete_large_source_does_not_apply_legacy_packet_limit() -> None:
-    page = {
+    page: dict[str, Any] = {
         "page_size": [200, 200],
         "words": [{"id": str(i), "text": "retained source", "bbox": [1, 1, 2, 2]} for i in range(5000)],
         "vector_candidates": [],

@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 from bench.pipeline_ocr_scale_audit import compare_geometry, digest, dpi_for, freeze, normalize, run, sources
@@ -60,7 +61,13 @@ def test_run_retains_native_mapping_results_and_failures(tmp_path: Path, monkeyp
         if len(calls) == 1:
             msg = "mock recognition failure"
             raise RuntimeError(msg)
-        return [{"text": "ITEM", "bbox": (0, 0, self.rect[2] / 2, self.rect[3] / 2), "confidence": 0.9}]
+        return [
+            {
+                "text": "ITEM",
+                "bbox": cast("pylopdf.Rect", (0, 0, self.rect[2] / 2, self.rect[3] / 2)),
+                "confidence": 0.9,
+            }
+        ]
 
     monkeypatch.setattr(pylopdf.Page, "get_text_ocr", mocked_ocr)
     result = run(tmp_path)

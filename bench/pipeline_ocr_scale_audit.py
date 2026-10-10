@@ -45,7 +45,7 @@ def sources() -> list[dict[str, Any]]:
     image = Image.new("RGB", (1200, 1600), "white")
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default(size=24)
-    cells = []
+    cells: list[dict[str, Any]] = []
     rows = [["ITEM", "UNITS", "RATE", "TOTAL"]]
     rows.extend([[f"Part {i:02d}", str(10 + i), f"{i + 2}.50", f"{(10 + i) * (i + 2)}.00"] for i in range(1, 21)])
     for ri, row in enumerate(rows):
@@ -99,7 +99,7 @@ def freeze(output: Path) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     if (output / "plan.json").exists():
         return json.loads((output / "plan.json").read_text())
-    plan = {
+    plan: dict[str, Any] = {
         "schema": 1,
         "scales": list(SCALES),
         "arms": list(ARMS),
@@ -216,7 +216,7 @@ def run(output: Path) -> dict[str, Any]:
         raise ValueError("Unrecognized frozen plan")
     with _Measure() as init:
         engine = pylopdf.OcrEngine(threads=4, max_concurrent=1)
-    report = {
+    report: dict[str, Any] = {
         "plan_sha256": digest((output / "plan.json").read_bytes()),
         "platform": platform.platform(),
         "python": platform.python_version(),
