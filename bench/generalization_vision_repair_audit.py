@@ -24,7 +24,7 @@ def evaluate(directories: list[Path], manifest_path: Path, target_path: Path) ->
     import pylopdf
 
     adapter = importlib.import_module("bench.pipeline_vision_transcription")
-    scorer = importlib.import_module("bench.pipeline_scoring")
+    scorer = importlib.import_module("bench.generalization_scoring")
     manifest = json.loads(manifest_path.read_text())
     source_records = {row["id"]: row for row in manifest["pages"]}
     start, cpu = time.perf_counter(), time.process_time()
@@ -98,13 +98,14 @@ def evaluate(directories: list[Path], manifest_path: Path, target_path: Path) ->
             for identifier in strict
             if strict[identifier]["false_positive_tables"] != counterfactual[identifier]["false_positive_tables"]
         ]
-        (Path(cohort["directory"]) / "counterfactual-format-repair-scored.json").write_text(
+        (Path(cohort["directory"]) / "counterfactual-format-repair-authoritative-scored.json").write_text(
             json.dumps(cohort, ensure_ascii=False, indent=2) + "\n"
         )
     peak, tool = process_peak_rss()
     return {
         "schema": 1,
         "version": VERSION,
+        "scorer": "bench.generalization_scoring",
         "cohorts": cohorts,
         "scope": "postprocessing diagnostic reusing every retained response; no Pmin or cache-hit claim",
         "target_sha256": _sha(target_path.read_bytes()),

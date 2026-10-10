@@ -1,0 +1,15 @@
+# P002 source-only crop vision control
+
+The opt-in `vision_regions` processor transcribes source-only CPU detector proposals as image crops. It performs no OCR, source-ID assignment, reference lookup, format repair, score-driven selection, or default extraction change. Detector coverage stays explicitly `unverified`, including pages with no proposals.
+
+The root owns one persistent `LayoutDetector` and its initialization metrics. Each page renders a nominal 1536-edge detector image; class `Table` proposals with confidence at least 0.25 remain in detector order. Invalid geometry, more than 32 proposals, or boxes outside the original display viewport refuse the page before requests. Original page rotation is preserved.
+
+A single higher-resolution page render uses `(4096-1)/maximum_display_extent`, retaining actual raster dimensions and scale under the 4096 edge cap. Each continuous detector viewport becomes an exact global-coordinate crop through Pillow's EXTENT transform, avoiding floor/ceil enlargement mislabeled as the narrower viewport. Crops use fixed longest edge 1024, RGB JPEG quality 90, and the existing 750,000-byte request boundary without adaptive resizing or retry.
+
+The indexed transport wrapper preserves baseline index-0 filenames, tags and request bytes. Crop requests use unique `vision/index` ledger tags and request/response filenames. Every raw response and provider accounting entry is retained before strict parsing, including prior successful regions when a later region fails. Request indexes and call indexes remain explicit per region.
+
+`compose(regions, viewport)` strictly reparses every raw response in declared index order and requires contained global crop viewports, unique ordered request indexes, and successful region status. It concatenates canonical tables, caps the page at 4096 aggregate slots, and refuses positive-area overlap between returned table bboxes. Overlapping detections do not imply owned text or justify deduplication. Any region or composition error atomically yields a failed page with no admitted tables or successful structure/Markdown artifacts; retained fragments are diagnostic evidence only.
+
+Validation: 14 Python tests cover global coordinate mapping, fractional crop viewport preservation, JPEG settings, invalid order/request indexes, overlap, truncation, failed region output, slot/proposal limits, zero-proposal coverage, and indexed fake transport retaining prior files. Ruff and mypy pass. Tests use local fake proposals and transport; they do not measure detector recall, provider quality, or model latency. No paid calls, network inference or GPU were used. Runtime CPU/RSS for a real detector-plus-provider campaign remain unmeasured here and belong to the separately frozen root run and detector-worker metrics.
+
+The reporter revalidates through the exact trusted compose helper and strict adapter, requiring matching structure and Markdown. Output labels remain table-only, model-transcribed, and `source_conserved=False`. Inference-time proposal counts cannot measure detector misses without a separate reference-based evaluation.
