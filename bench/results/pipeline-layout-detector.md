@@ -18,7 +18,7 @@ Worker CPU uses process_time; own-process RSS uses /proc/self/statm sampled ever
 
 ## Complete source coverage
 
-The 333 complete class predictions comprised 150 Text, 40 List-item, 38 Section-header, 23 Picture, 21 Table, 17 Page-header, nine Caption, seven Page-footer, six Formula and two Title boxes. The 21 table proposals occurred on 15 pages. All contained cached words, and no word center was contested by overlapping table proposals. There were no native vector grids in these image carriers.
+The 313 complete class predictions comprised 150 Text, 40 List-item, 38 Section-header, 23 Picture, 21 Table, 17 Page-header, nine Caption, seven Page-footer, six Formula and two Title boxes. The 21 table proposals occurred on 15 pages. All contained cached words, and no word center was contested by overlapping table proposals. There were no native vector grids in these image carriers.
 
 Partitioning produced 23 detector regions and 48 residual regions. Detector regions owned 1,397 source IDs and residual regions owned 5,954 IDs. Four detector regions were capacity fragments from one dense page; each explicitly retains incomplete context and cannot claim complete-table topology. The page with no detected table retained all 489 words as residual source. The separate native-extraction-only pass also completed 16/16 but had zero source words: these inputs are lossless image PDF carriers.
 
