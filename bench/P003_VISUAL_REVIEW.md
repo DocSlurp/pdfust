@@ -108,3 +108,35 @@ region has four columns where the gold has three: the output separates the
 ranking number from the team name. These visible cells are mostly red because
 anchor positions differ, even where literal source information is retained.
 Neither treatment yields a complete newspaper table.
+
+## Coordinator-driven reporting
+
+The reused reporter follows
+`/home/dan/.agents/skills/progress-reporter/SKILL.md`. It does not schedule paid
+work or change concurrency. One metadata-only checkpoint is produced with:
+
+```bash
+/home/dan/code/oss/pylopdf/.venv/bin/python -m bench.p003_progress_checkpoint \
+  --status /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/parallel-acquisition-aux32-v1/status.json \
+  --ledger /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/decisions/ledger.json \
+  --output /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/progress-reports \
+  --planned synthetic48=48 --planned shared56=56
+```
+
+The reporter retains timestamped JSON/Markdown snapshots and `latest.md/html`.
+It reads queue/ledger metadata only, hashes the read files and records their own
+file timestamps using the open descriptor. It does not read raw request bodies
+or credentials. Completed jobs, running jobs, queued declarations and
+operational page outcomes stay separate from strict scoring. Evaluation-file
+presence is explicitly weaker than independent freshness verification. Planned
+queues without launch telemetry remain unknown rather than fabricated zeros.
+
+Ledger accounted amounts are grouped by their retained reported, catalog
+estimate or reservation status. A missing/non-finite charge prevents a complete
+budget remainder. The USD 44.9319455668 conservative prior baseline stays
+separate. Reporting model cost is unknown in available telemetry. Local reporter
+CPU/RSS is retained separately from the workers' psutil 100 ms process-tree
+measurements. A generated checkpoint is not user publication: coordinator last
+publication remains unknown until confirmed, and the coordinator must publish
+within five minutes or immediately on a material change. No autonomous timer or
+post-session reporting is promised.
