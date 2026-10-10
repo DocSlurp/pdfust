@@ -1827,3 +1827,39 @@ additional source-only region proposals, and fixed-provider crop transcription.
 Candidate reranking against identical pixels is a separate hypothesis targeting
 the large response variability observed in P002. Generated candidate costs and
 incremental selector costs must remain separate from end-to-end performance.
+
+### P003 first comparisons and evidence treatments, 2026-10-10 19:04 UTC
+
+The matched PPLX gate plus rolling-context bundle ties the OCR300 source-ID
+control at 3/53 complete tables and 384/2333 strict cell anchors, with 19.06%
+more API cost. The first pinned Haiku crop run yields 393 strict anchors,
+3 complete tables, one atomic output failure and one negative-page false
+positive. Luna yields 784 strict anchors and 3 complete tables with all sixteen
+pages operational and no negative-page false positives. These single runs do
+not overcome the response variation observed previously; repeats remain required.
+See `bench/results/decision-p003.md` for quality and resource tables.
+
+The optimistic source-inventory audit permits at most 1880/2333 exact whole-token
+anchor strings and 9/53 complete tables. This is a necessary bound with arbitrary
+order and unlimited token reuse, not an achievable extraction score. It measured
+0.391 seconds wall, 0.390 CPU seconds and 92,827,648 bytes sampled RSS. An initial
+attempt using unavailable `/usr/bin/time` failed before execution and its error
+log is retained; the completed run uses the existing 100-ms process sampler.
+
+New isolated treatments provide source-only OCR/raster region proposals,
+strict whole-crop candidate ranking, bounded row-boundary edits, and independent
+gate image resolution. Gate packet treatments retain exact words, quarter-point
+compact arrays, uniformly sampled 64-word evidence, image-only evidence, or
+mechanical reading flow. Specialized admission instructions can be varied
+independently from the packet. Existing full-source admission remains enforced.
+All proposed source regions require semantic admission before transcription;
+proposal counts are not extraction quality. No model sees reference labels.
+
+Luna's zero OpenRouter charge exposed a BYOK accounting omission: positive
+upstream charges are nested in `usage.cost_details.upstream_inference_cost`.
+The client now records that amount separately and adds it to a known gateway
+fee without overwriting the original reported zero. Shared-provider requests
+never add upstream costs again. Missing fee data stays incomplete. All nineteen
+Luna responses provide both amounts; their combined API-reported cost is
+USD 0.012964825, pending independent overlay verification of the original frozen
+report. Pricing and telemetry regression checks pass within 200 targeted tests.

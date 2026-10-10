@@ -560,7 +560,11 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                 *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
                 *(["pipeline_source_order.py"] if config.get("source_order") == "original" else []),
-                *(["p003_gate_packet.py"] if config.get("gate_packet", "legacy") != "legacy" else []),
+                *(
+                    ["p003_gate_packet.py"]
+                    if config.get("gate_packet", "legacy") != "legacy" or config.get("gate_instructions") == "region"
+                    else []
+                ),
                 *(
                     ["pipeline_row_context.py", "pipeline_row_evidence.py"]
                     if config.get("generation_row_evidence") or config.get("gate_row_evidence")

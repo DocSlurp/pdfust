@@ -291,6 +291,11 @@ inspect them.
 
 ## Experimental relationship decisions (opt-in)
 
+The ongoing [P003 decision-model comparison](bench/results/decision-p003.md)
+reports fresh natural-document quality, pages/minute, pages/API USD, and CPU/RAM
+measurements. It separates source-ID assembly, image transcription, admission
+gates, and incremental repair so their different output contracts stay visible.
+
 The [P002 generalization study](bench/results/generalization-p002.md)
 expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
 annotated OmniDocBench page images, and 56 native-PDF diagnostics. A fixed

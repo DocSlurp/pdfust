@@ -68,3 +68,21 @@ models and generation models are distinct fields. `--gate-row-evidence` changes
 only gate evidence; `--image-edge` and `--ocr-dpi` are independent controls.
 The unchanged strict validators retain page failures rather than repairing them
 silently. Additional decision mechanisms get separate treatment identities.
+
+## First re-evaluation, 18:55 UTC
+
+Adding the PPLX gate plus rolling context to the OCR300 evidence bundle ties the
+ungated baseline at three complete tables, 397 exact text anchors and 384 strict
+span-aware anchors. It costs 19.06% more in this first fresh pair and measures
+6.63% lower throughput. Identical source/detector fingerprints and image asset
+sets rule out changed acquisition; individual page outputs still vary. This
+combined gate treatment has no measured aggregate quality gain yet. Preserve
+the comparison and continue other models rather than promoting this combination.
+
+The next serial batch compares eight pinned transcription routes on the same
+ordinary detector crops. Then run the broader typed-model gate screen, including
+text-only alternatives and Gateway d1/Laya, with explicit route capability checks.
+Additional acquisition and candidate reranking earn priority because decisions
+cannot recover omitted regions or literal strings absent from their evidence.
+Local row repair remains an incremental diagnostic on retained baseline states;
+its rates must not be presented as newly measured end-to-end pipeline throughput.

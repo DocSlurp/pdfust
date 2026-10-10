@@ -346,14 +346,16 @@ def select_region(
         info["gate_image"] = bool(gate_url)
     viewport = "Image viewport in global page coordinates: " + json.dumps(region["bbox"]) + ".\n" if gate_url else ""
     gate_instructions = None
-    if config.get("gate_packet", "legacy") != "legacy":
+    if config.get("gate_instructions") == "region":
         from bench.p003_gate_packet import GATE_INSTRUCTIONS
+
+        gate_instructions = GATE_INSTRUCTIONS
+    if config.get("gate_packet", "legacy") != "legacy":
         from bench.p003_gate_packet import packet as gate_packet
 
         prompt, info["gate_packet"] = gate_packet(
             snapshot, region["bbox"], pixels_available=bool(gate_url), style=config["gate_packet"],
         )
-        gate_instructions = GATE_INSTRUCTIONS if config.get("gate_instructions") == "region" else None
     else:
         prompt = viewport + admission_packet(snapshot, premise="relational", pixels_available=bool(gate_url))
     if config.get("gate_row_evidence"):
