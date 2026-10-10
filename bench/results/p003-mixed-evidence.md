@@ -1,6 +1,6 @@
 # P003 mixed evidence comparison
 
-Snapshot: 2026-10-10T20:58:14+00:00. 56/57 declared arms independently evaluated. DEV only.
+Snapshot: 2026-10-10T21:02:35+00:00. 57/57 declared arms independently evaluated. DEV only.
 
 Low-resolution PPLX candidate decisions approach the fixed Luna/P002 Sonnet pool oracle on natural16. Adding a fresh Sonnet run to the valid-region pool raises no oracle ceiling in this frozen sample. Frozen-generation gates preserve or reduce the ordinal baseline; the broad natural64 Luna crop pipeline scores slightly more strict cells than ordinal and emits fewer extra tables. These are single-run observations under contended transport, without matched repeat confidence.
 
@@ -99,6 +99,97 @@ Ranking cost includes all new run-attributed attempts, including failures or res
 | choice-pplx-768-rgb-r1-c3 | 16 | 0.00066184 | 0.00066184 | 16.1209 | 24175 | 59.5499 | 27.4074 | 269.125 |
 | choice-diff-jev-0-r0-c3 | 14 | 0.000758772 | 0.000758772 | 32.0371 | 21086.7 | 29.9653 | 20.3122 | 128.77 |
 
+## Candidate admission and fallback coverage
+
+The fixed pair has 16 distinct crop-choice opportunities and three genuinely duplicate crop pools. Successful final page outputs do not imply successful incremental ranking: atomic failures preserve the entire first baseline page. A reported selected crop may also be discarded when a later crop fails.
+
+| Run | Attempts/16 possible | Returned calls | Completed ranking pages | No-question pages | Atomic-fallback pages | Selected crops | Unresolved crops | Discarded crops | Genuine duplicate pools | Distinct pending mislabeled duplicate | Evidence cap refusals | Input admission refusals |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| choice-pplx-128-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 14 | 2 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-400-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-diff-d1-0-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 7 | 7 | 0 | 3 | 0 | 1 | 0 |
+| choice-diff-tev-0-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 5 | 9 | 0 | 3 | 0 | 1 | 0 |
+| choice-pplx-400-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1200-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-512-rgb_png-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-diff-luna-0-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 0 | 14 | 0 | 3 | 0 | 1 | 0 |
+| choice-pplx-400-rgb_png-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1024-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-512-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1024-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-400-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-diff-pplx-0-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 2 | 12 | 0 | 3 | 0 | 1 | 0 |
+| choice-pplx-1200-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1024-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-256-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-diff-pplx-512-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 14 | 0 | 0 | 3 | 0 | 1 | 0 |
+| choice-pplx-768-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-768-rgb_png-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1024-rgb_png-r1-c3 | 9/16 | 9 | 6 | 5 | 5 | 8 | 0 | 1 | 3 | 5 | 0 | 1 |
+| choice-pplx-768-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-diff-luna-512-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 7 | 7 | 0 | 3 | 0 | 1 | 0 |
+| choice-pplx-128-rgb_png-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-256-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1200-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-512-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-256-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-256-rgb_png-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-1200-rgb_png-r1-c3 | 9/16 | 9 | 6 | 5 | 5 | 8 | 0 | 1 | 3 | 5 | 0 | 1 |
+| choice-pplx-128-grayscale8-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-128-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 15 | 1 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-512-rgb_palette16-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-pplx-768-rgb-r1-c3 | 16/16 | 16 | 11 | 5 | 0 | 16 | 0 | 0 | 3 | 0 | 0 | 0 |
+| choice-diff-jev-0-r0-c3 | 14/16 | 14 | 10 | 5 | 1 | 0 | 14 | 0 | 3 | 0 | 1 | 0 |
+
+The 1024/1200 RGB PNG arms transmit only nine of 16 possible questions. Each records one frozen input/body admission refusal, four subsequent request-stage RuntimeErrors with no retained detail, and five atomic fallback pages. One staged crop choice is discarded. The final 784-cell score exactly equals the first baseline; these arms do not establish poor returned-model decision quality at larger resolution. Historical region initialization also mislabeled five pending distinct pools as `not_applicable_duplicates`: the archived count of eight includes only three genuine duplicate pools. Original statuses and artifacts are preserved; the table distinguishes pool cardinality from that label.
+
+All difference-evidence arms transmit 14 questions and retain one whole-page fallback after complete evidence exceeds the explicit UTF8 cap. No evidence is truncated, and the remaining crop on that failed page is not requested. Their dense-page limitation is an admission result, not a pure comparison of model reasoning.
+
+## Secondary dense-page sensitivity
+
+The full 16-page results above remain primary. This secondary view removes only the two dense pages predeclared in the source acquisition audit (`p1bfa52a41a5e15015698`, `p98d10ef50dee4b24506a`) from every treatment equally. Both original page failures and negatives would remain in the retained denominator. The other 14 pages contain 10 positives, four negatives, 14 tables and 361 cells; the dense pair contains 39 tables and 1,972 cells.
+
+| Run | Full positive macro strict % | Full positive macro complete % | Other14 strict/361 | Other14 complete/14 | Other14 positive macro strict % | Other14 positive macro complete % | Other14 errors | Other14 extra | Other14 negative FP/4 | Dense strict/1972 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| historical Luna first baseline | 61.4234 | 20.8333 | 290 | 3 | 68.4303 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-128-rgb_palette16-r1-c3 | 64.8519 | 21.4744 | 292 | 3 | 69.3394 | 25 | 0 | 0 | 0 | 794 |
+| choice-pplx-400-rgb_palette16-r1-c3 | 62.958 | 25.641 | 287 | 4 | 67.0667 | 30 | 0 | 0 | 0 | 794 |
+| choice-diff-d1-0-r0-c3 | 59.9082 | 20.8333 | 286 | 3 | 66.6121 | 25 | 0 | 0 | 0 | 494 |
+| choice-diff-tev-0-r0-c3 | 61.4234 | 20.8333 | 290 | 3 | 68.4303 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-400-rgb-r1-c3 | 62.958 | 25.641 | 287 | 4 | 67.0667 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-1200-rgb_palette16-r1-c3 | 61.6516 | 25 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 392 |
+| choice-pplx-512-rgb_png-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-diff-luna-0-r0-c3 | 61.4234 | 20.8333 | 290 | 3 | 68.4303 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-400-rgb_png-r1-c3 | 62.958 | 25.641 | 287 | 4 | 67.0667 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-1024-grayscale8-r1-c3 | 60.1365 | 25 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 392 |
+| choice-pplx-512-grayscale8-r1-c3 | 64.3226 | 25.641 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 692 |
+| choice-pplx-1024-rgb-r1-c3 | 61.6516 | 25 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 392 |
+| choice-pplx-400-grayscale8-r1-c3 | 64.4731 | 25.641 | 291 | 4 | 68.8848 | 30 | 0 | 0 | 0 | 794 |
+| choice-diff-pplx-0-r0-c3 | 62.181 | 20.8333 | 292 | 3 | 69.3394 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-1200-rgb-r1-c3 | 61.6516 | 25 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 392 |
+| choice-pplx-1024-rgb_palette16-r1-c3 | 61.6516 | 25 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 392 |
+| choice-pplx-256-rgb_palette16-r1-c3 | 64.4731 | 25.641 | 291 | 4 | 68.8848 | 30 | 0 | 0 | 0 | 794 |
+| choice-diff-pplx-512-r0-c3 | 61.0446 | 25 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 494 |
+| choice-pplx-768-rgb_palette16-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-pplx-768-rgb_png-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-pplx-1024-rgb_png-r1-c3 | 61.4234 | 20.8333 | 290 | 3 | 68.4303 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-768-grayscale8-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-diff-luna-512-r0-c3 | 65.5901 | 20.8333 | 291 | 3 | 73.4303 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-128-rgb_png-r1-c3 | 65.2307 | 25.641 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-256-rgb-r1-c3 | 64.4731 | 25.641 | 291 | 4 | 68.8848 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-1200-grayscale8-r1-c3 | 61.6516 | 25 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 392 |
+| choice-pplx-512-rgb-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-pplx-256-grayscale8-r1-c3 | 64.4731 | 25.641 | 291 | 4 | 68.8848 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-256-rgb_png-r1-c3 | 64.4731 | 25.641 | 291 | 4 | 68.8848 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-1200-rgb_png-r1-c3 | 61.4234 | 20.8333 | 290 | 3 | 68.4303 | 25 | 0 | 0 | 0 | 494 |
+| choice-pplx-128-grayscale8-r1-c3 | 65.2307 | 25.641 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-128-rgb-r1-c3 | 65.2307 | 25.641 | 293 | 4 | 69.7939 | 30 | 0 | 0 | 0 | 794 |
+| choice-pplx-512-rgb_palette16-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-pplx-768-rgb-r1-c3 | 62.8074 | 25.641 | 289 | 4 | 67.9758 | 30 | 0 | 0 | 0 | 692 |
+| choice-diff-jev-0-r0-c3 | 61.4234 | 20.8333 | 290 | 3 | 68.4303 | 25 | 0 | 0 | 0 | 494 |
+
+For edge128 RGB, the 303-cell gain over Luna consists of 300 cells on the second dense page and three cells on the other 14 pages (one and two on two separate pages). Other14 strict cells rise 290 to 293, complete tables three to four; positive macro strict recall rises 68.43% to 69.79%. Full positive macro strict recall rises 61.42% to 65.23%. The first dense page scores zero strict cells in both. Thus the large micro-average gain is concentrated on one dense page; the small-page evidence supports a smaller change and still requires repeats.
+
 ## Frozen-generation gate decisions
 
 These arms keep the ordinal source inventory, candidate region states and generation outputs fixed. Only fresh admission decisions vary. Table admits the same validated frozen state; prose or unresolved follows the frozen source fallback. The control scores 384 strict cells and three complete tables. Gate failures and fallback outputs retain explicit status; a silent missing-decision fallback is not scored as a model gain. Costs and wall time below cover incremental gate work only.
@@ -123,6 +214,7 @@ These arms keep the ordinal source inventory, candidate region states and genera
 | gate-solarflash-0-rgb-compact-region-r0-c3 | 66 | -318 | 66 | 72 | 0 | 52 | 0 | 0 | 0 | 18 | 0.00217875 | 63.0242 | 22.3769 |
 | gate-jev-0-rgb-compact-region-r0-c3 | 280 | -104 | 293 | 333 | 1 | 44 | 1 | 0 | 0 | 18 | 0.00177941 | 37.7895 | 21.8767 |
 | gate-luna-512-rgb-compact-visual_schema-r0-c3 | 384 | 0 | 397 | 465 | 3 | 38 | 1 | 0 | 0 | 18 | 0.0029855 | 38.9565 | 23.8497 |
+| gate-solar-0-rgb-compact-region-r0-c3 | 117 | -267 | 117 | 124 | 1 | 50 | 0 | 0 | 8 | 9 | Unknown | 395.479 | 12.4144 |
 | gate-clef-0-rgb-compact-region-r0-c3 | 280 | -104 | 293 | 333 | 1 | 44 | 1 | 0 | 0 | 18 | 0.00916152 | 39.1611 | 21.9752 |
 
 ## Valid-region oracle, separate offline experiment
@@ -144,8 +236,6 @@ All arms are single runs. Stochastic calls, crop choices, admission decisions an
 
 Only explicit provider-reported cache read/write counters are observations. Missing counters remain unknown; retained transcript usage is historical and no local replay/cache-hit benefit is inferred from cost or latency. Financial overlays never alter original quality or reports. Full raw evidence and source paths stay in ignored artifacts.
 
-Declared status snapshot SHA256: `7e4cca3463ab6dc2986be0b0254a17ea44794e06167ec181c4ffa83f0679bb9b`.
+Declared status snapshot SHA256: `616a333631c6e690d28fd3192e748c605c1e4f2be263cd89c79bee538b4e4293`.
 
-Verified evaluation inventory SHA256: `dae2453625fa4fb02294401c3e59c2c4e40107274d9405b21922b2e202b351f1`.
-
-Pending independent evaluation at snapshot: `gate-solar-0-rgb-compact-region-r0-c3` (running).
+Verified evaluation inventory SHA256: `9cca3621f32d377a52b49f6dd88a43f466af6a9cda7fe00dec17baa33c984567`.
