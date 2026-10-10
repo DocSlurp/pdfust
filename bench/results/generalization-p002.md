@@ -29,12 +29,15 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-haiku-2048-q50 | 14/16 | 2 | 2/12 | 2 | 9 | 261/2333 | 208/2333 | 15829/16640 | 10 | 4 | 12.4331 | 1190.19 | 0.0117628 |
 | natural16-vision-crops-sonnet-1024 | 16/16 | 0 | 3/12 | 5 | 25 | 1287/2333 | 982/2333 | 7864/16640 | 23 | 0 | 6.87782 | 69.4119 | 0.230508 |
 | natural16-vision-crops-haiku-1024 | 14/16 | 2 | 3/12 | 4 | 14 | 862/2333 | 687/2333 | 11089/16640 | 14 | 3 | 8.56503 | 1538.73 | 0.0090984 |
+| natural16-vision-opus-2048-q50 | 16/16 | 0 | 2/12 | 3 | 14 | 463/2333 | 300/2333 | 15091/16640 | 15 | 6 | 6.84489 | 34.5862 | 0.462612 |
 
 ### natural16-whole-reviewed
 
 Scope: complete source assembly; text: source-owned; source-conserved pages: 9/16.
 
 Failure categories: `{"local_input_or_output_admission": 7}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 0.00%; complete tables 0.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -67,6 +70,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 9/1
 
 Failure categories: `{"local_input_or_output_admission": 7}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 0.00%; complete tables 0.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -97,6 +102,8 @@ Ledger attempts 25; reported USD subtotal 0.0358282; missing reported charges 0;
 Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
 
 Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 4.18%; complete tables 0.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -129,6 +136,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 16/
 
 Failure categories: `{}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 15.31%; complete tables 0.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -160,6 +169,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 16/
 
 Failure categories: `{}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 50.38%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -189,6 +200,8 @@ Ledger attempts 47; reported USD subtotal 1.20126; missing reported charges 0; c
 Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
 
 Failure categories: `{"invalid_anchor_collection": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 43.55%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -220,6 +233,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 14/
 
 Failure categories: `{"provider_content_filter": 2}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 41.11%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -250,6 +265,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 16/
 
 Failure categories: `{}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 46.65%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -279,6 +296,8 @@ Ledger attempts 47; reported USD subtotal 0.0709715; missing reported charges 0;
 Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
 
 Failure categories: `{"provider_content_filter": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 52.27%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -312,6 +331,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 15/
 
 Failure categories: `{"provider_content_filter": 1}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 45.97%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -344,6 +365,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{"invalid_table_geometry": 1}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 54.95%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -374,6 +397,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{"invalid_table_topology": 3}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 39.61%; complete tables 16.67%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -403,6 +428,8 @@ Ledger attempts 16; reported USD subtotal 0.0085084; missing reported charges 0;
 Scope: complete source assembly; text: source-owned; source-conserved pages: 15/16.
 
 Failure categories: `{"provider_output_length": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 51.05%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -436,6 +463,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{"local_input_or_output_admission": 5}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 50.01%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -466,6 +495,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{"local_input_or_output_admission": 5}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 45.46%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -495,6 +526,8 @@ Ledger attempts 11; reported USD subtotal 0.0087591; missing reported charges 0;
 Scope: complete source assembly; text: source-owned; source-conserved pages: 14/16.
 
 Failure categories: `{"local_input_or_output_admission": 2}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 47.38%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -528,6 +561,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 15/
 
 Failure categories: `{"local_input_or_output_admission": 1}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 52.08%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -560,6 +595,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 64.10%; complete tables 23.40%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -590,6 +627,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{"invalid_table_geometry": 1, "invalid_table_topology": 1}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 40.34%; complete tables 16.67%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -619,6 +658,8 @@ Ledger attempts 16; reported USD subtotal 0.0117628; missing reported charges 0;
 Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
 
 Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 66.97%; complete tables 25.64%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
@@ -652,6 +693,8 @@ Scope: table-only image transcription comparator; text: model-transcribed; sourc
 
 Failure categories: `{"invalid_table_geometry": 1, "invalid_table_topology": 1}`.
 
+Supplementary positive-page macro recall (12 pages): exact cells 52.90%; complete tables 25.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
 
 | Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
@@ -677,6 +720,38 @@ Ledger attempts 19; reported USD subtotal 0.0090984; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.86041s, CPU 5.93336s; 16 per-page measurement entries, request CPU total 14.2593s; maximum sampled request RSS 1202114560 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-vision-opus-2048-q50
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 62.01%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 7 |
+| remaining_fourteen | 3/14 | 2/10 | 293 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-opus-5.5`; review `unmeasured`; generation `anthropic/claude-opus-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-opus-5.5 | 16 | 16 | 0.462612 | 0 / 16 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 14 | 463/2333 | 15091/16640 | 0/4 |
+
+Whole-run wall 140.251s; CPU 10.5721s; sampled RSS 237559808 bytes; verified output pages/min 6.84489; exact positive pages/min 0.855611. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 16; reported USD subtotal 0.462612; missing reported charges 0; cost bases `{"provider-reported USD": 16}`. Reservation amount 0; estimate amount 0.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -692,6 +767,8 @@ Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d092842955
 Scope: complete source assembly; text: source-owned; source-conserved pages: 270/276.
 
 Failure categories: `{"invalid_table_topology": 1, "local_input_or_output_admission": 1, "other_failure": 4}`.
+
+Supplementary positive-page macro recall (172 pages): exact cells 59.30%; complete tables 59.30%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Policy `native`; assembly `native`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `unmeasured`. Actual request models are listed below; a configured default does not prove it was called.
 
@@ -718,6 +795,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 272
 
 Failure categories: `{"missing_source_text": 4}`.
 
+Supplementary positive-page macro recall (172 pages): exact cells 59.30%; complete tables 59.30%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Policy `native`; assembly `select`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
@@ -742,6 +821,8 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 Scope: complete source assembly; text: source-owned; source-conserved pages: 270/276.
 
 Failure categories: `{"missing_source_text": 4, "provider_output_length": 2}`.
+
+Supplementary positive-page macro recall (172 pages): exact cells 90.46%; complete tables 80.52%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
 
 Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
 
@@ -777,6 +858,8 @@ Scope: complete source assembly; text: source-owned; source-conserved pages: 258
 
 Failure categories: `{"invalid_table_topology": 1, "local_input_or_output_admission": 1, "other_failure": 16}`.
 
+Supplementary positive-page macro recall (172 pages): exact cells 59.30%; complete tables 59.30%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
 Policy `native`; assembly `native`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `unmeasured`. Actual request models are listed below; a configured default does not prove it was called.
 
 | Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
@@ -798,7 +881,7 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- Additional crop, fixed-edge OCR, ordinal and hybrid controls are queued; each frozen treatment remains separate
+- Additional fixed-edge OCR, ordinal, hybrid and gated controls are queued; each frozen treatment remains separate
 
 ## Interpretation
 
@@ -1219,3 +1302,30 @@ and faster, while Sonnet retains all sixteen outputs, more exact topology
 (25 versus 14), more exact cells (982 versus 687), and zero extra tables.
 These are fixed DEV comparisons, without selecting responses or repairing
 boxes, merged spans, text, or detector coverage against references.
+
+## Whole-page Opus and supplementary macro recalls
+
+Opus2048 JPEG50 completes all sixteen pages but recovers 300/2333 exact
+cells and three complete tables on two exact positive pages. Fourteen
+tables have exact topology; six extras all occur on the dense positives.
+Remaining fourteen recover 293/361 exact cells with all fourteen table
+structures, while the dense pair recovers seven cells and no complete
+table, missing37/39. All sixteen charges total USD 0.462612: 6.84
+operational pages/minute and 34.59 operational pages/API USD. It improves
+neither quality nor cost over Sonnet2048 JPEG50 in this fixed screen.
+
+Supplementary positive-page macro recalls now give equal weight to each
+of the twelve positive pages. A page's exact-cell recall is its exact
+anchors divided by its reference anchors; complete-table recall is its
+complete tables divided by its reference tables. Failed or missing positive
+pages contribute zero. Four negatives remain in separate error and false-positive
+metrics. This does not replace the primary 53-table/2333-anchor totals or
+penalize extras; both totals and false positives remain necessary.
+
+The Opus macro exact-cell recall is 62.01%, despite only 12.86% micro
+recall, because its dense-page loss carries less weight in the macro.
+Its macro complete-table recall is 20.83%. This describes page weighting,
+not an improvement or a selected evaluation subset. Tests distinguish a
+100-cell missed page from a one-cell recovered page, retain a failed
+positive at zero even with retained partial tables, and exclude negatives
+and unscored diagnostics from the macro only.
