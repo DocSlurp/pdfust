@@ -136,7 +136,9 @@ def image_pdf(image_path: Path, width: float, height: float) -> bytes:
     from PIL import Image
 
     with Image.open(image_path) as image:
-        rgb = image.convert("RGB")
+        rgba = image.convert("RGBA")
+        rgb = Image.new("RGB", image.size, "white")
+        rgb.paste(rgba, mask=rgba.getchannel("A"))
         pixels, dimensions = rgb.tobytes(), rgb.size
     return _serialize(
         [
@@ -456,13 +458,132 @@ def build(directory: Path, omni_rows: list[dict[str, Any]]) -> dict[str, Any]:
     return manifest
 
 
+def white_alpha_revision(directory: Path) -> dict[str, Any]:
+    """Preserve r1 and freeze r2 correcting only transparent authored carrier compositing."""
+    directory = guard_path(directory)
+    base = json.loads((directory / "manifest.json").read_bytes())
+    references = json.loads((directory / "private-targets.json").read_bytes())
+    provenance = json.loads((directory / "private-provenance.json").read_bytes())
+    destination = directory / "corpus-r2"
+    pdfs = destination / "pdfs"
+    pdfs.mkdir(parents=True, exist_ok=True)
+    if (destination / "manifest.json").exists():
+        raise ValueError("White-alpha corpus revision already frozen")
+    source_map = {row["id"]: row for row in provenance}
+    changed = []
+    for page in base["pages"]:
+        if page["family"] != "authored/ocr-carrier":
+            continue
+        name = source_map[page["id"]]["source_case"].split("/")[-1]
+        data = image_pdf(directory / (name + ".png"), 612, 792)
+        digest = sha(data)
+        path = pdfs / (digest + ".pdf")
+        path.write_bytes(data)
+        changed.append({"id": page["id"], "previous_pdf_sha256": page["pdf_sha256"], "pdf_sha256": digest})
+        page["pdf_path"] = str(path)
+        page["pdf_sha256"] = digest
+        source_map[page["id"]]["revision_note"] = (
+            "r2 composites rendered RGBA onto white before RGB image wrapping; r1 lost transparency against black"
+        )
+    identity = sha(
+        canonical(
+            {
+                "schema": 1,
+                "parent_dataset_sha256": base["dataset_sha256"],
+                "pages": [{key: value for key, value in row.items() if key != "pdf_path"} for row in base["pages"]],
+                "targets": [
+                    {key: value for key, value in row.items() if key != "annotation_path"}
+                    for row in references["pages"]
+                ],
+            }
+        )
+    )
+    manifest = {
+        **base,
+        "dataset_sha256": identity,
+        "parent_dataset_sha256": base["dataset_sha256"],
+        "revision": "r2-white-alpha",
+        "revision_changes": changed,
+    }
+    references["dataset_sha256"] = identity
+    write_json(destination / "private-targets.json", references)
+    write_json(destination / "private-provenance.json", provenance)
+    write_json(destination / "manifest.json", manifest)
+    return manifest
+
+
+def natural_screen(directory: Path) -> dict[str, Any]:
+    """Freeze a second metadata-only 16-page natural screen without changing the base pilot."""
+    directory = guard_path(directory)
+    base = json.loads((directory / "manifest.json").read_bytes())
+    references = json.loads((directory / "private-targets.json").read_bytes())
+    target_map = {row["id"]: row for row in references["pages"]}
+    destination = directory / "screens" / "natural16"
+    destination.mkdir(parents=True, exist_ok=True)
+    if (destination / "manifest.json").exists():
+        raise ValueError("Natural screen already frozen")
+    selected = []
+    covered: set[str] = set()
+    for family, quota in (("multiple-table", 6), ("single-table", 6), ("no-table", 4)):
+        pool = sorted(
+            [row for row in base["pages"] if row["family"] == "omni/" + family],
+            key=lambda row: sha((SEED + "/natural16/" + row["id"]).encode()),
+        )
+        for _ in range(quota):
+
+            def diversity(row: dict[str, Any]) -> set[str]:
+                metadata = row["diversity"]
+                return {
+                    *(f"{key}:{value}" for key, value in metadata["attributes"].items()),
+                    *("category:" + category for category in metadata["category_counts"]),
+                }
+
+            winner = max(pool, key=lambda row: len(diversity(row) - covered))
+            pool.remove(winner)
+            covered.update(diversity(winner))
+            selected.append({**winner, "pilot": True})
+    targets = [target_map[row["id"]] for row in selected]
+    identity = sha(
+        canonical(
+            {
+                "schema": 1,
+                "source_dataset_sha256": base["dataset_sha256"],
+                "screen": "natural16",
+                "pages": [{key: value for key, value in row.items() if key != "pdf_path"} for row in selected],
+                "targets": [{key: value for key, value in row.items() if key != "annotation_path"} for row in targets],
+            }
+        )
+    )
+    manifest = {
+        **base,
+        "dataset_sha256": identity,
+        "source_dataset_sha256": base["dataset_sha256"],
+        "pages": selected,
+        "pilot_policy": "Second predeclared screen: six multiple-table, six single-table and four no-table Omni pages; greedy metadata diversity; frozen hash ties; no extraction outputs used",
+    }
+    write_json(destination / "private-targets.json", {"schema": 1, "dataset_sha256": identity, "pages": targets})
+    source_provenance = json.loads((directory / "private-provenance.json").read_bytes())
+    write_json(
+        destination / "private-provenance.json",
+        [row for row in source_provenance if row["id"] in {page["id"] for page in selected}],
+    )
+    write_json(destination / "manifest.json", manifest)
+    return manifest
+
+
 def main() -> None:
     """Acquire and freeze ignored research artifacts with measured CPU-only build usage."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, default=ARTIFACTS)
     parser.add_argument("--annotation-path", type=Path)
     parser.add_argument("--acquire-only", action="store_true")
+    parser.add_argument("--natural-screen", action="store_true")
+    parser.add_argument("--white-alpha-revision", action="store_true")
     args = parser.parse_args()
+    if args.natural_screen or args.white_alpha_revision:
+        manifest = natural_screen(args.directory) if args.natural_screen else white_alpha_revision(args.directory)
+        print(json.dumps({"dataset_sha256": manifest["dataset_sha256"], "pages": len(manifest["pages"])}))
+        return
     start, cpu = time.perf_counter(), time.process_time()
     rows = acquire(args.directory, args.annotation_path)
     manifest = None if args.acquire_only else build(args.directory, rows)

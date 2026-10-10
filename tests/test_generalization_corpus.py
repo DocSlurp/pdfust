@@ -3,6 +3,7 @@
 # Test fixture rows retain a readable construction loop.
 # ruff: noqa: PERF401
 
+import io
 import json
 import sys
 from collections import Counter
@@ -105,3 +106,85 @@ def test_frozen_manifest_separates_private_references(tmp_path: Path, monkeypatc
     assert target["pages"][0]["tables"] == case["tables"]
     with pytest.raises(ValueError, match="already frozen"):
         corpus.build(tmp_path, [])
+
+
+def test_natural_screen_is_separate_and_metadata_selected(tmp_path: Path) -> None:
+    """The second screen preserves source identities and leaves the base manifest untouched."""
+    pages = []
+    targets = []
+    for row in _rows():
+        count = len(row["layout_dets"])
+        identifier = row["page_info"]["image_path"]
+        family = ("no-table", "single-table", "multiple-table")[count]
+        pages.append(
+            {
+                "id": identifier,
+                "family": "omni/" + family,
+                "pdf_path": "/unused/input.pdf",
+                "pilot": False,
+                "diversity": {"attributes": row["page_info"]["page_attribute"], "category_counts": {"table": count}},
+            }
+        )
+        targets.append({"id": identifier, "tables": [], "structural_scored": True})
+    base = {"schema": 1, "split": "DEV", "dataset_sha256": "frozen-base", "pages": pages}
+    corpus.write_json(tmp_path / "manifest.json", base)
+    corpus.write_json(tmp_path / "private-targets.json", {"pages": targets})
+    corpus.write_json(tmp_path / "private-provenance.json", [])
+    original = (tmp_path / "manifest.json").read_bytes()
+    screen = corpus.natural_screen(tmp_path)
+    assert len(screen["pages"]) == 16
+    assert Counter(row["family"] for row in screen["pages"]) == {
+        "omni/multiple-table": 6,
+        "omni/single-table": 6,
+        "omni/no-table": 4,
+    }
+    assert all(row["pilot"] for row in screen["pages"])
+    assert screen["source_dataset_sha256"] == "frozen-base"
+    assert screen["dataset_sha256"] != "frozen-base"
+    assert (tmp_path / "manifest.json").read_bytes() == original
+    with pytest.raises(ValueError, match="already frozen"):
+        corpus.natural_screen(tmp_path)
+
+
+def test_transparent_carrier_composites_onto_white(tmp_path: Path) -> None:
+    """Invisible black RGBA background cannot erase visible black source text."""
+    image = tmp_path / "transparent.png"
+    rgba = Image.new("RGBA", (24, 32), (0, 0, 0, 0))
+    rgba.putpixel((5, 5), (0, 0, 0, 255))
+    rgba.save(image)
+    with pylopdf.Document(stream=image_pdf(image, 72, 96)) as document:
+        retained = Image.open(io.BytesIO(document[0].get_images()[0]["image"])).convert("RGB")
+        assert retained.getpixel((0, 0)) == (255, 255, 255)
+        assert retained.getpixel((5, 5)) == (0, 0, 0)
+
+
+def test_white_alpha_revision_preserves_r1_and_stable_ids(tmp_path: Path) -> None:
+    """A source correction creates a new frozen identity, never overwriting the old manifest."""
+    image = tmp_path / "ocr-carrier-00.png"
+    Image.new("RGBA", (24, 32), (0, 0, 0, 0)).save(image)
+    pages = [
+        {
+            "id": "carrier",
+            "family": "authored/ocr-carrier",
+            "pdf_path": "/original/carrier.pdf",
+            "pdf_sha256": "r1-source",
+        },
+        {"id": "native", "family": "native/diagnostic", "pdf_path": "/original/native.pdf", "pdf_sha256": "unchanged"},
+    ]
+    base = {"schema": 1, "split": "DEV", "dataset_sha256": "r1-frozen", "pages": pages}
+    targets = {"schema": 1, "dataset_sha256": "r1-frozen", "pages": [{"id": row["id"], "tables": []} for row in pages]}
+    corpus.write_json(tmp_path / "manifest.json", base)
+    corpus.write_json(tmp_path / "private-targets.json", targets)
+    corpus.write_json(
+        tmp_path / "private-provenance.json", [{"id": "carrier", "source_case": "authored/ocr-carrier-00"}]
+    )
+    original = (tmp_path / "manifest.json").read_bytes()
+    revised = corpus.white_alpha_revision(tmp_path)
+    assert revised["parent_dataset_sha256"] == "r1-frozen"
+    assert revised["dataset_sha256"] != "r1-frozen"
+    assert revised["pages"][0]["id"] == "carrier"
+    assert revised["pages"][0]["pdf_sha256"] != "r1-source"
+    assert revised["pages"][1] == pages[1]
+    assert (tmp_path / "manifest.json").read_bytes() == original
+    with pytest.raises(ValueError, match="already frozen"):
+        corpus.white_alpha_revision(tmp_path)

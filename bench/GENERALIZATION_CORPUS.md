@@ -105,3 +105,45 @@ Initial public acquisition took 13.51 seconds wall and 1.57 seconds process
 CPU, with 427,412 KiB process lifetime peak RSS. The separate full construction
 process took 17.04 seconds wall and 17.02 seconds CPU, with 767,528 KiB peak
 RSS. These are build measurements, not extraction or throughput claims.
+
+## Source audit and corrected revision
+
+The initial render audit found that authored OCR carriers discarded rendered
+RGBA transparency when converting to RGB. Their invisible black background
+became opaque black and obscured black foreground text. The original frozen
+snapshot and its diagnostics are preserved; its 12 authored OCR carriers are
+invalid sources for OCR quality conclusions. Official Omni JPEG images and
+264 other page source hashes were unaffected.
+
+The corrected full corpus is `pipeline-p002/corpus-r2/manifest.json`, SHA256
+`e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
+It records the initial dataset as its parent, preserves all 276 page IDs and
+private construction targets, and replaces only the 12 defective carrier PDF
+payloads. RGBA now composites onto white before RGB wrapping. This revision
+is the source for subsequent main comparisons. Reproduce the correction with
+`--white-alpha-revision`; an existing revised manifest refuses overwriting.
+
+All 156 authored native construction pages were rendered at 45 dpi and
+composited onto white in `authored-audit-gallery.png`; per-page raster
+visibility counts are retained in `authored-visibility-audit.json`. Every
+page has visible dark content (minimum 964 dark pixels at this resolution).
+The gallery includes all rotations, crop variants, wrapped rows, multiple
+tables, and decorative negatives. Layout review found no additional clipping,
+row overlap, or missing-content source defect. The corrected carrier appearance
+matches those authored source renderings; this visual audit does not imply
+correct pipeline extraction.
+
+These authored designs remain sparse, single-producer construction fixtures.
+Their repeated templates are useful stress controls, but they cannot support
+claims about arbitrary natural PDFs. Natural cases and native diagnostics must
+remain separately reported.
+
+A second predefined natural screen is frozen separately at
+`pipeline-p002/screens/natural16/manifest.json`, SHA256
+`68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c2d`.
+It selects six multiple-table, six single-table, and four no-table Omni pages
+from the original fixed 64-page selection using metadata diversity and seeded
+hash ties. All screen pages are marked pilot; the original 32-page pilot is
+unchanged. The screen reuses existing source IDs and is a diagnostic subset,
+not new independent data. Reproduce with `--natural-screen` before inspecting
+screen output quality. Its sources were unaffected by the alpha correction.
