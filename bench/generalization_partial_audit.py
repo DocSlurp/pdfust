@@ -102,6 +102,7 @@ def gallery(manifest: dict[str, Any], partials: list[dict[str, Any]], output: Pa
         "<style>body{font:16px system-ui;max-width:1500px;margin:auto;padding:24px}"
         "h1,h2{color:#8b2500}section{border-top:2px solid #999;padding:20px 0}"
         ".columns{display:grid;grid-template-columns:minmax(250px,1fr) minmax(350px,1fr);gap:24px}"
+        ".columns>div{min-width:0;overflow-x:auto}"
         "img{max-width:100%;height:auto}table{border-collapse:collapse;margin:12px 0}"
         "td{border:1px solid #777;padding:4px}pre{white-space:pre-wrap;overflow-wrap:anywhere}"
         "@media(max-width:800px){.columns{grid-template-columns:1fr}}</style>"
