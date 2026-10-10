@@ -2,6 +2,7 @@
 
 import json
 from copy import deepcopy
+from typing import Any
 
 import pytest
 from bench.pipeline_assembly import validate
@@ -24,7 +25,7 @@ def source() -> dict:
     }
 
 
-def cell(row: int, column: int, ids: list[str], row_span: int = 1, column_span: int = 1) -> dict:
+def cell(row: int, column: int, ids: list[Any], row_span: int = 1, column_span: int = 1) -> dict:
     """Build a declared anchor independent of literal text."""
     return {"row": row, "column": column, "row_span": row_span, "column_span": column_span, "source_ids": ids}
 

@@ -257,7 +257,7 @@ def native_pages(count: int = 56) -> list[dict[str, Any]]:
 
     base = ROOT / "tests/assets/real_world"
     readme = (base / "README.md").read_text()
-    candidates = []
+    candidates: list[dict[str, Any]] = []
     for line in readme.splitlines():
         match = re.match(r"\| `([^`]+\.pdf)` \| (.*?) \| (.*?) \| (.*?) \|", line)
         if not match:
@@ -296,7 +296,9 @@ def build(directory: Path, omni_rows: list[dict[str, Any]]) -> dict[str, Any]:
         raise ValueError("Corpus manifest already frozen; choose a fresh directory")
     pdfs = directory / "pdfs"
     pdfs.mkdir(parents=True, exist_ok=True)
-    pages, targets, provenance = [], [], []
+    pages: list[dict[str, Any]] = []
+    targets: list[dict[str, Any]] = []
+    provenance: list[dict[str, Any]] = []
 
     def add(
         data: bytes,
@@ -379,7 +381,8 @@ def build(directory: Path, omni_rows: list[dict[str, Any]]) -> dict[str, Any]:
         image = directory / "images" / identifier
         annotation = annotations / (identifier + ".json")
         write_json(annotation, row)
-        tables, errors = [], []
+        tables: list[dict[str, Any]] = []
+        errors: list[str] = []
         blocks = [b for b in row["layout_dets"] if b["category_type"] == "table"]
         for block in blocks:
             parsed = parse_annotation_html(block.get("html", ""))
@@ -580,6 +583,7 @@ def main() -> None:
     parser.add_argument("--natural-screen", action="store_true")
     parser.add_argument("--white-alpha-revision", action="store_true")
     args = parser.parse_args()
+    manifest: dict[str, Any] | None
     if args.natural_screen or args.white_alpha_revision:
         manifest = natural_screen(args.directory) if args.natural_screen else white_alpha_revision(args.directory)
         print(json.dumps({"dataset_sha256": manifest["dataset_sha256"], "pages": len(manifest["pages"])}))

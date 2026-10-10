@@ -5,6 +5,7 @@ import json
 import math
 from copy import deepcopy
 from types import ModuleType
+from typing import Any
 
 import pytest
 from bench import pipeline_generation as anchors
@@ -88,7 +89,7 @@ def test_quarter_preserves_text_and_ids_and_has_bounded_finite_ordered_boxes(ada
 
 
 def test_encoding_precedes_packet_admission_without_bypassing_source_admission() -> None:
-    dense = {
+    dense: dict[str, Any] = {
         "page_size": [600, 800],
         "words": [
             {
@@ -110,7 +111,10 @@ def test_encoding_precedes_packet_admission_without_bypassing_source_admission()
 
 
 def test_quarter_extreme_finite_coordinates_do_not_overflow_or_replace_originals() -> None:
-    original = {"page_size": [600, 800], "words": [{"id": "w0", "text": "x", "bbox": [1e308, 1e308, 1e308, 1e308]}]}
+    original: dict[str, Any] = {
+        "page_size": [600, 800],
+        "words": [{"id": "w0", "text": "x", "bbox": [1e308, 1e308, 1e308, 1e308]}],
+    }
     encoded = json.loads(encode(original, None, "quarter"))
     assert encoded["words"][0][2] == original["words"][0]["bbox"]
     with pytest.raises(ValueError, match="Unknown"):

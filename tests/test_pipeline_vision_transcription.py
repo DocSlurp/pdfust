@@ -17,7 +17,7 @@ from bench.pipeline_vision_transcription import (
     request,
 )
 
-BOUNDS = [100, 200, 900, 600]
+BOUNDS: list[float] = [100, 200, 900, 600]
 URL = "data:image/png;base64,AA=="
 
 
