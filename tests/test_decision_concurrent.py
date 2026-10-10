@@ -401,3 +401,35 @@ def test_telemetry_checkpoint_failure_keeps_financial_settlement(
     assert row["concurrent_state"] == "completed"
     assert (base.directory / row["response_file"]).read_bytes() == payload()
     assert opener.call_count == 1
+
+
+def test_explicit_p003_matched_inflight_replicates(base: hosted.DecisionClient) -> None:
+    """Same model inputs may overlap only for explicitly distinct P003 tags."""
+    client = ConcurrentDecisionClient(base, max_inflight=3, wave_limits={"P003": 50}, allow_matched_replicates=True)
+    encoded = json.dumps(body(), separators=(",", ":")).encode()
+    first = client._reserve(body(), encoded, "P003/arm-a/page", 0.3)  # noqa: SLF001
+    second = client._reserve(body(), encoded, "P003/arm-b/page", 0.3)  # noqa: SLF001
+    assert first["index"] != second["index"]
+    assert sum(row["accounted_usd"] for row in ledger(base)["requests"]) == 0.6
+    with pytest.raises(RuntimeError, match="tag already"):
+        client._reserve(body(), encoded, "P003/arm-a/page", 0.3)  # noqa: SLF001
+    saved = ledger(base)
+    saved["requests"][0].update(concurrent_state="failed", error="OSError")
+    base.ledger.write_text(json.dumps(saved))
+    with pytest.raises(RuntimeError, match="failed or unresolved"):
+        client._reserve(body(), encoded, "P003/arm-c/page", 0.3)  # noqa: SLF001
+
+
+def test_default_matched_inflight_still_refused(base: hosted.DecisionClient) -> None:
+    client = ConcurrentDecisionClient(base, wave_limits={"P003": 50})
+    encoded = json.dumps(body(), separators=(",", ":")).encode()
+    client._reserve(body(), encoded, "P003/a", 0.3)  # noqa: SLF001
+    with pytest.raises(RuntimeError, match="in flight"):
+        client._reserve(body(), encoded, "P003/b", 0.3)  # noqa: SLF001
+
+
+def test_matched_policy_cannot_admit_other_waves(base: hosted.DecisionClient) -> None:
+    with pytest.raises(ValueError, match="P003-only"):
+        ConcurrentDecisionClient(base, allow_matched_replicates=True)
+    with pytest.raises(ValueError, match="P003-only"):
+        ConcurrentDecisionClient(base, wave_limits={"P002": 50}, allow_matched_replicates=True)

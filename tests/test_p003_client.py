@@ -3,11 +3,13 @@ from __future__ import annotations
 
 # ruff: noqa: ANN001, ANN201, ANN202, SLF001 - mocked client internals.
 import json
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 from bench import decision_hosted as hosted
-from bench.p003_client import P003ConcurrentClient
+from bench.decision_hosted import DecisionClient
+from bench.p003_client import P003ConcurrentClient, P003DecisionClient
 
 
 def test_stops_arm_without_second_reservation(tmp_path, monkeypatch):
@@ -18,7 +20,9 @@ def test_stops_arm_without_second_reservation(tmp_path, monkeypatch):
     monkeypatch.setattr(base, "_prior_api_cost", lambda: 0)
     opener = MagicMock(side_effect=OSError("mock transport failure"))
     client = P003ConcurrentClient(client=base, opener=opener)
-    assert client._concurrent.policy == {"max_inflight": 3, "wave_limits_usd": {"P003": 50.0}}
+    assert client._concurrent.policy == {
+        "max_inflight": 3, "wave_limits_usd": {"P003": 50.0}, "allow_matched_replicates": True,
+    }
     with pytest.raises(RuntimeError):
         client.request({"model": hosted.JEV, "questions": {}}, tag="P003/mock")
     with pytest.raises(RuntimeError, match="arm stopped"):
@@ -47,3 +51,27 @@ def test_settlement_preserves_byok_components(tmp_path, monkeypatch):
     saved = json.loads(base.ledger.read_text())["requests"][0]
     for field in ("upstream_inference_usd", "gateway_reported_usd"):
         assert saved[field] == result["entry"][field]
+
+
+def test_transport_failure_stops_subsequent_paid_admissions(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = object.__new__(P003DecisionClient)
+    calls = []
+
+    def failed(_self: object, body: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
+        calls.append(body)
+        raise RuntimeError
+
+    monkeypatch.setattr(DecisionClient, "request", failed)
+    with pytest.raises(RuntimeError):
+        client.request({"model": "example"}, tag="P003/first")
+    with pytest.raises(RuntimeError, match="arm stopped"):
+        client.request({"model": "different"}, tag="P003/second")
+    assert len(calls) == 1
+
+
+def test_success_does_not_stop_new_requests(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = object.__new__(P003DecisionClient)
+    monkeypatch.setattr(DecisionClient, "request", lambda *_args, **_kwargs: {"result": {}})
+    assert client.request({}, tag="P003/a") == {"result": {}}
+    assert client.request({}, tag="P003/b") == {"result": {}}
+    assert not client.stopped

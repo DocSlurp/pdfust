@@ -61,6 +61,7 @@ class ConcurrentDecisionClient:
         max_inflight: int = 2,
         wave_limits: dict[str, float] | None = None,
         opener: Callable[..., Any] | None = None,
+        allow_matched_replicates: bool = False,
     ) -> None:
         """Wrap an existing exact OpenRouter client without reading credentials."""
         if type(client) is not hosted.DecisionClient:
@@ -72,9 +73,13 @@ class ConcurrentDecisionClient:
             k not in WAVE_LIMITS or hosted.accounted_cost(v) > WAVE_LIMITS[k] or v <= 0 for k, v in waves.items()
         ):
             raise ValueError("Wave limits must tighten the existing P001/P002/P003 caps")
+        if type(allow_matched_replicates) is not bool or (allow_matched_replicates and set(waves) != {"P003"}):
+            raise ValueError("Matched replicate policy is restricted to P003-only admission")
         self._client = client
         self.root, self.directory, self.ledger = client.root, client.directory, client.ledger
         self.policy: dict[str, Any] = {"max_inflight": max_inflight, "wave_limits_usd": deepcopy(waves)}
+        if allow_matched_replicates:
+            self.policy["allow_matched_replicates"] = True
         self._opener = urllib.request.urlopen if opener is None else opener
 
     def _load(self) -> dict[str, Any]:
@@ -116,6 +121,14 @@ class ConcurrentDecisionClient:
                     raise RuntimeError("Retained response awaits settlement; concurrent admission blocked")
                 if entry.get("gateway", "openrouter") != "openrouter" or entry.get("request_sha256") != key:
                     continue
+                matched_policy = self.policy.get("allow_matched_replicates", False)
+                if matched_policy and entry.get("tag") == tag:
+                    raise RuntimeError("Identical matched replicate tag already retained; no automatic retry")
+                if (
+                    matched_policy and entry.get("concurrent_state") == "in_flight" and not entry.get("error")
+                    and entry.get("tag", "").split("/", 1)[0] == "P003" and wave == "P003"
+                ):
+                    continue  # Same input, independently named arm; all reservations still count.
                 if entry.get("error") or not entry.get("response_file") or entry.get("concurrent_state") == "in_flight":
                     raise RuntimeError("Identical request is in flight, failed or unresolved; no automatic retry")
             if sum(e.get("concurrent_state") == "in_flight" for e in entries) >= self.policy["max_inflight"]:
