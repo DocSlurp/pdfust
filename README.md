@@ -322,6 +322,12 @@ lose logical cell ordering. Every other authored family is exact. These raw
 scores retain that regression; a separately labeled correction must verify
 reading direction without changing the model's evidence or inventing cell text.
 
+The [frozen offline orientation correction](bench/results/p002-native-orientation.md)
+restores all twelve rotated tables: Haiku reaches **169/249 complete tables and
+6,863/8,897 exact cells**, and Sonnet reaches 169/249 and 6,378/8,897. All original
+failures and extra tables remain. These corrected quality counts reuse retained
+responses; they do not replace the original fresh-run throughput measurements.
+
 The matched full Sonnet hybrid costs USD 0.838664. It produces more operational
 outputs but fewer exact cells and more negative-page false positives than Haiku
 in this fresh run. Higher model price does not establish a better pipeline.

@@ -49,6 +49,12 @@ for review without relabeling failed pages as complete.
   assembly. Its reported API charge is USD 0.0397398 versus USD 0.1275912.
   The rotation correction is audited separately; historical timing and quality
   records remain unchanged.
+- **Reading order needs an explicit contract.** A source-only logical projection
+  restores twelve rotated native tables in both full hybrid controls. Haiku
+  reaches 169/249 complete tables and 6,863/8,897 exact cells in the
+  [offline audit](results/p002-native-orientation.md). Every other table and all
+  original failures remain unchanged. A separate regional-prose fix preserves
+  original word/line order instead of sorting by proposal order.
 - **Missing source text is a hard limit for placement models.** Higher-resolution
   OCR substantially increases the available literal vocabulary, but that alone
   does not solve table localization or assembly. Source-only decisions cannot
