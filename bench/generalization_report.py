@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from bench.generalization_scoring import audit_model_body, normalize_text, score_dataset, score_page
+from bench.generalization_vision_regions import compose as vision_regions_compose
+from bench.generalization_vision_regions import proposals as vision_region_proposals
 from bench.pipeline_regions import compose, validate_composed
 from bench.pipeline_report import _render_markdown, _verify_markdown_renderer
 from bench.pipeline_scoring import score_dataset as authored_score_dataset
@@ -135,9 +137,11 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     comparison = {}
     required = (
         {"generalization_vision_run.py", "pipeline_vision_transcription.py", "pipeline_frontier.py"}
-        if processor == "vision"
+        if processor in {"vision", "vision_regions"}
         else {"pipeline_run.py", "pipeline_assembly.py"}
     )
+    if processor == "vision_regions":
+        required.add("generalization_vision_regions.py")
     if processor == "regions":
         required |= {"pipeline_regions.py", "generalization_run.py"}
         if frozen.get("config", {}).get("assembly_method") in {"generate", "gated_generate"}:
@@ -159,7 +163,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] = (
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
-    if processor == "vision":
+    if processor in {"vision", "vision_regions"}:
         if any(comparison[name] != "identical" for name in required - {"generalization_vision_run.py"}):
             raise ValueError("Trusted local vision adapter differs from frozen code")
         historical_runner = {}
@@ -226,15 +230,32 @@ def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str
     if prediction.get("status") != "ok":
         return {"operational": False, "conserved": False}
     state = _read(directory / f"{ident}-structure.json")
-    if processor == "vision":
+    if processor in {"vision", "vision_regions"}:
         if (
-            prediction.get("route") != "vision_transcription"
+            prediction.get("route")
+            != ("vision_transcription_regions" if processor == "vision_regions" else "vision_transcription")
             or prediction.get("source_conserved") is not False
             or prediction.get("unresolved_ids") != []
             or "source" in prediction
         ):
             raise ValueError("Vision output must be labeled model transcription without source ownership")
-        rebuilt = vision_parse(prediction["transcription_response"], prediction["viewport"])
+        if processor == "vision_regions":
+            regions = prediction["transcription_regions"]
+            if prediction.get("coverage") != "unverified" or prediction.get("proposal_count") != len(regions):
+                raise ValueError("Vision region proposal count or unverified coverage label differs")
+            selected = vision_region_proposals(prediction["layout_detection"], prediction["viewport"])
+            proposal_fields = ("index", "request_index", "viewport", "detector_box")
+            if [{key: region.get(key) for key in proposal_fields} for region in regions] != [
+                {key: region[key] for key in proposal_fields} for region in selected
+            ]:
+                raise ValueError("Vision regions differ from complete retained detector proposals")
+            rebuilt = vision_regions_compose(regions, prediction["viewport"])
+            for region in regions:
+                parsed = vision_parse(region["transcription_response"], region["viewport"])
+                if parsed["tables"] != region.get("tables"):
+                    raise ValueError("Vision region tables differ from reparsed retained response")
+        else:
+            rebuilt = vision_parse(prediction["transcription_response"], prediction["viewport"])
         if rebuilt != state or rebuilt["tables"] != prediction["tables"]:
             raise ValueError("Vision transcription differs from reparsed retained response")
         if guard_path(directory / f"{ident}.md").read_bytes() != vision_markdown(rebuilt).encode():
@@ -426,6 +447,10 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
         direct = prediction.get("transcription_response")
         if isinstance(direct, dict):
             responses.append({"source": "transcription_response", "payload": direct})
+        for region in prediction.get("transcription_regions", []):
+            raw = region.get("transcription_response")
+            if isinstance(raw, dict):
+                responses.append({"source": f"transcription_region_{region.get('index')}", "payload": raw})
         for call in prediction.get("calls", []):
             filename = call.get("entry", {}).get("response_file")
             if filename is not None:
@@ -462,7 +487,7 @@ def _failure_taxonomy(directory: Path, predictions: list[dict[str, Any]]) -> dic
             category = "invalid_anchor_collection"
         elif "source id" in lower or "source_id" in lower or "unknown id" in lower:
             category = "invalid_source_ids"
-        elif any(word in lower for word in ("span", "topology", "rectangular", "overlapping", "tiling")):
+        elif any(word in lower for word in ("span", "topology", "rectangular", "overlap", "tiling")):
             category = "invalid_table_topology"
         elif any(word in lower for word in ("admission", "exceeds", "over-limit", "budget")):
             category = "local_input_or_output_admission"
@@ -520,7 +545,7 @@ def score_run(
     if actual != expected or len(actual) != len(frozen["records"]):
         raise ValueError("Frozen records differ from complete intended manifest cohort")
     processor = config.get("processor", "whole")
-    if processor not in {"whole", "regions", "vision"}:
+    if processor not in {"whole", "regions", "vision", "vision_regions"}:
         raise ValueError("Unsupported processor")
     code = verify_code(directory, frozen, processor=processor)
     predictions = report["results"]
@@ -614,9 +639,11 @@ def score_run(
         "markdown_bytes_verified_pages": operational,
         "conserved_pages": conserved,
         "output_scope": (
-            "table-only image transcription comparator" if processor == "vision" else "complete source assembly"
+            "table-only image transcription comparator"
+            if processor in {"vision", "vision_regions"}
+            else "complete source assembly"
         ),
-        "text_provenance": ("model-transcribed" if processor == "vision" else "source-owned"),
+        "text_provenance": ("model-transcribed" if processor in {"vision", "vision_regions"} else "source-owned"),
         "source_candidate_ceilings": [{"id": t["id"], **_ceiling(t, by_id.get(t["id"], {}))} for t in private],
         "costs": costs,
         "resources": metrics,
@@ -669,7 +696,7 @@ def score_run(
             (
                 "Vision is a table-only model transcription comparator; it neither conserves OCR source "
                 "nor produces complete page prose. Every intended table target remains scored."
-                if processor == "vision"
+                if processor in {"vision", "vision_regions"}
                 else "Source ownership conservation verifies retained words, not raster OCR completeness."
             ),
             "Legacy predicted bboxes derive from owned text extents; annotation boxes may include borders or padding.",

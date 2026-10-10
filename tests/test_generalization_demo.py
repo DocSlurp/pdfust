@@ -12,13 +12,15 @@ from bench import generalization_run, pipeline_run
 from bench import pipeline_vision_transcription as vision
 from test_pipeline_run import config, record
 
+import pylopdf
+
 
 def retained(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, processor: str = "whole") -> tuple[Path, Path, Path]:
     source = record(tmp_path)
     run = tmp_path / "run"
     run.mkdir()
     settings = {**config("native"), "processor": processor, "ocr_empty": False, "run_id": "demo-run"}
-    if processor == "vision":
+    if processor in {"vision", "vision_regions"}:
         raw = {
             "choices": [
                 {
@@ -59,6 +61,32 @@ def retained(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, processor: str = "
             "viewport": [0, 0, 340, 300],
             "transcription_response": raw,
         }
+        if processor == "vision_regions":
+            result.pop("transcription_response")
+            result.update(
+                route="vision_transcription_regions",
+                coverage="unverified",
+                proposal_count=1,
+                transcription_regions=[
+                    {
+                        "index": 0,
+                        "request_index": 0,
+                        "status": "ok",
+                        "viewport": result["viewport"],
+                        "transcription_response": raw,
+                        "tables": state["tables"],
+                    }
+                ],
+            )
+        if processor == "vision_regions":
+            box = {"label": "Table", "confidence": 0.9, "bbox": result["viewport"]}
+            result["transcription_regions"][0]["detector_box"] = box
+            result["layout_detection"] = {
+                "type": "result",
+                "device": "cpu",
+                "viewport": result["viewport"],
+                "boxes": [box],
+            }
         (run / f"{source['id']}-result.json").write_text(json.dumps(result))
         (run / f"{source['id']}-structure.json").write_text(json.dumps(state))
         (run / f"{source['id']}.md").write_text(vision.markdown(state))
@@ -83,7 +111,7 @@ def retained(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, processor: str = "
     return manifest, run, artifacts / "gallery"
 
 
-@pytest.mark.parametrize("processor", ["whole", "regions", "vision"])
+@pytest.mark.parametrize("processor", ["whole", "regions", "vision", "vision_regions"])
 def test_gallery_verifies_all_screen_pages_and_preserves_failures(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, processor: str
 ) -> None:
@@ -105,7 +133,7 @@ def test_gallery_verifies_all_screen_pages_and_preserves_failures(
     assert "&lt;script&gt;bad()&lt;/script&gt;" in html
     assert "missing-page" in html
     assert "failed-page" in html
-    if processor == "vision":
+    if processor in {"vision", "vision_regions"}:
         assert "model-transcribed; no source ownership" in html
         assert '<img src="https://external.invalid/x">' not in html
         assert "&lt;script&gt;alert" in html
@@ -176,3 +204,33 @@ def test_relative_pdf_record_is_rejected_before_resolution(tmp_path: Path, monke
     (run / "frozen.json").write_text(json.dumps(frozen))
     with pytest.raises(ValueError, match="paths must be absolute"):
         demo.build(manifest, run, output)
+
+
+@pytest.mark.parametrize("processor", ["vision", "vision_regions"])
+def test_vision_gallery_preserves_original_rotation_despite_assembly_flags(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, processor: str
+) -> None:
+    manifest, run, output = retained(tmp_path, monkeypatch, processor)
+    records = json.loads(manifest.read_text())["pages"]
+    pdf = Path(records[0]["pdf_path"])
+    with pylopdf.open(stream=pdf.read_bytes()) as document:
+        document[0].set_rotation(90)
+        data = document.tobytes()
+    pdf.write_bytes(data)
+    for item in records:
+        item["pdf_sha256"] = demo.sha(data)
+    manifest.write_text(json.dumps({"split": "DEV", "pages": records}))
+    frozen = json.loads((run / "frozen.json").read_text())
+    frozen.update(records=records, manifest_sha256=demo.sha(manifest.read_bytes()))
+    frozen["config"]["normalize_rotation"] = True
+    (run / "frozen.json").write_text(json.dumps(frozen))
+    report = json.loads((run / "report.json").read_text())
+    report["config"] = frozen["config"]
+    prediction = report["results"][0]
+    prediction.update(effective_rotation=0, rotation_normalized=True)
+    (run / "opaque-page-result.json").write_text(json.dumps(prediction))
+    (run / "report.json").write_text(json.dumps(report))
+    result = demo.build(manifest, run, output, image_edge=512)
+    assert result["pages"][0]["original_rotation"] == 90
+    assert result["pages"][0]["display_viewport"] == [0, 0, 300, 340]
+    assert result["pages"][0]["provenance"] == "model-transcribed; no source ownership"

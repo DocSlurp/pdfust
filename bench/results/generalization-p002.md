@@ -804,3 +804,19 @@ sixteenth the API cost. Both are table-only comparators with zero conserved
 pages and unchanged full-target denominators. Local concurrency during these
 waves is disclosed by the run resource records; timing differences alone do
 not establish model serving performance.
+
+## Regional vision replay contract
+
+The separate `vision_regions` processor uses source-only fixed detector
+proposals and image-only crop transcriptions. Offline verification requires
+identical trusted crop composition and transcription adapter code, replays
+every retained detector proposal, reparses every crop response against its
+global viewport, and checks retained regional tables, combined structure, and
+exact Markdown bytes. Missing crops, reordered requests, out-of-page geometry,
+overlapping returned tables, and aggregate slot admissions fail verification.
+A runtime crop failure remains an atomic page error; successful prefixes are
+not quality-scored. Zero proposals retain `coverage=unverified`, including on
+negative pages. Every intended page and table target remains in the primary
+denominator. Both whole-page and crop vision galleries preserve original
+rotation and label the outputs as table-only model transcription with no
+source conservation. This contract does not yet assert crop-run quality.

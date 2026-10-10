@@ -405,17 +405,22 @@ def test_vision_reparse_rejects_tampered_output(tmp_path: Path, field: str) -> N
         verify_output(tmp_path, prediction, processor="vision")
 
 
+@pytest.mark.parametrize("processor", ["vision", "vision_regions"])
 def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
     fixture: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    processor: str,
 ) -> None:
     f = fixture
     local = Path(module.__file__).parent
     trusted = tmp_path / "trusted"
     trusted.mkdir()
     hashes = {}
-    for name in ("pipeline_vision_transcription.py", "pipeline_frontier.py", "generalization_vision_run.py"):
+    names = ["pipeline_vision_transcription.py", "pipeline_frontier.py", "generalization_vision_run.py"]
+    if processor == "vision_regions":
+        names.append("generalization_vision_regions.py")
+    for name in names:
         data = (
             (local / name).read_bytes() if name != "generalization_vision_run.py" else b"# Trusted local test runner.\n"
         )
@@ -424,11 +429,13 @@ def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
         hashes[name] = sha(data)
     monkeypatch.setattr(module, "__file__", str(trusted / "generalization_report.py"))
     frozen = deepcopy(f["frozen"])
-    frozen["config"]["processor"] = "vision"
+    frozen["config"]["processor"] = processor
     frozen["code_sha256"] = hashes
     report = deepcopy(f["report"])
     report["config"] = frozen["config"]
-    report["results"] = [vision_prediction(f["run"])]
+    report["results"] = [
+        regional_vision_prediction(f["run"]) if processor == "vision_regions" else vision_prediction(f["run"])
+    ]
     write(f["run"] / "frozen.json", frozen)
     write(f["run"] / "report.json", report)
     result = score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
@@ -447,7 +454,7 @@ def test_vision_frozen_code_and_score_keep_all_targets_and_zero_conserved_pages(
     (f["run"] / "code" / "pipeline_vision_transcription.py").write_bytes(changed)
     frozen["code_sha256"]["pipeline_vision_transcription.py"] = sha(changed)
     with pytest.raises(ValueError, match="differs from frozen"):
-        verify_code(f["run"], frozen, processor="vision")
+        verify_code(f["run"], frozen, processor=processor)
 
 
 @pytest.mark.parametrize(
@@ -559,3 +566,82 @@ def test_reviewed_vision_runner_history_never_relaxes_adapter_identity(
     frozen["code_sha256"]["generalization_vision_run.py"] = sha(changed)
     with pytest.raises(ValueError, match="unreviewed frozen code"):
         verify_code(f["run"], frozen, processor="vision")
+
+
+def regional_vision_prediction(directory: Path) -> dict[str, Any]:
+    prediction = vision_prediction(directory)
+    raw = prediction.pop("transcription_response")
+    prediction.update(
+        route="vision_transcription_regions",
+        coverage="unverified",
+        proposal_count=1,
+        transcription_regions=[
+            {
+                "index": 0,
+                "request_index": 0,
+                "status": "ok",
+                "viewport": [10, 20, 80, 90],
+                "transcription_response": raw,
+                "tables": [],
+            }
+        ],
+    )
+    box = {"label": "Table", "confidence": 0.9, "bbox": [10, 20, 80, 90]}
+    prediction["transcription_regions"][0]["detector_box"] = box
+    prediction["layout_detection"] = {
+        "type": "result",
+        "device": "cpu",
+        "viewport": prediction["viewport"],
+        "boxes": [box],
+    }
+    write(directory / "negative-result.json", prediction)
+    return prediction
+
+
+def test_regional_vision_replays_raw_crops_without_source_conservation(tmp_path: Path) -> None:
+    prediction = regional_vision_prediction(tmp_path)
+    assert verify_output(tmp_path, prediction, processor="vision_regions") == {
+        "operational": True,
+        "conserved": False,
+    }
+    prediction.update(proposal_count=0, transcription_regions=[])
+    prediction["layout_detection"]["boxes"] = []
+    write(tmp_path / "negative-result.json", prediction)
+    assert verify_output(tmp_path, prediction, processor="vision_regions")["operational"]
+
+
+@pytest.mark.parametrize("field", ["tables", "index", "viewport", "status", "raw", "coverage", "count", "dropped"])
+def test_regional_vision_rejects_tampered_crop_records(tmp_path: Path, field: str) -> None:
+    prediction = regional_vision_prediction(tmp_path)
+    region = prediction["transcription_regions"][0]
+    if field == "tables":
+        region["tables"] = [{"invented": True}]
+    elif field == "index":
+        region["request_index"] = 1
+    elif field == "viewport":
+        region["viewport"] = [0, 0, 120, 120]
+    elif field == "status":
+        region["status"] = "error"
+    elif field == "raw":
+        region["transcription_response"]["choices"][0]["finish_reason"] = "length"
+    elif field == "dropped":
+        prediction.update(transcription_regions=[], proposal_count=0)
+    elif field == "coverage":
+        prediction["coverage"] = "complete"
+    else:
+        prediction["proposal_count"] = 0
+    write(tmp_path / "negative-result.json", prediction)
+    with pytest.raises(ValueError, match=r"."):
+        verify_output(tmp_path, prediction, processor="vision_regions")
+
+
+def test_regional_vision_atomic_failure_does_not_verify_success_artifacts(tmp_path: Path) -> None:
+    prediction = regional_vision_prediction(tmp_path)
+    prediction.update(status="error", tables=[])
+    write(tmp_path / "negative-result.json", prediction)
+    (tmp_path / "negative-structure.json").unlink()
+    (tmp_path / "negative.md").unlink()
+    assert verify_output(tmp_path, prediction, processor="vision_regions") == {
+        "operational": False,
+        "conserved": False,
+    }
