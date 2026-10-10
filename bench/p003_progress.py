@@ -1,0 +1,415 @@
+"""Generate P003 progress tables from explicitly named independently verified evaluations."""
+
+# Retained benchmark JSON has heterogeneous resource/score fields.
+# ruff: noqa: ANN401, EM101, TRY003, C901, PLR0912, ISC004
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from pathlib import Path
+from typing import Any
+
+from bench.silver import guard_path, sha
+
+KNOWN_RUNS = (
+    "screen-ordinal-ocr300-512-r0",
+    "screen-gated-pplx-ocr300-512-r0",
+    "screen-crops-haiku-1024-pinned-r0",
+    "screen-crops-luna-1024-pinned-r0",
+)
+EVALUATION_NAMES = ("evaluation-cost-reconciled.json", "evaluation.json", "verified-evaluation.json")
+
+
+def load_evaluations(paths: list[Path], report_directory: Path | None = None) -> tuple[list[dict[str, Any]], list[str]]:
+    """Read explicit paths only; missing completed evaluations stay visible as pending."""
+    runs: dict[str, dict[str, Any]] = {}
+    pending = []
+    for requested in paths:
+        path = guard_path(requested)
+        candidates = [path] if path.suffix == ".json" else [path / name for name in EVALUATION_NAMES]
+        selected = next((p for p in candidates if p.is_file()), None)
+        if selected is None:
+            pending.append(str(path))
+            continue
+        content = selected.read_bytes()
+        payload = json.loads(content)
+        for observed in payload["runs"]:
+            required = {
+                "name",
+                "report_sha256",
+                "code_sha256",
+                "scores",
+                "resources",
+                "costs",
+                "intended_pages",
+                "operational_pages",
+                "errors",
+                "exact_positive_pages",
+                "evaluation_scope",
+            }
+            if not required <= observed.keys() or not observed["code_sha256"]:
+                raise ValueError("Progress input lacks independently verified run provenance")
+            if observed["operational_pages"] + observed["errors"] != observed["intended_pages"]:
+                raise ValueError("Progress input drops failures from intended-page denominator")
+            run = {**observed, "evaluation_path": str(selected), "evaluation_sha256": sha(content)}
+            if Path(run["name"]).name != run["name"] or run["name"] in {".", ".."}:
+                raise ValueError("Unsafe verified run name")
+            source_report = (
+                (report_directory / run["name"] / "report.json")
+                if report_directory
+                else selected.parent / "report.json"
+            )
+            source_report = guard_path(source_report)
+            if source_report.is_file():
+                raw = guard_path(source_report).read_bytes()
+                if sha(raw) != run["report_sha256"]:
+                    raise ValueError("Provider cache source report differs from independently verified report hash")
+                report = json.loads(raw)
+                incremental_key = (
+                    "incremental_ranking"
+                    if report["config"].get("processor") == "p003_candidate_choice"
+                    else "incremental_repair"
+                    if report["config"].get("processor") == "p003_boundary_repair"
+                    else None
+                )
+                call_key = (
+                    "ranking_calls"
+                    if incremental_key == "incremental_ranking"
+                    else "repair_calls"
+                    if incremental_key
+                    else "calls"
+                )
+                run["provider_cache_usage"] = cache_usage(
+                    [call for page in report["results"] for call in page.get(call_key, [])],
+                    (report[incremental_key] if incremental_key else report).get("ledger_attempts"),
+                )
+                baseline_reports = report.get("candidate_generation_reports", [])
+                if report.get("baseline_report") is not None:
+                    baseline_reports = [report["baseline_report"]]
+                run["historical_provider_cache_usage"] = [
+                    cache_usage(
+                        [call for page in baseline["results"] for call in page.get("calls", [])],
+                        baseline.get("ledger_attempts"),
+                    )
+                    for baseline in baseline_reports
+                ]
+            prior = runs.get(run["name"])
+            if prior is not None:
+                if prior["report_sha256"] != run["report_sha256"] or prior["scores"] != run["scores"]:
+                    raise ValueError("Conflicting frozen quality for the same run name")
+                if prior.get("cost_reconciliation") is not None and run.get("cost_reconciliation") is None:
+                    continue
+            runs[run["name"]] = run
+    return list(runs.values()), pending
+
+
+def cache_usage(calls: list[dict[str, Any]], ledger_attempts: int | None) -> dict[str, Any]:
+    """Sum explicit provider cache counters over unique fresh returned ledger entries only."""
+    indexed = {}
+    replayed = unattributed = 0
+    for call in calls:
+        if call.get("replayed") is True:
+            replayed += 1
+            continue
+        index = call.get("entry", {}).get("index")
+        if type(index) is not int:
+            unattributed += 1
+            continue
+        if index in indexed and indexed[index] != call.get("usage", {}):
+            raise ValueError("Conflicting provider usage for the same ledger attempt")
+        indexed[index] = call.get("usage", {})
+    counters = {}
+    for key in ("cached_tokens", "cache_write_tokens"):
+        values = [usage.get("prompt_tokens_details", {}).get(key) for usage in indexed.values()]
+        valid = [
+            value
+            for value in values
+            if not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(value) and value >= 0
+        ]
+        counters[key] = {
+            "provider_reported_known_subtotal": sum(valid),
+            "counter_present_calls": len(valid),
+            "counter_missing_calls": len(values) - len(valid),
+            "complete_counter_total": sum(valid)
+            if len(valid) == len(values) and ledger_attempts == len(values)
+            else None,
+        }
+    return {
+        "unique_fresh_returned_attempts": len(indexed),
+        "ledger_attempts": ledger_attempts,
+        "all_attempt_usage_coverage": len(indexed) == ledger_attempts and not unattributed,
+        "replayed_records_excluded": replayed,
+        "unattributed_records_excluded": unattributed,
+        "counters": counters,
+        "scope": "Provider-reported prompt cache counters; missing counters unknown; no local replay claim",
+    }
+
+
+def _fmt(value: Any) -> str:
+    if value is None:
+        return "Unmeasured"
+    if isinstance(value, float):
+        return f"{value:.6g}"
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def _table(headers: list[str], rows: list[list[Any]]) -> list[str]:
+    return [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join("---" for _ in headers) + " |",
+        *("| " + " | ".join(_fmt(value) for value in row) + " |" for row in rows),
+    ]
+
+
+def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
+    """Keep observed quality, original/reconciled accounting and incremental work separate."""
+    lines = [
+        "# P003 decision-model progress",
+        "",
+        "These tables read completed independently verified DEV evaluations. All intended pages remain in "
+        "quality/error denominators. Single runs do not establish hosted repeat confidence. "
+        "Historical candidate generation and newly measured incremental work are separate.",
+        "",
+    ]
+    quality = []
+    for run in runs:
+        scores = run["scores"]
+        quality.append(
+            [
+                run["name"],
+                f"{run['operational_pages']}/{run['intended_pages']}",
+                run["errors"],
+                f"{scores.get('complete_tables', 0)}/{scores.get('expected_tables', 0)}",
+                f"{scores.get('strict_exact_cells', 0)}/{scores.get('expected_cells', 0)}",
+                scores.get("correct_text_cells"),
+                scores.get("correct_structure_cells"),
+                scores.get("missing_tables"),
+                scores.get("false_positive_tables"),
+                f"{scores.get('false_positive_page', 0)}/{scores.get('negative_page', 0)}",
+                run["exact_positive_pages"],
+            ]
+        )
+    lines += _table(
+        [
+            "Run",
+            "Outputs/intended",
+            "Errors",
+            "Complete tables",
+            "Strict cells",
+            "Text cells",
+            "Structure cells",
+            "Missing tables",
+            "Extra tables",
+            "Negative FP",
+            "Exact positive pages",
+        ],
+        quality,
+    )
+    lines += [
+        "",
+        "Full-pipeline rates count verified operational outputs. Cost overlays leave original report "
+        "costs visible. Transport concurrency is part of the treatment; contended runs are separate evidence.",
+        "",
+    ]
+    rates = []
+    for run in runs:
+        config, accounting = run["config"], run["costs"]
+        overlay = run.get("cost_reconciliation", {}).get("reconciled", {})
+        concurrency = config.get("transport_concurrency", config.get("workers", run["resources"].get("concurrency", 1)))
+        rates.append(
+            [
+                run["name"],
+                run["evaluation_scope"],
+                f"serial ({concurrency})" if concurrency == 1 else f"contended ({concurrency})",
+                run.get("pages_per_minute"),
+                run.get("pages_per_api_usd"),
+                accounting.get("effective_api_usd"),
+                accounting.get("accounted_usd_including_reservations"),
+                overlay.get("effective_api_usd"),
+                run.get("reconciled_pages_per_api_usd"),
+            ]
+        )
+    lines += _table(
+        [
+            "Run",
+            "Measured scope",
+            "Transport",
+            "Pages/min",
+            "Original pages/APIUSD",
+            "Original effective USD",
+            "Original accounted incl reserves USD",
+            "Reconciled effective USD",
+            "Reconciled pages/APIUSD",
+        ],
+        rates,
+    )
+    incremental = [run for run in runs if run["evaluation_scope"] != "complete pipeline"]
+    if incremental:
+        lines += ["", "Incremental processing rates exclude historical baseline generation.", ""]
+        lines += _table(
+            [
+                "Run",
+                "Repair attempted pages/min",
+                "Repair attempted pages/APIUSD",
+                "Ranking processed pages/min",
+                "Ranking processed pages/APIUSD",
+            ],
+            [
+                [
+                    r["name"],
+                    *(
+                        r.get(key)
+                        for key in (
+                            "incremental_attempted_pages_per_minute",
+                            "incremental_attempted_pages_per_api_usd",
+                            "incremental_ranking_pages_processed_per_minute",
+                            "incremental_ranking_pages_processed_per_api_usd",
+                        )
+                    ),
+                ]
+                for r in incremental
+            ],
+        )
+    lines += [
+        "",
+        "CPU/RSS observations retain their process scopes; worker RSS peaks are never added to parent peaks.",
+        "",
+    ]
+    resources = []
+    for run in runs:
+        metrics = run["resources"]
+        resources.append(
+            [
+                run["name"],
+                "parent",
+                metrics.get("wall_seconds"),
+                metrics.get("cpu_seconds"),
+                metrics.get("peak_rss_bytes", metrics.get("peak_sampled_rss_bytes")),
+                metrics.get("measurement_scope", metrics.get("measurement", "retained run process scope")),
+            ]
+        )
+        worker = metrics.get("layout_detector_worker")
+        if worker:
+            initialization = worker.get("initialization", {}).get("initialization", {})
+            resources.append(
+                [
+                    run["name"],
+                    "detector worker initialization",
+                    initialization.get("wall_seconds"),
+                    initialization.get("cpu_seconds"),
+                    initialization.get("peak_sampled_rss_bytes"),
+                    initialization.get("measurement", worker.get("scope")),
+                ]
+            )
+            requests = [row["metrics"] for row in worker.get("requests", [])]
+            if requests:
+                resources.append(
+                    [
+                        run["name"],
+                        "detector worker request intervals",
+                        sum(row["wall_seconds"] for row in requests)
+                        if all("wall_seconds" in row for row in requests)
+                        else None,
+                        sum(row["cpu_seconds"] for row in requests)
+                        if all("cpu_seconds" in row for row in requests)
+                        else None,
+                        max(
+                            (row["peak_sampled_rss_bytes"] for row in requests if "peak_sampled_rss_bytes" in row),
+                            default=None,
+                        ),
+                        f"{len(requests)} retained single-worker request intervals; "
+                        "sum recorded interval wall/CPU; max sampled RSS. "
+                        + worker.get("scope", ""),
+                    ]
+                )
+    lines += _table(
+        ["Run", "Process", "Wall seconds", "CPU seconds", "Peak RSS bytes", "Measurement scope/evidence"], resources
+    )
+    lines += [
+        "",
+        "Provider cache counters are unmeasured in these evaluation-only inputs unless explicitly retained "
+        "as provider-reported usage. No local replay or cache-hit claim is inferred from latency or cost.",
+        "",
+    ]
+    cache_rows = []
+    for run in runs:
+        usage = run.get("provider_cache_usage")
+        if usage is None:
+            cache_rows.append([run["name"], "current measured stage", None, None, None, "Unmeasured report usage"])
+        else:
+            cache_rows.append(
+                [
+                    run["name"],
+                    "current measured stage",
+                    usage["unique_fresh_returned_attempts"],
+                    usage["ledger_attempts"],
+                    usage["all_attempt_usage_coverage"],
+                    json.dumps(usage["counters"], sort_keys=True),
+                ]
+            )
+        for index, historical in enumerate(run.get("historical_provider_cache_usage", [])):
+            cache_rows.append(
+                [
+                    run["name"],
+                    f"historical baseline {index}",
+                    historical["unique_fresh_returned_attempts"],
+                    historical["ledger_attempts"],
+                    historical["all_attempt_usage_coverage"],
+                    json.dumps(historical["counters"], sort_keys=True),
+                ]
+            )
+    lines += _table(
+        [
+            "Run",
+            "Cache scope",
+            "Unique fresh returned calls",
+            "All ledger attempts",
+            "All-attempt coverage",
+            "Explicit provider cache counters",
+        ],
+        cache_rows,
+    )
+    lines.append("")
+    for run in runs:
+        lines += [
+            f"- `{run['name']}`: evaluation `{run['evaluation_sha256']}` at `{run['evaluation_path']}`; "
+            f"immutable report `{run['report_sha256']}`; "
+            f"failures `{json.dumps(run.get('failure_categories', {}), sort_keys=True)}`."
+        ]
+        if run.get("baseline_provenance"):
+            lines.append(
+                "  Historical baseline provenance: `" + json.dumps(run["baseline_provenance"], sort_keys=True) + "`."
+            )
+        if run.get("cost_reconciliation"):
+            lines.append(
+                "  Verified accounting overlay: `" + json.dumps(run["cost_reconciliation"], sort_keys=True) + "`."
+            )
+    if pending:
+        lines += ["", "Pending completed evaluation: " + ", ".join(f"`{p}`" for p in pending) + "."]
+    return "\n".join(lines) + "\n"
+
+
+def main() -> None:
+    """Generate progress from a frozen explicit run list without discovering artifact directories."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--directory", type=Path, required=True, help="Explicit P003 artifact base directory")
+    parser.add_argument("--run", type=Path, action="append", help="Explicit run directory or evaluation JSON; repeat")
+    parser.add_argument("--plan", type=Path, help="Explicit JSON list of run paths; no automatic discovery")
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    requested = args.run or []
+    if args.plan:
+        plan = json.loads(guard_path(args.plan).read_bytes())
+        if not isinstance(plan, list) or any(not isinstance(value, str) for value in plan):
+            parser.error("Progress plan must be a JSON list of explicit run paths")
+        requested.extend(Path(value) for value in plan)
+    paths = [p if p.is_absolute() else args.directory / p for p in requested or map(Path, KNOWN_RUNS)]
+    runs, pending = load_evaluations(paths, report_directory=guard_path(args.directory))
+    output = guard_path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render(runs, pending))
+
+
+if __name__ == "__main__":
+    main()
