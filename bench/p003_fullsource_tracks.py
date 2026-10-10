@@ -14,7 +14,7 @@ from bench.silver import canonical, sha
 
 GAPS = (0.5, 1.0, 1.5)
 SUPPORTS = (0.1, 0.25, 0.5)
-MAX_LINES = 256
+MAX_LINES = 1024
 MAX_COLUMNS = 32
 
 
