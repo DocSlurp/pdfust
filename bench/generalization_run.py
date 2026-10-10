@@ -168,10 +168,11 @@ def _request(
     url: str | None,
     *,
     model: str | None = None,
+    instructions: str | None = None,
 ) -> dict[str, Any]:
     if client is None:
         raise ValueError("Hosted region selection requires the coordinated metered client")
-    request = baseline.body(model or config["model"], prompt, choices, url)
+    request = baseline.body(model or config["model"], prompt, choices, url, instructions=instructions)
     if config.get("answer_tokens") and request["model"] in baseline.CHAT_MODELS:
         request["max_tokens"] = config["answer_tokens"]
     step = len(result["calls"])
@@ -338,10 +339,23 @@ def select_region(
     url, metadata = region_image(page, region["bbox"], config["image_edge"])
     info.update(metadata)
     gate_url = url if config.get("gate_image", True) else None
+    if config.get("gate_image", True) and config.get("gate_image_edge") is not None:
+        gate_url, gate_metadata = region_image(page, region["bbox"], config["gate_image_edge"])
+        info["gate_image_metadata"] = gate_metadata
     if "gate_image" in config:
         info["gate_image"] = bool(gate_url)
     viewport = "Image viewport in global page coordinates: " + json.dumps(region["bbox"]) + ".\n" if gate_url else ""
-    prompt = viewport + admission_packet(snapshot, premise="relational", pixels_available=bool(gate_url))
+    gate_instructions = None
+    if config.get("gate_packet", "legacy") != "legacy":
+        from bench.p003_gate_packet import GATE_INSTRUCTIONS
+        from bench.p003_gate_packet import packet as gate_packet
+
+        prompt, info["gate_packet"] = gate_packet(
+            snapshot, region["bbox"], pixels_available=bool(gate_url), style=config["gate_packet"],
+        )
+        gate_instructions = GATE_INSTRUCTIONS if config.get("gate_instructions") == "region" else None
+    else:
+        prompt = viewport + admission_packet(snapshot, premise="relational", pixels_available=bool(gate_url))
     if config.get("gate_row_evidence"):
         from bench.pipeline_row_context import context
 
@@ -351,12 +365,15 @@ def select_region(
         "prose": "This region contains prose, forms, formulas or other non-table content.",
         "unresolved": "Available source evidence cannot establish whether this region contains a table.",
     }
-    answer = _request(client, result, config, output, region["id"], prompt, choices, gate_url)
+    answer = _request(
+        client, result, config, output, region["id"], prompt, choices, gate_url, instructions=gate_instructions,
+    )
     probabilities = sorted(answer.get("probabilities", {}).values(), reverse=True)
     if config.get("gate_review_model") and probabilities and probabilities[0] < baseline.GATE_REVIEW_SCORE:
         info["gate_primary"] = answer
         answer = _request(
-            client, result, config, output, region["id"], prompt, choices, gate_url, model=config["gate_review_model"]
+            client, result, config, output, region["id"], prompt, choices, gate_url,
+            model=config["gate_review_model"], instructions=gate_instructions,
         )
     info["admission"] = answer
     if answer["choice"] != "table":

@@ -12,7 +12,7 @@ from bench import pipeline_run
 from bench.decision_hosted import DECISION_MODELS
 from bench.silver import guard_path
 
-PRESETS = ("ordinal", "gated_ordinal", "hybrid", "vision_regions")
+PRESETS = ("ordinal", "gated_ordinal", "hybrid", "vision_regions", "p003_regions")
 HYBRID_EDGE = 1024
 
 
@@ -44,10 +44,21 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
     }
     if args.preset == "gated_ordinal":
         config["assembly_method"] = "gated_generate"
+        config.update(gate_packet=args.gate_packet, gate_instructions=args.gate_instructions)
+        if args.gate_image_edge is not None:
+            config["gate_image_edge"] = args.gate_image_edge
     if args.preset in {"hybrid", "vision_regions"}:
         config.update(
             processor=args.preset, generation_tokens=16384, jpeg_quality=90,
             normalize_rotation=False, rotation_mode="preserve", native_table_orientation="logical",
+        )
+    if args.preset == "p003_regions":
+        config.update(
+            processor="p003_regions", generation_tokens=16384, jpeg_quality=90,
+            normalize_rotation=False, rotation_mode="preserve",
+            region_proposal_arm=args.region_proposal_arm, candidate_cap=32,
+            proposal_edge=1536, gate_image_edge=512, gate_enabled=not args.ungated_regions,
+            layout_detector="yolo" if args.region_proposal_arm == "yolo" else "none",
         )
     return config
 
@@ -71,11 +82,25 @@ def main() -> None:
     parser.add_argument("--gate-row-evidence", action="store_true")
     parser.add_argument("--text-gate", action="store_true", help="Omit gate pixels; keep generation image unchanged")
     parser.add_argument("--gate-provider", choices=("openrouter", "vercel"), default="openrouter")
+    parser.add_argument(
+        "--gate-packet", choices=("legacy", "fullwords", "compact", "sample64", "image_only", "lineflow"),
+        default="legacy",
+    )
+    parser.add_argument("--gate-instructions", choices=("legacy", "region"), default="legacy")
+    parser.add_argument("--gate-image-edge", type=int, choices=(128, 256, 400, 512, 768, 1024))
+    parser.add_argument(
+        "--region-proposal-arm", choices=("tracks_whole", "tracks_fixed2", "yolo"), default="tracks_whole",
+    )
+    parser.add_argument("--ungated-regions", action="store_true")
     parser.add_argument("--repeat-index", type=int, choices=(0, 1, 2), default=0)
     parser.add_argument("--order-seed", type=int, default=20261010)
     args = parser.parse_args()
     if args.preset == "hybrid" and args.image_edge != HYBRID_EDGE:
         parser.error("The matched hybrid uses fixed 1024 px crops")
+    if args.preset == "p003_regions" and args.image_edge != HYBRID_EDGE:
+        parser.error("Source proposal treatments use fixed 1024 px transcription crops")
+    if args.ungated_regions and (args.preset != "p003_regions" or args.region_proposal_arm != "yolo"):
+        parser.error("Only the source-proposal YOLO control may disable its gate")
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     report = pipeline_run.run(guard_path(args.manifest), guard_path(args.output), configuration(args))
     print(json.dumps({k: v for k, v in report.items() if k != "results"}, indent=2))

@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 from bench import generalization_run as runner
 from bench import pipeline_run as baseline
+from bench.p003_gate_packet import GATE_INSTRUCTIONS
 from bench.pipeline_regions import split
 from PIL import Image
 from test_pipeline_run import config, pdf_bytes, record
@@ -243,3 +244,46 @@ def test_gate_receives_complete_row_context_only_when_requested(
         assert state["unresolved_ids"] == ["w0"]
     assert "Additional source-derived observations" not in prompts[0]
     assert "Additional source-derived observations" in prompts[1]
+
+
+def test_gate_packet_and_image_resolution_do_not_change_generation_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = {"page_size": [100, 100], "words": [{"id": "w0", "text": "literal", "bbox": [1, 1, 10, 10]}]}
+    region = {"id": "r0", "boundary": "unsplit", "bbox": [0, 0, 100, 100], "source": source}
+    images = []
+    generated = []
+
+    def image(_page: object, _bbox: object, edge: int) -> tuple[str, dict[str, Any]]:
+        images.append(edge)
+        return f"image-{edge}", {"image_edge": edge}
+
+    def gate(*args: Any, **kwargs: Any) -> dict[str, Any]:  # noqa: ANN401 - captured test transport.
+        assert args[7] == "image-256"
+        assert kwargs["instructions"] == GATE_INSTRUCTIONS
+        assert "quarter display points" in args[5]
+        return {"choice": "table", "probabilities": {"table": 1}}
+
+    def generate(*args: object, **_kwargs: object) -> dict[str, Any]:
+        generated.append(args)
+        return baseline.native_state(source)
+
+    monkeypatch.setattr(runner, "region_image", image)
+    monkeypatch.setattr(runner, "_request", gate)
+    monkeypatch.setattr(runner, "generate_region", generate)
+    settings = {
+        **config("gated"), "assembly_method": "gated_generate", "image_edge": 512,
+        "gate_image_edge": 256, "gate_packet": "compact", "gate_instructions": "region",
+    }
+    _, info = runner.select_region(region, None, settings, tmp_path, {"id": "opaque", "calls": []}, None)
+    assert images == [512, 256]
+    assert generated[0][2] == "image-512"
+    assert info["gate_image_metadata"]["image_edge"] == 256
+
+
+def test_specific_gate_instructions_survive_chat_translation() -> None:
+    choices = {"table": "Relational table", "unresolved": "Not enough evidence"}
+    for model in ("perplexity/pplx-decider-v1.1-27b", "anthropic/claude-haiku-5.5"):
+        body = baseline.body(model, "literal source", choices, None, instructions="Classify this region.")
+        assert "Classify this region." in json.dumps(body)
+        assert "Select the source-supported complete assembly" not in json.dumps(body)
