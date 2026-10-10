@@ -980,6 +980,7 @@ def score_run(
     trusted_code: dict[str, str] | None = None,
     baseline_trusted_code: dict[str, str] | None = None,
     candidate_trusted_code: dict[str, dict[str, str]] | None = None,
+    incremental_trusted_code: dict[str, dict[str, str]] | None = None,
     reviewed_parser_sha256: tuple[str, ...] = (),
 ) -> dict[str, Any]:
     """Validate existing runner artifacts without calling inference or executing archives."""
@@ -1043,12 +1044,20 @@ def score_run(
             "decision_p003_native.py",
             "pipeline_regions.py",
         }
+    elif processor == "p003_topology_source":
+        required |= {"p003_topology_run.py", "p003_topology_ownership.py", "pipeline_regions.py"}
     elif processor != "whole":
         raise ValueError("Unsupported frozen processor")
     if not required <= code.keys():
         raise ValueError("Frozen code lacks required processor dependencies")
-    incremental = processor in {"p003_boundary_repair", "p003_candidate_choice"}
-    if processor == "p003_candidate_choice":
+    incremental = processor in {"p003_boundary_repair", "p003_candidate_choice", "p003_topology_source"}
+    if processor == "p003_topology_source":
+        from bench.p003_incremental_verification import verify_topology
+
+        baseline_provenance, repair_verified = verify_topology(
+            directory, report, frozen, incremental_trusted_code, reviewed_parser_sha256=reviewed_parser_sha256
+        )
+    elif processor == "p003_candidate_choice":
         baseline_provenance, repair_verified = verify_candidate_run(
             directory, report, frozen, candidate_trusted_code, reviewed_parser_sha256=reviewed_parser_sha256
         )
@@ -1056,7 +1065,10 @@ def score_run(
         baseline_provenance, repair_verified = verify_incremental_run(directory, report, frozen, baseline_trusted_code)
     else:
         baseline_provenance, repair_verified = None, {}
-    incremental_key = "incremental_ranking" if processor == "p003_candidate_choice" else "incremental_repair"
+    incremental_key = {
+        "p003_candidate_choice": "incremental_ranking",
+        "p003_topology_source": "incremental_ownership",
+    }.get(processor, "incremental_repair")
     artifacts = []
     operational = 0
     for prediction in predictions:
@@ -1160,6 +1172,8 @@ def score_run(
         "evaluation_scope": (
             "incremental ranking on retained candidates"
             if processor == "p003_candidate_choice"
+            else "incremental ownership conditional on frozen topology and source"
+            if processor == "p003_topology_source"
             else "incremental repair on retained artifacts"
         )
         if incremental
@@ -1179,6 +1193,8 @@ def score_run(
             predictions,
             call_keys=("ranking_calls",)
             if processor == "p003_candidate_choice"
+            else ("topology_calls",)
+            if processor == "p003_topology_source"
             else ("repair_calls",)
             if incremental
             else ("calls",),
@@ -1212,13 +1228,13 @@ def score_run(
             metrics.get("wall_seconds"),
             60,
         )
-        if incremental
+        if processor == "p003_boundary_repair"
         else None,
         "incremental_attempted_pages_per_api_usd": _rate(
             sum(p.get("incremental_repair", {}).get("attempted", False) for p in predictions),
             accounting["effective_api_usd"],
         )
-        if incremental
+        if processor == "p003_boundary_repair"
         else None,
         "incremental_ranking_pages_processed_per_minute": _rate(len(predictions), metrics.get("wall_seconds"), 60)
         if processor == "p003_candidate_choice"
@@ -1471,6 +1487,12 @@ def main() -> None:
         help="Independent baseline-N digest maps; one shared or one per --run",
     )
     parser.add_argument(
+        "--incremental-trusted-code",
+        type=Path,
+        action="append",
+        help="Independent copied-name baseline digest maps for gate/topology; one shared or one per --run",
+    )
+    parser.add_argument(
         "--reviewed-parser-sha256",
         action="append",
         default=[],
@@ -1499,6 +1521,7 @@ def main() -> None:
     trusted = snapshots(args.trusted_code)
     baseline_trusted = snapshots(args.baseline_trusted_code)
     candidate_trusted = snapshots(args.candidate_trusted_code)
+    incremental_trusted = snapshots(args.incremental_trusted_code)
     runs = [
         score_run(
             p,
@@ -1508,10 +1531,11 @@ def main() -> None:
             trusted_code=code,
             baseline_trusted_code=baseline_code,
             candidate_trusted_code=candidate_code,
+            incremental_trusted_code=incremental_code,
             reviewed_parser_sha256=tuple(args.reviewed_parser_sha256),
         )
-        for p, code, baseline_code, candidate_code in zip(
-            args.run, trusted, baseline_trusted, candidate_trusted, strict=True
+        for p, code, baseline_code, candidate_code, incremental_code in zip(
+            args.run, trusted, baseline_trusted, candidate_trusted, incremental_trusted, strict=True
         )
     ]
     if args.cost_reconciliation:
