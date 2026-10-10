@@ -20,11 +20,27 @@ def _read(path: Path) -> dict[str, Any]:
 
 
 def _helpers(frozen: dict[str, Any], names: tuple[str, ...]) -> None:
+    historical_config_keys = {
+        "baseline_source_order",
+        "campaign",
+        "max_questions",
+        "model",
+        "prepare_only",
+        "processor",
+        "reviewed_parser_sha256",
+        "run_hosted",
+        "run_id",
+        "scope",
+        "source_conserved",
+        "transport_concurrency",
+        "boundary_words",
+    }
     for name in names:
         digest = frozen["code_sha256"].get(name)
         if (
             name == "p003_topology_run.py"
             and frozen["config"].get("boundary_words", "strict") == "strict"
+            and set(frozen["config"]) <= historical_config_keys
             and digest == "3368006228075df064d2e6cceb024ff6896817dce3e1c6b210ce4fb84b15a13f"
         ):
             continue  # Root reviewed default partition/body semantics; only cost-scope label differs.
