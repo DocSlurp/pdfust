@@ -173,6 +173,7 @@ def generate_region(
         url=url,
         viewport=bbox,
         max_tokens=config.get("generation_tokens", 8192),
+        evidence_format=config.get("generation_evidence", "objects"),
     )
     step = len(result["calls"])
     write_json(output / f"{result['id']}-request-{step}.json", body)
@@ -347,6 +348,7 @@ def process(
                     dpi=config.get("ocr_dpi", 150),
                     engine=baseline.ocr_engine(),
                     tokenization=ocr_source,
+                    orientation=config.get("ocr_orientation", "fixed"),
                 )
                 snapshot = {**snapshot, **evidence["source"]}
                 result["ocr"] = {
@@ -462,12 +464,14 @@ def main() -> None:
     parser.add_argument("--ocr-dpi", type=int, choices=(100, 150, 200, 300), default=150)
     parser.add_argument("--ocr-source", choices=("legacy", "reextract", "whitespace"), default="legacy")
     parser.add_argument("--ocr-mode", choices=("empty", "uncovered_images"), default="empty")
+    parser.add_argument("--ocr-orientation", choices=("fixed", "candidates"), default="fixed")
     parser.add_argument("--answer-tokens", type=int, choices=(1024, 2048, 4096), default=2048)
     parser.add_argument("--packet-characters", type=int, choices=(25000, 80000, 128000), default=25000)
     parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
     parser.add_argument("--generation-model", choices=baseline.CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
     parser.add_argument("--generation-format", choices=("anchors", "matrix"), default="anchors")
+    parser.add_argument("--generation-evidence", choices=("objects", "arrays", "quarter"), default="objects")
     parser.add_argument("--raster-rules", action="store_true")
     parser.add_argument("--raster-edge", type=int, choices=(1024, 1536, 2048), default=1536)
     parser.add_argument("--layout-detector", choices=("none", "yolo"), default="none")
@@ -475,13 +479,15 @@ def main() -> None:
     parser.add_argument("--detector-residual", choices=("retain", "analyze"), default="retain")
     parser.add_argument("--detector-tiles", choices=("none", "2x2", "3x3", "both"), default="none")
     parser.add_argument("--detector-boundary", choices=("retain", "analyze"), default="retain")
-    parser.add_argument("--rotation-mode", choices=("always", "native", "preserve"), default="always")
+    parser.add_argument("--rotation-mode", choices=("always", "native", "preserve"), default="native")
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
     parser.add_argument("--pilot", action="store_true")
     args = parser.parse_args()
     if args.ocr_source == "legacy" and args.ocr_mode != "empty":
         parser.error("Uncovered image OCR requires an explicit reextract or whitespace source")
+    if args.ocr_source == "legacy" and args.ocr_orientation != "fixed":
+        parser.error("Orientation candidates require an explicit reextract or whitespace source")
     config = vars(args).copy()
     config.pop("manifest")
     config.pop("output")
