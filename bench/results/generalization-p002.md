@@ -32,6 +32,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-opus-2048-q50 | 16/16 | 0 | 2/12 | 3 | 14 | 463/2333 | 300/2333 | 15091/16640 | 15 | 6 | 6.84489 | 34.5862 | 0.462612 |
 | natural16-yolo-fused-ocr2048-haiku-1024 | 15/16 | 1 | 2/12 | 3 | 11 | 471/2333 | 285/2333 | 14352/16640 | 14 | 1 | 2.83641 | 619.341 | 0.0242193 |
 | natural16-yolo-matrix-haiku-512-rowwrap | 15/16 | 1 | 1/12 | 2 | 12 | 349/2333 | 231/2333 | 14139/16640 | 14 | 1 | 3.21552 | 594.347 | 0.0252378 |
+| natural16-yolo-matrix-haiku-512-columns | 16/16 | 0 | 1/12 | 2 | 12 | 545/2333 | 332/2333 | 13616/16640 | 14 | 0 | 3.38242 | 584.159 | 0.0273898 |
 
 ### natural16-whole-reviewed
 
@@ -822,6 +823,40 @@ Ledger attempts 18; reported USD subtotal 0.0252378; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.57637s, CPU 5.26687s; 16 per-page measurement entries, request CPU total 14.3686s; maximum sampled request RSS 1204649984 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-yolo-matrix-haiku-512-columns
+
+Scope: complete source assembly; text: source-owned; source-conserved pages: 16/16.
+
+Failure categories: `{}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 48.82%; complete tables 12.50%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 101 |
+| remaining_fourteen | 2/14 | 1/10 | 231 |
+
+Policy `gated`; assembly `generate`; configured gate/selector `perplexity/pplx-decider-v1.1-27b`; review `None`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0273898 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 12 | 545/2333 | 13616/16640 | 0/4 |
+
+Whole-run wall 283.821s; CPU 300.288s; sampled RSS 584110080 bytes; verified output pages/min 3.38242; exact positive pages/min 0.211401. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0273898; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.60641s, CPU 5.36507s; 16 per-page measurement entries, request CPU total 14.0722s; maximum sampled request RSS 1192894464 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -951,7 +986,7 @@ Ledger attempts 0; reported USD subtotal 0; missing reported charges 0; cost bas
 ## Pending completed reports
 
 - natural16-generate-haiku: interrupted after 4/16 retained pages; 12 missing pages remain failures; unresolved USD 0.30 reservation and unknown rate prevent a completed cost comparison
-- Additional column-prompt, ordinal, hybrid and gated controls are queued; each frozen treatment remains separate
+- Additional ordinal, hybrid, gated and four-worker controls are queued; each frozen treatment remains separate
 
 ## Interpretation
 
@@ -1380,7 +1415,7 @@ cells and three complete tables on two exact positive pages. Fourteen
 tables have exact topology; six extras all occur on the dense positives.
 Remaining fourteen recover 293/361 exact cells with all fourteen table
 structures, while the dense pair recovers seven cells and no complete
-table, missing37/39. All sixteen charges total USD 0.462612: 6.84
+table, missing 37/39. All sixteen charges total USD 0.462612: 6.84
 operational pages/minute and 34.59 operational pages/API USD. It improves
 neither quality nor cost over Sonnet2048 JPEG50 in this fixed screen.
 
@@ -1415,7 +1450,7 @@ The dense pair recovers twelve exact cells and no complete table; remaining
 fourteen recover 273 cells and three complete tables. Supplementary
 positive-page macro recall is 51.53% exact cells and 20.83% complete tables.
 All sixteen cached sources are measured: the literal inventory ceiling
-is 861/2333 cells (dense569, remaining292), versus 1880 under OCR300.
+is 861/2333 cells (dense 569, remaining 292), versus 1880 under OCR300.
 Fixed2048 resolves the large dense pages at only 90.02 and 94.33 DPI.
 These source bounds and the quality loss favor retaining adequate source
 resolution for large pages. Tiling, fusion and OCR resolution change
@@ -1437,3 +1472,24 @@ and 594.35 operational pages/API USD. Supplementary positive-page macro
 recall is 47.92% exact cells and 12.50% complete tables. This single frozen
 prompt treatment gives no observed quality gain; it does not measure the
 yet-unfinished column-prompt or source-derived row-context controls.
+
+## Matched column prompt control
+
+The fixed columns prompt retains 16/16 source-conserved outputs, 332/2333
+exact cells, 545 structural cells and twelve exact topologies. Two complete
+tables remain on one exact positive page. There are no extra tables or
+negative-page false positives. Thirty-eight reference tables remain missing,
+including 37/39 on the dense pair. All nineteen charges total USD 0.0273898,
+for 3.38 operational pages/minute and 584.16 operational pages/API USD.
+Supplementary positive-page macro recall is 48.82% exact cells and 12.50%
+complete tables. No operational failures remain; p98 completes strictly.
+
+Compared with the matched base512 arm, the primary exact-cell count rises
+by 74 and one additional page completes, while the negative false positive
+disappears. Dense pages gain 101 cells, offset by 27 fewer exact cells on
+the remaining fourteen (231 versus 258). Complete tables and exact positive
+pages do not improve. Rowwrap also retains 231 cells on the remaining group
+but zero on the dense pair. Thus the columns prompt shows a modest dense
+recovery improvement in this single frozen trial, with a smaller-page tradeoff,
+and remains well below direct crop transcription. No retry, response selection
+or reference-driven prompt adjustment contributes to these scores.
