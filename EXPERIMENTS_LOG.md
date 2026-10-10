@@ -1689,3 +1689,49 @@ and the preserved USD 0.30 unresolved reservation; live reservations can vary.
 The newest orientation/source-order/wrapper focused checks pass, including 47
 tests in the latest root run. Guarded private-main pushes continue; raw artifacts
 remain local. No local GPU or remote rental is used in this wave.
+
+### P002 validation and final control, 2026-10-10 06:55 UTC
+
+The planned serial comparison queue completed. Direct matrix generation with
+row context loses 33 exact cells (258 → 225) and one exact topology, keeps the
+same fifteen successful pages and two complete tables, and costs about 53% more.
+Gate-only row context behaves differently: PPLX gating plus Haiku ordinal assembly
+improves from 232 to 336 cells, fifteen to sixteen successful pages, and seven to
+zero extra tables, with about 3% higher API cost. Complete tables remain two.
+The OCR300/compact-array/ordinal/column-prompt combination reaches 395 cells and
+three complete tables, with sixteen outputs and no extra tables. It changes
+multiple factors together; the next recorded hypothesis adds gate-only row
+context to this combination, but that combination has not been run.
+
+The all-page multiscale partial audit recovers 320 additional exact cells from
+Sonnet's failed pages while admitting three extra tables; Haiku is unchanged.
+Original page failures, all charges and unsent crop proposals remain retained.
+The matched 300-DPI alternate-renderer OCR follow-up examines all four unsupported
+diagnostics with three renderers. It consumes more CPU/RAM but does not establish
+reliable Unicode recovery; no automatic renderer or OCR substitution is enabled.
+See `bench/results/p002-multiscale-partial.md` and `p002-renderer-ocr-300.md`.
+
+The actual arbitrary-document CLI smoke completes four pages and preserves all
+145 source words exactly once, fixes rotated native indexing and multicolumn
+prose ordering, and correctly marks a two-page subset partial. Frozen helper and
+runtime hashes verify. The complete CPU suite passes 3,549 tests, with fourteen
+skips and two expected failures in 145.22 seconds. Tracked Ruff and mypy over
+235 source files pass. The last portion of the combined OCR control overlapped
+CPU tests; its elapsed time has an explicit contention caveat. No heavy CPU
+validation continues into the final fresh benchmark.
+
+At 06:52:22 UTC root starts the separately frozen
+`full276-hybrid-haiku-1024-logical` after both tests and the serial paid queue
+drain. An 18-minute interrupt bound, followed by a 30-second kill grace, preserves
+the five-hour reporting deadline. It changes the explicit logical-native flag,
+not model pixels/prompts/exclusions. All new response variability and failures
+will remain in its own primary scores and measured rates. The old full276 gated
+expansion was never started and is explicitly deferred. No other paid arm is
+authorized by this final-window plan.
+
+Before that last run, P002 has 1,351 attempts and USD 7.92619116 positive reported
+charges, plus the unchanged USD 0.30 interrupted-call reservation. Private-main
+pushes include the implementation, tests, plans and aggregate reports; raw
+artifacts remain ignored locally. An independent claims audit confirms the
+README rates, denominators and corrected-versus-physical distinction, and fixes
+one diagram wording error: native proposal exclusion uses overlap, not containment.
