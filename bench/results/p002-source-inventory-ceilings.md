@@ -12,6 +12,7 @@ All sixteen retained page inventories are available in each measured arm. The
 | Legacy150 (`natural16-generate-sonnet`) | 1194 | 6 | 1451 | 14 |
 | Whitespace150 (`natural16-generate-whitespace`) | 1238 | 6 | 1449 | 14 |
 | Whitespace300 (`natural16-yolo-ocr300-matrix-haiku-1024`) | 1880 | 9 | 2110 | 23 |
+| Whitespace fixed2048 (`natural16-yolo-fused-ocr2048-haiku-1024`) | 861 | 4 | 962 | 6 |
 
 There are 41 empty anchors, included in every cell bound and counted separately
 in the retained JSON. Empty source-ID collections can produce these strings.
@@ -40,10 +41,10 @@ The posthoc density split retains the primary sixteen-page denominator. The
 remaining fourteen include four negatives; these are diagnostics, not newly
 selected evaluation cohorts.
 
-| Diagnostic | Expected anchors | Legacy literal / relaxed | Whitespace150 literal / relaxed | Whitespace300 literal / relaxed | Literal table bounds: legacy / 150 / 300 |
-|---|---:|---:|---:|---:|---:|
-| Two dense newspapers | 1972 | 912 / 1145 | 956 / 1143 | 1591 / 1794 | 3 / 3 / 6 of 39 |
-| Remaining fourteen | 361 | 282 / 306 | 282 / 306 | 289 / 316 | 3 / 3 / 3 of 14 |
+| Diagnostic | Expected anchors | Legacy literal / relaxed | Whitespace150 literal / relaxed | Whitespace300 literal / relaxed | Fixed2048 literal / relaxed | Literal table bounds: legacy / 150 / 300 / 2048 |
+|---|---:|---:|---:|---:|---:|---:|
+| Two dense newspapers | 1972 | 912 / 1145 | 956 / 1143 | 1591 / 1794 | 569 / 650 | 3 / 3 / 6 / 0 of 39 |
+| Remaining fourteen | 361 | 282 / 306 | 282 / 306 | 289 / 316 | 292 / 312 | 3 / 3 / 3 / 4 of 14 |
 
 Both text supply and assembly limit current results. Legacy source text imposes
 an optimistic ceiling of 1194 cells (51.2%), while the source-ID Sonnet run
@@ -66,11 +67,24 @@ run also changes image resolution and evidence representation, so its actual
 score gain cannot be attributed to OCR DPI alone. Unlimited reuse and arbitrary
 ordering make these bounds much more permissive than valid source ownership.
 
+The fixed2048 source arm measures a lower ceiling: 861 literal-feasible
+anchors (36.9%) and 962 under the whitespace-free relaxation. Its fixed
+edge corresponds to only 90.02 and 94.33 effective DPI on the two large
+newspaper viewports. All sixteen sources remain measured, including the
+failed output page. Neither dense page has a table whose full reference
+text is feasible even under the relaxation. Remaining fourteen improve
+the literal bound slightly to 292 cells and four tables. Actual recovery
+is 285 exact cells, with twelve on the dense pair. This arm also changes
+detector tiling and fusion, so its quality cannot identify their separate
+effects. The source-only ceiling comparison supports retaining sufficient
+OCR resolution for large pages, without claiming aligned OCR recall.
+
 Reproduce with `.venv/bin/python -m bench.generalization_inventory_ceiling
 --corpus <artifacts>/pipeline-p002/screens/natural16
 --run <artifacts>/pipeline-p002/natural16-generate-sonnet
 --run <artifacts>/pipeline-p002/natural16-generate-whitespace
 --run <artifacts>/pipeline-p002/natural16-yolo-ocr300-matrix-haiku-1024
+--run <artifacts>/pipeline-p002/natural16-yolo-fused-ocr2048-haiku-1024
 --output <artifacts>/pipeline-p002/regions-audit/inventory-ceilings.json` on one
 line. The CLI verifies corpus identity and each retained result's exact equality
 with its report, preserving source/report hashes and arm settings in ignored
@@ -87,7 +101,9 @@ Whitespace report SHA256:
 `1e3f530410128362229f6c421840aef3564fd6ec7a9e58a9ad859963fb389c23`.
 Whitespace300 report SHA256:
 `539628cf1548302d9c668b38dfe731270bb7c687f5c237fa086efa9a530fc518`.
-The single-process CPU-only replay took 0.735 wall / 0.732 process CPU seconds,
+Fixed2048 report SHA256:
+`54271402d3c258088cff8ac1319ee181e403ff4c4ddefbe8c2b10acbf7e225f2`.
+The single-process CPU-only replay took 0.939 wall / 0.936 process CPU seconds,
 measured with `time.perf_counter` / `time.process_time` across corpus loading and
-all three arms. RSS is unmeasured. Remote requests and charges are zero. Concurrent
+all four arms. RSS is unmeasured. Remote requests and charges are zero. Concurrent
 root tests/inference preprocessing may affect elapsed time.
