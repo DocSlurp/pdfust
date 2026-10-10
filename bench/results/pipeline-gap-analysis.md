@@ -80,6 +80,7 @@ have 16 positives and 16 negatives and must not be compared as full-corpus rates
 | `native-r1` | 181 | 16/35 | 0/133 |
 | `native-text-r1` | 181 | 3/35 | 26/133 |
 | `full-native-ocr` | 181 | 16/35 | 0/133 |
+| `full-assembly-pplx` | 181 | 34/35 | 27/133 |
 | `pilot-pplx-256` | 32 | 15/16 | 4/16 |
 | `pilot-oriented-pplx-256` | 32 | 16/16 | 4/16 |
 | `pilot-gated-pplx-relational` | 32 | 16/16 | 1/16 |
@@ -101,10 +102,23 @@ calling these decisions reliable. The observed failure is routing/selection with
 a bounded edit workflow, not insufficient source content. Global complete-assembly
 selection is the stronger retained result for this pilot.
 
-`full-assembly-pplx` was still executing when this report was written. It had 21
-retained page results and no completed report, so no full-run aggregate is inferred.
-The frozen source oracle remains independent of that run. Update this report from
-its completed report before making full-corpus model comparisons.
+`full-assembly-pplx` subsequently completed all 181 page attempts and retained
+175 complete outputs. It achieves 34/35 exact positives and 433/437 correct
+reference cell slots. Its single positive failure is the same OCR placement gap
+identified independently in the frozen source oracle; all available exact positive
+alternatives are selected correctly. Its 27 negative false-positive pages are
+selection/admission failures, since the complete no-table alternative is available.
+Offline provenance groups these as ten companion prose pages, fifteen DEV silver
+two-column/three-column/reading-order pages and two structure multicolumn pages.
+No case metadata enters the candidate or model evidence.
+
+Twenty-one of these 27 wrong complete-assembly choices report maximum choice scores
+at least 0.8; the largest is 0.978. These scores are not calibrated correctness.
+They come from assembly decisions, so they must not be treated as a direct estimate
+of the planned separate admission gate's confidence behavior. A relational
+admission/review arm still needs its own complete positive and negative results.
+All six output failures in this full run are diagnostic-only: the two empty OCR
+pages, malformed native span tiling and three complete-packet refusals listed below.
 
 ## Unsupported and diagnostic pages
 
@@ -157,7 +171,14 @@ contribute to scored structural totals.
 The full two-arm source/proposal audit plus offline scoring took 6.66 seconds wall
 and 6.82 seconds process CPU. `getrusage(RUSAGE_SELF)` lifetime peak RSS was
 538,996,736 bytes, measured without sampling in one sequential process and no
-subprocesses. Lifetime RSS includes imports; per-stage memory is unmeasured.
+subprocesses. Linux high-water can include inherited process history; it is not
+used as a module-specific memory comparison. Per-stage memory is unmeasured.
 `full-native-ocr` separately reports 7.00 seconds wall, 17.83 seconds CPU and
 465,768,448 bytes peak process RSS sampled every 100 ms. Neither figure includes
 paid inference. Hosted GPU resources remain unmeasured.
+
+The completed hosted assembly run reports 198.00 seconds wall, 98.14 seconds local
+process CPU and 558,686,208 bytes sampled peak RSS. Its elapsed time includes
+transport and hosted inference; local process CPU includes extraction, rendering
+and response handling. Remote inference resource usage is unmeasured. These figures
+are not a CPU-only comparison against the independent source audit.
