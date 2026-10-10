@@ -38,7 +38,7 @@ IMAGE_MODELS = (
     "cloudflare/clef",
     "cloudflare/clef-omni",
 )
-EDGES = (0, 256, 512, 768, 1024)
+EDGES = (0, 128, 256, 400, 512, 768, 1024, 1200)
 ROOT_REVIEWED_PARSER_SHA256 = frozenset(
     {
         "8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e",
