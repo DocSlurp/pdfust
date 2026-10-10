@@ -319,7 +319,7 @@ The image-crop hybrid costs USD 0.0397398 and recovers 1,813/3,847 natural
 reference cells, versus 1,299 for source-ID assembly. Its physical-order control
 also exposes a native-table rotation bug: all twelve authored rotated tables
 lose logical cell ordering. Every other authored family is exact. These raw
-scores retain that regression; a separately labeled correction must verify
+scores retain that regression; the separately labeled correction below verifies
 reading direction without changing the model's evidence or inventing cell text.
 
 The [frozen offline orientation correction](bench/results/p002-native-orientation.md)
