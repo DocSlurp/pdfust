@@ -146,3 +146,21 @@ def test_pipeline_queue_command_passes_real_cli_parser(tmp_path, monkeypatch):
     p003_run.main()
     assert captured[0][2]["workers"] == 1
     assert captured[0][2]["transport_concurrency"] == 3
+
+
+def test_union_cli_activates_cpu_detector_and_declared_overlap_policy(tmp_path, monkeypatch):
+    captured = []
+    monkeypatch.setattr(p003_run.pipeline_run, "run", lambda *args: captured.append(args) or {})
+    command = parallel.command_for(
+        {"name": "union", "arguments": ["--preset", "p003_regions", "--image-edge", "1024",
+         "--region-proposal-arm", "yolo_fixed2", "--region-conflict-policy", "small_area_then_probability"]},
+        tmp_path / "manifest.json", tmp_path / "union",
+    )
+    monkeypatch.setattr(sys, "argv", [command[2], *command[3:]])
+    p003_run.main()
+    config = captured[0][2]
+    assert config["layout_detector"] == "yolo"
+    assert config["region_proposal_arm"] == "yolo_fixed2"
+    assert config["conflict_policy"] == "small_area_then_probability"
+    assert config["gate_enabled"] is True
+    assert config["workers"] == 1

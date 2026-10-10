@@ -65,7 +65,8 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
             normalize_rotation=False, rotation_mode="preserve",
             region_proposal_arm=args.region_proposal_arm, candidate_cap=32,
             proposal_edge=1536, gate_image_edge=512, gate_enabled=not args.ungated_regions,
-            layout_detector="yolo" if args.region_proposal_arm == "yolo" else "none",
+            layout_detector="yolo" if args.region_proposal_arm in ("yolo", "yolo_fixed2") else "none",
+            conflict_policy=args.region_conflict_policy,
         )
     return config
 
@@ -103,7 +104,13 @@ def main() -> None:
     parser.add_argument("--gate-image-mode", choices=("rgb", "grayscale8", "rgb_palette16"), default="rgb")
     parser.add_argument("--gate-image-edge", type=int, choices=(128, 256, 400, 512, 768, 1024))
     parser.add_argument(
-        "--region-proposal-arm", choices=("tracks_whole", "tracks_fixed2", "yolo"), default="tracks_whole",
+        "--region-proposal-arm", choices=("tracks_whole", "tracks_fixed2", "yolo", "yolo_fixed2"),
+        default="tracks_whole",
+    )
+    parser.add_argument(
+        "--region-conflict-policy",
+        choices=("table_probability_then_proposal_order_nonoverlap", "small_area_then_probability"),
+        default="table_probability_then_proposal_order_nonoverlap",
     )
     parser.add_argument("--ungated-regions", action="store_true")
     parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
