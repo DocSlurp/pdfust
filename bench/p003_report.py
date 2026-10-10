@@ -224,6 +224,12 @@ def verify_treatment_helpers(frozen: dict[str, Any]) -> None:
         raise ValueError("Unknown frozen gate image mode")
     if image_mode != "rgb":
         required.add("p003_gate_image.py")
+    rubric = config.get("gate_instructions", "legacy")
+    semantic_rubrics = {"visual_schema", "recall_first", "skeptical", "local_relations"}
+    if rubric not in {"legacy", "region", *semantic_rubrics}:
+        raise ValueError("Unknown frozen gate instruction rubric")
+    if rubric in semantic_rubrics:
+        required.add("p003_prompt_variants.py")
     for name in required:
         local = Path(__file__).parent / name
         if not local.is_file() or frozen["code_sha256"].get(name) != sha(local.read_bytes()):

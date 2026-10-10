@@ -679,6 +679,25 @@ def test_nonlegacy_helper_inventory_is_required_even_with_trusted_archive(
         p003_report.verify_treatment_helpers(frozen)
 
 
+@pytest.mark.parametrize("rubric", ["visual_schema", "recall_first", "skeptical", "local_relations"])
+def test_semantic_gate_rubric_requires_authenticated_current_helper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, rubric: str
+) -> None:
+    from bench import p003_report
+
+    monkeypatch.setattr(p003_report, "__file__", str(tmp_path / "p003_report.py"))
+    frozen = {"config": {"gate_instructions": rubric}, "code_sha256": {}}
+    with pytest.raises(ValueError, match="strict treatment replay helper"):
+        p003_report.verify_treatment_helpers(frozen)
+    helper = tmp_path / "p003_prompt_variants.py"
+    helper.write_text("# Explicit independently authenticated rubric helper\n")
+    frozen["code_sha256"][helper.name] = sha(helper.read_bytes())
+    p003_report.verify_treatment_helpers(frozen)
+    helper.write_text("# Changed helper requires a new frozen version\n")
+    with pytest.raises(ValueError, match="strict treatment replay helper"):
+        p003_report.verify_treatment_helpers(frozen)
+
+
 def test_transport_failures_preserve_http_errors_without_duplicate_attempt_counts() -> None:
     from bench.p003_report import transport_failures
 
