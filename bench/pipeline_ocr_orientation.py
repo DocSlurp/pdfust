@@ -77,7 +77,12 @@ def recognize(page: Any, *, dpi: float, engine: Any = None, clip: Any = None) ->
     if isinstance(dpi, bool) or not isinstance(dpi, (int, float)) or not math.isfinite(dpi) or dpi <= 0:
         raise ValueError("OCR DPI must be positive and finite")
     bounds = list(page.rect) if clip is None else list(clip)
-    if len(bounds) != 4 or any(not math.isfinite(value) for value in bounds):
+    if (
+        len(bounds) != 4
+        or any(not math.isfinite(value) for value in bounds)
+        or bounds[2] <= bounds[0]
+        or bounds[3] <= bounds[1]
+    ):
         raise ValueError("OCR orientation geometry must be finite")
     pixels = math.ceil((bounds[2] - bounds[0]) * dpi / 72) * math.ceil((bounds[3] - bounds[1]) * dpi / 72)
     full = list(page.rect)

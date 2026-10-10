@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from bench.generalization_native_audit import _raster
-from bench.pipeline_ocr_orientation import recognize
+from bench.pipeline_ocr_orientation import evidence, recognize
 from bench.silver_structure import process_peak_rss
 
 
@@ -117,12 +117,85 @@ def run(directory: Path) -> dict[str, Any]:
     return result
 
 
+DENSE_IDS = ("p1bfa52a41a5e15015698", "p98d10ef50dee4b24506a")
+DENSE_DPIS = (150, 300)
+
+
+def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
+    """Compare fixed upright whitespace source inventories without quality labels."""
+    import pylopdf
+    from bench.pipeline_ocr_sources import extract
+
+    manifest = json.loads(manifest_path.read_text())
+    selected = {row["id"]: row for row in manifest["pages"] if row["id"] in DENSE_IDS}
+    if set(selected) != set(DENSE_IDS):
+        message = "Explicit dense source IDs are missing"
+        raise ValueError(message)
+    directory.mkdir(parents=True, exist_ok=True)
+    start, cpu = time.perf_counter(), time.process_time()
+    engine = pylopdf.OcrEngine(threads=1)
+    rows = []
+    for identifier in DENSE_IDS:
+        record = selected[identifier]
+        for dpi in DENSE_DPIS:
+            started, consumed = time.perf_counter(), time.process_time()
+            row = {
+                "id": identifier,
+                "dpi": dpi,
+                "tokenization": "whitespace",
+                "orientation": "fixed",
+                "pdf_path": record["pdf_path"],
+                "page_number": record.get("page_number", 0),
+            }
+            with pylopdf.open(record["pdf_path"]) as document:
+                before = document.tobytes()
+                try:
+                    extracted = extract(
+                        document[row["page_number"]], mode="empty", dpi=dpi, engine=engine, tokenization="whitespace"
+                    )
+                    row["extraction"] = extracted
+                    recognized = extracted["diagnostics"]["recognized"]
+                    row["evidence"] = {
+                        "recognized_box_count": len(recognized),
+                        "source_word_count": len(extracted["source"]["words"]),
+                        **evidence(recognized),
+                    }
+                except Exception as error:
+                    row["error"] = f"{type(error).__name__}: {error}"
+                row["caller_preserved"] = document.tobytes() == before
+            row.update(wall_seconds=time.perf_counter() - started, cpu_seconds=time.process_time() - consumed)
+            row["process_peak_rss_bytes"], row["rss_tool"] = process_peak_rss()
+            rows.append(row)
+            (directory / "dense-progress.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n")
+    result = {
+        "schema": 1,
+        "settings": {
+            "ids": DENSE_IDS,
+            "dpi": DENSE_DPIS,
+            "workers": 1,
+            "ocr_threads": 1,
+            "tokenization": "whitespace",
+            "orientation": "fixed",
+        },
+        "scope": "source inventories only; no reference text or table recall",
+        "wall_seconds": time.perf_counter() - start,
+        "cpu_seconds": time.process_time() - cpu,
+        "rows": rows,
+    }
+    (directory / "dense-results.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    return result
+
+
 def main() -> None:
     """Write the opt-in retained audit without networking or GPU usage."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--dense-manifest", type=Path)
     args = parser.parse_args()
-    run(args.output)
+    if args.dense_manifest is None:
+        run(args.output)
+    else:
+        dense_audit(args.dense_manifest, args.output)
 
 
 if __name__ == "__main__":

@@ -238,7 +238,8 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
         if recognized and tokenization == "reextract":
             for rotation, group in oriented_groups:
                 owned[0].insert_ocr_text_layer(
-                    [(*word["bbox"], word["text"]) for word in group], rotation=cast(Literal[0, 90, 180, 270], rotation)
+                    [(*word["bbox"], word["text"]) for word in group],
+                    rotation=cast("Literal[0, 90, 180, 270]", rotation),
                 )
         complete = _native_words(owned[0])
         if tokenization == "whitespace":
@@ -262,8 +263,17 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
                 raise ValueError("Re-extracted OCR geometry intersects native text")
     if any(native_counts.values()):
         raise ValueError("OCR insertion changed native source ownership")
+    orientation_trials = diagnostics["orientation_passes"]
+    diagnostics["orientation_abstentions"] = sum(trial["selected_rotation"] is None for trial in orientation_trials)
+    diagnostics["orientation_all_pass_wall_seconds"] = sum(
+        trial["all_pass_wall_seconds"] for trial in orientation_trials
+    )
+    diagnostics["orientation_all_pass_cpu_seconds"] = sum(trial["all_pass_cpu_seconds"] for trial in orientation_trials)
+    status = "recognized" if recognized else "recognized_no_text"
+    if not recognized and orientation_trials and diagnostics["orientation_abstentions"]:
+        status = "abstained_uncertain_orientation"
     diagnostics.update(
-        status="recognized" if recognized else "recognized_no_text",
+        status=status,
         recognized_box_count=len(recognized),
         reextracted_word_count=len(complete) - len(native) if tokenization == "reextract" else None,
         ocr_source_word_count=len(complete) - len(native),

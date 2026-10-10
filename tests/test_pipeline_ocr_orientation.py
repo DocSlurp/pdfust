@@ -94,3 +94,14 @@ def test_abstention_exposes_no_candidate_text(monkeypatch: pytest.MonkeyPatch) -
         result = extract(document.new_page(), orientation="candidates")
     assert result["source"]["words"] == []
     assert result["diagnostics"]["orientation_passes"][0]["status"] == "abstained_uncertain_orientation"
+
+
+@pytest.mark.parametrize("dpi", [0, -1, float("nan"), True])
+def test_orientation_refuses_invalid_dpi_before_ocr(dpi: float) -> None:
+    with pylopdf.Document() as document, pytest.raises(ValueError, match="DPI"):
+        recognize(document.new_page(), dpi=dpi)
+
+
+def test_four_pass_pixel_admission_is_complete() -> None:
+    with pylopdf.Document() as document, pytest.raises(ValueError, match="raster"):
+        recognize(document.new_page(width=3000, height=3000), dpi=150)
