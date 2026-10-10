@@ -1,0 +1,264 @@
+"""Opt-in source-only CPU detector crops for strict image-only transcription.
+
+No OCR, source word IDs, references, repairs or inference occur during proposal
+selection. Provider transport is delegated to the coordinated metered caller.
+"""
+
+# ruff: noqa: ANN401, PLC0415, EM101, TRY003, SLF001, PLR2004, TRY301
+from __future__ import annotations
+
+import base64
+import io
+import math
+import time
+from pathlib import Path
+from typing import Any
+
+from bench import generalization_vision_run as vision
+from bench import pipeline_vision_transcription as adapter
+from bench.silver import guard_path, sha, write_json
+
+MAX_REGIONS = 32
+MAX_PAGE_SLOTS = 4096
+DETECTOR_EDGE = 1536
+RENDER_EDGE = 4096
+CROP_EDGE = 1024
+JPEG_QUALITY = 90
+DETECTOR_CONFIDENCE = 0.25
+
+
+def _contained(value: Any, viewport: list[float]) -> list[float]:
+    box = list(adapter._viewport(value))
+    page = adapter._viewport(viewport)
+    if box[0] < page[0] or box[1] < page[1] or box[2] > page[2] or box[3] > page[3]:
+        raise ValueError("Crop viewport lies outside the original page")
+    return box
+
+
+def proposals(detection: dict[str, Any], viewport: list[float]) -> list[dict[str, Any]]:
+    """Select only fixed-confidence Table detections in retained detector order."""
+    if detection.get("device") != "cpu" or detection.get("type") != "result":
+        raise ValueError("Crop transcription requires complete CPU detector output")
+    if list(detection.get("viewport", [])) != viewport:
+        raise ValueError("Detector viewport differs from original page")
+    boxes = detection.get("boxes")
+    if not isinstance(boxes, list) or len(boxes) > 1024:
+        raise ValueError("Detector box inventory exceeds admission")
+    retained: list[dict[str, Any]] = []
+    for box in boxes:
+        label, confidence = box["label"], box["confidence"]
+        if (
+            not isinstance(label, str)
+            or isinstance(confidence, bool)
+            or not isinstance(confidence, (float, int))
+            or not math.isfinite(confidence)
+            or not 0 <= confidence <= 1
+        ):
+            raise ValueError("Invalid source detector class or confidence")
+        bounds = _contained(box["bbox"], viewport)
+        if label == "Table" and confidence >= DETECTOR_CONFIDENCE:
+            retained.append(
+                {
+                    "index": len(retained),
+                    "request_index": len(retained),
+                    "viewport": bounds,
+                    "detector_box": dict(box),
+                    "status": "not_requested",
+                }
+            )
+    if len(retained) > MAX_REGIONS:
+        raise ValueError("Complete table proposal inventory exceeds32 regions; no subset selection")
+    return retained
+
+
+def compose(regions: list[dict[str, Any]], viewport: list[float]) -> dict[str, Any]:
+    """Reparse every raw response and compose atomic ordered disjoint tables."""
+    adapter._viewport(viewport)
+    if not isinstance(regions, list) or len(regions) > MAX_REGIONS:
+        raise ValueError("Region inventory admission exceeded")
+    tables: list[dict[str, Any]] = []
+    slots = 0
+    for index, region in enumerate(regions):
+        if (
+            type(region.get("index")) is not int
+            or region["index"] != index
+            or type(region.get("request_index")) is not int
+            or region["request_index"] != index
+            or region.get("status") != "ok"
+        ):
+            raise ValueError("Region order, request uniqueness or success status is invalid")
+        bounds = _contained(region["viewport"], viewport)
+        parsed = adapter.parse(region["transcription_response"], bounds)
+        for table in parsed["tables"]:
+            slots += table["row_count"] * table["col_count"]
+            if slots > MAX_PAGE_SLOTS:
+                raise ValueError("Complete crop transcription exceeds4096 slots")
+            box = table["bbox"]
+            for prior in tables:
+                other = prior["bbox"]
+                if min(box[2], other[2]) > max(box[0], other[0]) and min(box[3], other[3]) > max(box[1], other[1]):
+                    raise ValueError("Returned crop tables overlap; ownership is unverified")
+            tables.append(table)
+    return {"tables": tables, "text_provenance": adapter.PROVENANCE, "source_conserved": False}
+
+
+def _crop(image: Any, viewport: list[float], bounds: list[float]) -> tuple[str, dict[str, Any]]:
+    from PIL import Image
+
+    box = _contained(bounds, viewport)
+    width, height = image.size
+    scale_x, scale_y = width / (viewport[2] - viewport[0]), height / (viewport[3] - viewport[1])
+    pixel_box = [
+        (box[0] - viewport[0]) * scale_x,
+        (box[1] - viewport[1]) * scale_y,
+        (box[2] - viewport[0]) * scale_x,
+        (box[3] - viewport[1]) * scale_y,
+    ]
+    # EXTENT retains the exact continuous crop viewport instead of relabeling a
+    # floor/ceil-expanded raster as the narrower detector box.
+    target_width, target_height = pixel_box[2] - pixel_box[0], pixel_box[3] - pixel_box[1]
+    ratio = CROP_EDGE / max(target_width, target_height)
+    target = (max(1, round(target_width * ratio)), max(1, round(target_height * ratio)))
+    cropped = image.transform(target, Image.Transform.EXTENT, pixel_box, resample=Image.Resampling.BICUBIC)
+    stream = io.BytesIO()
+    cropped.save(stream, format="JPEG", quality=JPEG_QUALITY)
+    data = stream.getvalue()
+    metadata = {
+        "image_codec": "JPEG",
+        "image_mode": "RGB",
+        "image_quality": JPEG_QUALITY,
+        "image_edge": CROP_EDGE,
+        "image_size": list(target),
+        "image_viewport": box,
+        "image_sha256": sha(data),
+        "image_bytes": len(data),
+        "whole_page": False,
+        "body_limit_adaptation": False,
+        "continuous_crop": True,
+    }
+    return "data:image/jpeg;base64," + base64.b64encode(data).decode(), metadata
+
+
+def process(record: dict[str, Any], config: dict[str, Any], output: Path, client: Any) -> dict[str, Any]:  # noqa: C901 - atomic staged result retention
+    """Preserve all region responses/costs before strict atomic page admission."""
+    from PIL import Image
+
+    import pylopdf
+
+    began, cpu = time.perf_counter(), time.process_time()
+    result: dict[str, Any] = {
+        "id": record["id"],
+        "status": "error",
+        "tables": [],
+        "calls": [],
+        "unresolved_ids": [],
+        "route": "vision_transcription_regions",
+        "processor": "vision_regions",
+        "source_conserved": False,
+        "text_provenance": adapter.PROVENANCE,
+        "output_scope": "table_only",
+        "output_atomic": True,
+        "coverage": "unverified",
+        "transcription_regions": [],
+        "stages": {},
+        "crop_settings": {
+            "detector_edge": DETECTOR_EDGE,
+            "render_edge_cap": RENDER_EDGE,
+            "crop_edge": CROP_EDGE,
+            "jpeg_quality": JPEG_QUALITY,
+            "class": "Table",
+            "confidence": DETECTOR_CONFIDENCE,
+            "maximum_regions": MAX_REGIONS,
+            "maximum_slots": MAX_PAGE_SLOTS,
+        },
+    }
+    stage = "input"
+    try:
+        if (
+            config.get("campaign", "P002") != "P002"
+            or config.get("image_edge", CROP_EDGE) != CROP_EDGE
+            or config.get("jpeg_quality", JPEG_QUALITY) != JPEG_QUALITY
+        ):
+            raise ValueError("Crop control requires P002 and fixed1024 image edge")
+        detector = config.get("_layout_detector")
+        if detector is None:
+            raise ValueError("Crop control requires an initialized persistent CPU detector")
+        data = guard_path(Path(record["pdf_path"])).read_bytes()
+        if sha(data) != record["pdf_sha256"]:
+            raise ValueError("Frozen source PDF hash changed")
+        result["pdf_sha256"] = sha(data)
+        stage = "detector"
+        with pylopdf.open(stream=data) as document:
+            page = document[record["page_number"]]
+            viewport = list(page.rect)
+            result.update(viewport=viewport, original_rotation=page.rotation, rotation_normalized=False)
+            detector_pixels = page.render(
+                scale=DETECTOR_EDGE / max(page.rect.width, page.rect.height), background=(255, 255, 255)
+            )
+            result["detector_image"] = {
+                "edge": DETECTOR_EDGE,
+                "sha256": sha(detector_pixels),
+                "bytes": len(detector_pixels),
+                "viewport": viewport,
+            }
+            result["layout_detection"] = detector.detect(detector_pixels, viewport=viewport)
+            regions = proposals(result["layout_detection"], viewport)
+            result["transcription_regions"] = regions
+            result["proposal_count"] = len(regions)
+            result["stages"]["detector_seconds"] = time.perf_counter() - began
+            if regions:
+                stage = "render"
+                pixels = page.render(
+                    scale=RENDER_EDGE / max(page.rect.width, page.rect.height), background=(255, 255, 255)
+                )
+                with Image.open(io.BytesIO(pixels)) as rendered:
+                    image = rendered.convert("RGB")
+                    if max(image.size) > RENDER_EDGE:
+                        raise ValueError("Full-page raster exceeds fixed4096 edge cap")
+                    result["render_image_size"] = list(image.size)
+                    for region in regions:
+                        stage = "crop"
+                        url, metadata = _crop(image, viewport, region["viewport"])
+                        region["image"] = metadata
+                        stage = "request"
+                        body = adapter.request(
+                            config.get("generation_model", vision.MODELS[1]),
+                            url,
+                            region["viewport"],
+                            max_tokens=config.get("generation_tokens", 16384),
+                        )
+                        region["status"] = "requesting"
+                        first_call = len(result["calls"])
+                        try:
+                            response = vision._transcribe(
+                                client, body, config, result, output, request_index=region["request_index"]
+                            )
+                            region["transcription_response"] = response
+                            region["request"] = result.pop("request")
+                            result.pop("transcription_response", None)
+                            region["call_indexes"] = list(range(first_call, len(result["calls"])))
+                            stage = "parse"
+                            parsed = adapter.parse(response, region["viewport"])
+                            region.update(status="ok", tables=parsed["tables"])
+                        except Exception as error:
+                            region.update(status="error", error_stage=stage, error_type=type(error).__name__)
+                            if "request" in result:
+                                region["request"] = result.pop("request")
+                            region["call_indexes"] = list(range(first_call, len(result["calls"])))
+                            if isinstance(error, ValueError):
+                                region["error"] = str(error)[:500]
+                            raise
+        stage = "compose"
+        parsed = compose(result["transcription_regions"], result["viewport"])
+        rendered_markdown = adapter.markdown(parsed)
+        write_json(output / f"{record['id']}-structure.json", parsed)
+        (output / f"{record['id']}.md").write_text(rendered_markdown)
+        result.update(status="ok", tables=parsed["tables"])
+    except Exception as error:
+        result.update(error_type=type(error).__name__, error_stage=stage, tables=[])
+        if isinstance(error, ValueError):
+            result["error"] = str(error)[:500]
+    result.pop("transcription_response", None)
+    result.update(wall_seconds=time.perf_counter() - began, cpu_seconds=time.process_time() - cpu)
+    write_json(output / f"{record['id']}-result.json", result)
+    return result

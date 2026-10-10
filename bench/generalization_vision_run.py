@@ -20,6 +20,7 @@ from bench.silver import guard_path, sha, write_json
 if TYPE_CHECKING:
     from bench.decision_hosted import DecisionClient
 
+MAX_REQUESTS = 32
 MAX_BODY_BYTES = 750_000
 IMAGE_EDGES = (512, 1024, 1200, 2048)
 
@@ -62,17 +63,21 @@ def _ledger(client: DecisionClient) -> list[dict[str, Any]]:
     return json.loads(client.ledger.read_bytes())["requests"] if client.ledger.exists() else []
 
 
-def _transcribe(
+def _transcribe(  # noqa: PLR0913 - indexed retained transport preserves default behavior
     client: DecisionClient | None,
     body: dict[str, Any],
     config: dict[str, Any],
     result: dict[str, Any],
     output: Path,
+    *,
+    request_index: int = 0,
 ) -> dict[str, Any]:
     """Retain metering and the raw response before any transcription parsing."""
     from bench.decision_hosted import accounted_cost
 
-    write_json(output / f"{result['id']}-request-0.json", body)
+    if type(request_index) is not int or not 0 <= request_index < MAX_REQUESTS:
+        raise ValueError("Vision request index exceeds admission")
+    write_json(output / f"{result['id']}-request-{request_index}.json", body)
     encoded = json.dumps(body, separators=(",", ":")).encode()
     result["request"] = {
         "body_sha256": sha(encoded),
@@ -91,7 +96,7 @@ def _transcribe(
     reservation = 1.0 if body["model"] == "anthropic/claude-opus-5.5" else 0.30
     if spent + reservation > baseline.WAVE_LIMIT:
         raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
-    tag = f"P002/{config['run_id']}/{result['id']}/vision/0"
+    tag = f"P002/{config['run_id']}/{result['id']}/vision/{request_index}"
     before_indexes = {row["index"] for row in previous if "index" in row}
     began, cpu = time.perf_counter(), time.process_time()
     try:
@@ -127,7 +132,7 @@ def _transcribe(
         }
     )
     result["transcription_response"] = response["result"]
-    write_json(output / f"{result['id']}-response-0.json", response["result"])
+    write_json(output / f"{result['id']}-response-{request_index}.json", response["result"])
     write_json(output / f"{result['id']}-result.json", result)
     return response["result"]
 
