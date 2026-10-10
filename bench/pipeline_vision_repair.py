@@ -53,7 +53,7 @@ def repair(result: dict[str, Any], viewport: list[float]) -> dict[str, Any]:
     if not isinstance(tables, list) or len(tables) > adapter.MAX_TABLES:
         raise ValueError("Table inventory admission exceeded")
     edits = []
-    original_positions = []
+    original_positions: list[tuple[int, int, int, str]] = []
     total_slots = 0
     for index, table in enumerate(tables):
         adapter._exact(table, {"bbox", "matrix", "mergedspans"})

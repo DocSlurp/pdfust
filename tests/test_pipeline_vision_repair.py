@@ -73,20 +73,20 @@ def test_bbox_clips_without_rescaling_and_retains_original() -> None:
 
 @pytest.mark.parametrize("bbox", [[1001, 20, 1100, 900], [50, 20, 40, 900], [0, 0, float("nan"), 900]])
 def test_invalid_or_disjoint_geometry_is_refused(bbox: list) -> None:
-    with pytest.raises(ValueError, match="."):
+    with pytest.raises(ValueError, match=r"."):
         repair(response([["A"]], bbox=bbox), [0, 0, 600, 800])
 
 
 @pytest.mark.parametrize("spans", [[[0, 0, 1, 3]], [[0, 0, 1, 2], [0, 1, 1, 2]], [[0, 0, 1, 1]], [[1, 1, 1, 2]]])
 def test_invalid_spans_and_missing_anchors_are_refused(spans: list) -> None:
-    with pytest.raises(ValueError, match="."):
+    with pytest.raises(ValueError, match=r"."):
         repair(response([["A", ""], ["B"]], spans), [0, 0, 600, 800])
 
 
 @pytest.mark.parametrize("matrix", [[["A", 3]], [["A"], []], [["Anchor", "Nonempty"]]])
 def test_ambiguous_types_empty_rows_or_deleting_nonempty_values_are_refused(matrix: list) -> None:
     spans = [[0, 0, 1, 2]] if matrix == [["Anchor", "Nonempty"]] else []
-    with pytest.raises(ValueError, match="."):
+    with pytest.raises(ValueError, match=r"."):
         repair(response(matrix, spans), [0, 0, 600, 800])
 
 
@@ -101,12 +101,12 @@ def test_non_normal_outputs_are_never_repaired(reason: str | None) -> None:
 def test_refusal_and_malformed_or_duplicate_json_are_refused() -> None:
     raw = response([["A"]])
     raw["choices"][0]["message"]["refusal"] = "refusal"
-    with pytest.raises(ValueError, match="."):
+    with pytest.raises(ValueError, match=r"."):
         repair(raw, [0, 0, 600, 800])
     for content in ('{"answers":', '{"answers":{},"answers":{}}'):
         raw = response([["A"]])
         raw["choices"][0]["message"]["content"] = content
-        with pytest.raises(ValueError, match="."):
+        with pytest.raises(ValueError, match=r"."):
             repair(raw, [0, 0, 600, 800])
 
 
