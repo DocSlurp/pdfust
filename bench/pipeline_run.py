@@ -492,6 +492,11 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
     campaign = config.get("campaign", "P001")
     if campaign not in {"P001", "P002", "P003"}:
         raise ValueError("Unknown complete-pipeline campaign")
+    wire_schema = config.get("transcription_wire_schema", "strict")
+    if wire_schema not in ("strict", "simple"):
+        raise ValueError("Unknown transcription wire schema")
+    if wire_schema != "strict" and (campaign != "P003" or config.get("processor") != "vision_regions"):
+        raise ValueError("Simple transcription wire schema requires P003 vision_regions")
     transport_concurrency = config.get("transport_concurrency", 1)
     if type(transport_concurrency) is not int or transport_concurrency not in (1, 3):
         raise ValueError("Transport concurrency must be one or three")
@@ -608,6 +613,7 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
                     else []
                 ),
                 *(["p003_transcription_design.py"] if representation != "legacy" else []),
+                *(["p003_wire_schema.py"] if wire_schema != "strict" else []),
                 *(
                     ["generalization_vision_run.py", "pipeline_vision_transcription.py"]
                     if config.get("processor") in (

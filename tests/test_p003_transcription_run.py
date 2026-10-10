@@ -49,14 +49,16 @@ def test_legacy_constructor_byte_identical() -> None:
 
 @pytest.mark.parametrize("model", ["anthropic/claude-haiku-5.5", "openai/gpt-6-luna"])
 @pytest.mark.parametrize("representation", ["legacy", "matrix_strict", "atomic_cells"])
+@pytest.mark.parametrize("wire_schema", ["strict", "simple"])
 def test_real_process_request_body_parser_and_saved_metadata(
-    tmp_path: Path, model: str, representation: str,
+    tmp_path: Path, model: str, representation: str, wire_schema: str,
 ) -> None:
     response = atomic_response() if representation == "atomic_cells" else raw([["literal"]])
     client = Client(tmp_path, response)
     config = {
         "campaign": "P003", "run_id": "stub", "generation_model": model, "generation_tokens": 321,
         "transcription_representation": representation, "generation_provider": "PinnedFixtureProvider",
+        "transcription_wire_schema": wire_schema,
         "_layout_detector": Detector([{"label": "Table", "confidence": 0.9, "bbox": [10, 20, 100, 150]}]),
     }
     result = regions.process(_record(tmp_path), config, tmp_path, client)
@@ -76,13 +78,14 @@ def test_real_process_request_body_parser_and_saved_metadata(
     assert request["body_bytes"] == len(encoded)
     assert request["transcription_representation"] == representation
     expected = regions.transcription_request(model, body["messages"][1]["content"][0]["image_url"]["url"],
-                                             region["viewport"], max_tokens=321, representation=representation)
+                                             region["viewport"], max_tokens=321, representation=representation,
+                                             wire_schema=wire_schema)
     assert expected["messages"] == body["messages"]
     assert expected["response_format"] == body["response_format"]
     assert report.verify_output(tmp_path, result, processor="vision_regions", config=config) == {
         "operational": True, "conserved": False,
     }
-    if representation != "legacy":
+    if representation != "legacy" or wire_schema != "strict":
         body["messages"][0]["content"] = "changed prompt"
         (tmp_path / "fixture-request-0.json").write_text(json.dumps(body))
         with pytest.raises(ValueError, match="Actual transcription body"):

@@ -32,13 +32,15 @@ TRANSCRIPTION_REPRESENTATIONS = ("legacy", "matrix_strict", "atomic_cells")
 
 
 
-def transcription_request(
+def transcription_request(  # noqa: PLR0913 - independent wire and representation treatments.
     model: str, url: str, viewport: list[float], max_tokens: int = adapter.MAX_TOKENS,
-    *, representation: str = "legacy",
+    *, representation: str = "legacy", wire_schema: str = "strict",
 ) -> dict[str, Any]:
     """Rebuild actual strict request content without changing legacy body bytes."""
     if representation not in TRANSCRIPTION_REPRESENTATIONS:
         raise ValueError("Unknown transcription representation")
+    if wire_schema not in ("strict", "simple"):
+        raise ValueError("Unknown transcription wire schema")
     body = adapter.request(model, url, viewport, max_tokens=max_tokens)
     if representation != "legacy":
         from bench.p003_transcription_design import prompt_variant
@@ -48,6 +50,10 @@ def transcription_request(
         body["response_format"]["json_schema"] = {
             "name": "pdf_vision_" + representation, "strict": True, "schema": variant["schema"],
         }
+    if wire_schema == "simple":
+        from bench.p003_wire_schema import simplify
+
+        body, _removed = simplify(body)
     return body
 
 
@@ -328,6 +334,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
                             url,
                             region["viewport"],
                             max_tokens=config.get("generation_tokens", 16384), representation=representation,
+                            wire_schema=config.get("transcription_wire_schema", "strict"),
                         )
                         region["status"] = "requesting"
                         first_call = len(result["calls"])

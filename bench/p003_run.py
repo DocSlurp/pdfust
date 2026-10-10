@@ -47,6 +47,8 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
     }
     if args.gate_image_mode != "rgb":
         config["gate_image_mode"] = args.gate_image_mode
+    if args.transcription_wire_schema != "strict":
+        config["transcription_wire_schema"] = args.transcription_wire_schema
     if args.transport_concurrency == P003_TRANSPORT_CONCURRENCY:
         config["transport_concurrency"] = 3
     if args.preset == "gated_ordinal":
@@ -88,6 +90,7 @@ def main() -> None:
     parser.add_argument(
         "--transcription-representation", choices=("legacy", "matrix_strict", "atomic_cells"), default="legacy",
     )
+    parser.add_argument("--transcription-wire-schema", choices=("strict", "simple"), default="strict")
     parser.add_argument("--image-edge", type=int, choices=(0, 128, 256, 400, 512, 768, 1024, 1200), default=512)
     parser.add_argument("--ocr-dpi", type=int, choices=(150, 300), default=300)
     parser.add_argument("--gate-row-evidence", action="store_true")
@@ -125,6 +128,8 @@ def main() -> None:
         parser.error("Only the source-proposal YOLO control may disable its gate")
     if args.transcription_representation != "legacy" and args.preset not in {"vision_regions", "hybrid"}:
         parser.error("Nonlegacy transcription representations require vision_regions or hybrid")
+    if args.transcription_wire_schema != "strict" and args.preset != "vision_regions":
+        parser.error("Simple transcription wire schema requires vision_regions")
     if args.transport_concurrency == P003_TRANSPORT_CONCURRENCY and args.gate_provider != "openrouter":
         parser.error("Transport concurrency three requires OpenRouter")
     if args.gate_image_mode != "rgb" and (

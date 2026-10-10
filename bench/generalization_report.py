@@ -210,6 +210,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         required.add("p003_prompt_variants.py")
     if representation != "legacy":
         required.add("p003_transcription_design.py")
+    if frozen.get("config", {}).get("transcription_wire_schema", "strict") != "strict":
+        required.add("p003_wire_schema.py")
     if processor in {"vision_regions", "vision_multiscale"}:
         required.add("generalization_vision_regions.py")
     if processor == "vision_multiscale":
@@ -590,6 +592,9 @@ def _verify_transcription_requests(
 ) -> None:
     """Authenticate the treatment against actual bodies, including failed pages."""
     representation = config.get("transcription_representation", "legacy")
+    wire_schema = config.get("transcription_wire_schema", "strict")
+    if wire_schema not in ("strict", "simple"):
+        raise ValueError("Unknown frozen transcription wire schema")
     if representation not in {"legacy", "matrix_strict", "atomic_cells"}:
         raise ValueError("Unknown frozen transcription representation")
     if prediction.get("transcription_representation", "legacy") != representation:
@@ -598,7 +603,7 @@ def _verify_transcription_requests(
         if region.get("transcription_representation", "legacy") != representation:
             raise ValueError("Region representation differs from frozen treatment")
         # Existing legacy archives did not retain this treatment's body seam.
-        if representation == "legacy":
+        if representation == "legacy" and wire_schema == "strict":
             continue
         metadata = region.get("request")
         if metadata is None and region.get("status") == "not_requested":
@@ -613,6 +618,7 @@ def _verify_transcription_requests(
         rebuilt = transcription_request(
             config["generation_model"], url, region["viewport"],
             max_tokens=config.get("generation_tokens", 16384), representation=representation,
+            wire_schema=wire_schema,
         )
         if config.get("generation_provider"):
             rebuilt["provider"] = {"only": [config["generation_provider"]], "allow_fallbacks": False,
