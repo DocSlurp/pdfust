@@ -220,3 +220,49 @@ def test_actual_native_and_empty_crop_children_compose_without_inference(tmp_pat
     assert result["vision_result"]["coverage"] == "unverified"
     assert "Literal native prose" in (tmp_path / "output" / "real.md").read_text()
     assert result["route"] == "hybrid"
+
+
+def test_invalid_native_vector_is_quarantined_without_losing_words(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    source = {
+        "page_size": [0, 0, 100, 100],
+        "words": [{"id": "r:w0", "text": "Retained literal", "bbox": [10, 10, 30, 20]}],
+        "vector_candidates": [{"row_count": 2, "col_count": 2, "cells": [[0, 0, 50, 50]], "spans": []}],
+    }
+    state = {"tables": [], "unresolved_ids": ["r:w0"]}
+    original = deepcopy(source)
+
+    def native_process(record: dict, _config: dict, output: Path, _client: Any) -> dict:
+        write_json(output / f"{record['id']}-structure.json", state)
+        return {"id": record["id"], "status": "ok", "source": source, "calls": [], "tables": []}
+
+    def vision_process(record: dict, config: dict, output: Path, _client: Any) -> dict:
+        detection = config["_layout_detector"].detect(b"pixels", viewport=[0, 0, 100, 100])
+        write_json(
+            output / f"{record['id']}-structure.json",
+            {"tables": [], "text_provenance": "model-transcribed", "source_conserved": False},
+        )
+        return {
+            "id": record["id"],
+            "status": "ok",
+            "calls": [],
+            "tables": [],
+            "viewport": [0, 0, 100, 100],
+            "layout_detection": detection,
+        }
+
+    monkeypatch.setattr(hybrid.native, "process", native_process)
+    monkeypatch.setattr(hybrid.regions, "process", vision_process)
+    detector = SimpleNamespace(detect=lambda image, *, viewport: {"boxes": []})
+    config = {"campaign": "P002", "policy": "gated", "layout_detector": "yolo", "_layout_detector": detector}
+    result = hybrid.process({"id": "quarantine"}, config, tmp_path, None)
+    assert result["status"] == "ok", result
+    assert result["source"]["words"] == source["words"]
+    assert result["source"]["vector_candidates"] == []
+    assert result["native_warnings"] == [{"native_index": 0, "reason": "Invalid or over-limit native table slots"}]
+    assert result["unresolved_ids"] == ["r:w0"]
+    assert result["source_conserved"] is True
+    assert source == original
+    assert result["native_result"]["source"] == original
+    assert "Retained literal" in (tmp_path / "quarantine.md").read_text()

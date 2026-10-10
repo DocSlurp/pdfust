@@ -110,7 +110,9 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
         if child.get("calls"):
             raise ValueError("Native-only hybrid child unexpectedly made model calls")
         state = _structure(native_output, identifier)
-        source = helper.sanitize_vectors(child["source"])
+        cleaned, warnings = native.sanitize_vectors(child["source"])
+        result["native_warnings"] = warnings
+        source = helper.sanitize_vectors(cleaned)
         result.update(source=source, native_state=state)
         boxes = helper.native_boxes(source, state)
         result["native_boxes"] = boxes
