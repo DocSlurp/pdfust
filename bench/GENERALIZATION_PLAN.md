@@ -159,3 +159,33 @@ Mechanical repair is not accepted by default: the frozen counterfactual that pad
 short rows admitted a false table on a negative page. Retain strict responses,
 errors, and charges. Geometry clipping and null-covered-cell repair are documented
 separately; successful parsing is not evidence of a quality improvement.
+
+### Layer 4: packet admission, crop evidence and compact responses
+
+The 2048-pixel JPEG90 whole-page controls refuse five of sixteen requests at the
+750,000-byte transport cap, including both dense pages. They do not measure model
+readability on those pages. A source-only encoding diagnostic keeps 2048 pixels
+and changes JPEG quality: 90 admits 11/16 (maximum 1,341,758 request bytes), 70
+admits 14/16 (836,402), and 50 admits 16/16 (645,398). Predeclare quality 50 as a
+separate fixed arm for Sonnet, Haiku and Opus, retaining quality 90 controls and
+all failures. No request-specific resize, quality adaptation or retry is applied.
+
+Detector-crop transcription uses fixed whole-page CPU YOLO proposals, a full-page
+4096-pixel render cap, 1024-pixel JPEG90 crops, source-only .25 Table confidence,
+at most 32 crops and 4096 aggregate slots. Reparse every raw response and verify
+all detector proposals before admitting a page; failed crops fail the page
+atomically. Overlapping returned tables refuse rather than guessing ownership.
+This is a table-only transcription control, not complete native/OCR conservation.
+
+Predeclare two prompt-only source-ID assembly arms on the fixed screen: row-wrap
+reasoning across neighboring columns, and repeated column-track alignment with
+semantic negative checks. Both preserve the complete input, output schema, strict
+parser and literal source text. A separate ordinal-index response adapter will
+test whether shorter identifiers reduce output-length failures; integer indexes
+must expand through the exact retained source order before existing validation.
+
+Fixed longest-edge OCR is another explicit arm: 2048 pixels with effective DPI
+computed from display extent, preserving physical-scale invariance. The matched
+CPU experiment re-embeds identical raster pixels at half, original and double
+physical dimensions before comparing fixed DPI against fixed pixels. This tests
+encoding sensitivity; more recognized boxes alone still do not establish accuracy.
