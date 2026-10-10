@@ -73,13 +73,19 @@ Provider cache counters are unmeasured in these evaluation-only inputs unless ex
 
 | Run | Cache scope | Observed returned/all attempts | Reported read tokens subtotal | Reported write tokens subtotal | Read counter missing calls | Write counter missing calls | All-attempt usage coverage |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| confirmation48-luna-1024-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
-| confirmation48-sonnet-1024-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
-| confirmation48-haiku-matrix-1024-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
-| confirmation48-ordinal-ocr300-512-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
-| confirmation48-choice-pplx-0-rgb-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
-| confirmation48-choice-pplx-128-rgb-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
-| confirmation48-choice-pplx-512-rgb-r0-c3 | current measured stage | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured | Unmeasured |
+| confirmation48-luna-1024-r0-c3 | current measured stage | 52/52 | 0 | 20897 | 0 | 0 | True |
+| confirmation48-sonnet-1024-r0-c3 | current measured stage | 55/55 | 0 | 0 | 0 | 0 | True |
+| confirmation48-haiku-matrix-1024-r0-c3 | current measured stage | 53/53 | 0 | 0 | 0 | 0 | True |
+| confirmation48-ordinal-ocr300-512-r0-c3 | current measured stage | 39/39 | 0 | 0 | 0 | 0 | True |
+| confirmation48-choice-pplx-0-rgb-r0-c3 | current measured stage | 39/39 | Unmeasured | Unmeasured | 39 | 39 | True |
+| confirmation48-choice-pplx-0-rgb-r0-c3 | historical baseline 0 | 52/52 | 0 | 20897 | 0 | 0 | True |
+| confirmation48-choice-pplx-0-rgb-r0-c3 | historical baseline 1 | 55/55 | 0 | 0 | 0 | 0 | True |
+| confirmation48-choice-pplx-128-rgb-r0-c3 | current measured stage | 39/39 | Unmeasured | Unmeasured | 39 | 39 | True |
+| confirmation48-choice-pplx-128-rgb-r0-c3 | historical baseline 0 | 52/52 | 0 | 20897 | 0 | 0 | True |
+| confirmation48-choice-pplx-128-rgb-r0-c3 | historical baseline 1 | 55/55 | 0 | 0 | 0 | 0 | True |
+| confirmation48-choice-pplx-512-rgb-r0-c3 | current measured stage | 39/39 | Unmeasured | Unmeasured | 39 | 39 | True |
+| confirmation48-choice-pplx-512-rgb-r0-c3 | historical baseline 0 | 52/52 | 0 | 20897 | 0 | 0 | True |
+| confirmation48-choice-pplx-512-rgb-r0-c3 | historical baseline 1 | 55/55 | 0 | 0 | 0 | 0 | True |
 
 - `confirmation48-luna-1024-r0-c3`: evaluation `6bab980676c3eff3b94e5a2614e7d9796ecfb75aa7fd7a64d1fbdb93b50d8786`; report `cc0ffd0dc3e83089de5a7d88f938a947dd492ead3f706f8f9aa789e0490e120f`; failures `{"Table matrix must contain rectangular literal string cells": 1}`; transport `{}`.
 - `confirmation48-sonnet-1024-r0-c3`: evaluation `374f9fd0b9f3cf75a8ed7e54d1fd582921df34551226f6cb04a64928da9ad037`; report `2e0fb00b4071ac5fa0e6ca6fde632b91e0ecad77c3a3823dfc78b60bda552850`; failures `{"Covered merge slots must be empty strings": 1, "Table bounds are outside normalized image coordinates": 2}`; transport `{}`.

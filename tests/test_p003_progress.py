@@ -220,3 +220,19 @@ def test_confirmed_quality_and_abstention_are_primary_separate_from_retained_out
     assert "Retained pipeline output quality" in text
     assert "Parsed abstentions" in text
     assert "Fully chosen candidate pages" in text
+
+
+def test_nested_explicit_run_uses_adjacent_authenticated_report(tmp_path: Path) -> None:
+    directory = tmp_path / "queue" / "example"
+    directory.mkdir(parents=True)
+    report = {"config": {"processor": "vision_regions"}, "ledger_attempts": 1, "results": [
+        {"calls": [{"entry": {"index": 9}, "replayed": False,
+                    "usage": {"prompt_tokens_details": {"cached_tokens": 17, "cache_write_tokens": 0}}}]},
+    ]}
+    write_json(directory / "report.json", report)
+    record = run_record()
+    record["report_sha256"] = sha((directory / "report.json").read_bytes())
+    write_json(directory / "evaluation.json", {"runs": [record]})
+    runs, _ = load_evaluations([directory], report_directory=tmp_path)
+    counters = runs[0]["provider_cache_usage"]["counters"]
+    assert counters["cached_tokens"]["complete_counter_total"] == 17

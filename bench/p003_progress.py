@@ -56,11 +56,9 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
             run = {**observed, "evaluation_path": str(selected), "evaluation_sha256": sha(content)}
             if Path(run["name"]).name != run["name"] or run["name"] in {".", ".."}:
                 raise ValueError("Unsafe verified run name")
-            source_report = (
-                (report_directory / run["name"] / "report.json")
-                if report_directory
-                else selected.parent / "report.json"
-            )
+            source_report = selected.parent / "report.json"
+            if not source_report.is_file() and report_directory is not None:
+                source_report = report_directory / run["name"] / "report.json"
             source_report = guard_path(source_report)
             if source_report.is_file():
                 raw = guard_path(source_report).read_bytes()
