@@ -42,10 +42,10 @@ def _fixture(directory: Path) -> tuple[Path, dict[str, Any]]:
     ]
     identity_records = [{key: value for key, value in row.items() if key != "pdf_path"} for row in records]
     identity = sha(canonical({"schema": 1, "pages": identity_records, "targets": targets}))
-    manifest = {"split": "DEV", "dataset_sha256": identity, "pages": records}
+    manifest: dict[str, Any] = {"split": "DEV", "dataset_sha256": identity, "pages": records}
     write_json(corpus / "manifest.json", manifest)
     write_json(corpus / "private-targets.json", {"dataset_sha256": identity, "pages": targets})
-    config = {
+    config: dict[str, Any] = {
         "run_id": pipeline.name,
         "pilot": True,
         "policy": "assembly",
@@ -66,8 +66,8 @@ def _fixture(directory: Path) -> tuple[Path, dict[str, Any]]:
             "records": [{key: row[key] for key in ("id", "pdf_path", "pdf_sha256", "page_number")} for row in records],
         },
     )
-    state = {"tables": [table], "unresolved_ids": []}
-    prediction = {
+    state: dict[str, Any] = {"tables": [table], "unresolved_ids": []}
+    prediction: dict[str, Any] = {
         "id": "positive",
         "status": "ok",
         **state,
@@ -82,7 +82,7 @@ def _fixture(directory: Path) -> tuple[Path, dict[str, Any]]:
     }
     write_json(pipeline / "positive-structure.json", state)
     (pipeline / "positive.md").write_text(_render_markdown(prediction["source"], state))
-    report = {
+    report: dict[str, Any] = {
         "config": config,
         "results": [prediction, {"id": "negative", "status": "error", "tables": []}],
         "metrics": {"wall_seconds": 60.0, "cpu_seconds": 1.0, "peak_sampled_rss_bytes": 1024},
@@ -302,7 +302,7 @@ def test_renderer_retains_merged_cells_outside_words_and_escaped_text() -> None:
             {"id": "outside", "text": "<note>", "bbox": [10, 40, 30, 50], "line": [1, 0]},
         ],
     }
-    state = {
+    state: dict[str, Any] = {
         "tables": [
             {
                 "row_count": 1,
