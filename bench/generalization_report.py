@@ -34,6 +34,7 @@ SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 # renderer, source-order sorting and a single newline between region renderings.
 TRUSTED_HISTORICAL_CODE = {
     "generalization_run.py": {
+        "baae56a9e99eb624502b1238a51a25f4751bd755752ad7499ae5187d98dfca2a": "1185a06",
         "8c51ca5295c8c9e27cf4cad0f5a7e957c36be94c1739ac616d2aa1cd9f7dd865": "1083b53",
         "b65ce79aef238bceed439bca6998dd003130bb190b4b2c85feb1eaf67eb04456": "0cc3b3f",
         "4c02938d7abea98dbc070944aa0b962f85ef5069e2b07c9f801a80c308b40b80": "01273f1",

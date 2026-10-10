@@ -13,7 +13,7 @@ from typing import Any
 
 from bench.generalization_report import load_corpus
 from bench.generalization_scoring import _cells, normalize_text
-from bench.silver import guard_path, sha
+from bench.silver import canonical, guard_path, sha
 
 DENSE_IDS = {"p1bfa52a41a5e15015698", "p98d10ef50dee4b24506a"}
 
@@ -108,6 +108,7 @@ def evaluate(targets: list[dict[str, Any]], predictions: list[dict[str, Any]]) -
                 page[prefix + "possible_cells"] = sum(sum(table) for table in feasible)
                 page[prefix + "possible_tables"] = sum(all(table) for table in feasible)
             page["source_words"] = len(texts)
+            page["source_sha256"] = sha(canonical(source))
         pages.append(page)
     return {
         "totals": _totals(pages),
