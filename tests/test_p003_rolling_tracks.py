@@ -84,3 +84,50 @@ def test_no_invalid_topology_or_undeclared_profile_salvage():
     region["source_ids"].append("a")
     with pytest.raises(ValueError, match="Duplicate"):
         rolling.compose(source, [region], {"r": topology}, [], 1.0, 1)
+
+
+@pytest.mark.parametrize("endpoint", [float("nan"), float("inf"), True, "0"])
+def test_outer_endpoint_cannot_be_replaced_before_validation(endpoint: object):
+    source, region, topology = fixture()
+    topology["x_edges"][0] = endpoint
+    result = rolling.compose(source, [region], {"r": topology}, [], 1.0, 1)
+    assert result["state"]["tables"] == []
+    assert result["regions"][0]["refusal"] == "nonfinite_or_invalid_frozen_column_endpoint"
+
+
+def test_all_crossing_words_cannot_create_an_empty_table():
+    source, region, topology = fixture()
+    for word in source["words"][:-1]:
+        word["bbox"][0:3:2] = [45, 55]
+    result = rolling.compose(source, [region], {"r": topology}, [], 1.0, 1)
+    assert result["state"]["tables"] == []
+    assert result["regions"][0]["refusal"] == "no_whole_word_assignments_to_frozen_columns"
+    assert len(result["state"]["unresolved_ids"]) == len(source["words"])
+
+
+def test_region_slot_cap_refuses_complete_proposal(monkeypatch: pytest.MonkeyPatch):
+    source, region, topology = fixture()
+    monkeypatch.setattr(rolling, "MAX_SLOTS", 3)
+    result = rolling.compose(source, [region], {"r": topology}, [], 0.75, 1)
+    assert result["state"]["tables"] == []
+    assert result["regions"][0]["refusal"] == "complete_rectangular_grid_admission"
+    assert len(result["state"]["unresolved_ids"]) == len(source["words"])
+
+
+def test_whole_page_slot_cap_cannot_return_one_partial_table(monkeypatch: pytest.MonkeyPatch):
+    source, region, topology = fixture()
+    source["page_size"][2] = 300
+    words = copy.deepcopy(source["words"][:5])
+    for word in words:
+        word["id"] = "other-" + word["id"]
+        word["bbox"][0] += 200
+        word["bbox"][2] += 200
+    source["words"].extend(words)
+    other = {"region_id": "other", "bbox": [200, 0, 300, 100], "source_ids": [w["id"] for w in words]}
+    other_topology = {"status": "geometry_candidate", "x_edges": [200, 250, 300]}
+    monkeypatch.setattr(rolling, "MAX_SLOTS", 7)
+    result = rolling.compose(source, [region, other], {"r": topology, "other": other_topology}, [], 0.75, 1)
+    assert result["state"]["tables"] == []
+    assert result["page_refusal"] == "whole_page_slots_all_tables_refused"
+    assert all(not r["effective_page_accepted"] for r in result["regions"])
+    assert len(result["state"]["unresolved_ids"]) == len(source["words"])

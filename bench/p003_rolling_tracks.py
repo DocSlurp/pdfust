@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from bisect import bisect_right
 from itertools import pairwise
 from statistics import median
@@ -39,7 +40,8 @@ def horizontal_rules(drawings: list[dict]) -> list[list[float]]:
     return rules
 
 
-def region(source: dict[str, Any], proposal: dict[str, Any], topology: dict[str, Any],
+def region(  # noqa: PLR0911 - explicit complete-evidence refusal branches.
+           source: dict[str, Any], proposal: dict[str, Any], topology: dict[str, Any],
            rules: list[list[float]], ratio: float, key_count: int) -> dict[str, Any]:
     """Freeze every adjacent-row decision and decode complete source-owned cells."""
     lookup = _sources(source)
@@ -48,6 +50,9 @@ def region(source: dict[str, Any], proposal: dict[str, Any], topology: dict[str,
         raise ValueError("Unique known regional source IDs required")
     owned = set(ids)
     bounds = proposal["bbox"]
+    if (len(bounds) != 4 or any(type(v) not in (int, float) or not math.isfinite(v) for v in bounds)
+            or bounds[0] >= bounds[2] or bounds[1] >= bounds[3]):
+        raise ValueError("Finite positive regional bounds required")
     words = [w for w in source["words"] if w["id"] in owned and physical._inside(w["bbox"], bounds)]
     lines = physical._lines(words)
     receipt = {"region_id": proposal["region_id"], "physical_lines": lines, "decisions": [],
@@ -55,6 +60,8 @@ def region(source: dict[str, Any], proposal: dict[str, Any], topology: dict[str,
     xs = topology.get("x_edges", [])
     if topology.get("status") != "geometry_candidate" or not 3 <= len(xs) <= 33:
         return {**receipt, "refusal": "missing_or_unadmitted_frozen_columns"}
+    if any(type(x) not in (int, float) or not math.isfinite(x) for x in xs):
+        return {**receipt, "refusal": "nonfinite_or_invalid_frozen_column_endpoint"}
     if any(not bounds[0] < x < bounds[2] for x in xs[1:-1]) or any(a >= b for a, b in pairwise(xs)):
         return {**receipt, "refusal": "column_tracks_outside_region_or_nonmonotone"}
     # Region geometry declares the outer bounds; only internal TATR tracks are preserved.
@@ -76,6 +83,8 @@ def region(source: dict[str, Any], proposal: dict[str, Any], topology: dict[str,
             if xs[col] <= b[0] < b[2] <= xs[col + 1]:
                 slots.setdefault(col, []).append(ident)
         mapped.append(slots)
+    if not any(mapped):
+        return {**receipt, "refusal": "no_whole_word_assignments_to_frozen_columns"}
     groups: list[dict[int, list[str]]] = []
     for index, slots in enumerate(mapped):
         occupied = set(slots)
