@@ -128,3 +128,18 @@ def test_duplicate_source_input_and_excess_candidates_are_refused() -> None:
     page, candidates = fixture()
     with pytest.raises(ValueError, match="alternative count"):
         packet(page, candidates * 9)
+
+
+@pytest.mark.parametrize("limit", [0, -1, 128001, True, 1.5])
+def test_explicit_larger_packet_budget_is_still_bounded(limit: Any) -> None:
+    page, candidates = fixture()
+    with pytest.raises(ValueError, match="admission"):
+        packet(page, candidates, max_characters=limit)
+
+
+def test_explicit_packet_budget_preserves_complete_evidence() -> None:
+    page, candidates = fixture()
+    full = packet(page, candidates, max_characters=80000)
+    assert full == packet(page, candidates)
+    with pytest.raises(ValueError, match="no partial context"):
+        packet(page, candidates, max_characters=len(full) - 1)

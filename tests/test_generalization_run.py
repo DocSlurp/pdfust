@@ -93,3 +93,26 @@ def test_unknown_campaign_rejected_before_metering(tmp_path: Path) -> None:
     client: Any = SimpleNamespace(ledger=tmp_path / "absent")
     with pytest.raises(ValueError, match="Unknown"):
         baseline.call(client, {}, "unregistered/run")
+
+
+@pytest.mark.parametrize("method", ["generate", "gated_generate"])
+def test_generation_can_construct_without_a_geometry_alternative(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, method: str
+) -> None:
+    source = {"page_size": [100, 100], "words": [{"id": "w0", "text": "literal", "bbox": [1, 1, 10, 10]}]}
+    region = {"id": "r0", "boundary": "unsplit", "bbox": [0, 0, 100, 100], "source": source}
+    calls = []
+
+    def generate(*args: object, **_kwargs: object) -> dict[str, Any]:
+        calls.append(args)
+        return baseline.native_state(source)
+
+    monkeypatch.setattr(runner, "generate_region", generate)
+    monkeypatch.setattr(
+        runner, "_request", lambda *_args, **_kwargs: {"choice": "table", "probabilities": {"table": 1}}
+    )
+    settings = {**config("gated"), "assembly_method": method, "image_edge": 0}
+    state, info = runner.select_region(region, None, settings, tmp_path, {"id": "opaque", "calls": []}, None)
+    assert len(calls) == 1
+    assert state["unresolved_ids"] == ["w0"]
+    assert "generated" in info["route"]

@@ -74,3 +74,38 @@ Official references checked 2026-10-10:
 
 Append measured results, rejected hypotheses and new predeclared derivatives here
 and in the experiment log as each layer finishes.
+
+### Layer 1: source and region corrections
+
+The initial corpus contained 12 authored RGBA scan carriers incorrectly flattened
+to black. Revision `corpus-r2` preserves all 276 page IDs and references, changes
+only those 12 PDFs, and retains the initial snapshot and ongoing native run as a
+source-defect diagnostic. Subsequent main comparisons use r2. Natural16 is an
+additional metadata-selected screen (six multiple-table, six single-table, four
+negative pages) frozen before its outcomes; the original 32-page pilot is unchanged.
+
+Region candidate coverage on authored sources initially regressed from 132/156
+complete reference tables in the full-page candidate union to 116/156. Relative
+vertical leading and dominant sustained horizontal corridors restore 132/156 and
+remove 16 unwanted table splits. These are target-aware candidate-oracle diagnostics,
+not selected model quality. All proposal rules consume source geometry only.
+
+New predeclared derivative: allow a bounded chat model to assemble cells directly
+from source IDs when finite geometry menus cannot represent natural tables. The
+response contains IDs, coordinates and spans, never replacement text. Validate
+ownership and topology, construct literal values locally, and retain unassigned
+words. Compare against selection-only on the fixed natural screen; report its
+higher generation cost and any malformed output. Missing OCR tokens remain a
+separate bottleneck. Root alone transmits calls.
+
+Discovery audit: a worker's initial file search incidentally listed two protected
+filenames. No protected contents or scores were read, and no further access occurred.
+Subsequent discovery is restricted to explicitly named DEV paths. This procedural
+incident is retained instead of claiming there was no protected-name enumeration.
+
+The first region natural16 run still rejects seven pages due to the 25,000-character
+packet ceiling. Offline inspection finds readable region packets up to 68,824
+characters, within the live PPLX 262,144-token context. Predeclare a bounded
+80,000-character readable-packet arm; keep the old default and complete evidence,
+never truncate. Separately test direct and admission-gated source-ID generation
+with an 8,192-token answer ceiling, recording truncations and complete costs.

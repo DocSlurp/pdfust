@@ -92,6 +92,52 @@ def _request(
     return response["answer"]
 
 
+def generate_region(
+    snapshot: dict[str, Any],
+    bbox: list[float],
+    url: str | None,
+    config: dict[str, Any],
+    output: Path,
+    result: dict[str, Any],
+    region_id: str,
+    client: DecisionClient | None,
+) -> dict[str, Any]:
+    """Meter a fresh source-ID construction, preserving failed-call charges."""
+    from bench.decision_hosted import accounted_cost
+    from bench.pipeline_generation import parse, request
+
+    if client is None:
+        raise ValueError("Generative assembly requires the coordinated metered client")
+    ledger = json.loads(client.ledger.read_bytes())
+    spent = sum(accounted_cost(e["accounted_usd"]) for e in ledger["requests"] if e.get("tag", "").startswith("P002/"))
+    if spent + 0.30 > baseline.WAVE_LIMIT:
+        raise RuntimeError("P002 reservation would exceed its USD 50 wave cap")
+    body = request(
+        snapshot,
+        config.get("generation_model", "anthropic/claude-sonnet-5.5"),
+        url=url,
+        viewport=bbox,
+        max_tokens=config.get("generation_tokens", 8192),
+    )
+    step = len(result["calls"])
+    write_json(output / f"{result['id']}-request-{step}.json", body)
+    began, cpu = time.perf_counter(), time.process_time()
+    response = client.request(
+        body, tag=f"P002/{config['run_id']}/{result['id']}/{region_id}/{step}", max_body_bytes=750_000, replay=False
+    )
+    result["calls"].append(
+        {
+            "entry": response["entry"],
+            "usage": response["result"].get("usage", {}),
+            "replayed": response["replayed"],
+            "kind": "source_id_generation",
+            "client_wall_seconds": time.perf_counter() - began,
+            "client_cpu_seconds": time.process_time() - cpu,
+        }
+    )
+    return parse(snapshot, response["result"])
+
+
 def select_region(
     region: dict[str, Any],
     page: Any,
@@ -107,11 +153,18 @@ def select_region(
     if native["tables"] or config["policy"] == "native":
         info["route"] = "native"
         return native, info
+    method = config.get("assembly_method", "select")
+    if method == "generate":
+        url, metadata = region_image(page, region["bbox"], config["image_edge"])
+        info.update(metadata)
+        state = generate_region(snapshot, region["bbox"], url, config, output, result, region["id"], client)
+        info["route"] = "generated"
+        return state, info
     candidates = propose(snapshot)
     if config.get("column_consensus", True):
         candidates = column_proposals(snapshot, candidates)
     info["candidates"] = candidates
-    if len(candidates) == 1:
+    if len(candidates) == 1 and method != "gated_generate":
         info["route"] = "no_alternative"
         return candidates[0], info
     url, metadata = region_image(page, region["bbox"], config["image_edge"])
@@ -134,10 +187,17 @@ def select_region(
     if answer["choice"] != "table":
         info["route"] = "gated_out"
         return candidates[0], info
+    if method == "gated_generate":
+        state = generate_region(snapshot, region["bbox"], url, config, output, result, region["id"], client)
+        info["route"] = "gated_generated"
+        return state, info
     choices = {candidate["id"]: candidate["description"] for candidate in candidates}
     choices["unresolved"] = "No complete candidate faithfully represents this region; retain all source words."
-    make_packet = readable_packet if config.get("readable_packet", True) else packet
-    prompt = viewport + make_packet(snapshot, candidates)
+    if config.get("readable_packet", True):
+        evidence = readable_packet(snapshot, candidates, max_characters=config.get("packet_characters", 25_000))
+    else:
+        evidence = packet(snapshot, candidates)
+    prompt = viewport + evidence
     answer = _request(client, result, config, output, region["id"], prompt, choices, url)
     info.update(route="selected", selection=answer)
     state = next((candidate for candidate in candidates if candidate["id"] == answer["choice"]), candidates[0])
@@ -250,6 +310,10 @@ def main() -> None:
     parser.add_argument("--region-characters", type=int, default=8000)
     parser.add_argument("--ocr-dpi", type=int, choices=(100, 150, 200, 300), default=150)
     parser.add_argument("--answer-tokens", type=int, choices=(1024, 2048, 4096), default=2048)
+    parser.add_argument("--packet-characters", type=int, choices=(25000, 80000, 128000), default=25000)
+    parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
+    parser.add_argument("--generation-model", choices=baseline.CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
+    parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
     parser.add_argument("--original-packet", action="store_true")
     parser.add_argument("--no-columns", action="store_true")
     parser.add_argument("--pilot", action="store_true")

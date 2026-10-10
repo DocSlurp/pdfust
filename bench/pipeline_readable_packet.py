@@ -96,13 +96,24 @@ def payload(page: dict[str, Any], candidates: list[dict[str, Any]]) -> dict[str,
     }
 
 
-def packet(page: dict[str, Any], candidates: list[dict[str, Any]], *, context_style: str = "full") -> str:
+def packet(
+    page: dict[str, Any],
+    candidates: list[dict[str, Any]],
+    *,
+    context_style: str = "full",
+    max_characters: int | None = None,
+) -> str:
     """Return complete readable evidence or refuse explicitly without rounding or truncation."""
     if context_style != "full":
         raise ValueError("Only complete full-page context is supported")
+    if max_characters is None:
+        max_characters = MAX_PACKET_CHARACTERS
+    if type(max_characters) is not int or not 1 <= max_characters <= 128_000:
+        raise ValueError("Readable packet admission must be between 1 and 128000 characters")
     result = INSTRUCTIONS + _json(payload(page, candidates))
-    if len(result) > MAX_PACKET_CHARACTERS:
-        raise ValueError("Complete readable decision packet exceeds 25000 characters; no partial context")
+    if len(result) > max_characters:
+        message = f"Complete readable decision packet exceeds {max_characters} characters; no partial context"
+        raise ValueError(message)
     return result
 
 

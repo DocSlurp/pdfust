@@ -471,7 +471,11 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                 "corpus_routes.py",
                 "silver_structure.py",
                 "silver.py",
-                *(["generalization_run.py", "pipeline_regions.py"] if config.get("processor") == "regions" else []),
+                *(
+                    ["generalization_run.py", "pipeline_regions.py", "pipeline_generation.py"]
+                    if config.get("processor") == "regions"
+                    else []
+                ),
                 *(["pipeline_column_consensus.py"] if config.get("column_consensus") else []),
                 *(["pipeline_compact_packet.py"] if config.get("compact_packet") else []),
                 *(["pipeline_readable_packet.py"] if config.get("readable_packet") else []),
