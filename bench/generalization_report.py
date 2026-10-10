@@ -163,6 +163,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
             required.add("pipeline_dense_candidates.py")
         if frozen.get("config", {}).get("ocr_source", "legacy") != "legacy":
             required.add("pipeline_ocr_sources.py")
+    if frozen.get("config", {}).get("detector_fusion", "none") != "none":
+        required.add("pipeline_layout_fusion.py")
     if not required <= hashes.keys():
         raise ValueError("Frozen code lacks required verifier dependencies")
     for name, digest in hashes.items():
@@ -174,6 +176,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] = (
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
+    if "pipeline_layout_fusion.py" in required and comparison["pipeline_layout_fusion.py"] != "identical":
+        raise ValueError("Trusted source-only detector fusion differs from frozen code")
     if frozen.get("config", {}).get("generation_format") == "indices" and any(
         comparison.get(name) != "identical"
         for name in (

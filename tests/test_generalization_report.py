@@ -675,3 +675,22 @@ def test_index_generation_requires_exact_trusted_expansion_and_matrix_parser(fix
     frozen["code_sha256"]["pipeline_index_matrix_generation.py"] = sha(altered)
     with pytest.raises(ValueError, match="ordinal expansion"):
         verify_code(f["run"], frozen, processor="regions")
+
+
+
+def test_fusion_configuration_requires_exact_trusted_selection_module(fixture: dict[str, Any]) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    frozen["config"]["detector_fusion"] = "overlap_union"
+    with pytest.raises(ValueError, match="required verifier dependencies"):
+        verify_code(f["run"], frozen, processor="whole")
+    name = "pipeline_layout_fusion.py"
+    data = (Path(module.__file__).parent / name).read_bytes()
+    (f["run"] / "code" / name).write_bytes(data)
+    frozen["code_sha256"][name] = sha(data)
+    assert verify_code(f["run"], frozen, processor="whole")["archive_hashes_verified"]
+    altered = data + b"\n# Different fusion configuration.\n"
+    (f["run"] / "code" / name).write_bytes(altered)
+    frozen["code_sha256"][name] = sha(altered)
+    with pytest.raises(ValueError, match="source-only detector fusion"):
+        verify_code(f["run"], frozen, processor="whole")
