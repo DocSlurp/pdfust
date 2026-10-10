@@ -2,7 +2,11 @@
 
 import json
 
-from bench.p003_decision_evidence import confirmed_candidate_predictions, decision_evidence
+from bench.p003_decision_evidence import (
+    confirmed_candidate_predictions,
+    decision_evidence,
+    successful_ownership_predictions,
+)
 from bench.p003_report import strict_scores
 from tests.test_p003_report import table
 
@@ -132,3 +136,26 @@ def test_confirmed_quality_omits_abstained_duplicate_and_discarded_tables() -> N
     assert scored["missing_tables"] == 2
     report["results"][0]["ranking_status"] = "failed_retained_first"
     assert confirmed_candidate_predictions(report)[0]["tables"] == []
+
+
+def test_ownership_quality_omits_retained_failures_and_no_question_pages() -> None:
+    report = {
+        "config": {"processor": "p003_topology_source"},
+        "results": [
+            {"id": "completed", "topology_status": "completed", "status": "ok", "tables": [{"fixed": "geometry"}]},
+            {
+                "id": "failed",
+                "topology_status": "failed_retained_baseline",
+                "status": "ok",
+                "tables": [{"old": "baseline"}],
+            },
+            {"id": "skipped", "topology_status": "not_applicable", "status": "ok", "tables": [{"old": "baseline"}]},
+        ],
+    }
+    predictions = successful_ownership_predictions(report)
+    assert predictions is not None
+    assert len(predictions) == 3
+    assert predictions[0]["tables"] == [{"fixed": "geometry"}]
+    assert predictions[1]["tables"] == predictions[2]["tables"] == []
+    assert predictions[1]["status"] == "error"
+    assert "deterministic geometry" in predictions[0]["scope"]

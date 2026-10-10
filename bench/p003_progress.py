@@ -220,6 +220,37 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
             ],
         )
         lines += ["Retained pipeline output quality (including historical fallback outputs):", ""]
+    composed_runs = [r for r in runs if r.get("successful_incremental_composition_quality") is not None]
+    if composed_runs:
+        lines += [
+            "Successful incremental ownership composition, including deterministic geometry and protected source. "
+            "Failed, skipped and no-question baseline pages receive no composition credit. "
+            "This is not model-only attribution.",
+            "",
+        ]
+        lines += _table(
+            [
+                "Run",
+                "Composed strict cells",
+                "Complete tables",
+                "Missing / extra",
+                "Negative FP",
+                "Incremental failures",
+            ],
+            [
+                [
+                    r["name"],
+                    f"{q['strict_exact_cells']}/{q['expected_cells']}",
+                    f"{q['complete_tables']}/{q['expected_tables']}",
+                    f"{q['missing_tables']} / {q['false_positive_tables']}",
+                    f"{q['false_positive_page']}/{q['negative_page']}",
+                    q["all_page_errors"],
+                ]
+                for r in composed_runs
+                for q in [r["successful_incremental_composition_quality"]["scores"]]
+            ],
+        )
+        lines += ["Legacy retained pipeline output quality follows separately.", ""]
     quality = []
     for run in runs:
         scores = run["scores"]

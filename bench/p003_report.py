@@ -15,7 +15,11 @@ from pathlib import Path
 from typing import Any
 
 from bench.generalization_scoring import _cells, audit_model_body, score_dataset
-from bench.p003_decision_evidence import confirmed_candidate_predictions, decision_evidence
+from bench.p003_decision_evidence import (
+    confirmed_candidate_predictions,
+    decision_evidence,
+    successful_ownership_predictions,
+)
 from bench.silver import canonical, guard_path, sha, write_json
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
@@ -1246,6 +1250,8 @@ def score_run(
     scoring = strict_scores(reference_pages, scoring_predictions)
     confirmed = confirmed_candidate_predictions(report)
     confirmed_scoring = strict_scores(reference_pages, confirmed) if confirmed is not None else None
+    completed_ownership = successful_ownership_predictions(report)
+    ownership_scoring = strict_scores(reference_pages, completed_ownership) if completed_ownership is not None else None
     audits = []
     request_images = []
     request_paths = set(directory.glob("**/*-request-*.json")) | set(directory.glob("**/*-request.json"))
@@ -1322,6 +1328,17 @@ def score_run(
             "selected_model_regions": sum(p["selected_model_regions"] for p in confirmed),
         }
         if confirmed_scoring is not None
+        else None,
+        "successful_incremental_composition_quality": {
+            "scope": (
+                "Completed ownership composition including deterministic geometry/protected source; "
+                "failed, skipped and no-question baseline pages excluded; not model-only attribution"
+            ),
+            "scores": ownership_scoring["totals"],
+            "page_scores": ownership_scoring["pages"],
+            "positive_macro": ownership_scoring["positive_macro"],
+        }
+        if ownership_scoring is not None
         else None,
         "dataset_sha256": manifest["dataset_sha256"],
         "manifest_sha256": frozen["manifest_sha256"],

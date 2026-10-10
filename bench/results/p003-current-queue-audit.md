@@ -26,3 +26,14 @@ Additional independently verified completed arms in the same current queue:
 | Ownership direct Jev neighbors | Not a candidate-choice metric | 358 / 3 | 99 | 9 / 2 / 5 |
 
 The ownership counts distinguish completed assembly from whole-page baseline retention. These legacy output scores include that retention and do not establish successful model decisions on failed pages. All these completed arms have consistent requested-model inventories and no explicit retries. Each model's results remain separate.
+
+The failure-filtered ownership metric below credits only completed incremental whole-page compositions. It includes deterministic geometry and protected source portions; it is not attribution to the model alone. Failed, skipped and no-question baseline pages contribute no tables, with all 16 pages / 53 tables / 2,333 cells retained.
+
+| Ownership treatment | Successful-composition strict / complete | Missing / extra | Failed retained pages | Returned native word questions | Declared geometry locks |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Hybrid PPLX neighbors | 268 / 3 | 39 / 1 | 1 | 2,564 | 252 |
+| All-words PPLX compact | 200 / 1 | 39 / 0 | 1 | 3,730 | 0 |
+| All-words Jev neighbors | 49 / 1 | 33 / 5 | 2 | 2,352 | 0 |
+| Direct Jev neighbors | 245 / 3 | 41 / 1 | 2 | 1,489 | 252 |
+
+Returned native question counts include both stages where used and may ask the same source word twice. Geometry locks are recorded admission declarations, not model decisions or proof of committed cell contribution. Exact cell attribution and a matched deterministic geometry control are deferred; no mixed cell is silently described as wholly model-placed.

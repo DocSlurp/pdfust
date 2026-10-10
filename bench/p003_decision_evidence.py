@@ -84,6 +84,31 @@ def decision_evidence(report: dict[str, Any]) -> dict[str, Any] | None:
                 "Model abstention retains historical first output in these artifacts; it is not a chosen model output"
             ),
         )
+    if processor == "p003_topology_source":
+        choices = Counter(
+            response.get("choice")
+            for call in calls
+            for response in call.get("result", {}).get("answers", {}).values()
+            if isinstance(response, dict) and response.get("type") == "choice"
+        )
+        answer["returned_native_word_questions"] = sum(choices.values())
+        answer["returned_native_unresolved_choices"] = choices.get("unresolved", 0)
+        answer["returned_native_outside_choices"] = choices.get("outside", 0)
+        answer["returned_native_other_choices"] = (
+            sum(choices.values()) - choices.get("unresolved", 0) - choices.get("outside", 0)
+        )
+        declarations = [
+            region["geometry_first"]
+            for page in report["results"]
+            for region in page.get("topology_regions", [])
+            if isinstance(region.get("geometry_first"), dict)
+        ]
+        answer["geometry_locked_declared_words"] = sum(d.get("geometry_locked_count", 0) for d in declarations)
+        answer["geometry_disputed_declared_words"] = sum(d.get("disputed_count", 0) for d in declarations)
+        answer["ownership_counter_scope"] = (
+            "Returned questions counted across stages, not unique assignments; "
+            "geometry counts are frozen admission declarations, not model contributions"
+        )
     return answer
 
 
@@ -115,3 +140,20 @@ def confirmed_candidate_predictions(report: dict[str, Any]) -> list[dict[str, An
             }
         )
     return predictions
+
+
+def successful_ownership_predictions(report: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """Keep completed ownership compositions; omit every retained failure or skipped baseline."""
+    if report["config"].get("processor") != "p003_topology_source":
+        return None
+    return [
+        {
+            "id": page["id"],
+            "status": "error" if "failed" in page.get("topology_status", "") else "ok",
+            "tables": page["tables"]
+            if page.get("topology_status") == "completed" and page.get("status") == "ok"
+            else [],
+            "scope": "Completed incremental composition including deterministic geometry and protected source",
+        }
+        for page in report["results"]
+    ]
