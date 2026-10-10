@@ -9,6 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import bench
 import pytest
 from bench import generalization_hybrid_run as hybrid
 from bench.silver import sha, write_json
@@ -59,7 +60,7 @@ def setup(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         markdown=lambda actual: actual["markdown"],
     )
     monkeypatch.setitem(sys.modules, "bench.pipeline_hybrid_composition", helper)
-    monkeypatch.setattr(sys.modules["bench"], "pipeline_hybrid_composition", helper, raising=False)
+    monkeypatch.setattr(bench, "pipeline_hybrid_composition", helper, raising=False)
     data["detector"] = SimpleNamespace(detect=lambda image, *, viewport: deepcopy(raw))
 
     def native_process(record: dict, config: dict, output: Path, client: Any) -> dict:

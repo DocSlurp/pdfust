@@ -44,7 +44,7 @@ def _structure(output: Path, identifier: str) -> dict[str, Any]:
     return state
 
 
-def process(record: dict[str, Any], config: dict[str, Any], output: Path, client: Any) -> dict[str, Any]:
+def process(record: dict[str, Any], config: dict[str, Any], output: Path, client: Any) -> dict[str, Any]:  # noqa: C901, PLR0912
     """Compose successful native and crop children; expose no partial page tables."""
     from bench import pipeline_hybrid_composition as helper
 
@@ -80,6 +80,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             or config.get("jpeg_quality", 90) != 90
             or config.get("normalize_rotation", False)
             or config.get("rotation_mode", "preserve") != "preserve"
+            or config.get("native_table_orientation", "physical") not in {"physical", "logical"}
             or config.get("_layout_detector") is None
         ):
             raise ValueError("Hybrid control requires P002 gated CPU YOLO, preserved rotation and fixed JPEG90 crops")
@@ -116,6 +117,18 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
         result.update(source=source, native_state=state)
         boxes = helper.native_boxes(source, state)
         result["native_boxes"] = boxes
+        if config.get("native_table_orientation", "physical") == "logical":
+            import pylopdf
+            from bench import pipeline_native_orientation as orientation
+
+            stage = "native_orientation"
+            data = guard_path(Path(record["pdf_path"])).read_bytes()
+            from bench.silver import sha
+
+            if sha(data) != record["pdf_sha256"]:
+                raise ValueError("Frozen source PDF changed before native orientation")
+            with pylopdf.open(stream=data) as document:
+                result["native_orientation_evidence"] = orientation.evidence(document[record["page_number"]], boxes)
         wrapper = NativeExcludingDetector(config["_layout_detector"], boxes, helper)
         vision_config = {**config, "processor": "vision_regions", "_layout_detector": wrapper}
         stage = "vision"
@@ -129,7 +142,10 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             raise ValueError("Vision child did not produce complete atomic output")
         vision_state = _structure(vision_output, identifier)
         stage = "compose"
-        composed = helper.compose(source, state, vision_state)
+        if config.get("native_table_orientation", "physical") == "logical":
+            composed = orientation.compose(source, state, vision_state, result["native_orientation_evidence"])
+        else:
+            composed = helper.compose(source, state, vision_state)
         result["composition"] = composed
         if composed.get("status") != "ok":
             raise ValueError("Hybrid composition abstained")
@@ -165,6 +181,7 @@ def main() -> None:
     parser.add_argument("--ocr-edge", type=int, choices=(0, 1536, 2048, 3072), default=0)
     parser.add_argument("--ocr-mode", choices=("empty", "uncovered_images"), default="empty")
     parser.add_argument("--ocr-orientation", choices=("fixed", "candidates"), default="fixed")
+    parser.add_argument("--native-table-orientation", choices=("physical", "logical"), default="physical")
     parser.add_argument("--pilot", action="store_true")
     args = parser.parse_args()
     config = {key: value for key, value in vars(args).items() if key not in {"manifest", "output"}}
