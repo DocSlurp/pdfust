@@ -16,8 +16,11 @@ from typing import Any
 from bench import pipeline_hybrid_composition as hybrid
 from bench.generalization_run import sanitize_vectors
 from bench.generalization_scoring import audit_model_body, normalize_text, score_dataset, score_page
+from bench.generalization_vision_multiscale import RULES as MULTISCALE_RULES
+from bench.generalization_vision_multiscale import replay as multiscale_replay
 from bench.generalization_vision_regions import compose as vision_regions_compose
 from bench.generalization_vision_regions import proposals as vision_region_proposals
+from bench.pipeline_layout_detector import _box
 from bench.pipeline_regions import compose, validate_composed
 from bench.pipeline_report import _render_markdown, _verify_markdown_renderer
 from bench.pipeline_scoring import score_dataset as authored_score_dataset
@@ -174,11 +177,18 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     comparison = {}
     required = (
         {"generalization_vision_run.py", "pipeline_vision_transcription.py", "pipeline_frontier.py"}
-        if processor in {"vision", "vision_regions"}
+        if processor in {"vision", "vision_regions", "vision_multiscale"}
         else {"pipeline_run.py", "pipeline_assembly.py"}
     )
-    if processor == "vision_regions":
+    if processor in {"vision_regions", "vision_multiscale"}:
         required.add("generalization_vision_regions.py")
+    if processor == "vision_multiscale":
+        required |= {
+            "generalization_vision_multiscale.py",
+            "pipeline_layout_tiles.py",
+            "pipeline_layout_fusion.py",
+            "pipeline_layout_detector.py",
+        }
     if processor == "hybrid":
         required |= {
             "generalization_hybrid_run.py",
@@ -248,7 +258,7 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         )
     ):
         raise ValueError("Trusted ordinal expansion or matrix parser differs from frozen code")
-    if processor in {"vision", "vision_regions"}:
+    if processor in {"vision", "vision_regions", "vision_multiscale"}:
         if any(
             comparison[name] != "identical"
             for name in required - {"generalization_vision_run.py"} - historical_helpers.keys()
@@ -376,6 +386,41 @@ def _verify_hybrid_output(directory: Path, prediction: dict[str, Any]) -> dict[s
     return {"operational": True, "conserved": rebuilt["source_conserved"]}
 
 
+def _verify_multiscale_detection(prediction: dict[str, Any]) -> None:
+    """Replay all fixed CPU source windows before strict crop composition."""
+    viewport = prediction["viewport"]
+    image = prediction["multiscale_image"]
+    bounds = _box(viewport)
+    size = image["image_size"]
+    if (
+        prediction.get("processor") != "vision_multiscale"
+        or prediction.get("multiscale_rules") != MULTISCALE_RULES
+        or image.get("viewport") != viewport
+        or image.get("rotation_normalized") is not False
+        or image.get("original_rotation") not in (0, 90, 180, 270)
+        or image.get("original_rotation") != prediction.get("original_rotation")
+        or prediction.get("rotation_normalized") is not False
+        or image.get("render_scale") != 3071 / max(bounds[2] - bounds[0], bounds[3] - bounds[1])
+        or not isinstance(size, list)
+        or len(size) != 2  # noqa: PLR2004
+        or any(type(value) is not int or value < 3 or value > 3072 for value in size)  # noqa: PLR2004
+        or max(size) < 3070  # noqa: PLR2004
+        or abs(size[0] / size[1] - (bounds[2] - bounds[0]) / (bounds[3] - bounds[1])) > 2 / min(size)
+    ):
+        raise ValueError("Multiscale source rendering or fixed rules differ from trusted acquisition")
+    base = prediction.get("multiscale_received_base_image")
+    if (
+        not isinstance(base, dict)
+        or base.get("used_for_inference") is not False
+        or base.get("sha256") != prediction.get("detector_image", {}).get("sha256")
+        or base.get("bytes") != prediction.get("detector_image", {}).get("bytes")
+    ):
+        raise ValueError("Multiscale unused base raster differs from retained crop detector input")
+    rebuilt = multiscale_replay(prediction["multiscale_raw_calls"], viewport, size)
+    if rebuilt != prediction.get("layout_detection"):
+        raise ValueError("Multiscale retained detector proposals differ from complete trusted raw replay")
+
+
 def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str) -> dict[str, Any]:
     """Revalidate source ownership and exact retained Markdown for successful pages."""
     ident = prediction["id"]
@@ -389,16 +434,22 @@ def verify_output(directory: Path, prediction: dict[str, Any], *, processor: str
     if prediction.get("status") != "ok":
         return {"operational": False, "conserved": False}
     state = _read(directory / f"{ident}-structure.json")
-    if processor in {"vision", "vision_regions"}:
+    if processor in {"vision", "vision_regions", "vision_multiscale"}:
         if (
             prediction.get("route")
-            != ("vision_transcription_regions" if processor == "vision_regions" else "vision_transcription")
+            != (
+                "vision_transcription_regions"
+                if processor in {"vision_regions", "vision_multiscale"}
+                else "vision_transcription"
+            )
             or prediction.get("source_conserved") is not False
             or prediction.get("unresolved_ids") != []
             or "source" in prediction
         ):
             raise ValueError("Vision output must be labeled model transcription without source ownership")
-        if processor == "vision_regions":
+        if processor in {"vision_regions", "vision_multiscale"}:
+            if processor == "vision_multiscale":
+                _verify_multiscale_detection(prediction)
             regions = prediction["transcription_regions"]
             if prediction.get("coverage") != "unverified" or prediction.get("proposal_count") != len(regions):
                 raise ValueError("Vision region proposal count or unverified coverage label differs")
@@ -741,7 +792,7 @@ def score_run(
     if actual != expected or len(actual) != len(frozen["records"]):
         raise ValueError("Frozen records differ from complete intended manifest cohort")
     processor = config.get("processor", "whole")
-    if processor not in {"whole", "regions", "vision", "vision_regions", "hybrid"}:
+    if processor not in {"whole", "regions", "vision", "vision_regions", "vision_multiscale", "hybrid"}:
         raise ValueError("Unsupported processor")
     code = verify_code(directory, frozen, processor=processor)
     predictions = report["results"]
@@ -819,6 +870,12 @@ def score_run(
                 and isinstance(p["vision_result"].get("layout_detection"), dict)
                 and "metrics" in p["vision_result"]["layout_detection"]
             ],
+            "multiscale_raw_requests": [
+                call["result"]["metrics"]
+                for p in predictions
+                for call in p.get("multiscale_raw_calls", [])
+                if isinstance(call.get("result"), dict) and "metrics" in call["result"]
+            ],
             "scope": "Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. "
             "Parent elapsed time includes initialization and requests; RSS peaks are not summed.",
         }
@@ -853,7 +910,7 @@ def score_run(
         "conserved_pages": conserved,
         "output_scope": (
             "table-only image transcription comparator"
-            if processor in {"vision", "vision_regions"}
+            if processor in {"vision", "vision_regions", "vision_multiscale"}
             else (
                 "complete retained-source assembly with explicit mixed text provenance"
                 if processor == "hybrid"
@@ -863,7 +920,11 @@ def score_run(
         "text_provenance": (
             "mixed native-source/model-transcribed"
             if processor == "hybrid"
-            else ("model-transcribed" if processor in {"vision", "vision_regions"} else "source-owned")
+            else (
+                "model-transcribed"
+                if processor in {"vision", "vision_regions", "vision_multiscale"}
+                else "source-owned"
+            )
         ),
         "source_candidate_ceilings": [{"id": t["id"], **_ceiling(t, by_id.get(t["id"], {}))} for t in private],
         "costs": costs,
@@ -917,7 +978,7 @@ def score_run(
             (
                 "Vision is a table-only model transcription comparator; it neither conserves OCR source "
                 "nor produces complete page prose. Every intended table target remains scored."
-                if processor in {"vision", "vision_regions"}
+                if processor in {"vision", "vision_regions", "vision_multiscale"}
                 else (
                     "Hybrid accounts every original source word, with superseded words retained in its ledger; "
                     "accepted transcription has no original source ownership and makes source_conserved false."

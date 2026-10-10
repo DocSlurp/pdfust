@@ -127,7 +127,7 @@ def build(
         with pylopdf.open(stream=data) as document:
             page = document[record["page_number"]]
             original_rotation = page.rotation
-            if prediction is not None and processor not in {"vision", "vision_regions", "hybrid"}:
+            if prediction is not None and processor not in {"vision", "vision_regions", "vision_multiscale", "hybrid"}:
                 if "effective_rotation" in prediction:
                     page.set_rotation(prediction["effective_rotation"])
                 elif prediction.get("rotation_normalized") or frozen["config"].get("normalize_rotation"):
@@ -137,7 +137,7 @@ def build(
         (output / "images" / f"{ident}.png").write_bytes(png)
         provenance = (
             "model-transcribed; no source ownership"
-            if processor in {"vision", "vision_regions"}
+            if processor in {"vision", "vision_regions", "vision_multiscale"}
             else (
                 "mixed native-source/model-transcribed; original words accounted"
                 if processor == "hybrid" and operational

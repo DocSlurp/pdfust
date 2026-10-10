@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from bench import generalization_hybrid_run, generalization_vision_run
 from bench import generalization_report as module
+from bench import generalization_vision_multiscale as multi
 from bench.generalization_report import (
     _bounds,
     _costs,
@@ -32,6 +33,7 @@ from bench.pipeline_report import _render_markdown
 from bench.pipeline_vision_transcription import markdown as vision_markdown
 from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, sha
+from tests.test_generalization_vision_multiscale import Detector, record
 
 import pylopdf
 
@@ -957,3 +959,77 @@ def test_positive_macro_missing_page_contributes_zero() -> None:
     result = _evaluate([{"id": "missing", "tables": [small]}], [])
     assert _positive_macro(result["pages"])["exact_cell_recall"] == 0
     assert _positive_macro(result["pages"])["complete_table_recall"] == 0
+
+
+def multiscale_prediction(directory: Path) -> dict[str, Any]:
+    config = {"campaign": "P002", "layout_detector": "yolo", "_layout_detector": Detector(boxes=False)}
+    return multi.process(record(directory), config, directory / "output", None)
+
+
+def test_multiscale_replays_complete_raw_acquisition_before_crop_output(tmp_path: Path) -> None:
+    prediction = multiscale_prediction(tmp_path)
+    assert prediction["status"] == "ok"
+    assert verify_output(tmp_path / "output", prediction, processor="vision_multiscale") == {
+        "operational": True,
+        "conserved": False,
+    }
+
+
+@pytest.mark.parametrize("field", ["layout_detection", "viewport", "rules", "base", "raw", "size", "rotation"])
+def test_multiscale_output_refuses_tampered_acquisition(tmp_path: Path, field: str) -> None:
+    prediction = multiscale_prediction(tmp_path)
+    if field == "layout_detection":
+        prediction["layout_detection"]["raw_box_count"] += 1
+    elif field == "viewport":
+        prediction["multiscale_image"]["viewport"][0] += 1
+    elif field == "rules":
+        prediction["multiscale_rules"]["preliminary_nms"] = True
+    elif field == "base":
+        prediction["multiscale_received_base_image"]["used_for_inference"] = True
+    elif field == "raw":
+        prediction["multiscale_raw_calls"].pop()
+    elif field == "size":
+        prediction["multiscale_image"]["image_size"][0] = 5000
+    else:
+        prediction["multiscale_image"]["rotation_normalized"] = True
+    write(tmp_path / "output" / "test-result.json", prediction)
+    with pytest.raises(ValueError, match=r"Multiscale|multiscale"):
+        verify_output(tmp_path / "output", prediction, processor="vision_multiscale")
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "generalization_vision_multiscale.py",
+        "pipeline_layout_tiles.py",
+        "pipeline_layout_fusion.py",
+        "pipeline_layout_detector.py",
+    ],
+)
+def test_multiscale_requires_exact_acquisition_dependencies(fixture: dict[str, Any], missing: str) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    frozen["code_sha256"] = {}
+    for name in (
+        "generalization_vision_run.py",
+        "pipeline_vision_transcription.py",
+        "pipeline_frontier.py",
+        "generalization_vision_regions.py",
+        "generalization_vision_multiscale.py",
+        "pipeline_layout_tiles.py",
+        "pipeline_layout_fusion.py",
+        "pipeline_layout_detector.py",
+    ):
+        data = (Path(module.__file__).parent / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    assert verify_code(f["run"], frozen, processor="vision_multiscale")["archive_hashes_verified"]
+    absent = deepcopy(frozen)
+    absent["code_sha256"].pop(missing)
+    with pytest.raises(ValueError, match="required verifier dependencies"):
+        verify_code(f["run"], absent, processor="vision_multiscale")
+    altered = (f["run"] / "code" / missing).read_bytes() + b"\n# Unreviewed detector acquisition.\n"
+    (f["run"] / "code" / missing).write_bytes(altered)
+    frozen["code_sha256"][missing] = sha(altered)
+    with pytest.raises(ValueError, match=r"fusion|adapter"):
+        verify_code(f["run"], frozen, processor="vision_multiscale")
