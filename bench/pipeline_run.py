@@ -684,7 +684,10 @@ def run(  # noqa: PLR0912 - separate serial and opt-in concurrent routes explici
         if config.get("layout_detector") == "yolo":
             from bench.pipeline_layout_detector import LayoutDetector
 
-            detector = stack.enter_context(LayoutDetector())
+            detector_options = (
+                {"image_size": config["detector_inference_size"]} if "detector_inference_size" in config else {}
+            )
+            detector = stack.enter_context(LayoutDetector(**detector_options))
             detector_initialization = detector.initialization
             process_config = {**config, "_layout_detector": detector}
         results = []

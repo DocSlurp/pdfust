@@ -15,6 +15,7 @@ from bench.silver import guard_path
 
 PRESETS = ("ordinal", "gated_ordinal", "hybrid", "vision_regions", "p003_regions")
 HYBRID_EDGE = 1024
+DEFAULT_DETECTOR_INFERENCE_SIZE = 640
 P003_TRANSPORT_CONCURRENCY = 3
 
 
@@ -45,6 +46,9 @@ def configuration(args: argparse.Namespace) -> dict[str, Any]:
         "detector_residual": "retain", "detector_boundary": "retain",
         "repeat_index": args.repeat_index, "preset": args.preset,
     }
+    detector_size = getattr(args, "detector_inference_size", DEFAULT_DETECTOR_INFERENCE_SIZE)
+    if detector_size != DEFAULT_DETECTOR_INFERENCE_SIZE:
+        config["detector_inference_size"] = detector_size
     if args.gate_image_mode != "rgb":
         config["gate_image_mode"] = args.gate_image_mode
     if args.transcription_wire_schema != "strict":
@@ -93,6 +97,7 @@ def main() -> None:
     parser.add_argument("--transcription-wire-schema", choices=("strict", "simple"), default="strict")
     parser.add_argument("--image-edge", type=int, choices=(0, 128, 256, 400, 512, 768, 1024, 1200), default=512)
     parser.add_argument("--ocr-dpi", type=int, choices=(150, 300), default=300)
+    parser.add_argument("--detector-inference-size", type=int, choices=(640, 1024, 1280), default=640)
     parser.add_argument("--ocr-edge", type=int, choices=(0, 1536, 2048, 3072), default=0,
                         help="Use the existing fixed longest-edge OCR treatment; zero keeps explicit DPI")
     parser.add_argument("--gate-row-evidence", action="store_true")

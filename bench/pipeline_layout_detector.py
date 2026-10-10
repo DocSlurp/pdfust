@@ -93,8 +93,10 @@ def _emit(value: dict[str, Any]) -> None:
     sys.stdout.flush()
 
 
-def _worker(model_path: Path) -> None:
+def _worker(model_path: Path, image_size: int = 640) -> None:
     """Run CPU-only YOLO with inline frames and sanitized protocol errors."""
+    if type(image_size) is not int or image_size not in (640, 1024, 1280):
+        raise ValueError("Detector inference size must be 640, 1024 or 1280")
     os.environ.update(CUDA_VISIBLE_DEVICES="", YOLO_OFFLINE="true", HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
     with _Measure() as initialization, contextlib.redirect_stdout(sys.stderr):
         import torch  # type: ignore[import-not-found]
@@ -110,7 +112,7 @@ def _worker(model_path: Path) -> None:
         model = YOLO(str(model_path))
         configuration = {
             "device": "cpu",
-            "imgsz": 640,
+            "imgsz": image_size,
             "batch": 1,
             "conf": 0.25,
             "quantize": "fp32",
@@ -197,7 +199,7 @@ def _worker(model_path: Path) -> None:
 class LayoutDetector:
     """One serialized CPU worker; lifecycle and accounting are independent of root."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - explicit bounded worker lifecycle and inference configuration.
         self,
         *,
         model: Path = MODEL,
@@ -205,8 +207,11 @@ class LayoutDetector:
         worker_script: Path | None = None,
         initialization_timeout: float = 120,
         request_timeout: float = 120,
+        image_size: int = 640,
     ) -> None:
         """Initialize one local CPU worker with bounded protocol deadlines."""
+        if type(image_size) is not int or image_size not in (640, 1024, 1280):
+            raise ValueError("Detector inference size must be 640, 1024 or 1280")
         if min(initialization_timeout, request_timeout) <= 0 or not all(
             math.isfinite(v) for v in (initialization_timeout, request_timeout)
         ):
@@ -223,7 +228,8 @@ class LayoutDetector:
             MKL_NUM_THREADS="4",
         )
         self.process = subprocess.Popen(  # noqa: S603 - explicit local Python and reviewed worker source.
-            [str(python), "-u", str(worker_script or Path(__file__).resolve()), "--worker", "--model", str(model)],
+            [str(python), "-u", str(worker_script or Path(__file__).resolve()), "--worker", "--model", str(model),
+             *(["--image-size", str(image_size)] if image_size != 640 else [])],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
@@ -241,6 +247,8 @@ class LayoutDetector:
             self.initialization = self._read(time.monotonic() + initialization_timeout)
             if self.initialization.get("type") != "ready" or self.initialization.get("device") != "cpu":
                 raise RuntimeError("Detector CPU initialization failed")
+            if image_size != 640 and self.initialization.get("configuration", {}).get("imgsz") != image_size:
+                raise RuntimeError("Detector worker did not acknowledge the requested inference size")
         except BaseException:
             self.close()
             raise
@@ -466,7 +474,9 @@ def detector_regions(
     }
 
 
-def baseline(manifest_path: Path, output: Path, *, sources_directory: Path | None = None) -> dict[str, Any]:
+def baseline(
+    manifest_path: Path, output: Path, *, sources_directory: Path | None = None, image_size: int = 640
+) -> dict[str, Any]:
     """Render an explicit DEV manifest and retain detector statistics without gold."""
     import pylopdf
     from bench.pipeline_run import source
@@ -479,7 +489,7 @@ def baseline(manifest_path: Path, output: Path, *, sources_directory: Path | Non
     output.mkdir(parents=True, exist_ok=False)
     root_wall, root_cpu = time.perf_counter(), time.process_time()
     predictions = []
-    with LayoutDetector() as detector:
+    with LayoutDetector(image_size=image_size) as detector:
         initialization = detector.initialization
         for record in manifest["pages"]:
             before_wall, before_cpu = time.perf_counter(), time.process_time()
@@ -545,17 +555,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--model", type=Path, default=MODEL)
+    parser.add_argument("--image-size", type=int, choices=(640, 1024, 1280), default=640)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--sources-directory", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.worker:
         try:
-            _worker(args.model)
+            _worker(args.model, args.image_size)
         except Exception as error:
             _emit({"type": "error", "error_type": type(error).__name__})
     elif args.manifest is not None and args.output is not None:
-        baseline(args.manifest, args.output, sources_directory=args.sources_directory)
+        baseline(args.manifest, args.output, sources_directory=args.sources_directory, image_size=args.image_size)
     else:
         parser.error("Supply --manifest and --output for a source-only baseline")
 
