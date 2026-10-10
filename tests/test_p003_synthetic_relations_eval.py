@@ -33,7 +33,7 @@ class Client:
             "request_sha256": sha(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()),
             "accounted_usd": 0.01,
             "provider_reported_usd": 0.01,
-            "cost_status": "reported",
+            "cost_status": "provider-reported USD",
         }
         self.entries.append(entry)
         return {
@@ -202,3 +202,12 @@ def test_evaluation_archive_no_pipeline_credit(inputs: dict[str, Any], tmp_path:
     assert result["new_calls"] == 0
     assert result["ledger_accessed"] is False
     assert result["full_pipeline_rate"] is None
+
+
+def test_unknown_cost_basis_is_not_a_complete_estimate() -> None:
+    entry = {"cost_status": "unknown", "accounted_usd": 0.3}
+    result = evaluator.charges([entry], 1)
+    assert result["effective_usd"] is None
+    assert result["known_partial_effective_usd"] == 0
+    assert result["accounted_usd"] == 0.3
+    assert result["unresolved_reserved_usd"] == 0

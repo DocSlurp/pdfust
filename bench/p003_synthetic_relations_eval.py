@@ -55,7 +55,8 @@ def _number(value: Any) -> float:
 
 def charges(entries: list[dict[str, Any]], attempted: int) -> dict[str, Any]:
     """Rebuild retained financial totals, preserving reported zeros and unresolved reservations."""
-    resolved = [e for e in entries if e.get("cost_status") != "reserved"]
+    bases = {"provider-reported USD", "catalog estimate", "provider-reported BYOK upstream plus gateway USD"}
+    resolved = [e for e in entries if e.get("cost_status") in bases]
     reserved = [e for e in entries if e.get("cost_status") == "reserved"]
     reported = [_number(e["provider_reported_usd"]) for e in entries if "provider_reported_usd" in e]
     complete = len(resolved) == len(entries)
