@@ -1199,6 +1199,8 @@ def score_run(
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
     accounting = costs(report[incremental_key] if incremental else report)
+    attempt_report = report[incremental_key] if incremental else report
+    attempt_entries = attempt_report.get("entries", [])
     metrics = dict(report.get("metrics", {}))
     if report.get("layout_detector_initialization") is not None:
         metrics["layout_detector_worker"] = {
@@ -1244,6 +1246,13 @@ def score_run(
         "operational_pages": operational,
         "errors": len(expected) - operational,
         "failure_categories": dict(errors),
+        "attempt_transport_failures": {
+            "counts": transport_failures([{"calls": [{"entry": entry} for entry in attempt_entries]}]),
+            "retained_attempt_entries": len(attempt_entries),
+            "declared_attempts": attempt_report.get("ledger_attempts"),
+            "complete_attempt_inventory": len(attempt_entries) == attempt_report.get("ledger_attempts"),
+            "scope": "Explicit archived run-attributed attempts, including failures without returned responses",
+        },
         "returned_call_transport_failures": transport_failures(
             predictions,
             call_keys=("ranking_calls",)
