@@ -30,6 +30,14 @@ def test_seeded_plan_is_copied_and_control_overrides_rejected():
             parallel.validate_plan([{"name": "a", "arguments": arguments}], 1)
 
 
+def test_arm_duration_is_explicit_and_bounded():
+    for value in (True, 0, 29, 10801, 2400.0, "2400"):
+        with pytest.raises(ValueError, match="duration"):
+            parallel.validate_plan([{"name": "a", "arguments": [], "max_wall_seconds": value}], 1)
+    arm = {"name": "a", "arguments": [], "max_wall_seconds": 7200}
+    assert parallel.validate_plan([arm], 1) == [arm]
+
+
 @pytest.mark.parametrize("limit", [3, 6])
 def test_queue_cpu_children_overlap_freeze_and_no_overwrite(tmp_path, monkeypatch, limit):
     original_popen = subprocess.Popen
@@ -58,6 +66,8 @@ def test_queue_cpu_children_overlap_freeze_and_no_overwrite(tmp_path, monkeypatc
     assert result["max_observed_concurrent_arms"] == limit
     assert len(result["arms"]) == count
     assert all(arm["status"] == "completed" for arm in result["arms"])
+    assert all(arm["max_wall_seconds"] == 2400 for arm in result["arms"])
+    assert result["policy"]["heartbeat_seconds"] == 5.0
     assert all("--workers" not in command for command in commands)
     assert all(command[command.index("--transport-concurrency") + 1] == "3" for command in commands)
     assert len(result["frozen_order"]) == count

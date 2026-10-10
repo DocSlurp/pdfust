@@ -36,6 +36,9 @@ INCREMENTAL_FIELDS = {
 MAX_ARMS = 64
 MAX_CONCURRENT = 3
 MAX_WALL = 2400
+MIN_DECLARED_WALL = 30
+MAX_DECLARED_WALL = 10800
+HEARTBEAT_SECONDS = 5.0
 START_MARGIN = 120
 STOP_MARGIN = 60
 
@@ -65,6 +68,12 @@ def validate_plan(plan: Any, seed: int) -> list[dict[str, Any]]:  # noqa: ANN401
         if not isinstance(arm, dict):
             message = "Each arm must be an object"
             raise TypeError(message)
+        if "max_wall_seconds" in arm and (
+            type(arm["max_wall_seconds"]) is not int
+            or not MIN_DECLARED_WALL <= arm["max_wall_seconds"] <= MAX_DECLARED_WALL
+        ):
+            message = "Declared arm duration must be an integer from 30 through 10800 seconds"
+            raise ValueError(message)
         if arm.get("kind", "pipeline") not in MODULES:
             message = "Experiment kind must be pipeline, candidate, boundary, gate or topology"
             raise ValueError(message)
@@ -275,13 +284,19 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
     monitor, started = AggregateMonitor(), time.monotonic()
     policy = {**POLICY, "max_concurrent_arms": max_parallel_arms,
               "max_cpu_heavy_arms": 3, "transport_slot_wait": max_parallel_arms > MAX_CONCURRENT,
+              "heartbeat_seconds": HEARTBEAT_SECONDS,
+              "declared_arm_duration_overrides": True,
               "scheduler": "first eligible in frozen order; pipeline/candidate are CPU-heavy"}
     record = {"policy": policy, "seed": seed, "frozen_order": json.loads(json.dumps(ordered)), "paid_cutoff": cutoff,
               "manifest": str(manifest.resolve()) if manifest is not None else None, "arms": statuses,
               "rates_label": "contended per-arm rates separated by experiment kind",
               "aggregate_rates": None, "max_observed_concurrent_arms": 0}
 
+    last_checkpoint = started
+
     def checkpoint() -> None:
+        nonlocal last_checkpoint
+        last_checkpoint = time.monotonic()
         record["resources"] = monitor.result(time.monotonic() - started)
         write_json(directory / "status.json", record)
 
@@ -305,7 +320,8 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                 write_json(directory / "trusted-code" / (name + ".json"), trust)
                 command = command_for(arm, manifest, output)
                 status = {"name": name, "kind": arm.get("kind", "pipeline"), "status": "starting", "command": command,
-                          "started_at": time.time(), "rate_label": "contended", "retry": False}
+                          "started_at": time.time(), "rate_label": "contended", "retry": False,
+                          "max_wall_seconds": arm.get("max_wall_seconds", MAX_WALL)}
                 statuses.append(status)
                 checkpoint()
                 log = (directory / "logs" / (name + ".log")).open("x")
@@ -327,7 +343,7 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                 record["max_observed_concurrent_arms"] = max(record["max_observed_concurrent_arms"], len(running))
             monitor.sample()
             for name, (process, log, status) in list(running.items()):
-                timeout = time.time() - status["started_at"] >= MAX_WALL or remaining <= STOP_MARGIN
+                timeout = time.time() - status["started_at"] >= status["max_wall_seconds"] or remaining <= STOP_MARGIN
                 if process.poll() is None and timeout:
                     stop_group(process, monitor.sample)
                     status["interrupted"] = "wall_limit" if remaining > STOP_MARGIN else "paid_cutoff"
@@ -346,6 +362,8 @@ def run_queue(  # noqa: C901, PLR0912, PLR0913 - bounded lifecycle and explicit 
                     log.close()
                     del running[name]
                     checkpoint()
+            if time.monotonic() - last_checkpoint >= HEARTBEAT_SECONDS:
+                checkpoint()
             if remaining < START_MARGIN and ordered:
                 record["not_started"] = [arm["name"] for arm in ordered]
                 ordered.clear()
