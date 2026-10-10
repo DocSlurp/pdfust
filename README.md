@@ -291,7 +291,7 @@ inspect them.
 
 ## Experimental relationship decisions (opt-in)
 
-The ongoing [P002 generalization study](bench/results/generalization-p002.md)
+The [P002 generalization study](bench/results/generalization-p002.md)
 expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
 annotated OmniDocBench page images, and 56 native-PDF diagnostics. A fixed
 16-page natural screen contains 53 tables and 2,333 reference cells; two dense
@@ -310,7 +310,7 @@ configuration was selected before running the additional natural pages.
 | Native grids + Sonnet image crops, 1024 px, physical-order control | 271 | 157 | 6,119 | 128 | 16 | 16.73 | 323.13 |
 | Native grids + Haiku image crops, 1024 px, corrected logical order, fresh run | 269 | **170** | **6,615** | **141** | 2 | 18.20 | 6,977.17 |
 
-The Haiku run costs USD 0.1275912 in reported API charges. It recovers 155/156
+The 512 px Haiku source-ID run costs USD 0.1275912 in reported API charges. It recovers 155/156
 authored tables and 11/93 natural tables, with eight authored and one natural
 negative-page false positives. Four unsupported diagnostics and two truncated
 responses remain failures. These results support further gated and hybrid

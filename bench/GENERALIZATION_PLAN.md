@@ -325,3 +325,14 @@ causal native-order diagnostic. Defer the original full276 gated expansion,
 whose smaller pilot had regressed; retain its hypothesis and all pilot results.
 No other new paid arms may start in this final window. Root alone coordinates
 the transition, with no concurrent legacy paid clients.
+
+### Final disposition, 07:15 UTC
+
+The fresh corrected full276 run completed normally, its strict report and
+matched-input audit are retained, and all paid work has stopped. The document
+CLI and regression fixes passed the complete CPU suite. See
+`results/generalization-p002.md`, `GENERALIZATION_FINDINGS.md` and the final
+P002 entry in `../EXPERIMENTS_LOG.md` for outcomes and accounting. The full276
+gated expansion and the combined OCR300/ordinal/column-prompt plus gate-only
+row-context arm are deferred, not measured. Natural dense-document failures
+remain the principal unresolved generalization problem.

@@ -1735,3 +1735,49 @@ pushes include the implementation, tests, plans and aggregate reports; raw
 artifacts remain ignored locally. An independent claims audit confirms the
 README rates, denominators and corrected-versus-physical distinction, and fixes
 one diagram wording error: native proposal exclusion uses overlap, not containment.
+
+### P002 completed campaign, 2026-10-10 07:15 UTC
+
+The final fresh logical-native Haiku hybrid completed normally before the
+five-hour deadline. Across all 276 DEV pages it produces 269 operational outputs,
+170/249 complete tables, 6,615/8,897 exact text cells, 195 exact topologies and
+141/172 exact positive pages. There are three extra tables, including false
+positives on two of the 48 negative pages. All 156 authored tables and all 5,050
+authored cells are exact. The 64 natural pages remain a substantial limitation:
+14/93 complete tables, 1,565/3,847 exact cells and three atomic failures. Four
+unsupported native diagnostics also remain failures. Operational success is not
+the same as a fully correct page.
+
+The fresh run measures 18.20 operational pages/minute and 6,977.17 operational
+pages/API USD, with USD 0.0385543 in 118 positive provider-reported charges.
+Page-processing wall time is 886.820288 seconds, parent CPU 1,286.129753 seconds
+and sampled parent peak RSS 873,086,976 bytes. RSS is sampled every 100 ms.
+The separate detector worker uses 5.25327 startup CPU seconds and 240.982 request
+CPU seconds, with a maximum sampled request RSS of 1,252,999,168 bytes. Parent
+wall includes detector work; CPU and RSS scopes remain separate and peaks are
+not summed. Local GPU and remote inference hardware utilization are unmeasured;
+no local GPU or remote rental was used in this wave.
+
+The source-only identity audit confirms identical native boxes, detector
+proposals, exclusions and crop descriptors across all 276 pages, plus identical
+hashes for all 118 retained requests, versus the physical-order Haiku control.
+The natural16 subset likewise has 19 identical requests. Its changing scores
+reflect fresh response variability. The deterministic paired offline correction
+remains separate: it recovers 259 authored cells without changing any model
+response. Fresh natural results must not be credited to that correction.
+
+Final P002 accounting retains 1,469 attempts, 1,468 positive provider-reported
+charges totaling USD 7.96474546, and one unresolved interrupted-call reservation
+of USD 0.30. Cumulative conservative accounting is USD 44.9319455668, including
+prior charges, reservations and historical rental, against the USD 150 cap.
+All paid work has stopped. These amounts distinguish charges from reservations;
+API throughput excludes local compute cost.
+
+The final implementation passed 3,549 tests, with fourteen skips and two expected
+failures; tracked Ruff and mypy over 235 source files passed. Only documentation
+changed afterward. The arbitrary-document CLI, four-page actual smoke output,
+source-order and native-orientation fixes, strict failure reporting and optional
+partial-review artifacts are documented in the usage guide and final report.
+The full276 gated expansion and combined OCR300/ordinal/column-prompt plus
+gate-row-context hypothesis remain explicitly unrun. This completes the bounded
+research campaign, not a claim of reliable extraction for every PDF family.
