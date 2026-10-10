@@ -41,6 +41,8 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-crops-haiku-512 | 16/16 | 0 | 2/12 | 2 | 12 | 364/2333 | 290/2333 | 13879/16640 | 14 | 1 | 9.7988 | 1979.73 | 0.0080819 |
 | natural16-vision-crops-haiku-400 | 16/16 | 0 | 2/12 | 3 | 12 | 359/2333 | 225/2333 | 14420/16640 | 12 | 2 | 8.49134 | 1779.68 | 0.0089904 |
 | natural16-hybrid-haiku-1024 | 14/16 | 2 | 2/12 | 3 | 11 | 339/2333 | 289/2333 | 13601/16640 | 11 | 1 | 4.47476 | 1534.1 | 0.0091259 |
+| natural16-vision-multiscale-sonnet-1024 | 14/16 | 2 | 3/12 | 4 | 13 | 361/2333 | 293/2333 | 13583/16640 | 14 | 0 | 4.15324 | 48.457 | 0.288916 |
+| natural16-vision-multiscale-haiku-1024 | 15/16 | 1 | 2/12 | 2 | 14 | 829/2333 | 581/2333 | 13308/16640 | 17 | 2 | 5.51649 | 1135.8 | 0.0132065 |
 
 ### natural16-whole-reviewed
 
@@ -1136,6 +1138,74 @@ Ledger attempts 19; reported USD subtotal 0.0091259; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.58069s, CPU 5.32563s; 16 per-page measurement entries, request CPU total 14.5005s; maximum sampled request RSS 1208565760 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-vision-multiscale-sonnet-1024
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"invalid_table_geometry": 2}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 58.16%; complete tables 25.00%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 4/14 | 3/10 | 293 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-sonnet-5.5`; review `unmeasured`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 25 | 25 | 0.288916 | 0 / 25 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 4 | 13 | 361/2333 | 13583/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 202.252s; CPU 33.5164s; sampled RSS 367755264 bytes; verified output pages/min 4.15324; exact positive pages/min 0.889981. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 25; reported USD subtotal 0.288916; missing reported charges 0; cost bases `{"provider-reported USD": 25}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.9268s, CPU 5.88708s; 0 per-page measurement entries, request CPU total unmeasureds; maximum sampled request RSS unmeasured bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### natural16-vision-multiscale-haiku-1024
+
+Scope: table-only image transcription comparator; text: model-transcribed; source-conserved pages: 0/16.
+
+Failure categories: `{"invalid_table_topology": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 57.02%; complete tables 16.67%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 299 |
+| remaining_fourteen | 2/14 | 2/10 | 282 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 29 | 29 | 0.0132065 | 0 / 29 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 2 | 14 | 829/2333 | 13308/16640 | 0/4 |
+
+Page-processing run wall (excludes freeze/client setup) 163.147s; CPU 35.8899s; sampled RSS 357777408 bytes; verified output pages/min 5.51649; exact positive pages/min 0.735532. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 29; reported USD subtotal 0.0132065; missing reported charges 0; cost bases `{"provider-reported USD": 29}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.70732s, CPU 5.40057s; 0 per-page measurement entries, request CPU total unmeasureds; maximum sampled request RSS unmeasured bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -2112,3 +2182,47 @@ variation in one difficult page, while smaller-page text and complete-table
 variation also persists. The repeat table is a stochastic diagnostic, not an
 architecture causal estimate. Full-run subsets do not receive fabricated shares
 of full-run timing or cost; all failed calls remain charged in their parent runs.
+
+
+## Fixed multiscale detector and crop transcription
+
+Both new arms acquire detector proposals from one whole-page image plus four
+fixed overlapping 2×2 tiles, then apply the predeclared larger-containment fusion.
+All five raw calls, source windows, coordinate mappings and fused proposals replay
+exactly before unchanged strict crop transcription and page-atomic composition.
+Original page rotation is preserved; output is model-transcribed tables only,
+without source conservation. All sixteen pages and their targets remain primary.
+
+| Model | Operational / 16 | Exact cells / 2333 | Structural cells | Exact topologies | Complete tables / 53 | Extra tables | Negative FP pages / 4 | API USD | Pages/min | Pages/API USD |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Sonnet | 14 | 293 | 361 | 13 | 4 | 0 | 0 | 0.288916 | 4.15 | 48.46 |
+| Haiku | 15 | 581 | 829 | 14 | 2 | 2 | 0 | 0.0132065 | 5.52 | 1135.80 |
+
+Sonnet's two dense pages fail normalized bbox validation despite normal-stop
+responses. Haiku's sole failure is p656 invalid merged-span bounds, also ending
+normally. Every failed page contributes zero; all 25 Sonnet and 29 Haiku charged
+attempts remain in cost accounting. No unsubmitted proposal receives a fabricated
+response. Sonnet macro recall is 58.16% cells/25.00% tables, Haiku 57.02%/16.67%.
+Sonnet has three exact positive pages; Haiku has two. The smaller-page diagnostic
+recovers 293 Sonnet cells and four complete tables, versus 282 Haiku cells and two.
+
+Both detector treatments now produce ten accepted Table proposals on dense p1,
+compared with zero in the ordinary whole-page detector control. This is a
+source-only proposal acquisition gain. Haiku completes all ten p1 crop calls,
+recovering 161 exact cells across five matched tables, while Sonnet stops after
+five calls when a bbox fails and scores zero for that page. P98 has two accepted
+Table proposals in both models; Haiku recovers 138 cells across four matched
+tables, while Sonnet's bbox failure again rejects the page. Total dense recovery
+is 299 Haiku cells and zero Sonnet cells, with no complete dense tables.
+All-class fused detector boxes are not interchangeable with accepted Table
+proposal counts, and detector acquisition alone is not complete-output quality.
+
+Compared with ordinary 1024 crops, Haiku gains p1 coverage but loses p98 exact
+cells in this fresh response sample; total recovery falls from 687 to 581 and
+complete tables from four to two, while operational coverage rises from fourteen
+to fifteen. Sonnet loses the ordinary crop run's 692 p98 cells through atomic
+failure. Detector coverage, transcription legibility and strict output format
+therefore remain separate limitations. These fixed single-run treatments neither
+prove a universal multiscale improvement nor justify changing atomic validation.
+The independently frozen partial-output diagnostic is supplementary and will
+retain these primary statuses, costs and missing calls.
