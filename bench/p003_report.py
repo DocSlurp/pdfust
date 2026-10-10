@@ -230,6 +230,13 @@ def verify_treatment_helpers(frozen: dict[str, Any]) -> None:
         raise ValueError("Unknown frozen gate instruction rubric")
     if rubric in semantic_rubrics:
         required.add("p003_prompt_variants.py")
+    wire = config.get("transcription_wire_schema", "strict")
+    if wire not in {"strict", "simple"}:
+        raise ValueError("Unknown frozen transcription wire schema")
+    if wire == "simple":
+        if config.get("campaign") != "P003" or config.get("processor") != "vision_regions":
+            raise ValueError("Simple transcription wire schema requires P003 vision_regions")
+        required.add("p003_wire_schema.py")
     for name in required:
         local = Path(__file__).parent / name
         if not local.is_file() or frozen["code_sha256"].get(name) != sha(local.read_bytes()):

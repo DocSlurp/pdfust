@@ -698,6 +698,27 @@ def test_semantic_gate_rubric_requires_authenticated_current_helper(
         p003_report.verify_treatment_helpers(frozen)
 
 
+def test_simple_transcription_wire_requires_current_helper_and_explicit_scope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bench import p003_report
+
+    monkeypatch.setattr(p003_report, "__file__", str(tmp_path / "p003_report.py"))
+    frozen = {"config": {"transcription_wire_schema": "simple"}, "code_sha256": {}}
+    with pytest.raises(ValueError, match="requires P003 vision_regions"):
+        p003_report.verify_treatment_helpers(frozen)
+    frozen["config"].update(campaign="P003", processor="vision_regions")
+    with pytest.raises(ValueError, match="strict treatment replay helper"):
+        p003_report.verify_treatment_helpers(frozen)
+    helper = tmp_path / "p003_wire_schema.py"
+    helper.write_text("# Explicit authenticated wire helper\n")
+    frozen["code_sha256"][helper.name] = sha(helper.read_bytes())
+    p003_report.verify_treatment_helpers(frozen)
+    frozen["config"]["transcription_wire_schema"] = "unknown"
+    with pytest.raises(ValueError, match="Unknown frozen transcription wire"):
+        p003_report.verify_treatment_helpers(frozen)
+
+
 def test_transport_failures_preserve_http_errors_without_duplicate_attempt_counts() -> None:
     from bench.p003_report import transport_failures
 
