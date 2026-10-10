@@ -319,12 +319,17 @@ def archives(source: Path, topology: Path) -> tuple[dict[str, str], dict[str, st
     source_config = {"processor": "regions", "source_order": "original"}
     topology_config = {"processor": "vision_regions", "generation_provider": "anthropic"}
     records, source_rows, topology_rows = [], [], []
+    pdf = source.parent / "source.pdf"
+    pdf.write_bytes(b"synthetic frozen PDF identity")
+    pdf_digest = sha(pdf.read_bytes())
     for i in range(16):
         ident = f"p{i}"
-        record = {"id": ident, "pdf_path": "unused-synthetic.pdf", "pdf_sha256": "frozen-pdf", "page_number": i}
+        record = {"id": ident, "pdf_path": str(pdf), "pdf_sha256": pdf_digest, "page_number": i}
         records.append(record)
         a, b = deepcopy(original), deepcopy(topo)
         a["id"], b["id"] = ident, ident
+        a.pop("pdf_sha256", None)  # Real source-only region rows have no PDF hash field.
+        b["pdf_sha256"] = pdf_digest
         for directory, row in ((source, a), (topology, b)):
             write_json(directory / f"{ident}-result.json", row)
             for suffix in ("-structure.json", ".md"):

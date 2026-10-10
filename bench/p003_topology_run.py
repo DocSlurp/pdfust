@@ -81,7 +81,7 @@ def authenticate_source(directory: Path, trusted: dict[str, str]) -> tuple[dict[
         row = rows[record["id"]]
         if candidate._read(directory / f"{record['id']}-result.json") != row:
             raise ValueError("Source per-page result differs from report")
-        if row["status"] == "ok" and row.get("pdf_sha256") != record["pdf_sha256"]:
+        if sha(guard_path(Path(record["pdf_path"])).read_bytes()) != record["pdf_sha256"]:
             raise ValueError("Source baseline PDF identity differs")
         verify_output(
             directory,
