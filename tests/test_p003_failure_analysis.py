@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from bench.p003_failure_analysis import attribute_page, coverage, overlap, proposal_boxes
+from bench.p003_failure_analysis import attribute_page, color_boxes, coverage, overlap, proposal_boxes
 
 
 def table(value: str = "A") -> dict[str, Any]:
@@ -27,6 +27,18 @@ def test_raw_union_preserves_overlaps_without_joining_partial_crops() -> None:
     boxes = proposal_boxes(page, "yolo_union_fixed2")
     assert boxes == [[0, 0, 5, 10], [5, 0, 10, 10]]
     assert coverage([0, 0, 10, 10], boxes)["maximum_target_inclusion"] == 0.5
+
+
+def test_color_pixel_mapping_keeps_complete_refusals_empty() -> None:
+    row = {
+        "status": "ok",
+        "viewport": [10, 20, 210, 120],
+        "image_size": [100, 50],
+        "components": [{"bbox": [25, 10, 50, 30]}],
+    }
+    assert color_boxes(row) == [[60, 40, 110, 80]]
+    row["status"] = "error"
+    assert color_boxes(row) == []
 
 
 @pytest.mark.parametrize("case", ["missing_proposal", "unrequested", "transcription", "rollback"])

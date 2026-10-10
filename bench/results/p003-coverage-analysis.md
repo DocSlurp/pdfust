@@ -62,3 +62,20 @@ Two independent source-only construction passes produced byte-equivalent page pl
 The CLI is `python -m bench.p003_failure_analysis --source <ordinal-run> --baseline <Luna> --baseline <Haiku> --baseline <Sonnet> --trusted-code <source-map> --trusted-code <Luna-map> --trusted-code <Haiku-map> --trusted-code <Sonnet-map> --corpus <natural16> --freeze <new-file> --output <new-file>`. Existing freezes are never overwritten. The pure `analyze(frozen_path, corpus)` seam scores an existing immutable freeze. Six focused tests cover geometry, raw union semantics, and miss accounting.
 
 Detailed evidence remains ignored under `pipeline-p003/coverage-analysis/`. Frozen measured proposal SHA256: `1f93d37b2cc4b44510b3ad651397bb1d877931f51c32722a97f4cf7d0e48347e`. Source proposal helper SHA256: `450ecb92f5fd3d9a68e571159037f2f0df574770695d4595988ff74448b94d44`.
+
+## Raw color-component opportunities
+
+The explicit `color-natural16-v1/report.json` source-only audit contributes complete component boxes, mapped from raster pixels to its retained display viewport. All records match the authenticated natural16 source inventory. This analysis checks inventory/report hashes, not an independent replay of the Rust component algorithm. Component-refused pages contribute zero candidates and keep their gold-table denominator. Components are not merged, padded, ranked, or interpreted as tables. The same six geometric thresholds apply.
+
+Each cell is covered tables / associated anchors; refusals are pages / 16.
+
+| Edge | Color threshold | Refusals | IoU ≥.25 | IoU ≥.50 | IoU ≥.75 | Inclusion ≥.90 | Inclusion ≥.95 | Inclusion 1.00 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 512 | 8 | 1/16 | 9/474 | 4/98 | 1/60 | 1/60 | 1/60 | 1/60 |
+| 512 | 18 | 0/16 | 9/548 | 3/314 | 2/254 | 1/10 | 0/0 | 0/0 |
+| 512 | 36 | 0/16 | 12/563 | 6/194 | 4/172 | 41/1984 | 40/1974 | 39/1972 |
+| 1024 | 8 | 7/16 | 1/2 | 0/0 | 0/0 | 0/0 | 0/0 | 0/0 |
+| 1024 | 18 | 5/16 | 3/93 | 2/83 | 2/83 | 2/83 | 2/83 | 0/0 |
+| 1024 | 36 | 1/16 | 5/146 | 4/136 | 3/128 | 16/1064 | 16/1064 | 13/936 |
+
+At color threshold 36, broad component boxes expose many table-area inclusion opportunities, especially at edge 512, while IoU-localized opportunities remain few. Color-connected background regions can surround several tables or unrelated content. Cell-background fragments and broad components would require a separately declared source-only grouping/admission mechanism before a semantic acquisition comparison. Complete component cap refusals must remain visible. Original audit resources: 4.277 seconds wall, 1.635 seconds parent CPU, 2.709 seconds completed Rust-child CPU, sampled parent peak about 154 MiB. Child lifetime ru_maxrss includes fork/exec inheritance and does not measure an isolated Rust working set. Detailed dense2/other14 sensitivity is retained in ignored `coverage-analysis/color-coverage.json`. The pure `analyze_color(report_path, corpus, proposal_freeze)` function reproduces this scoring; no new PDF rendering or inference occurs.

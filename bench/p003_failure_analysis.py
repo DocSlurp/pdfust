@@ -58,6 +58,23 @@ def proposal_boxes(page: dict[str, Any], arm: str) -> list[list[float]]:
     return yolo + boxes if arm == "yolo_union_fixed2" else boxes
 
 
+def color_boxes(row: dict[str, Any]) -> list[list[float]]:
+    """Map complete retained pixel components to display coordinates; failures stay empty."""
+    if row["status"] != "ok":
+        return []
+    left, top, right, bottom = row["viewport"]
+    width, height = row["image_size"]
+    return [
+        [
+            left + x0 / width * (right - left),
+            top + y0 / height * (bottom - top),
+            left + x1 / width * (right - left),
+            top + y1 / height * (bottom - top),
+        ]
+        for x0, y0, x1, y1 in (component["bbox"] for component in row["components"])
+    ]
+
+
 def freeze_proposals(
     source: Path, baselines: list[Path], trusts: list[Path], output: Path, *, cap: int = DEFAULT_CAP
 ) -> dict[str, Any]:
@@ -304,6 +321,59 @@ def analyze(frozen_path: Path, corpus: Path) -> dict[str, Any]:
         "model_attribution": summaries,
         "proposal_coverage_sensitivity": sensitivity,
         "scope": "Geometric opportunities only; no gate/transcription success inferred; distinct model-run evidence",
+    }
+
+
+def analyze_color(report_path: Path, corpus: Path, proposal_freeze: Path) -> dict[str, Any]:
+    """Score an explicit source-only color audit, retaining refused pages in every denominator."""
+    from bench.generalization_report import load_corpus
+
+    report, frozen = _read(report_path), _read(proposal_freeze)
+    manifest, targets = load_corpus(corpus)
+    if {r["id"]: r for r in report["frozen"]["records"]} != {r["id"]: r for r in frozen["records"]}:
+        raise ValueError("Color inventory must match the independently authenticated source records")
+    if report["frozen"]["manifest_sha256"] != sha((corpus / "manifest.json").read_bytes()):
+        raise ValueError("Color manifest differs from DEV references")
+    references = {page["id"]: page for page in targets["pages"]}
+    results = []
+    for edge in report["frozen"]["edges"]:
+        for threshold in report["frozen"]["thresholds"]:
+            rows = [row for row in report["rows"] if row["edge"] == edge and row["threshold"] == threshold]
+            if len(rows) != SCREEN_PAGES or {row["id"] for row in rows} != set(references):
+                raise ValueError("Color audit must retain one record for every intended page and variant")
+            for group in ("all16", "dense2", "other14"):
+                subset = [r for r in rows if group == "all16" or ((r["id"] in DENSE_IDS) == (group == "dense2"))]
+                comparisons = [
+                    {**coverage(table["bbox"], color_boxes(row)), "cells": len(_cells(table))}
+                    for row in subset
+                    for table in references[row["id"]]["tables"]
+                ]
+                for measure, cutoffs in (
+                    ("maximum_iou", IOU_THRESHOLDS),
+                    ("maximum_target_inclusion", INCLUSION_THRESHOLDS),
+                ):
+                    for cutoff in cutoffs:
+                        covered = [row for row in comparisons if row[measure] + 1e-12 >= cutoff]
+                        results.append(
+                            {
+                                "edge": edge,
+                                "color_threshold": threshold,
+                                "group": group,
+                                "measure": measure,
+                                "threshold": cutoff,
+                                "covered_tables": len(covered),
+                                "expected_tables": len(comparisons),
+                                "anchors_in_geometrically_covered_tables": sum(row["cells"] for row in covered),
+                                "refused_pages": sum(row["status"] != "ok" for row in subset),
+                            }
+                        )
+    return {
+        "schema": 1,
+        "dev_only": True,
+        "report_sha256": sha(report_path.read_bytes()),
+        "dataset_sha256": manifest["dataset_sha256"],
+        "sensitivity": results,
+        "scope": "Raw complete color component boxes; refusals have no candidates; no model quality claim",
     }
 
 
