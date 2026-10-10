@@ -30,6 +30,7 @@ from bench.silver import canonical, guard_path, sha
 
 LOCALIZATION_IOU = 0.5
 NATURAL_SCREEN_PAGES = 16
+CONCURRENT_VISION_WORKERS = 4
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
 
@@ -54,6 +55,7 @@ TRUSTED_HISTORICAL_CODE = {
         "8a87e312643ffc97e63448b8ef9c7b2fbaa169c28431eb177417c34f64ab5386": "b0775e2",
     },
     "generalization_vision_run.py": {
+        "a3543f1f8bb0b40032c93defe7f54925ece2449fff45cdbaaef910a707683516": "5424ee7",
         "4b049ab18bf32cc05a1be620a7a68962fdc36600f7fffd9e22ffe10d803d7a87": "3abf651",
         "365ec686584641896364a9daf1ad8f83e9e06a5fb8ac38a3b651f5c85dec9c91": "fc49724",
         "5d39813c50ece7844659081af76ee87c34e75d7c6a6bd3b949e900865755b106": "4bf4dc6",
@@ -221,6 +223,22 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     row_evidence = any(frozen.get("config", {}).get(flag) for flag in ("generation_row_evidence", "gate_row_evidence"))
     if row_evidence:
         required |= {"pipeline_row_context.py", "pipeline_row_evidence.py"}
+    concurrent = frozen.get("config", {}).get("workers", 1) > 1
+    concurrent_dependencies = {
+        "decision_concurrent.py",
+        "decision_hosted.py",
+        "decision_gateway.py",
+        "decision_langfuse.py",
+        "reprice_model_rates.py",
+    }
+    if concurrent:
+        if (
+            processor != "vision"
+            or frozen["config"]["workers"] != CONCURRENT_VISION_WORKERS
+            or frozen.get("concurrency") != CONCURRENT_VISION_WORKERS
+        ):
+            raise ValueError("Concurrent comparison requires fixed four-worker whole-page vision")
+        required |= concurrent_dependencies
     if not required <= hashes.keys():
         raise ValueError("Frozen code lacks required verifier dependencies")
     for name, digest in hashes.items():
@@ -232,6 +250,8 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
         comparison[name] = (
             "identical" if local_path.is_file() and sha(local_path.read_bytes()) == digest else "different"
         )
+    if concurrent and any(comparison[name] != "identical" for name in concurrent_dependencies):
+        raise ValueError("Trusted concurrent request accounting differs from frozen code")
     historical_helpers = {}
     helper_name = "generalization_vision_regions.py"
     if helper_name in required and comparison[helper_name] != "identical":

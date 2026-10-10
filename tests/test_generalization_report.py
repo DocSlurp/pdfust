@@ -1033,3 +1033,52 @@ def test_multiscale_requires_exact_acquisition_dependencies(fixture: dict[str, A
     frozen["code_sha256"][missing] = sha(altered)
     with pytest.raises(ValueError, match=r"fusion|adapter"):
         verify_code(f["run"], frozen, processor="vision_multiscale")
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [
+        "decision_concurrent.py",
+        "decision_hosted.py",
+        "decision_gateway.py",
+        "decision_langfuse.py",
+        "reprice_model_rates.py",
+    ],
+)
+def test_concurrent_vision_requires_exact_metering_dependencies(fixture: dict[str, Any], changed: str) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    frozen["config"].update(processor="vision", workers=4)
+    frozen["concurrency"] = 4
+    frozen["code_sha256"] = {}
+    for name in (
+        "generalization_vision_run.py",
+        "pipeline_vision_transcription.py",
+        "pipeline_frontier.py",
+        "decision_concurrent.py",
+        "decision_hosted.py",
+        "decision_gateway.py",
+        "decision_langfuse.py",
+        "reprice_model_rates.py",
+    ):
+        data = (Path(module.__file__).parent / name).read_bytes()
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    assert verify_code(f["run"], frozen, processor="vision")["archive_hashes_verified"]
+    absent = deepcopy(frozen)
+    absent["code_sha256"].pop(changed)
+    with pytest.raises(ValueError, match="required verifier dependencies"):
+        verify_code(f["run"], absent, processor="vision")
+    altered = (f["run"] / "code" / changed).read_bytes() + b"\n# Unreviewed metering.\n"
+    (f["run"] / "code" / changed).write_bytes(altered)
+    frozen["code_sha256"][changed] = sha(altered)
+    with pytest.raises(ValueError, match="concurrent request accounting"):
+        verify_code(f["run"], frozen, processor="vision")
+
+
+def test_concurrent_vision_rejects_inconsistent_frozen_concurrency(fixture: dict[str, Any]) -> None:
+    frozen = deepcopy(fixture["frozen"])
+    frozen["config"]["workers"] = 4
+    frozen["concurrency"] = 1
+    with pytest.raises(ValueError, match="four-worker whole-page vision"):
+        verify_code(fixture["run"], frozen, processor="vision")
