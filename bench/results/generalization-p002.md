@@ -1146,6 +1146,7 @@ Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d092842955
 | native-regional-full-r2 | 272/276 | 4 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 36.7759 | unmeasured | 0 |
 | full276-yolo-matrix-haiku-512 | 270/276 | 6 | 136/172 | 166 | 197 | 6784/8897 | 6329/8897 | 25472/55180 | 180 | 10 | 12.6423 | 2116.13 | 0.127591 |
 | full276-hybrid-haiku-1024 | 268/276 | 8 | 129/172 | 157 | 193 | 7306/8897 | 6604/8897 | 16329/55180 | 184 | 2 | 18.3269 | 6743.87 | 0.0397398 |
+| full276-hybrid-sonnet-1024 | 271/276 | 5 | 128/172 | 157 | 191 | 6758/8897 | 6119/8897 | 32776/55180 | 179 | 16 | 16.7304 | 323.133 | 0.838664 |
 
 ### native-full-r2
 
@@ -1257,6 +1258,35 @@ Page-processing run wall (excludes freeze/client setup) 877.401s; CPU 1293.92s; 
 Ledger attempts 118; reported USD subtotal 0.0397398; missing reported charges 0; cost bases `{"provider-reported USD": 118}`. Reservation amount 0; estimate amount 0.
 
 Separate CPU detector worker: initialization wall 2.74291s, CPU 5.49349s; 272 per-page measurement entries, request CPU total 247.883s; maximum sampled request RSS 1249431552 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### full276-hybrid-sonnet-1024
+
+Scope: complete retained-source assembly with explicit mixed text provenance; text: mixed native-source/model-transcribed; source-conserved pages: 184/276.
+
+Failure categories: `{"invalid_table_topology": 1, "missing_source_text": 4}`.
+
+Supplementary positive-page macro recall (172 pages): exact cells 84.95%; complete tables 75.29%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-sonnet-5.5`; review `unmeasured`; generation `anthropic/claude-sonnet-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-sonnet-5.5 | 119 | 119 | 0.838664 | 0 / 119 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| authored | 156/156 | 144 | 149 | 5001/5050 | 16224/27830 | 16/24 |
+| native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
+| omnidoc | 64/64 | 13 | 42 | 1757/3847 | 16552/27350 | 0/24 |
+
+Page-processing run wall (excludes freeze/client setup) 971.882s; CPU 1304.72s; sampled RSS 852406272 bytes; verified output pages/min 16.7304; exact positive pages/min 7.90219. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 119; reported USD subtotal 0.838664; missing reported charges 0; cost bases `{"provider-reported USD": 119}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.60717s, CPU 5.33543s; 272 per-page measurement entries, request CPU total 252.225s; maximum sampled request RSS 1236541440 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 ## Historical full-r1 snapshot — invalid scan carriers
 
@@ -2028,3 +2058,57 @@ why architecture ranking cannot be inferred from a single paired input sample.
 The sole fresh-subset failure is a nonrectangular literal matrix on pf012.
 Supplementary macro recall is 58.05% cells and 16.67% tables. This quality-only
 subset diagnostic does not assign a share of full-run wall time or API cost.
+
+
+## Full276 frozen Sonnet hybrid and matched repeats
+
+Sonnet hybrid verifies 271/276 operational outputs, including 184 source-conserved
+pages and 87 mixed native/model pages. On the unchanged 220 scored pages it
+recovers 6,119/8,897 exact cells, 6,758 structural cells, 191 exact topologies and
+157/249 complete tables on 128/172 exact positive pages. Forty-four tables remain
+missing. All sixteen extra tables are on sixteen authored negative pages; natural
+negatives have no false positives. All 118 reported charges total USD 0.838664,
+with 16.73 operational pages/minute and 323.13 pages/API USD.
+
+Natural64 recovers 1,328/3,847 exact cells, thirteen complete tables and 42 exact
+topologies. Its sole model failure is p98 cross-crop table overlap: both responses
+end normally, but the parent rejects the full page atomically. The other four
+failures are the existing unscored source-gap diagnostics. Authored positive-table
+quality is identical to full Haiku, including the preserved-rotation limitation;
+the model differences add false-positive tables on authored negatives.
+
+The single fresh Haiku full run recovers 485 more exact cells, has one negative
+false-positive page versus Sonnet's sixteen, and costs approximately 21 times
+less in API charges. Both recover 157 complete tables before any orientation
+counterfactual. Sonnet has three more operational pages. These observed runs
+support the cheaper Haiku treatment on this DEV corpus, while fresh response
+variation and configuration limitations preclude a universal model ranking.
+
+For each model, all three natural16 repeats below have identical proposal sets
+and complete crop descriptors on all sixteen pages, and identical independently
+verified retained request hashes for all nineteen crops. There are no native
+proposal exclusions on these pages. Source-only identity audits are retained at
+`regions-audit/haiku-three-repeat-identity.json` and
+`regions-audit/sonnet-three-repeat-identity.json`. Quality comparison then uses
+the unchanged 53-table/2,333-cell references, without feeding them into requests.
+
+| Model | Fresh run | Operational / 16 | Exact cells / 2333 | Complete tables / 53 | Exact positive pages / 12 | Errors | Extra tables | Negative FP pages / 4 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Haiku | standalone crops1024 | 14 | 687 | 4 | 3 | 2 | 3 | 0 |
+| Haiku | pilot hybrid1024 | 14 | 289 | 3 | 2 | 2 | 1 | 1 |
+| Haiku | full276 hybrid subset | 15 | 732 | 2 | 2 | 1 | 2 | 1 |
+| Sonnet | standalone crops1024 | 16 | 982 | 5 | 3 | 0 | 0 | 0 |
+| Sonnet | pilot hybrid1024 | 15 | 289 | 4 | 3 | 1 | 0 | 0 |
+| Sonnet | full276 hybrid subset | 15 | 287 | 3 | 2 | 1 | 0 | 0 |
+
+Haiku standalone fails p9f92 normalized bounds and pf012 covered merge slots;
+pilot hybrid fails p98 merged-span bounds and p9f92 normalized bounds; full
+hybrid subset fails only pf012's rectangular matrix. Sonnet standalone has no
+strict failures; both hybrid samples fail p98 cross-crop overlap. Every failed
+model response ends normally. The p98 dense contribution varies from 416 to
+zero to 449 Haiku cells, and from 692 to zero to zero Sonnet cells. Dense p1 has
+zero proposals in all six runs. This concentrates much of the observed micro
+variation in one difficult page, while smaller-page text and complete-table
+variation also persists. The repeat table is a stochastic diagnostic, not an
+architecture causal estimate. Full-run subsets do not receive fabricated shares
+of full-run timing or cost; all failed calls remain charged in their parent runs.
