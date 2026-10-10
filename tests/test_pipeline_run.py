@@ -5,14 +5,16 @@ from __future__ import annotations
 import base64
 import io
 import json
+import sys
 from collections import Counter
 from contextlib import nullcontext
+from copy import deepcopy
 from html.parser import HTMLParser
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import pytest
-from bench import pipeline_repair, pipeline_routing
+from bench import pipeline_column_consensus, pipeline_repair, pipeline_routing
 from bench import pipeline_run as runner
 from bench.pipeline_assembly import native_state
 from conftest import build_raw_pdf
@@ -21,7 +23,7 @@ from PIL import Image
 import pylopdf
 
 
-def pdf_bytes(*, bordered: bool = True) -> bytes:
+def pdf_bytes(*, bordered: bool = True, third_row: bool = False) -> bytes:
     stream = (
         "q 0 G 1 w 40 260 m 300 260 l 40 220 m 300 220 l 40 180 m 300 180 l "
         "40 180 m 40 260 l 170 180 m 170 260 l 300 180 m 300 260 l S Q\n"
@@ -30,6 +32,8 @@ def pdf_bytes(*, bordered: bool = True) -> bytes:
         "BT /F1 12 Tf 50 195 Td (Alpha) Tj ET\n"
         "BT /F1 12 Tf 180 195 Td (42) Tj ET"
     )
+    if third_row:
+        stream += "\nBT /F1 12 Tf 50 165 Td (Beta) Tj ET\nBT /F1 12 Tf 178 165 Td (7) Tj ET"
     if not bordered:
         stream = "BT" + stream.split("BT", 1)[1]
     return build_raw_pdf(
@@ -44,9 +48,9 @@ def pdf_bytes(*, bordered: bool = True) -> bytes:
     )
 
 
-def record(tmp_path: Path, *, bordered: bool = True) -> dict:
+def record(tmp_path: Path, *, bordered: bool = True, third_row: bool = False) -> dict:
     pdf = tmp_path / "source.pdf"
-    data = pdf_bytes(bordered=bordered)
+    data = pdf_bytes(bordered=bordered, third_row=third_row)
     pdf.write_bytes(data)
     return {"id": "opaque-page", "pdf_path": str(pdf), "pdf_sha256": runner.sha(data), "page_number": 0}
 
@@ -582,3 +586,125 @@ def test_strong_gate_score_skips_review(tmp_path: Path, monkeypatch: pytest.Monk
     assert result["source_conserved"]
     assert "c0" in requests[1][0]["questions"]["q0"]["criteria"]
     assert not (tmp_path / "opaque-page-request-2.json").exists()
+
+
+@pytest.fixture
+def compact_module(monkeypatch: pytest.MonkeyPatch) -> list:
+    calls = []
+    module = ModuleType("bench.pipeline_compact_packet")
+
+    def packet(page: dict, candidates: list) -> str:
+        calls.append((deepcopy(page), deepcopy(candidates)))
+        return "COMPLETE_COMPACT_SOURCE_PACKET"
+
+    module.packet = packet
+    monkeypatch.setitem(sys.modules, "bench.pipeline_compact_packet", module)
+    return calls
+
+
+def test_optional_consensus_preserves_existing_prefix_and_raw_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, compact_module: list
+) -> None:
+    captured = {}
+    original = pipeline_column_consensus.propose
+
+    def consensus(page: dict, existing: list) -> list:
+        captured["source"] = deepcopy(page)
+        captured["existing"] = deepcopy(existing)
+        combined = original(page, existing)
+        assert combined[: len(existing)] == captured["existing"]
+        return combined
+
+    requests = []
+
+    def decision(_client: object, request: dict, _tag: str) -> dict:
+        requests.append(request)
+        return {"answer": {"choice": "unresolved"}}
+
+    monkeypatch.setattr(pipeline_column_consensus, "propose", consensus)
+    monkeypatch.setattr(runner, "call", decision)
+    row = record(tmp_path, bordered=False, third_row=True)
+    frozen_bytes = Path(row["pdf_path"]).read_bytes()
+    row.update(expected="REFERENCE_SECRET", family="REFERENCE_SECRET")
+    settings = config("assembly")
+    settings.update(column_consensus=True, compact_packet=True, image_edge=0)
+    result = runner.process(row, settings, tmp_path, object())
+    assert result["status"] == "ok"
+    assert result["candidates"][: len(captured["existing"])] == captured["existing"]
+    assert len(result["candidates"]) >= len(captured["existing"])
+    assert len(compact_module) == 1
+    assert requests[0]["state"] == "COMPLETE_COMPACT_SOURCE_PACKET"
+    assert captured["source"] == result["source"]
+    assert compact_module[0][0] == result["source"]
+    assert compact_module[0][1] == result["candidates"]
+    assert "REFERENCE_SECRET" not in repr(captured)
+    assert set(captured["source"]) == {"page_size", "words", "vector_candidates"}
+    assert result["source_conserved"]
+    assert Path(row["pdf_path"]).read_bytes() == frozen_bytes
+    assert runner.sha(frozen_bytes) == row["pdf_sha256"]
+
+
+@pytest.mark.parametrize("policy", ["native", "cascade", "gated", "adaptive"])
+def test_optional_flags_preserve_native_fast_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, compact_module: list, policy: str
+) -> None:
+    def unexpected(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Native fast path invoked optional proposals, packet, image or host")
+
+    monkeypatch.setattr(runner, "propose", unexpected)
+    monkeypatch.setattr(pipeline_column_consensus, "propose", unexpected)
+    monkeypatch.setattr(runner, "image", unexpected)
+    monkeypatch.setattr(runner, "call", unexpected)
+    settings = config(policy)
+    settings.update(column_consensus=True, compact_packet=True)
+    result = runner.process(record(tmp_path), settings, tmp_path, object())
+    assert result["status"] == "ok"
+    assert compact_module == []
+    assert result["calls"] == []
+    assert len(result["tables"]) == 1
+    assert result["source_conserved"]
+
+
+@pytest.mark.parametrize("policy", ["gated", "repair"])
+def test_compact_packet_skipped_for_admission_rejection_and_local_repair(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, compact_module: list, policy: str
+) -> None:
+    requests = []
+
+    def decision(_client: object, request: dict, _tag: str) -> dict:
+        requests.append(request)
+        return {"answer": {"choice": "prose" if policy == "gated" else "keep"}}
+
+    monkeypatch.setattr(runner, "call", decision)
+    monkeypatch.setattr(pipeline_repair, "operations", lambda *_args: [{"id": "o0", "description": "Source edit"}])
+    monkeypatch.setattr(pipeline_repair, "packet", lambda *_args, **_kwargs: "SOURCE_REPAIR_PACKET")
+    settings = config(policy)
+    settings.update(compact_packet=True, image_edge=0)
+    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, object())
+    assert result["status"] == "ok"
+    assert compact_module == []
+    assert len(requests) == 1
+    assert result["source_conserved"]
+
+
+def test_optional_flags_disabled_use_original_packet_and_proposals(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, compact_module: list
+) -> None:
+    def unexpected(*_args: object, **_kwargs: object) -> None:
+        pytest.fail("Disabled consensus proposer was invoked")
+
+    monkeypatch.setattr(pipeline_column_consensus, "propose", unexpected)
+    requests = []
+
+    def decision(_client: object, request: dict, _tag: str) -> dict:
+        requests.append(request)
+        return {"answer": {"choice": "unresolved"}}
+
+    monkeypatch.setattr(runner, "call", decision)
+    settings = config("assembly")
+    settings.update(column_consensus=False, compact_packet=False, image_edge=0)
+    result = runner.process(record(tmp_path, bordered=False), settings, tmp_path, object())
+    assert result["status"] == "ok"
+    assert compact_module == []
+    assert "Choose one complete page assembly" in requests[0]["state"]
+    assert result["source_conserved"]
