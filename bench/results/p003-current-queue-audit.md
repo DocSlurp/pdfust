@@ -77,3 +77,32 @@ Additional natural16 candidate controls use primary selected-only quality:
 At fixed 400 RGB, seed19 previously scored 1,081/five with three extras, whereas seed7 scores 980/five with none. At fixed 128 palette, seed7 previously scored 979/three with no extras versus seed19's 1,078/three with three extras. This permutation sensitivity does not identify an optimal seed or image size. No control is changed based on fresh-confirmation outcomes.
 
 ClefOmni direct bands score 209/two after failure filtering (legacy311/two), with one failed composition. Luna gate composes372/two and PPLX128 palette gate384/three on frozen generation. Their costs and resource scopes are in the progress tables; baseline retention remains excluded from successful ownership quality.
+
+The next checkpoint adds these independently verified selected-only controls,
+again using all 16 pages, 53 tables and 2,333 reference cells:
+
+| Candidate arm | Primary strict / complete | Missing / extra | Legacy strict / complete | Incremental API USD / reported |
+| --- | ---: | --- | ---: | ---: |
+| PPLX400 RGB seed43 | 1083 / 5 | 26 / 3 | 1083 / 5 | 0.00060236 |
+| PPLX128 palette seed43 | 1078 / 3 | 27 / 3 | 1082 / 4 | 0.00059822 |
+| PPLX512 palette blur | 44 / 0 | 48 / 0 | 784 / 3 | 0.00061408 |
+| PPLX128 palette repeat2 | 979 / 3 | 28 / 0 | 1086 / 4 | 0.00059822 |
+| PPLX128 RGB blur | 98 / 0 | 46 / 0 | 784 / 3 | 0.00059822 |
+| PPLX512 RGB repeat2 | 981 / 5 | 26 / 0 | 981 / 5 | 0.00061408 |
+
+The blur controls remain weak on confirmed selections despite their retained
+legacy baseline scores. The higher 400 RGB and 128 palette seed43 cell counts
+also retain three extra tables; the permutation tradeoff persists. None of
+these observations selects a fresh-confirmation treatment.
+
+| Ownership arm | Successful composition strict / complete, geometry included | Missing / extra | Failed pages | Legacy strict / complete | Incremental API USD |
+| --- | ---: | --- | ---: | ---: | ---: |
+| Hybrid Jev neighbors | 359 / 3 | 32 / 3 | 1 | 370 / 3 | 0.112295736 |
+| Direct PPLX bands | 251 / 3 | 39 / 1 | 1 | 353 / 3 | 0.87598702 |
+| Direct Luna neighbors | 245 / 3 | 39 / 1 | 1 | 347 / 3 | 0.1915652 |
+
+These composition counts include deterministic geometry and protected source
+portions. The failed pages contribute no predicted tables to primary quality;
+the legacy columns preserve original fallback outputs separately. All costs
+cover incremental attempts only. Luna's reported zero is preserved and its
+effective cost uses labeled catalog estimates; the other two costs are reported.
