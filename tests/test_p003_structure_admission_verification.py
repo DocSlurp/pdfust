@@ -21,7 +21,7 @@ def fixture(output: Path, choice: str = "retain") -> tuple[list[dict], dict, lis
     response = {
         "entry": {
             "index": 9,
-            "model": config["model"],
+            "requested_model": config["model"],
             "tag": f"P003/{config['run_id']}/structure-admission/0",
             "request_sha256": sha(json.dumps(body, separators=(",", ":")).encode()),
         },
@@ -49,7 +49,7 @@ def test_exact_raw_native_receipt_passes(tmp_path: Path) -> None:
     verifier.verify_decisions(tmp_path, selected, config, rows, initialization_failed=False)
 
 
-@pytest.mark.parametrize("field", ["model", "request_sha256", "tag"])
+@pytest.mark.parametrize("field", ["requested_model", "request_sha256", "tag"])
 def test_wrong_request_attribution_rejected(tmp_path: Path, field: str) -> None:
     selected, config, rows = fixture(tmp_path)
     rows[0]["entry"][field] = "wrong"

@@ -65,7 +65,7 @@ def verify_decisions(
             encoded = json.dumps(item["body"], separators=(",", ":"), allow_nan=False).encode()
             if (
                 entry.get("request_sha256") != sha(encoded)
-                or entry.get("model") != config["model"]
+                or entry.get("requested_model") != config["model"]
                 or entry.get("tag") != f"P003/{config['run_id']}/structure-admission/{index}"
                 or type(entry.get("index")) is not int
                 or entry.get("index") in entry_indexes
@@ -209,7 +209,7 @@ def verify_structure_admission(
     for entry in entries:
         tag = entry.get("tag", "")
         item = selected_by_index.get(tag.removeprefix(prefix)) if tag.startswith(prefix) else None
-        if item is None or item["body"] is None or entry.get("model") != config["model"]:
+        if item is None or item["body"] is None or entry.get("requested_model") != config["model"]:
             raise ValueError("Unattributed or refused admission ledger attempt")
         digest = sha(json.dumps(item["body"], separators=(",", ":"), allow_nan=False).encode())
         if entry.get("request_sha256") != digest or entry.get("index") in ledger_indexes:
