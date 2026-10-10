@@ -74,6 +74,7 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                     "p003_gate": ("incremental_gate", "calls"),
                     "p003_topology_source": ("incremental_ownership", "topology_calls"),
                     "p003_structure_admission": ("incremental_admission", "decision_results"),
+                    "p003_geometry_diagram": ("incremental_selection", "decision_results"),
                 }.get(report["config"].get("processor"), (None, "calls"))
                 measured_calls = [call for page in report["results"] for call in page.get(call_key, [])]
                 attempt_scope = report[incremental_key] if incremental_key else report
@@ -422,6 +423,8 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
                             "incremental_admission_valid_pages_per_minute",
                             "incremental_admission_intended_pages_per_api_usd",
                             "incremental_admission_valid_pages_per_api_usd",
+                            "incremental_selection_questions_per_minute",
+                            "incremental_selection_questions_per_api_usd",
                         )
                     ),
                 ]

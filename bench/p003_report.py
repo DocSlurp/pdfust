@@ -1170,6 +1170,8 @@ def score_run(
         required |= {"p003_topology_run.py", "p003_topology_ownership.py", "pipeline_regions.py"}
     elif processor == "p003_structure_admission":
         required |= {"p003_structure_admission_run.py", "p003_structure_admission.py", "p003_structure_geometry.py"}
+    elif processor == "p003_geometry_diagram":
+        required = {"p003_geometry_diagram_run.py", "p003_geometry_diagram.py", "p003_candidate_choice.py"}
     elif processor == "p003_gate":
         required |= {"p003_gate_run.py", "p003_gate_image.py", "p003_gate_packet.py", "pipeline_regions.py"}
     elif processor != "whole":
@@ -1182,8 +1184,15 @@ def score_run(
         "p003_topology_source",
         "p003_gate",
         "p003_structure_admission",
+        "p003_geometry_diagram",
     }
-    if processor == "p003_structure_admission":
+    if processor == "p003_geometry_diagram":
+        from bench.p003_geometry_diagram_verification import verify_geometry_diagram
+
+        baseline_provenance, repair_verified = verify_geometry_diagram(
+            directory, report, frozen, incremental_trusted_code
+        )
+    elif processor == "p003_structure_admission":
         from bench.p003_structure_admission_verification import verify_structure_admission
 
         baseline_provenance, repair_verified = verify_structure_admission(
@@ -1212,6 +1221,7 @@ def score_run(
         "p003_topology_source": "incremental_ownership",
         "p003_gate": "incremental_gate",
         "p003_structure_admission": "incremental_admission",
+        "p003_geometry_diagram": "incremental_selection",
     }.get(processor, "incremental_repair")
     artifacts = []
     operational = 0
@@ -1258,12 +1268,18 @@ def score_run(
     if report.get("complete_output_pages", operational) != operational:
         raise ValueError("Report complete output count differs from independently verified count")
     scoring_predictions = deepcopy(predictions)
+    if processor == "p003_geometry_diagram":
+        from bench.p003_geometry_diagram_verification import quality_predictions
+
+        scoring_predictions = quality_predictions(report)
     for prediction in scoring_predictions:
         if prediction.get("status") == "ok" and prediction.get("source") is not None:
             _bounds(prediction["source"], {"tables": [t for t in prediction["tables"] if "bbox" not in t]})
     reference_pages = [p for p in targets["pages"] if p["id"] in intended]
     scoring = strict_scores(reference_pages, scoring_predictions)
     confirmed = confirmed_candidate_predictions(report)
+    if processor == "p003_geometry_diagram":
+        confirmed = scoring_predictions
     confirmed_scoring = strict_scores(reference_pages, confirmed) if confirmed is not None else None
     completed_ownership = successful_ownership_predictions(report)
     ownership_scoring = strict_scores(reference_pages, completed_ownership) if completed_ownership is not None else None
@@ -1294,16 +1310,16 @@ def score_run(
             raise ValueError("Private-reference field in retained request")
         audits.append({"path": str(request.relative_to(directory)), "sha256": sha(request.read_bytes()), **audit})
     attempt_report = report[incremental_key] if incremental else report
-    if processor == "p003_structure_admission":
+    if processor in {"p003_structure_admission", "p003_geometry_diagram"}:
         attempt_report = attempt_report["charges"]
     accounting = costs(attempt_report)
     attempt_entries = attempt_report.get("entries", [])
     metrics = dict(report.get("metrics", {}))
-    if processor == "p003_structure_admission":
+    if processor in {"p003_structure_admission", "p003_geometry_diagram"}:
         metrics = {
             **report[incremental_key]["metrics"],
             "preprocessing": report.get("preprocessing"),
-            "scope": "Incremental retained-evidence admission only; OCR/TATR excluded",
+            "scope": "Incremental retained-evidence decisions only; acquisition/generation excluded",
         }
     if report.get("layout_detector_initialization") is not None:
         metrics["layout_detector_worker"] = {
@@ -1321,14 +1337,20 @@ def score_run(
         canonical(sorted([{k: a[k] for k in ("id", "source_sha256")} for a in artifacts], key=lambda a: a["id"]))
     )
     errors = Counter(
-        p.get("error_category", p.get("error", "unclassified")) for p in predictions if p.get("status") != "ok"
+        p.get("selection_status", "unclassified")
+        if processor == "p003_geometry_diagram"
+        else p.get("error_category", p.get("error", "unclassified"))
+        for p in predictions
+        if p.get("status") != "ok"
     )
     if len(predictions) < len(expected):
         errors["missing"] += len(expected) - len(predictions)
     return {
         "name": directory.name,
         "evaluation_scope": (
-            "incremental pure structure admission, no baseline credit"
+            "incremental synthetic geometry-diagram selection, no baseline credit; partial selected crops retained"
+            if processor == "p003_geometry_diagram"
+            else "incremental pure structure admission, no baseline credit"
             if processor == "p003_structure_admission"
             else "incremental ranking on retained candidates"
             if processor == "p003_candidate_choice"
@@ -1348,6 +1370,18 @@ def score_run(
             "baseline_credit": False,
         }
         if processor == "p003_structure_admission"
+        else None,
+        "pure_selection_outcomes": {
+            "decision_status_counts": report["decision_status_counts"],
+            "attempted_question_count": report["attempted_question_count"],
+            "selected_crop_count": sum(p["accepted_crop_count"] for p in predictions),
+            "complete_crop_pages": sum(p["complete_crop_coverage"] for p in predictions),
+            "partial_selected_crop_pages": sum(p["selection_status"] == "selected_partial_crops" for p in predictions),
+            "operational_failed_pages": len(expected) - operational,
+            "baseline_credit": False,
+            "scope": "Selected complete disjoint crops retained on operationally incomplete pages; conflicts zero",
+        }
+        if processor == "p003_geometry_diagram"
         else None,
         "decision_evidence": decision_evidence(report),
         "decision_confirmed_quality": {
@@ -1426,6 +1460,16 @@ def score_run(
         "pages_per_minute": None if incremental else _rate(operational, metrics.get("wall_seconds"), 60),
         "intended_pages_per_minute": None if incremental else _rate(len(expected), metrics.get("wall_seconds"), 60),
         "pages_per_api_usd": None if incremental else _rate(operational, accounting["effective_api_usd"]),
+        "incremental_selection_questions_per_minute": _rate(
+            report.get("attempted_question_count", 0), metrics.get("wall_seconds"), 60
+        )
+        if processor == "p003_geometry_diagram"
+        else None,
+        "incremental_selection_questions_per_api_usd": _rate(
+            report.get("attempted_question_count", 0), accounting["effective_api_usd"]
+        )
+        if processor == "p003_geometry_diagram"
+        else None,
         "incremental_admission_intended_pages_per_minute": _rate(len(expected), metrics.get("wall_seconds"), 60)
         if processor == "p003_structure_admission"
         else None,
