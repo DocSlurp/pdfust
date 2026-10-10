@@ -761,9 +761,13 @@ def test_literal_detector_prompt_replay_restores_runtime_order() -> None:
     }
     restored = _detector_request_order(json.loads(json.dumps({"boxes": [box]}, sort_keys=True)))
     proposal = {
-        "id": "r000", "bbox": box["bbox"], "mechanisms": ["yolo_table"],
+        "id": "r000",
+        "bbox": box["bbox"],
+        "mechanisms": ["yolo_table"],
         "evidence_records": [{"mechanism": "yolo_table", "detector_box": box}],
-        "warnings": [], "capacity_window": False, "packet": {},
+        "warnings": [],
+        "capacity_window": False,
+        "packet": {},
     }
     expected = gate_request("model", proposal, None)
     proposal["evidence_records"][0]["detector_box"] = restored["boxes"][0]
@@ -771,3 +775,25 @@ def test_literal_detector_prompt_replay_restores_runtime_order() -> None:
     restored["boxes"][0]["unknown"] = True
     with pytest.raises(ValueError, match="Unsupported detector box"):
         _detector_request_order(restored)
+
+
+@pytest.mark.parametrize("image_mode", ["rgb_png", "grayscale8", "rgb_palette16"])
+def test_candidate_encoding_requires_authenticated_helper_and_current_runner(image_mode: str) -> None:
+    from bench import p003_report
+
+    names = (
+        "p003_candidate_run.py",
+        "p003_candidate_choice.py",
+        "pipeline_vision_transcription.py",
+        "p003_selector_image.py",
+    )
+    hashes = {name: sha((Path(p003_report.__file__).parent / name).read_bytes()) for name in names}
+    frozen = {"config": {"image_mode": image_mode, "image_edge": 512}, "code_sha256": hashes}
+    p003_report.verify_candidate_helpers(frozen)
+    hashes["p003_selector_image.py"] = "tampered"
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)
+    hashes["p003_selector_image.py"] = sha((Path(p003_report.__file__).parent / "p003_selector_image.py").read_bytes())
+    hashes["p003_candidate_run.py"] = p003_report.ROOT_REVIEWED_DIFF_CANDIDATE_RUNNER
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)

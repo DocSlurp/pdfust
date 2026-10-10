@@ -213,15 +213,30 @@ def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
     mode = frozen["config"].get("evidence_mode", "whole")
     if mode not in {"whole", "differences"}:
         raise ValueError("Unknown frozen candidate evidence mode")
+    image_mode = frozen["config"].get("image_mode", "rgb")
+    if image_mode not in {"rgb", "rgb_png", "grayscale8", "rgb_palette16"} or (
+        image_mode != "rgb" and not frozen["config"].get("image_edge")
+    ):
+        raise ValueError("Unknown or pixel-free candidate image treatment")
     names = ["p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py"]
     if mode == "differences":
         names.append("p003_candidate_diff.py")
+    if image_mode != "rgb":
+        names.append("p003_selector_image.py")
     for name in names:
         digest = frozen["code_sha256"].get(name)
         if digest == sha((Path(__file__).parent / name).read_bytes()):
             continue
         if (
             name == "p003_candidate_run.py"
+            and image_mode == "rgb"
+            and digest == "c4d1875b65fd67099eb4d2c3b4089b7492eac4576377ba91d6a7cdbf2ab5aec8"
+            and frozen["config"].get("image_edge", 512) in {0, 128, 256, 400, 512, 768, 1024, 1200}
+        ):
+            continue  # Root reviewed exact RGB-default bytes before optional selector PNG transforms.
+        if (
+            name == "p003_candidate_run.py"
+            and image_mode == "rgb"
             and frozen["config"].get("image_edge", 512) in {0, 256, 512, 768, 1024}
             and (
                 digest == ROOT_REVIEWED_DIFF_CANDIDATE_RUNNER
@@ -665,6 +680,9 @@ def verify_candidate_run(
             if config["image_edge"]:
                 record = next(r for r in frozen["records"] if r["id"] == ident)
                 url, metadata = runner._rerender(record, first, crops[0], config["image_edge"])
+                from bench.p003_selector_image import transform
+
+                url, metadata = transform(url, metadata, config.get("image_mode", "rgb"))
             else:
                 url, metadata = (
                     urls[0],
