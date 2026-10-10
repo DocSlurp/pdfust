@@ -334,6 +334,25 @@ bounded row-boundary repair arms improves its 384-cell source-ID baseline.
 Model/role combinations, failures, CPU/RAM, provider cache counters, and full
 quality scores remain visible in the linked report.
 
+The next [spatial and representation screen](bench/results/p003-spatial-screen.md)
+retains all 16 pages and measures complete-pipeline costs under concurrent load:
+
+| Model and treatment | Outputs / 16 | Complete tables / 53 | Strict cells / 2,333 | Pages/min | Pages/API USD |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Haiku 5.5, explicit matrix instructions | 15 | 3 | 452 | 6.74 | 1,604.79 |
+| Sonnet 5.5, fresh same-crop run | 15 | 4 | 289 | 4.88 | 64.63 |
+| Gemini 3.5 Flash Lite, simplified wire schema | 15 | 3 | 287 | 9.09 | 345.24 |
+| PPLX admission + Haiku, union ranked by table probability | 13 | 2 | 270 | 0.78 | 295.66 |
+| PPLX admission + Haiku, union ranked by smaller region first | 15 | 1 | 138 | 0.94 | 333.88 |
+
+More admitted regions did not produce better tables. Source-preserving placement
+on frozen model topology also remains below the 384-cell ordinal baseline:
+uniform geometry recovers 276 cells, source-derived bands 328, PPLX ownership 280,
+and Luna Decisions ownership 232. The latter two are independently verified
+offline replays of original responses after a composition-order fix; they have
+no new inference throughput or cost claim. Local evidence, ambiguous-only
+placement, image encoding, and a broader 64-page DEV sample are under evaluation.
+
 The [P002 generalization study](bench/results/generalization-p002.md)
 expands coverage to 276 DEV pages: 156 authored stress pages, 64 independently
 annotated OmniDocBench page images, and 56 native-PDF diagnostics. A fixed
