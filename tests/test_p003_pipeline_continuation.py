@@ -188,3 +188,91 @@ def test_interrupted_page_cannot_be_silently_retried(tmp_path: Path) -> None:
             ],
             tmp_path / "out",
         )
+
+
+def proof_for(tmp_path: Path, directory: Path, trust: Path, ident: str, entries: list[dict]) -> Path:
+    original = continuation.authenticate(directory, json.loads(trust.read_bytes()))
+    page = next(p for p in original["pages"] if p["record"]["id"] == ident)
+    captured = tmp_path / "captured-ledger.json"
+    write_json(captured, {"requests": entries})
+    path = tmp_path / "root-attestation.json"
+    write_json(
+        path,
+        {
+            "schema": 1,
+            "kind": "root_prepared_never_transmitted",
+            "root_reviewed": True,
+            "audit_description": "Root captured stopped ledger and verified no admission for exact page prefix",
+            "segment_directory": str(directory.resolve()),
+            "run_id": original["frozen"]["config"]["run_id"],
+            "frozen_sha256": original["artifact_sha256"]["frozen.json"],
+            "code_sha256": original["frozen"]["code_sha256"],
+            "ledger_snapshot": {"path": str(captured), "sha256": sha(captured.read_bytes())},
+            "pages": [
+                {
+                    "id": ident,
+                    "record": page["record"],
+                    "artifacts": page["artifacts"],
+                    "tag_prefix": f"P003/{directory.name}/{ident}/",
+                    "ledger_entry_count": 0,
+                }
+            ],
+        },
+    )
+    return path
+
+
+def test_known_unsupported_completed_and_explicit_never_transmitted(tmp_path: Path) -> None:
+    rows = records(tmp_path)
+    directory, trust = segment(tmp_path, "original", rows)
+    result(directory, "a", "unsupported_no_text")
+    write_json(directory / "b-request-0.json", {"model": "model-a", "state": "literal"})
+    source_manifest = manifest(tmp_path, directory, rows)
+    assert (
+        continuation.authenticate(directory, json.loads(trust.read_bytes()))["pages"][0]["status"] == "completed_error"
+    )
+    proof = proof_for(tmp_path, directory, trust, "b", [])
+    plan = continuation.prepare(directory, trust, source_manifest, tmp_path / "approved", never_transmitted=proof)
+    assert plan["remaining_ids"] == ["b", "c", "d"]
+    assert plan["status_counts"]["prepared_never_transmitted"] == 1
+    assert not plan["automatic_retries"]
+
+
+@pytest.mark.parametrize("mutation", ["entry", "response", "source", "snapshot", "prefix", "request"])
+def test_never_transmitted_proof_rejects_admission_or_identity_changes(tmp_path: Path, mutation: str) -> None:
+    rows = records(tmp_path)
+    directory, trust = segment(tmp_path, "original", rows)
+    write_json(directory / "b-request-0.json", {"state": "literal"})
+    proof = proof_for(tmp_path, directory, trust, "b", [{"tag": "P003/original/b/0"}] if mutation == "entry" else [])
+    data = json.loads(proof.read_bytes())
+    if mutation == "response":
+        write_json(directory / "b-response-0.json", {"answers": {}})
+    elif mutation == "source":
+        data["pages"][0]["record"]["page_number"] = 99
+    elif mutation == "snapshot":
+        Path(data["ledger_snapshot"]["path"]).write_text('{"requests": [{"tag": "new"}]}')
+    elif mutation == "prefix":
+        data["pages"][0]["tag_prefix"] = "P003/another/b/"
+    elif mutation == "request":
+        write_json(directory / "b-request-0.json", {"state": "changed"})
+    write_json(proof, data)
+    with pytest.raises(ValueError, match=r"proof|identity"):
+        continuation.authenticate(directory, json.loads(trust.read_bytes()), never_transmitted=proof)
+
+
+def test_combine_requires_revalidated_never_transmitted_proof(tmp_path: Path) -> None:
+    rows = records(tmp_path)
+    original, trust = segment(tmp_path, "original", rows)
+    write_json(original / "b-request-0.json", {"state": "literal"})
+    proof = proof_for(tmp_path, original, trust, "b", [])
+    later, later_trust = segment(tmp_path, "later", [rows[1]])
+    result(later, "b", "error")
+    specs = [
+        {"directory": str(original), "trusted_code": str(trust)},
+        {"directory": str(later), "trusted_code": str(later_trust)},
+    ]
+    with pytest.raises(ValueError, match="Interrupted"):
+        continuation.combine(specs, tmp_path / "blocked")
+    specs[0]["never_transmitted"] = str(proof)
+    combined = continuation.combine(specs, tmp_path / "combined")
+    assert combined["results"][0]["id"] == "b"

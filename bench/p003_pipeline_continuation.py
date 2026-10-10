@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import shutil
 from collections import Counter
 from pathlib import Path
@@ -37,7 +38,9 @@ def _inventory(directory: Path) -> dict[str, str]:
     }
 
 
-def authenticate(directory: Path, trusted_code: dict[str, str]) -> dict[str, Any]:
+def authenticate(
+    directory: Path, trusted_code: dict[str, str], *, never_transmitted: Path | None = None
+) -> dict[str, Any]:
     """Authenticate a stable stopped segment, preserving errors and quarantining invalid outputs."""
     directory = guard_path(directory)
     before = _inventory(directory)
@@ -89,12 +92,12 @@ def authenticate(directory: Path, trusted_code: dict[str, str]) -> dict[str, Any
         if filename in before:
             try:
                 result = _read(directory / filename)
-                if result["id"] != ident or result.get("status") not in {"ok", "error"}:
+                if result["id"] != ident or result.get("status") not in {"ok", "error", "unsupported_no_text"}:
                     raise ValueError("Malformed completed page identity or status")
                 if report and reported.get(ident) != result:
                     raise ValueError("Retained result differs from segment report")
                 page["result"] = result
-                if result["status"] == "error":
+                if result["status"] != "ok":
                     page["status"] = "completed_error"
                 else:
                     verify_output(
@@ -112,7 +115,7 @@ def authenticate(directory: Path, trusted_code: dict[str, str]) -> dict[str, Any
         raise ValueError("Final segment report omits frozen pages")
     if before != _inventory(directory):
         raise ValueError("Segment changed during authentication; stop the arm before planning")
-    return {
+    segment = {
         "directory": str(directory.resolve()),
         "frozen": frozen,
         "report": report,
@@ -120,11 +123,77 @@ def authenticate(directory: Path, trusted_code: dict[str, str]) -> dict[str, Any
         "artifact_sha256": before,
         "trusted_code": trusted_code,
     }
+    if never_transmitted is not None:
+        attest_never_transmitted(segment, never_transmitted)
+    return segment
 
 
-def prepare(directory: Path, trusted_code: Path, manifest_path: Path, output: Path) -> dict[str, Any]:
+def attest_never_transmitted(segment: dict[str, Any], path: Path) -> None:
+    """Validate external root proof against an immutable captured ledger snapshot."""
+    proof = _read(path)
+    frozen = segment["frozen"]
+    directory = Path(segment["directory"])
+    snapshot = proof.get("ledger_snapshot", {})
+    if (
+        proof.get("schema") != 1
+        or proof.get("kind") != "root_prepared_never_transmitted"
+        or proof.get("root_reviewed") is not True
+        or proof.get("segment_directory") != str(directory)
+        or proof.get("run_id") != frozen["config"]["run_id"]
+        or proof.get("frozen_sha256") != segment["artifact_sha256"]["frozen.json"]
+        or proof.get("code_sha256") != frozen["code_sha256"]
+        or not isinstance(proof.get("audit_description"), str)
+        or not proof["audit_description"].strip()
+        or directory in guard_path(path).resolve().parents
+    ):
+        raise ValueError("Never-transmitted proof differs from stopped source/code/run identity")
+    captured = guard_path(Path(snapshot["path"]))
+    if directory in captured.resolve().parents or sha(captured.read_bytes()) != snapshot.get("sha256"):
+        raise ValueError("Captured ledger snapshot identity differs")
+    requests = _read(captured).get("requests")
+    if not isinstance(requests, list) or any(
+        not isinstance(e, dict) or not isinstance(e.get("tag"), str) for e in requests
+    ):
+        raise ValueError("Captured ledger lacks a complete request tag inventory")
+    pages = {p["record"]["id"]: p for p in segment["pages"]}
+    admitted = set()
+    for item in proof["pages"]:
+        ident = _id(item["id"])
+        prefix = f"P003/{frozen['config']['run_id']}/{ident}/"
+        page = pages.get(ident)
+        if (
+            ident in admitted
+            or page is None
+            or page["status"] != "interrupted_artifacts"
+            or item.get("record") != page["record"]
+            or item.get("artifacts") != page["artifacts"]
+            or item.get("tag_prefix") != prefix
+            or item.get("ledger_entry_count") != 0
+            or not page["artifacts"]
+            or any(
+                re.fullmatch(re.escape(ident) + r"-request-[0-9]+\.json", name) is None for name in page["artifacts"]
+            )
+            or any(e["tag"].startswith(prefix) for e in requests)
+        ):
+            raise ValueError("Page lacks exact request-only and zero-admission proof")
+        admitted.add(ident)
+    if not admitted:
+        raise ValueError("Never-transmitted proof admits no pages")
+    for ident in admitted:
+        pages[ident]["status"] = "prepared_never_transmitted"
+    segment["never_transmitted_attestation"] = {
+        "path": str(guard_path(path).resolve()),
+        "sha256": sha(guard_path(path).read_bytes()),
+        "proof": proof,
+        "scope": "explicit root audit; no retry of any admitted attempt",
+    }
+
+
+def prepare(
+    directory: Path, trusted_code: Path, manifest_path: Path, output: Path, *, never_transmitted: Path | None = None
+) -> dict[str, Any]:
     """Freeze clean missing pages only; never re-admit successful, failed or interrupted pages."""
-    segment = authenticate(directory, _read(trusted_code))
+    segment = authenticate(directory, _read(trusted_code), never_transmitted=never_transmitted)
     manifest_path, output = guard_path(manifest_path), guard_path(output)
     manifest = _read(manifest_path)
     if manifest.get("split") != "DEV" or sha(manifest_path.read_bytes()) != segment["frozen"]["manifest_sha256"]:
@@ -135,7 +204,9 @@ def prepare(directory: Path, trusted_code: Path, manifest_path: Path, output: Pa
     by_id = {row["id"]: row for row in rows}
     if any(by_id.get(row["id"]) != row for row in segment["frozen"]["records"]):
         raise ValueError("Original manifest source records differ from frozen source records")
-    remaining = [page["record"] for page in segment["pages"] if page["status"] == "clean_missing"]
+    remaining = [
+        page["record"] for page in segment["pages"] if page["status"] in {"clean_missing", "prepared_never_transmitted"}
+    ]
     subset = {
         "schema": manifest.get("schema", 1),
         "split": "DEV",
@@ -144,6 +215,7 @@ def prepare(directory: Path, trusted_code: Path, manifest_path: Path, output: Pa
         "scope": "clean unattempted pages only; source-equivalent per-model continuation",
     }
     output.mkdir(parents=True, exist_ok=False)
+    archive_attestation(segment, output)
     write_json(output / "manifest.json", subset)
     plan = {
         "processor": "p003_pipeline_continuation_plan",
@@ -185,11 +257,32 @@ def _finite(value: Any) -> float | None:
     return None
 
 
+def archive_attestation(segment: dict[str, Any], output: Path) -> None:
+    """Retain the root audit and immutable captured ledger alongside derived artifacts."""
+    receipt = segment.get("never_transmitted_attestation")
+    if receipt is not None:
+        target = output / "never-transmitted-audit"
+        target.mkdir()
+        shutil.copyfile(guard_path(Path(receipt["path"])), target / "root-attestation.json")
+        snapshot = receipt["proof"]["ledger_snapshot"]
+        raw = guard_path(Path(snapshot["path"])).read_bytes()
+        if sha(raw) != snapshot["sha256"]:
+            raise ValueError("Captured ledger changed before audit freezing")
+        (target / "captured-ledger.json").write_bytes(raw)
+
+
 def combine(specs: list[dict[str, Any]], output: Path) -> dict[str, Any]:
     """Combine disjoint same-treatment segments; explicit measured totals never double count segments."""
     if not specs:
         raise ValueError("At least one original segment is required")
-    segments = [authenticate(Path(spec["directory"]), _read(Path(spec["trusted_code"]))) for spec in specs]
+    segments = [
+        authenticate(
+            Path(spec["directory"]),
+            _read(Path(spec["trusted_code"])),
+            never_transmitted=Path(spec["never_transmitted"]) if spec.get("never_transmitted") else None,
+        )
+        for spec in specs
+    ]
     if len({segment["directory"] for segment in segments}) != len(segments):
         raise ValueError("Duplicate segment would double count original work")
     original = segments[0]["frozen"]
@@ -223,11 +316,13 @@ def combine(specs: list[dict[str, Any]], output: Path) -> dict[str, Any]:
     for index, (spec, segment) in enumerate(zip(specs, segments, strict=True)):
         target = output / "segments" / str(index)
         shutil.copytree(Path(segment["directory"]), target)
+        archive_attestation(segment, target)
         provenance.append(
             {
                 "directory": segment["directory"],
                 "artifact_sha256": segment["artifact_sha256"],
                 "trusted_code": segment["trusted_code"],
+                "never_transmitted_attestation": segment.get("never_transmitted_attestation"),
             }
         )
         retained_report = segment["report"]
@@ -321,6 +416,7 @@ def main() -> None:
     plan.add_argument("--trusted-code", type=Path, required=True)
     plan.add_argument("--manifest", type=Path, required=True)
     plan.add_argument("--output", type=Path, required=True)
+    plan.add_argument("--never-transmitted", type=Path)
     merge = commands.add_parser("combine")
     merge.add_argument(
         "--segments",
@@ -331,7 +427,7 @@ def main() -> None:
     merge.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     result = (
-        prepare(args.segment, args.trusted_code, args.manifest, args.output)
+        prepare(args.segment, args.trusted_code, args.manifest, args.output, never_transmitted=args.never_transmitted)
         if args.command == "prepare"
         else combine(_read(args.segments), args.output)
     )
