@@ -133,3 +133,29 @@ prose extraction. Validate complete responses, retain provider refusals and char
 every attempt. Compare against source-owned pipelines before selecting combinations.
 The initial Haiku anchor run was interrupted after four pages; retain its twelve
 missing pages and unresolved reservation, and run new controls with new identities.
+
+### Layer 3: explicit expansions and bounded crop transcription
+
+At 04:30 UTC the next queue is fixed before the additional 260-page outcomes:
+whole-detector matrix assembly with Haiku at 512 pixels on all 276 r2 pages,
+plus a matched natural16 1024-pixel arm. This is a cost-oriented expansion of a
+promising architecture, not a claim that the chosen model is already best.
+A separate combination uses whitespace OCR at 300 DPI and lossless array evidence;
+its outcome cannot attribute a change to image resolution alone. Whole-page vision
+controls compare 1200 with 2048 pixels for both Sonnet and Haiku without silent
+request-size adaptation.
+
+The 2x2 detector treatment increased proposals but reduced exact text cells from
+341 to 250 compared with whole-page detection. Freeze three source-only fusion
+rules before scoring: baseline NMS, larger-first containment suppression, and
+aligned-overlap unions. Keep member boxes, boundary warnings, and all source IDs.
+More proposals and apparent coverage remain diagnostics rather than extraction
+quality. A separate detector-crop vision arm will test whether larger local text
+pixels avoid both whole-page legibility limits and the fixed OCR vocabulary ceiling.
+That arm remains table-only and model-transcribed, with strict page-level atomic
+validation and no claim of source conservation.
+
+Mechanical repair is not accepted by default: the frozen counterfactual that pads
+short rows admitted a false table on a negative page. Retain strict responses,
+errors, and charges. Geometry clipping and null-covered-cell repair are documented
+separately; successful parsing is not evidence of a quality improvement.
