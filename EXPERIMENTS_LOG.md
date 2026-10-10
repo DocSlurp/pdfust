@@ -1579,3 +1579,63 @@ or rented host is used. At 05:36 UTC, P002 has 828 attempts and USD 6.1845728 in
 positive reported charges, plus the preserved USD 0.30 interrupted reservation
 and USD 0.30 active reservation: USD 6.7845728 conservative accounting. Raw
 artifacts remain local; only code, protocols and aggregate reports are pushed.
+
+### P002 checkpoint: 2026-10-10 06:00 UTC
+
+Matched Haiku crop edges 400/512/768/1024 recover 225/290/403/687 exact anchors
+and 3/2/3/4 complete tables on the same sixteen pages. Smaller edges admit all
+sixteen outputs; 1024 admits fourteen. Dense-page exact counts are 0/2/110/416;
+remaining-page counts are 225/288/293/271. Rates are 8.49/9.80/9.87/8.57 pages/min
+and 1,779.68/1,979.73/1,849.20/1,538.73 pages/API USD. No per-page image-size
+selector is fitted. Single fresh replicates do not isolate stochastic latency
+or response-shape variation from image effects.
+
+The complete native/image hybrid pilots expose that variability directly.
+Sonnet's standalone crop run and hybrid pilot have identical proposals on all
+sixteen pages, identical complete crop descriptors and all nineteen byte-identical
+request bodies, with no native exclusions. Eight response contents match; provider
+raw records also contain differing metadata. One fresh dense-page response fails
+strict overlap validation, dropping its prior 692 exact cells. Hybrid primary
+recovery is 289 instead of 982. Haiku also has all nineteen identical input bodies
+and drops from 687 to 289 after a fresh dense-page format failure. These differences
+must not be attributed to hybrid composition changing model accuracy. The full276
+hybrid runs provide broader coverage and another fresh response set.
+
+A concrete hybrid Markdown bug is fixed: tables without contained source words
+could tie a footer's source anchor, then sort after the footer and alphabetically
+by table contents. Renderer v2 uses source anchors, display geometry and stable
+insertion order. Exact frozen v1 hashes still select the original historical
+renderer in verification. Thirty-seven coordinate/ownership/failure tests pass,
+including real CropBox, right-angle rotations and later-page extraction. Native-only
+v1 and v2 output remains identical on all 272 available sources. A separate scorer
+validation fix rejects string matrix rows and non-list span containers under the
+existing canonical schema; matching rules stay frozen.
+
+Four-worker whole-page Haiku at 2048/JPEG50 produces 13/16 strict outputs, 216 exact
+cells and four complete tables in 25.217 seconds of page-processing wall time:
+30.93 pages/min, 1,181.46 pages/API USD and USD 0.0110033 for all sixteen fresh calls.
+The serial arm has 14 outputs, 208 cells, two complete tables and 12.43 pages/min.
+All input requests match semantically, but fresh responses differ. Independent
+review reconciles all UUIDs, charges, response hashes, output ordering and RSS
+samples. Process CPU is 17.939 seconds; overlapping per-page CPU intervals sum to
+67.538 and are explicitly nonadditive. Timing excludes artifact freezing/client
+setup in both arms; it is not complete command-startup time.
+
+The frozen partial-table salvage experiment retains only independently valid,
+isolated tables from normally completed responses. It quarantines every member
+of an overlap component across all crops, without repairing values, shapes or
+boxes. On the failed Sonnet hybrid page this recovers 629 exact cells and adds one
+extra table; original complete-page errors and primary scores remain unchanged.
+Haiku controls gain 10–47 cells, with two extra tables in the four-worker control.
+All eighty intended page/control observations, costs and failures remain retained.
+These are explicitly partial review artifacts, not successful complete pages or
+new paid runs. See `bench/results/p002-partial-salvage.md`.
+
+The full276 hybrid Haiku run is active. At the latest accounting check P002 has
+993 attempts, USD 6.47681702 positive reported charges and the preserved USD 0.30
+interruption reservation (active reservations vary). The current code passes
+tracked Ruff and full mypy on 229 source files; the earlier full-suite result
+remains 3,430 passed/14 skipped/two expected failures, with new focused tests
+passing separately. No local GPU or rental is used. T3 preview tabs open, but
+snapshot/navigation automation fails on the client; gallery HTML is generated
+and tested, with no claim of successful browser visual inspection.
