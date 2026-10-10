@@ -156,7 +156,7 @@ def test_native_display_hides_unused_model_settings_preserving_raw_config(tmp_pa
     write_json(pipeline / "report.json", report)
     result = run(tmp_path, tmp_path / "summary.md")
     text = (tmp_path / "summary.md").read_text()
-    assert "| native | CPU only | — | — | — | True | False |" in text
+    assert "| native | CPU only | — | — | — | True | False | — |" in text
     assert result["runs"][0]["config"]["model"] == "test-model"
     assert result["runs"][0]["config"]["image_edge"] == 512
     assert "<summary>Complete per-family structure scores</summary>" in text
@@ -186,3 +186,24 @@ def test_incomplete_frozen_runs_are_visible_without_scoring_partial_outputs(tmp_
     text = (tmp_path / "summary.md").read_text()
     assert "| unfinished | adaptive | test-model | 3 | 1 | True |" in text
     assert "wall/CPU and RSS remain unknown" in text
+
+
+def test_ocr_setting_visible_and_unused_gate_premise_hidden(tmp_path: Path) -> None:
+    pipeline, report = _fixture(tmp_path)
+    report["config"].update(policy="assembly", ocr_empty=True, gate_premise="relational")
+    frozen = json.loads((pipeline / "frozen.json").read_text())
+    frozen["config"] = report["config"]
+    write_json(pipeline / "frozen.json", frozen)
+    write_json(pipeline / "report.json", report)
+    result = run(tmp_path, tmp_path / "summary.md")
+    text = (tmp_path / "summary.md").read_text()
+    assert "| assembly | test-model | 512 | 1 | True | False | True | — |" in text
+    assert result["runs"][0]["config"]["gate_premise"] == "relational"
+    report["config"]["policy"] = "gated"
+    frozen["config"] = report["config"]
+    write_json(pipeline / "frozen.json", frozen)
+    write_json(pipeline / "report.json", report)
+    run(tmp_path, tmp_path / "summary.md")
+    assert (
+        "| gated | test-model | 512 | 1 | True | False | True | relational |" in (tmp_path / "summary.md").read_text()
+    )

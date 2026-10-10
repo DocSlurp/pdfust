@@ -225,8 +225,8 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         "The fixed pilot is selected by frozen manifest membership; absent results remain failures. "
         "Full and pilot cohorts have distinct denominators.",
         "",
-        "| Run | Cohort | Policy | Model | Image edge | Context rows | Legend | Normalize rotation | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
-        "|---|---|---|---|---:|---:|---|---|---|---:|---:|---:|---:|",
+        "| Run | Cohort | Policy | Model | Image edge | Context rows | Legend | Normalize rotation | OCR empty pages | Gate premise | Output / pages | Exact positive pages | Negative FP pages | All / scored errors |",
+        "|---|---|---|---|---:|---:|---|---|---|---|---:|---:|---:|---:|",
     ]
     for item in runs:
         config, pos, neg = item["config"], item["positive"], item["negative"]
@@ -235,10 +235,11 @@ def run(directory: Path, output: Path) -> dict[str, Any]:
         image_edge = "—" if native else config.get("image_edge", "unknown")
         context_rows = "—" if native else config.get("context_rows", "unknown")
         legend = "—" if native else config.get("legend", "unknown")
+        premise = config.get("gate_premise", "unknown") if config["policy"] == "gated" else "—"
         lines.append(
             f"| {_label(item['name'])} | {'pilot' if config['pilot'] else 'full'} | {_label(config['policy'])} | "
             f"{_label(model)} | {image_edge} | {context_rows} | {legend} | "
-            f"{config.get('normalize_rotation', False)} | {config.get('gate_premise', False)} | "
+            f"{config.get('normalize_rotation', False)} | {config.get('ocr_empty', False)} | {_label(premise)} | "
             f"{item['operational_pages']}/{item['scores']['pages']} | {pos['exact_page']}/{pos['scored_pages']} | "
             f"{neg['false_positive_page']}/{neg['scored_pages']} | {item['all_errors']}/{item['scores']['error']} |"
         )
