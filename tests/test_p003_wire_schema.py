@@ -25,3 +25,15 @@ def test_only_schema_bounds_change_and_local_geometry_stays_strict() -> None:
         '"matrix":[["A","B"]],"mergedspans":[]}]}}}'}}]}
     with pytest.raises(ValueError, match="outside normalized"):
         parse(response, [0, 0, 10, 10])
+
+
+def test_property_names_and_literal_values_are_not_schema_keywords() -> None:
+    body = {"response_format": {"json_schema": {"schema": {
+        "type": "object", "properties": {"maximum": {"type": "integer", "maximum": 5}},
+        "const": {"maxItems": 7},
+    }}}}
+    changed, removed = simplify(body)
+    schema = changed["response_format"]["json_schema"]["schema"]
+    assert schema["properties"]["maximum"] == {"type": "integer"}
+    assert schema["const"] == {"maxItems": 7}
+    assert removed == {"maximum": 1}

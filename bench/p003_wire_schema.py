@@ -29,7 +29,10 @@ def simplify(body: dict[str, Any]) -> tuple[dict[str, Any], dict[str, int]]:
                 if key in BOUND_KEYS:
                     del node[key]
                     removed[key] = removed.get(key, 0) + 1
-                else:
+                elif key in {"properties", "$defs", "definitions", "patternProperties", "dependentSchemas"}:
+                    for child in node[key].values():
+                        visit(child)
+                elif key not in {"const", "enum", "examples", "default"}:
                     visit(node[key])
 
     visit(schema)
