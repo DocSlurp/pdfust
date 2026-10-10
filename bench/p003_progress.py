@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 from typing import Any
 
+from bench.p003_decision_evidence import decision_evidence
 from bench.silver import guard_path, sha
 
 KNOWN_RUNS = (
@@ -66,6 +67,7 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                 if sha(raw) != run["report_sha256"]:
                     raise ValueError("Provider cache source report differs from independently verified report hash")
                 report = json.loads(raw)
+                run["decision_evidence"] = decision_evidence(report)
                 incremental_key, call_key = {
                     "p003_candidate_choice": ("incremental_ranking", "ranking_calls"),
                     "p003_boundary_repair": ("incremental_repair", "repair_calls"),
@@ -183,6 +185,41 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
         "Historical candidate generation and newly measured incremental work are separate.",
         "",
     ]
+    confirmed_runs = [r for r in runs if r.get("decision_confirmed_quality") is not None]
+    if confirmed_runs:
+        lines += [
+            "Primary candidate quality includes only model-selected complete crop states. Abstained, failed and "
+            "identical no-question regions receive no model credit; full intended denominators remain. "
+            "Historical retained pipeline quality follows separately.",
+            "",
+        ]
+        lines += _table(
+            [
+                "Run",
+                "Model-confirmed strict cells",
+                "Complete tables",
+                "Missing tables",
+                "Extra tables",
+                "Negative FP",
+                "Decision quality errors",
+                "Exact positive pages",
+            ],
+            [
+                [
+                    r["name"],
+                    f"{q['strict_exact_cells']}/{q['expected_cells']}",
+                    f"{q['complete_tables']}/{q['expected_tables']}",
+                    q["missing_tables"],
+                    q["false_positive_tables"],
+                    f"{q['false_positive_page']}/{q['negative_page']}",
+                    q["all_page_errors"],
+                    r["decision_confirmed_quality"]["exact_positive_pages"],
+                ]
+                for r in confirmed_runs
+                for q in [r["decision_confirmed_quality"]["scores"]]
+            ],
+        )
+        lines += ["Retained pipeline output quality (including historical fallback outputs):", ""]
     quality = []
     for run in runs:
         scores = run["scores"]
@@ -247,6 +284,45 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
         ],
         quality,
     )
+    decision_runs = [r for r in runs if r.get("decision_evidence") is not None]
+    if decision_runs:
+        lines += [
+            "",
+            "Fresh model decisions are separate from retained pipeline outputs. A valid unresolved "
+            "response is an abstention, not a model-selected output. Served model version aliases are retained "
+            "as provenance; they alone do not establish model substitution.",
+            "",
+        ]
+        lines += _table(
+            [
+                "Run",
+                "Fresh attempts",
+                "Returned calls",
+                "Parsed selected choices",
+                "Parsed abstentions",
+                "Committed model crops",
+                "Fully chosen candidate pages",
+                "Pages retaining output on abstention",
+                "Requested-model mismatches",
+                "Explicit retry attempts",
+            ],
+            [
+                [
+                    r["name"],
+                    d["fresh_ledger_attempts"],
+                    d["fresh_returned_calls"],
+                    d.get("parsed_selected_choices"),
+                    d.get("parsed_unresolved_abstentions"),
+                    d.get("committed_model_crop_choices"),
+                    d.get("fully_chosen_incremental_pages"),
+                    d.get("pages_with_unresolved_baseline_retention"),
+                    d["requested_model_mismatch_attempts"],
+                    d["explicit_retry_attempts"],
+                ]
+                for r in decision_runs
+                for d in [r["decision_evidence"]]
+            ],
+        )
     lines += [
         "",
         "Full-pipeline rates count verified operational outputs. Cost overlays leave original report "

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from bench.generalization_scoring import _cells, audit_model_body, score_dataset
+from bench.p003_decision_evidence import confirmed_candidate_predictions, decision_evidence
 from bench.silver import canonical, guard_path, sha, write_json
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
@@ -1238,6 +1239,8 @@ def score_run(
             _bounds(prediction["source"], {"tables": [t for t in prediction["tables"] if "bbox" not in t]})
     reference_pages = [p for p in targets["pages"] if p["id"] in intended]
     scoring = strict_scores(reference_pages, scoring_predictions)
+    confirmed = confirmed_candidate_predictions(report)
+    confirmed_scoring = strict_scores(reference_pages, confirmed) if confirmed is not None else None
     audits = []
     request_images = []
     request_paths = set(directory.glob("**/*-request-*.json")) | set(directory.glob("**/*-request.json"))
@@ -1302,6 +1305,19 @@ def score_run(
         if incremental
         else "complete pipeline",
         "baseline_provenance": baseline_provenance,
+        "decision_evidence": decision_evidence(report),
+        "decision_confirmed_quality": {
+            "scope": "Primary model-selected crop quality; full intended denominator; no baseline or duplicate credit",
+            "scores": confirmed_scoring["totals"],
+            "page_scores": confirmed_scoring["pages"],
+            "positive_macro": confirmed_scoring["positive_macro"],
+            "exact_positive_pages": sum(
+                p.get("exact_page", False) and p.get("positive_page", False) for p in confirmed_scoring["pages"]
+            ),
+            "selected_model_regions": sum(p["selected_model_regions"] for p in confirmed),
+        }
+        if confirmed_scoring is not None
+        else None,
         "dataset_sha256": manifest["dataset_sha256"],
         "manifest_sha256": frozen["manifest_sha256"],
         "report_sha256": sha((directory / "report.json").read_bytes()),
