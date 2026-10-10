@@ -107,10 +107,13 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
 def cache_usage(calls: list[dict[str, Any]], ledger_attempts: int | None) -> dict[str, Any]:
     """Sum explicit provider cache counters over unique fresh returned ledger entries only."""
     indexed = {}
-    replayed = unattributed = 0
+    replayed = unattributed = unknown_freshness = 0
     for call in calls:
         if call.get("replayed") is True:
             replayed += 1
+            continue
+        if call.get("replayed") is not False:
+            unknown_freshness += 1
             continue
         index = call.get("entry", {}).get("index")
         if type(index) is not int:
@@ -138,8 +141,9 @@ def cache_usage(calls: list[dict[str, Any]], ledger_attempts: int | None) -> dic
     return {
         "unique_fresh_returned_attempts": len(indexed),
         "ledger_attempts": ledger_attempts,
-        "all_attempt_usage_coverage": len(indexed) == ledger_attempts and not unattributed,
+        "all_attempt_usage_coverage": len(indexed) == ledger_attempts and not unattributed and not unknown_freshness,
         "replayed_records_excluded": replayed,
+        "unknown_freshness_records_excluded": unknown_freshness,
         "unattributed_records_excluded": unattributed,
         "counters": counters,
         "scope": "Provider-reported prompt cache counters; missing counters unknown; no local replay claim",
@@ -178,6 +182,19 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
         quality.append(
             [
                 run["name"],
+                run["config"].get("generation_model", run["config"].get("model", "native")),
+                ", ".join(
+                    f"{key}={run['config'][key]}"
+                    for key in (
+                        "processor",
+                        "preset",
+                        "transcription_representation",
+                        "image_edge",
+                        "gate_packet",
+                        "gate_image_mode",
+                    )
+                    if key in run["config"]
+                ),
                 f"{run['operational_pages']}/{run['intended_pages']}",
                 run["errors"],
                 f"{scores.get('complete_tables', 0)}/{scores.get('expected_tables', 0)}",
@@ -193,6 +210,8 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
     lines += _table(
         [
             "Run",
+            "Model",
+            "Treatment",
             "Outputs/intended",
             "Errors",
             "Complete tables",
@@ -319,8 +338,7 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
                             default=None,
                         ),
                         f"{len(requests)} retained single-worker request intervals; "
-                        "sum recorded interval wall/CPU; max sampled RSS. "
-                        + worker.get("scope", ""),
+                        "sum recorded interval wall/CPU; max sampled RSS. " + worker.get("scope", ""),
                     ]
                 )
     lines += _table(
@@ -334,59 +352,66 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
     ]
     cache_rows = []
     for run in runs:
-        usage = run.get("provider_cache_usage")
-        if usage is None:
-            cache_rows.append([run["name"], "current measured stage", None, None, None, "Unmeasured report usage"])
-        else:
+        usages = [
+            ("current measured stage", run.get("provider_cache_usage")),
+            *(
+                (f"historical baseline {index}", usage)
+                for index, usage in enumerate(run.get("historical_provider_cache_usage", []))
+            ),
+        ]
+        for scope, usage in usages:
+            if usage is None:
+                cache_rows.append([run["name"], scope, None, None, None, None, None, None])
+                continue
+            counters = usage["counters"]
+            cached, written = counters["cached_tokens"], counters["cache_write_tokens"]
             cache_rows.append(
                 [
                     run["name"],
-                    "current measured stage",
-                    usage["unique_fresh_returned_attempts"],
-                    usage["ledger_attempts"],
+                    scope,
+                    f"{usage['unique_fresh_returned_attempts']}/{usage['ledger_attempts']}",
+                    cached["provider_reported_known_subtotal"] if cached["counter_present_calls"] else None,
+                    written["provider_reported_known_subtotal"] if written["counter_present_calls"] else None,
+                    cached["counter_missing_calls"],
+                    written["counter_missing_calls"],
                     usage["all_attempt_usage_coverage"],
-                    json.dumps(usage["counters"], sort_keys=True),
-                ]
-            )
-        for index, historical in enumerate(run.get("historical_provider_cache_usage", [])):
-            cache_rows.append(
-                [
-                    run["name"],
-                    f"historical baseline {index}",
-                    historical["unique_fresh_returned_attempts"],
-                    historical["ledger_attempts"],
-                    historical["all_attempt_usage_coverage"],
-                    json.dumps(historical["counters"], sort_keys=True),
                 ]
             )
     lines += _table(
         [
             "Run",
             "Cache scope",
-            "Unique fresh returned calls",
-            "All ledger attempts",
-            "All-attempt coverage",
-            "Explicit provider cache counters",
+            "Observed fresh/all attempts",
+            "Reported read tokens subtotal",
+            "Reported write tokens subtotal",
+            "Read counter missing calls",
+            "Write counter missing calls",
+            "All-attempt usage coverage",
         ],
         cache_rows,
     )
     lines.append("")
     for run in runs:
-        lines += [
-            f"- `{run['name']}`: evaluation `{run['evaluation_sha256']}` at `{run['evaluation_path']}`; "
-            f"immutable report `{run['report_sha256']}`; "
+        lines.append(
+            f"- `{run['name']}`: evaluation `{run['evaluation_sha256']}`; report `{run['report_sha256']}`; "
             f"failures `{json.dumps(run.get('failure_categories', {}), sort_keys=True)}`."
-        ]
-        if run.get("baseline_provenance"):
+        )
+        provenance = run.get("baseline_provenance") or {}
+        baseline_hashes = [baseline.get("report_sha256") for baseline in provenance.get("candidate_baselines", [])]
+        if provenance.get("report_sha256"):
+            baseline_hashes.append(provenance["report_sha256"])
+        if baseline_hashes:
             lines.append(
-                "  Historical baseline provenance: `" + json.dumps(run["baseline_provenance"], sort_keys=True) + "`."
+                "  Historical baseline report hashes: " + ", ".join(f"`{value}`" for value in baseline_hashes) + "."
             )
-        if run.get("cost_reconciliation"):
+        overlay = run.get("cost_reconciliation")
+        if overlay:
             lines.append(
-                "  Verified accounting overlay: `" + json.dumps(run["cost_reconciliation"], sort_keys=True) + "`."
+                "  Verified accounting sidecar `" + overlay.get("sidecar_sha256", "unmeasured") + "`; "
+                "original report `" + overlay.get("original_report_sha256", run["report_sha256"]) + "`."
             )
     if pending:
-        lines += ["", "Pending completed evaluation: " + ", ".join(f"`{p}`" for p in pending) + "."]
+        lines += ["", "Pending completed evaluation: " + ", ".join(f"`{Path(p).name}`" for p in pending) + "."]
     return "\n".join(lines) + "\n"
 
 

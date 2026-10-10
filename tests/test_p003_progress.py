@@ -59,6 +59,8 @@ def test_progress_prefers_verified_overlay_keeps_original_unknown_and_pending(tm
     assert "Reconciled pages/APIUSD" in text
     assert "1250" in text
     assert "Pending completed evaluation" in text
+    assert str(tmp_path) not in text
+    assert "| Run | Model | Treatment |" in text
 
 
 def test_progress_rejects_removed_error_denominator(tmp_path: Path) -> None:
@@ -70,12 +72,12 @@ def test_progress_rejects_removed_error_denominator(tmp_path: Path) -> None:
 
 
 def test_cache_usage_deduplicates_fresh_indices_keeps_missing_counter_unknown() -> None:
-    call = {"entry": {"index": 1}, "usage": {"prompt_tokens_details": {"cached_tokens": 7}}}
+    call = {"entry": {"index": 1}, "usage": {"prompt_tokens_details": {"cached_tokens": 7}}, "replayed": False}
     result = cache_usage(
         [
             call,
             deepcopy(call),
-            {"entry": {"index": 2}, "usage": {}},
+            {"entry": {"index": 2}, "usage": {}, "replayed": False},
             {"entry": {"index": 3}, "usage": {}, "replayed": True},
         ],
         3,
@@ -89,7 +91,10 @@ def test_cache_usage_deduplicates_fresh_indices_keeps_missing_counter_unknown() 
 
 
 def test_cache_usage_rejects_conflicting_same_attempt_usage() -> None:
-    calls = [{"entry": {"index": 1}, "usage": {"prompt_tokens_details": {"cached_tokens": value}}} for value in (0, 7)]
+    calls = [
+        {"entry": {"index": 1}, "usage": {"prompt_tokens_details": {"cached_tokens": value}}, "replayed": False}
+        for value in (0, 7)
+    ]
     with pytest.raises(ValueError, match="Conflicting provider usage"):
         cache_usage(calls, 1)
 
