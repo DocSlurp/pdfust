@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from bench import generalization_report as module
 from bench.generalization_report import (
     _bounds,
     _costs,
@@ -273,3 +274,36 @@ def test_failed_request_body_is_audited_without_successful_call(fixture: dict[st
     write(f["run"] / "positive-request-0.json", {"annotation_html": "private reference"})
     with pytest.raises(ValueError, match="reference fields"):
         score_run(f["run"], f["corpus"] / "manifest.json", f["manifest"], f["targets"])
+
+
+def test_reviewed_history_allows_runner_changes_but_requires_validator_ast(
+    fixture: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    f = fixture
+    frozen = deepcopy(f["frozen"])
+    local_region = Path(module.__file__).with_name("pipeline_regions.py").read_bytes()
+    historical_region = local_region + b"\n# Reviewed historical proposal-only difference.\n"
+    historical_runner = b"def process():\n    return 'reviewed historical runner'\n"
+    for name, data in [("pipeline_regions.py", historical_region), ("generalization_run.py", historical_runner)]:
+        (f["run"] / "code" / name).write_bytes(data)
+        frozen["code_sha256"][name] = sha(data)
+    with pytest.raises(ValueError, match="unreviewed"):
+        verify_code(f["run"], frozen, processor="regions")
+    monkeypatch.setattr(
+        module,
+        "TRUSTED_HISTORICAL_CODE",
+        {
+            "pipeline_regions.py": {sha(historical_region): "reviewed-region"},
+            "generalization_run.py": {sha(historical_runner): "reviewed-runner"},
+        },
+    )
+    verified = verify_code(f["run"], frozen, processor="regions")
+    assert verified["region_validator_ast_compatible"]
+    assert verified["trusted_historical_commits"]["generalization_run.py"] == "reviewed-runner"
+    altered = historical_region.replace(b"MAX_PAGE_WORDS = 65_536", b"MAX_PAGE_WORDS = 65_535")
+    (f["run"] / "code" / "pipeline_regions.py").write_bytes(altered)
+    frozen["code_sha256"]["pipeline_regions.py"] = sha(altered)
+    module.TRUSTED_HISTORICAL_CODE["pipeline_regions.py"][sha(altered)] = "reviewed-but-incompatible"
+    with pytest.raises(ValueError, match="AST"):
+        verify_code(f["run"], frozen, processor="regions")

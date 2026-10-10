@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import math
 from collections import Counter, defaultdict
@@ -21,6 +22,41 @@ from bench.silver import canonical, guard_path, sha
 LOCALIZATION_IOU = 0.5
 
 SOURCE_FIELDS = ("id", "pdf_path", "pdf_sha256", "page_number")
+
+
+# Reviewed repository sources, never digests supplied by an artifact.
+# Runner 7395782 retains local region states and uses the verified baseline
+# renderer, source-order sorting and a single newline between region renderings.
+TRUSTED_HISTORICAL_CODE = {
+    "generalization_run.py": {
+        "a5bc281951becd59633a78d00bdeae125405789e09b3368617ff85ecbd191b26": "7395782",
+    },
+    "pipeline_regions.py": {
+        "66c6ec07d91753ec9a8885124e18a3d0a64f929be5f29682e1050ea826894d2a": "83bd9a6",
+        "f31b4e3b8579fb4676512104db7f5d6c8d81e36e3e6319272f1ea14aad82b494": "35cb3f2",
+    },
+}
+REGION_VALIDATION_FUNCTIONS = {"_box", "_characters", "_source", "compose", "validate_composed"}
+REGION_VALIDATION_CONSTANTS = {"MAX_PAGE_WORDS", "MAX_PAGE_CHARACTERS", "MAX_REGIONS"}
+
+
+def _region_validation_ast(source: bytes) -> str:
+    """Fingerprint only trusted composition validators and their local limits."""
+    module = ast.parse(source)
+    selected: list[ast.stmt] = []
+    names = set()
+    for node in module.body:
+        if isinstance(node, ast.FunctionDef) and node.name in REGION_VALIDATION_FUNCTIONS:
+            selected.append(node)
+            names.add(node.name)
+        elif isinstance(node, ast.Assign):
+            assigned = {target.id for target in node.targets if isinstance(target, ast.Name)}
+            if assigned & REGION_VALIDATION_CONSTANTS:
+                selected.append(node)
+                names.update(assigned & REGION_VALIDATION_CONSTANTS)
+    if names != REGION_VALIDATION_FUNCTIONS | REGION_VALIDATION_CONSTANTS:
+        raise ValueError("Region code lacks complete trusted validation dependencies")
+    return sha(ast.dump(ast.Module(body=selected, type_ignores=[])).encode())
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -101,9 +137,24 @@ def verify_code(directory: Path, frozen: dict[str, Any], *, processor: str) -> d
     validation_modules = {"pipeline_assembly.py"}
     if processor == "regions":
         validation_modules |= {"pipeline_regions.py", "generalization_run.py"}
-    if any(comparison[name] != "identical" for name in validation_modules):
-        raise ValueError("Trusted local ownership validator differs from frozen code")
-    return {"archive_hashes_verified": True, "local_comparison": comparison, "renderer": renderer}
+    trusted_history = {}
+    for name in validation_modules:
+        if comparison[name] != "identical":
+            reviewed = TRUSTED_HISTORICAL_CODE.get(name, {}).get(hashes[name])
+            if reviewed is None:
+                raise ValueError("Trusted local ownership validator differs from unreviewed frozen code")
+            trusted_history[name] = reviewed
+    if processor == "regions":
+        archived = (directory / "code" / "pipeline_regions.py").read_bytes()
+        if _region_validation_ast(archived) != _region_validation_ast((local / "pipeline_regions.py").read_bytes()):
+            raise ValueError("Historical region composition validators differ from trusted local AST")
+    return {
+        "archive_hashes_verified": True,
+        "local_comparison": comparison,
+        "trusted_historical_commits": trusted_history,
+        "renderer": renderer,
+        "region_validator_ast_compatible": processor == "regions",
+    }
 
 
 def _bounds(source: dict[str, Any], state: dict[str, Any]) -> None:
@@ -283,6 +334,10 @@ def score_run(
         if not audit["explicit_reference_fields_absent"]:
             raise ValueError("Explicit reference fields in retained model body")
         request_audits.append({"path": body_path.name, "sha256": sha(body_path.read_bytes()), **audit})
+    positive_targets = [t for t in private if t.get("structural_scored", True) and t.get("tables")]
+    negative_targets = [t for t in private if t.get("structural_scored", True) and not t.get("tables")]
+    positive = _evaluate(positive_targets, [by_id[t["id"]] for t in positive_targets if t["id"] in by_id])["totals"]
+    negative = _evaluate(negative_targets, [by_id[t["id"]] for t in negative_targets if t["id"] in by_id])["totals"]
     costs = _costs(report)
     metrics = dict(report.get("metrics", {}))
     for field in ("wall_seconds", "cpu_seconds", "cpu_utilization_percent", "peak_sampled_rss_bytes", "measurement"):
@@ -300,6 +355,8 @@ def score_run(
         "dataset_sha256": manifest["dataset_sha256"],
         "intended_pages": len(expected),
         "scores": scored["totals"],
+        "positive": positive,
+        "negative": negative,
         "page_scores": scored["pages"],
         "groups": groups,
         "authored_legacy_exact": authored_legacy["totals"],
@@ -327,6 +384,8 @@ def score_run(
         "pages_per_dollar": _ratio(operational, costs["effective_usd"]),
         "exact_pages_per_minute": _ratio(scored["totals"].get("exact_page", 0), metrics.get("wall_seconds"), 60),
         "exact_pages_per_dollar": _ratio(scored["totals"].get("exact_page", 0), costs["effective_usd"]),
+        "exact_positive_pages_per_minute": _ratio(positive.get("exact_page", 0), metrics.get("wall_seconds"), 60),
+        "exact_positive_pages_per_dollar": _ratio(positive.get("exact_page", 0), costs["effective_usd"]),
         "derived_prediction_bboxes": derived_boxes,
         "localization_policy": {
             "assignment_iou_threshold": 0.1,
@@ -402,6 +461,16 @@ def markdown_report(runs: list[dict[str, Any]]) -> str:
             "Resources: `" + json.dumps(run["resources"], sort_keys=True) + "`.",
             "",
             "All-attempt API accounting: `" + json.dumps(run["costs"], sort_keys=True) + "`.",
+            "",
+        ]
+        positive, negative = run["positive"], run["negative"]
+        lines += [
+            "",
+            (
+                f"Exact positive pages: {positive.get('exact_page', 0)}/{positive['scored_pages']}; "
+                f"exact negative pages: {negative.get('exact_page', 0)}/{negative['scored_pages']}. "
+                "All-page exact counts include successful empty outputs on negative pages."
+            ),
             "",
         ]
         legacy = run["authored_legacy_exact"]
