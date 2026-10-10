@@ -1145,6 +1145,7 @@ Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d092842955
 | native-full-r2 | 270/276 | 6 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 39.3111 | unmeasured | 0 |
 | native-regional-full-r2 | 272/276 | 4 | 96/172 | 120 | 120 | 4258/8897 | 4258/8897 | 31739/55180 | 96 | 0 | 36.7759 | unmeasured | 0 |
 | full276-yolo-matrix-haiku-512 | 270/276 | 6 | 136/172 | 166 | 197 | 6784/8897 | 6329/8897 | 25472/55180 | 180 | 10 | 12.6423 | 2116.13 | 0.127591 |
+| full276-hybrid-haiku-1024 | 268/276 | 8 | 129/172 | 157 | 193 | 7306/8897 | 6604/8897 | 16329/55180 | 184 | 2 | 18.3269 | 6743.87 | 0.0397398 |
 
 ### native-full-r2
 
@@ -1227,6 +1228,35 @@ Page-processing run wall (excludes freeze/client setup) 1281.41s; CPU 1288.23s; 
 Ledger attempts 119; reported USD subtotal 0.127591; missing reported charges 0; cost bases `{"provider-reported USD": 119}`. Reservation amount 0; estimate amount 0.
 
 Separate CPU detector worker: initialization wall 2.91058s, CPU 6.57843s; 272 per-page measurement entries, request CPU total 256.538s; maximum sampled request RSS 1245454336 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
+
+### full276-hybrid-haiku-1024
+
+Scope: complete retained-source assembly with explicit mixed text provenance; text: mixed native-source/model-transcribed; source-conserved pages: 198/276.
+
+Failure categories: `{"invalid_table_topology": 4, "missing_source_text": 4}`.
+
+Supplementary positive-page macro recall (172 pages): exact cells 84.62%; complete tables 75.19%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 118 | 118 | 0.0397398 | 0 / 118 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| authored | 156/156 | 144 | 149 | 5001/5050 | 1669/27830 | 0/24 |
+| native-diagnostic | 56/0 | unscored | unscored | unscored/unscored | unscored/unscored | unscored/unscored |
+| omnidoc | 64/64 | 13 | 44 | 2305/3847 | 14660/27350 | 1/24 |
+
+Page-processing run wall (excludes freeze/client setup) 877.401s; CPU 1293.92s; sampled RSS 869224448 bytes; verified output pages/min 18.3269; exact positive pages/min 8.82151. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 118; reported USD subtotal 0.0397398; missing reported charges 0; cost bases `{"provider-reported USD": 118}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.74291s, CPU 5.49349s; 272 per-page measurement entries, request CPU total 247.883s; maximum sampled request RSS 1249431552 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
 ## Historical full-r1 snapshot — invalid scan carriers
 
@@ -1931,3 +1961,70 @@ response variation and atomic failure prevent a causal hybrid-versus-transcripti
 quality attribution. The separately frozen full276
 hybrid expansion will test broader coverage without changing the natural16
 references, admissions, or parser.
+
+
+## Full276 frozen Haiku hybrid expansion
+
+The corrected-renderer hybrid completes 268/276 intended pages, including 198
+actually source-conserved outputs. The fixed 220 scored pages retain all 249
+tables, 8,897 anchor cells and 55,180 reference characters; the other 56 pages
+remain unscored diagnostics. Scores are 6,604 exact cells, 7,306 structural cells,
+193 exact topologies and 157 complete tables on 129/172 exact positive pages.
+Two extra tables include one false-positive negative page; 36 tables are missing.
+Supplementary positive-page macro recall is 84.62% cells and 75.19% tables.
+
+All 118 returned charges total USD 0.0397398. Page-processing throughput is
+18.33 operational pages/minute and 6,743.87 pages/API USD. Parent wall is
+877.40 seconds, CPU 1,293.92 seconds and sampled peak RSS 869,224,448 bytes;
+psutil samples RSS every 100 milliseconds. This excludes freeze/client setup
+and startup. Persistent CPU detector worker measurements remain separately
+retained; parent RSS is not a combined process-tree peak. Remote inference CPU,
+RAM and GPU remain unmeasured.
+
+| Cohort | Pages | Exact cells / expected | Complete tables / expected | Exact topologies | Atomic errors | Extra tables | Negative FP pages |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Authored | 156 | 4791/5050 | 144/156 | 149 | 0 | 0 | 0/24 |
+| Natural OmniDoc | 64 | 1813/3847 | 13/93 | 44 | 4 | 2 | 1/24 |
+| Native diagnostics | 56 | unscored | unscored | unscored | 4 | unscored | unscored |
+
+The four scored atomic failures all retain normal-stop model responses: invalid
+merged-span bounds, two nonrectangular matrices, and a nonempty covered merge
+slot. Four diagnostic failures are the previously recorded missing-source/render
+gaps. No successful child prefix is scored as a complete parent output.
+Natural multiple-table pages recover 1,109/2,921 cells and six complete tables,
+single-table pages 704/926 cells and seven complete tables. One of the 24 natural
+negative pages is a false positive, and another fails operationally.
+
+Compared with the frozen full source-ID matrix Haiku expansion, hybrid recovers
+275 more exact cells overall (6,604 versus 6,329), including 514 more on natural64
+(1,813 versus 1,299), and reduces negative false-positive pages from nine to one.
+Complete tables fall from 166 to 157, and exact topologies from 197 to 193.
+API charges fall from USD 0.1275912 to 0.0397398; throughput rises from 12.64 to
+18.33 pages/minute in these measured runs. Quality, cost and failure differences
+must be considered together; the arms differ in model task, native routing and
+rotation configuration, and are single fresh response samples.
+
+All twelve authored rotated pages remain operational but recover only 5/264
+exact cells, 215 structural cells, zero complete tables and five topologies.
+The native and source-ID baselines each recover all 264 cells and twelve complete
+tables/topologies on that family. Those baselines normalize PDF rotation;
+hybrid preserves it. Every other authored hybrid family is fully exact, including
+borderless, merged, dense, blank and OCR-carrier cases; both authored negative
+families remain correct. This isolates a preserved-rotation native grid-ordering
+limitation for further source-only testing, without repairing the frozen score.
+The aggregate authored loss of 239 cells and eleven complete tables versus
+source-ID matrix combines the rotated-family loss of 259 cells/twelve tables
+with gains elsewhere. The native regional baseline's 4,258 cells and 120 complete
+tables all come from authored cases; it recovers no natural64 tables.
+
+The full run contains a fresh independent natural16 repeat, retaining all fixed
+53 tables and 2,333 cells. It yields 15/16 outputs, 732 exact cells, 1,052 structural
+cells, sixteen topologies and two complete tables on two exact positive pages.
+Two extras include one negative-page false positive; 28 tables are missing.
+The p98 dense newspaper now recovers 449 cells, while p1 again has zero detector
+proposals. Its earlier separately frozen natural16 hybrid response failed atomically
+on p98 and recovered 289 cells total; these fresh response outcomes further show
+why architecture ranking cannot be inferred from a single paired input sample.
+The sole fresh-subset failure is a nonrectangular literal matrix on pf012.
+Supplementary macro recall is 58.05% cells and 16.67% tables. This quality-only
+subset diagnostic does not assign a share of full-run wall time or API cost.
