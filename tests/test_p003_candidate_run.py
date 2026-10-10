@@ -49,6 +49,18 @@ def provider(value: str) -> dict[str, Any]:
     }
 
 
+def options_from_evidence(evidence: dict[str, Any]) -> list[str]:
+    """Find the fake target in either complete or difference evidence."""
+    if evidence.get("mode") == "differences":
+        return [
+            alias
+            for t, r, c, slots in evidence["differing_slots"]
+            for alias, value in slots.items()
+            if (t, r, c) == (0, 1, 0) and value.get("value") == "second"
+        ]
+    return [alias for alias, tables in evidence["candidates"].items() if tables[0]["values"][1][0] == "second"]
+
+
 class Client:
     """Typed deterministic fake with isolated ledger; no provider or credentials."""
 
@@ -68,13 +80,7 @@ class Client:
         self.bodies.append(deepcopy(body))
         text = body["state"][0] if isinstance(body["state"], list) else body["state"]
         evidence = json.loads(text)
-        selected = (
-            "unresolved"
-            if self.abstain
-            else next(
-                alias for alias, tables in evidence["candidates"].items() if tables[0]["values"][1][0] == "second"
-            )
-        )
+        selected = "unresolved" if self.abstain else next(alias for alias in options_from_evidence(evidence))
         options_list = body["questions"]["q0"]["criteria"]
         ledger = json.loads(self.ledger.read_bytes())
         entry = {
@@ -103,7 +109,12 @@ class Client:
 
 
 def baseline(
-    directory: Path, value: str, *, color: str = "white", failed: bool = False, provider_name: str | None = None,
+    directory: Path,
+    value: str,
+    *,
+    color: str = "white",
+    failed: bool = False,
+    provider_name: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
     directory.mkdir()
     url, data = pixels(color)
@@ -203,7 +214,8 @@ def config(**extra: Any) -> dict[str, Any]:  # noqa: ANN401
 
 @pytest.mark.parametrize("provider_name", [None, "anthropic"])
 def test_authenticated_matched_pool_exact_candidate_and_separate_cost(
-    tmp_path: Path, provider_name: str | None,
+    tmp_path: Path,
+    provider_name: str | None,
 ) -> None:
     first, second = tmp_path / "first", tmp_path / "second"
     _, original, trust0 = baseline(first, "first", provider_name=provider_name)
@@ -375,7 +387,8 @@ def test_later_crop_selector_failure_rolls_back_whole_page(tmp_path: Path) -> No
 
 
 def test_reviewed_historical_parser_needs_explicit_independent_approval(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     first, second = tmp_path / "first", tmp_path / "second"
     _, _, trusted = baseline(first, "first")
@@ -395,8 +408,13 @@ def test_reviewed_historical_parser_needs_explicit_independent_approval(
     monkeypatch.setattr(runner, "ROOT_REVIEWED_PARSER_SHA256", frozenset({digest}))
     with pytest.raises(ValueError, match="independent trusted"):
         runner.authenticate(first, {}, reviewed_parser_sha256=(digest,))
-    result = runner.run([first, second], [trusted, other], tmp_path / "reviewed",
-                        config(reviewed_parser_sha256=[digest]), Client(tmp_path))
+    result = runner.run(
+        [first, second],
+        [trusted, other],
+        tmp_path / "reviewed",
+        config(reviewed_parser_sha256=[digest]),
+        Client(tmp_path),
+    )
     assert result["results"][0]["ranking_status"] == "completed"
     archived = json.loads((tmp_path / "reviewed/frozen.json").read_bytes())
     assert archived["config"]["reviewed_parser_sha256"] == [digest]
@@ -404,7 +422,8 @@ def test_reviewed_historical_parser_needs_explicit_independent_approval(
 
 
 def test_candidate_concurrent_factory_is_root_client_and_frozen(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from bench import p003_client  # noqa: PLC0415
 
@@ -426,3 +445,35 @@ def test_candidate_concurrent_factory_is_root_client_and_frozen(
     assert "decision_concurrent.py" in frozen["code_sha256"]
     with pytest.raises(ValueError, match="concurrency"):
         runner.run([first, second], [a, b], tmp_path / "bad-control", config(transport_concurrency=2), client)
+
+
+def test_difference_treatment_exact_request_and_atomic_capacity(tmp_path: Path) -> None:
+    first, second = tmp_path / "first", tmp_path / "second"
+    _, original, trust0 = baseline(first, "first")
+    _, _, trust1 = baseline(second, "second")
+    client = Client(tmp_path)
+    output = tmp_path / "diff"
+    report = runner.run(
+        [first, second], [trust0, trust1], output, config(evidence_mode="differences", evidence_max_bytes=4096), client
+    )
+    page = report["results"][0]
+    assert page["tables"][0]["values"][1][0] == "second"
+    evidence = json.loads(client.bodies[0]["state"])
+    assert len(evidence["differing_slots"]) == 1
+    assert (output / "p0-selector-0-evidence.json").exists()
+    assert "p003_candidate_diff.py" in json.loads((output / "frozen.json").read_bytes())["code_sha256"]
+    fail_client = Client(tmp_path)
+    output = tmp_path / "capacity"
+    report = runner.run(
+        [first, second],
+        [trust0, trust1],
+        output,
+        config(evidence_mode="differences", evidence_max_bytes=1),
+        fail_client,
+    )
+    assert fail_client.bodies == []
+    page = report["results"][0]
+    assert page["ranking_status"] == "failed_retained_first"
+    assert page["ranking_regions"][0]["ranking_status"] == "evidence_capacity_retained_first"
+    assert page["calls"] == original["calls"]
+    assert (output / "p0-structure.json").read_bytes() == (first / "p0-structure.json").read_bytes()

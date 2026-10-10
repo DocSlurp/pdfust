@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 from bench import generalization_vision_regions as regions
 from bench import p003_candidate_choice as chooser
+from bench import p003_candidate_diff as differences
 from bench import pipeline_run
 from bench import pipeline_vision_transcription as transcription
 from bench.decision_hosted import DECISION_MODELS
@@ -38,9 +39,11 @@ IMAGE_MODELS = (
     "cloudflare/clef-omni",
 )
 EDGES = (0, 256, 512, 768, 1024)
-ROOT_REVIEWED_PARSER_SHA256 = frozenset({
-    "8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e",
-})
+ROOT_REVIEWED_PARSER_SHA256 = frozenset(
+    {
+        "8188aca8439f7c4bf455bf81b55a7a3e9f0789ca3590abbd3042d050b784591e",
+    }
+)
 CODE_FILES = (
     "decision_concurrent.py",
     "decision_hosted.py",
@@ -94,12 +97,14 @@ def _crop_bytes(body: dict[str, Any]) -> tuple[str, bytes]:
 
 
 def authenticate(
-    directory: Path, trusted: dict[str, str], *, reviewed_parser_sha256: tuple[str, ...] = (),
+    directory: Path,
+    trusted: dict[str, str],
+    *,
+    reviewed_parser_sha256: tuple[str, ...] = (),
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, str]]:
     """Authenticate all archived code against an independent operator-supplied map."""
     if any(
-        not isinstance(digest, str) or digest not in ROOT_REVIEWED_PARSER_SHA256
-        for digest in reviewed_parser_sha256
+        not isinstance(digest, str) or digest not in ROOT_REVIEWED_PARSER_SHA256 for digest in reviewed_parser_sha256
     ):
         raise ValueError("Historical parser digest lacks an explicit root compatibility review")
     frozen, report = _read(directory / "frozen.json"), _read(directory / "report.json")
@@ -188,14 +193,30 @@ def _rerender(
     }
 
 
-def _body(pool: chooser.Pool, model: str, url: str, edge: int) -> dict[str, Any]:
-    body = chooser.request(pool, model, url)
+def _body(
+    pool: chooser.Pool,
+    model: str,
+    url: str,
+    edge: int,
+    *,
+    evidence_mode: str = "whole",
+    evidence_max_bytes: int = differences.DEFAULT_MAX_BYTES,
+) -> dict[str, Any]:
+    if evidence_mode not in {"whole", "differences"}:
+        raise ValueError("Unknown candidate evidence mode")
+    body = (
+        differences.request(pool, model, url, max_bytes=evidence_max_bytes)
+        if evidence_mode == "differences"
+        else chooser.request(pool, model, url)
+    )
     if not edge:
         body["state"] = body["state"][0]
         body["questions"]["q0"]["instructions"] = (
             "This is a text-only control: source pixels are unavailable. Compare supplied alternatives only, "
             "and choose unresolved when literal comparison cannot establish faithfulness. "
-            + chooser.SYSTEM.replace("against the attached source crop", "with the original source image unavailable")
+            + body["questions"]["q0"]["instructions"].replace(
+                "against the attached source crop", "with the original source image unavailable"
+            )
         )
     return body
 
@@ -258,7 +279,9 @@ def process(
                 provider = _read(inputs[baseline_index] / "frozen.json")["config"].get("generation_provider")
                 if provider:
                     expected_body["provider"] = {
-                        "only": [provider], "allow_fallbacks": False, "require_parameters": True,
+                        "only": [provider],
+                        "allow_fallbacks": False,
+                        "require_parameters": True,
                     }
                 encoded_body = json.dumps(expected_body, separators=(",", ":")).encode()
                 if body != expected_body or sha(encoded_body) != crop["request"]["body_sha256"]:
@@ -306,7 +329,29 @@ def process(
                     raise ValueError("Selector pixels do not match declared same-crop image provenance")
                 url = actual_url
             info["selector_image"] = metadata
-            body = _body(pool, config["model"], url, config["image_edge"])
+            stage = f"crop/{index}/evidence"
+            try:
+                body = _body(
+                    pool,
+                    config["model"],
+                    url,
+                    config["image_edge"],
+                    evidence_mode=config.get("evidence_mode", "whole"),
+                    evidence_max_bytes=config.get("evidence_max_bytes", differences.DEFAULT_MAX_BYTES),
+                )
+            except differences.EvidenceCapacityError:
+                info["ranking_status"] = "evidence_capacity_retained_first"
+                raise
+            if config.get("evidence_mode") == "differences":
+                projection = json.loads(body["state"][0] if isinstance(body["state"], list) else body["state"])
+                info["evidence"] = {
+                    "mode": "differences",
+                    "max_bytes": config.get("evidence_max_bytes", differences.DEFAULT_MAX_BYTES),
+                    "bytes": len(chooser.canonical_json(projection)),
+                    "sha256": sha(chooser.canonical_json(projection)),
+                    "differing_slots": len(projection["differing_slots"]),
+                }
+                write_json(output / f"{identifier}-selector-{index}-evidence.json", projection)
             stage = f"crop/{index}/request"
             write_json(output / f"{identifier}-selector-{index}-request.json", body)
             _reserve_wave(client)
@@ -395,6 +440,16 @@ def run(
     """Authenticate and freeze declared generation inputs before opt-in ranking calls."""
     if not config.get("run_hosted") or not 2 <= len(inputs) <= 4 or len(inputs) != len(trusted_code):
         raise ValueError("Ranking needs 2-4 explicit baseline/trust-map pairs and run_hosted opt-in")
+    mode = config.get("evidence_mode", "whole")
+    if mode not in {"whole", "differences"}:
+        raise ValueError("Unknown candidate evidence mode")
+    if "evidence_max_bytes" in config and mode != "differences":
+        raise ValueError("Difference evidence cap requires differences mode")
+    if mode == "differences":
+        cap = config.get("evidence_max_bytes", differences.DEFAULT_MAX_BYTES)
+        if type(cap) is not int or not 1 <= cap <= chooser.MAX_COMPARISON_BYTES:
+            raise ValueError("Difference evidence cap must be 1..128KiB UTF8 bytes")
+        config = {**config, "evidence_max_bytes": cap}
     transport = config.get("transport_concurrency", 1)
     if type(transport) is not int or transport not in (1, 3):
         raise ValueError("P003 ranking transport concurrency must be 1 or 3")
@@ -481,7 +536,7 @@ def run(
             }
         )
     root = Path(__file__).resolve().parent
-    available_code = CODE_FILES
+    available_code = CODE_FILES + (("p003_candidate_diff.py",) if mode == "differences" else ())
     (output / "code").mkdir()
     code = {}
     for name in available_code:
@@ -563,9 +618,17 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20261010)
     parser.add_argument("--transport-concurrency", type=int, choices=(1, 3), default=1)
     parser.add_argument("--reviewed-parser-sha256", action="append", default=[])
+    parser.add_argument("--evidence-mode", choices=("whole", "differences"), default="whole")
+    parser.add_argument("--evidence-max-bytes", type=int)
     parser.add_argument("--run-hosted", action="store_true")
     args = parser.parse_args()
     config = {"model": args.model, "image_edge": args.image_edge, "seed": args.seed, "run_hosted": args.run_hosted}
+    if args.evidence_mode == "differences":
+        config["evidence_mode"] = "differences"
+        if args.evidence_max_bytes is not None:
+            config["evidence_max_bytes"] = args.evidence_max_bytes
+    elif args.evidence_max_bytes is not None:
+        parser.error("--evidence-max-bytes requires --evidence-mode differences")
     if args.transport_concurrency == 3:
         config["transport_concurrency"] = 3
     if args.reviewed_parser_sha256:
