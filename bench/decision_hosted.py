@@ -30,6 +30,7 @@ MAX_IMAGE_BODY_BYTES = 750_000
 MAX_QUESTIONS = 16
 MAX_RESPONSE_BYTES = 2_000_000
 MAX_OUTPUT_TOKENS = 2048
+MAX_RETRY_REASON_CHARS = 240
 JEV = "typesafe/jev-1.13"
 REQUESTED_DECISION_MODELS = (
     "perplexity/pplx-decider-v1.1-27b",
@@ -325,7 +326,7 @@ class DecisionClient:
                         catalog_rates=pricing,
                     )
 
-    def request(  # noqa: C901 - explicit transport, replay and accounting gates.
+    def request(  # noqa: C901, PLR0912, PLR0913 - explicit transport, replay and retry gates.
         self,
         body: dict[str, Any],
         *,
@@ -333,9 +334,22 @@ class DecisionClient:
         max_body_bytes: int = MAX_BODY_BYTES,
         replay: bool = True,
         reservation_usd: float = RESERVATION,
+        retry_failed_index: int | None = None,
+        retry_reason: str | None = None,
     ) -> dict[str, Any]:
-        """Replay by default; explicit cache probes may retransmit successful identical bodies."""
+        """Replay by default; explicitly investigated HTTP 5xx failures permit one reserved retry."""
         validate_request_reservation(reservation_usd)
+        if (retry_failed_index is not None or retry_reason is not None) and (
+            type(retry_failed_index) is not int
+            or retry_failed_index < 0
+            or not isinstance(retry_reason, str)
+            or not retry_reason.strip()
+            or len(retry_reason) > MAX_RETRY_REASON_CHARS
+            or any(not char.isascii() or not char.isprintable() for char in retry_reason)
+            or self.key in retry_reason
+        ):
+            message = "explicit retry requires an index and a safe nonempty reason of at most 240 characters"
+            raise ValueError(message)
         if type(max_body_bytes) is not int or not 1 <= max_body_bytes <= MAX_IMAGE_BODY_BYTES:
             message = "request byte admission must be within the bounded image ceiling"
             raise ValueError(message)
@@ -365,11 +379,24 @@ class DecisionClient:
             )
             charged = sum(accounted_cost(row["accounted_usd"]) for row in ledger["requests"])
             prior = PRIOR_RENTAL + self._prior_api_cost()
+            if retry_failed_index is not None:
+                targets = [row for row in ledger["requests"] if row.get("index") == retry_failed_index]
+                if len(targets) != 1 or (
+                    targets[0].get("gateway", "openrouter") != "openrouter"
+                    or targets[0].get("request_sha256") != key
+                    or "response_file" in targets[0]
+                    or targets[0].get("error") not in {f"HTTP {code}" for code in range(500, 600)}
+                ):
+                    message = "explicit retry must identify the same response-free HTTP 5xx failed request"
+                    raise RuntimeError(message)
+                if any(row.get("retry_of_index") == retry_failed_index for row in ledger["requests"]):
+                    message = "explicit retry approval has already been consumed"
+                    raise RuntimeError(message)
             for entry in ledger["requests"]:
                 if entry.get("gateway", "openrouter") != "openrouter":
                     continue
                 if entry["request_sha256"] == key and entry.get("response_file"):
-                    if not replay:
+                    if not replay or retry_failed_index is not None:
                         continue
                     return {
                         "result": json.loads((self.directory / entry["response_file"]).read_text()),
@@ -380,6 +407,8 @@ class DecisionClient:
                         "replayed": True,
                     }
                 if entry["request_sha256"] == key:
+                    if retry_failed_index is not None and entry.get("index") == retry_failed_index:
+                        continue
                     message = "previous identical call failed; explicit investigation required before retry"
                     raise RuntimeError(message)
             if charged + reservation_usd > CAMPAIGN_LIMIT or prior + charged + reservation_usd > TOTAL_LIMIT:
@@ -392,7 +421,7 @@ class DecisionClient:
                 "requested_model": body["model"],
                 "request_sha256": key,
                 "request_bytes": len(encoded),
-                "force_transmission": not replay,
+                "force_transmission": not replay or retry_failed_index is not None,
                 "case_count": len(body["input"])
                 if body["model"] in EMBEDDING_MODELS
                 else len({name.rsplit("_", 1)[0] for name in body["questions"]})
@@ -404,6 +433,8 @@ class DecisionClient:
                 "prior_accounted_usd": prior,
                 "started_at": time.time(),
             }
+            if retry_failed_index is not None:
+                entry.update(retry_of_index=retry_failed_index, retry_reason=retry_reason)
             ledger["requests"].append(entry)
             checkpoint(self.ledger, ledger)
             request_file = self.directory / f"request-{index:03d}.json"

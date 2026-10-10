@@ -379,3 +379,156 @@ def test_openrouter_does_not_replay_gateway_body(
     assert not second["replayed"]
     assert second["entry"]["index"] != first["entry"]["index"]
     assert transmit.call_count == 2
+
+
+def failed_retry_entry(client: hosted.DecisionClient) -> dict[str, Any]:
+    """Seed a synthetic retained failure without invoking transport or credentials."""
+    import hashlib  # noqa: PLC0415 - fixture-only request fingerprint.
+
+    entry = {
+        "index": 0,
+        "request_sha256": hashlib.sha256(json.dumps(body(), separators=(",", ":")).encode()).hexdigest(),
+        "accounted_usd": hosted.RESERVATION,
+        "reservation_usd": hosted.RESERVATION,
+        "cost_status": "reserved",
+        "error": "HTTP 500",
+    }
+    hosted.checkpoint(client.ledger, {"requests": [entry]})
+    return entry
+
+
+def test_explicit_retry_is_reserved_before_transport_and_only_once(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = failed_retry_entry(client)
+
+    def transmit(*_args: Any, **_kwargs: Any) -> MagicMock:  # noqa: ANN401
+        rows = json.loads(client.ledger.read_text())["requests"]
+        assert rows[0] == original
+        assert rows[1]["retry_of_index"] == 0
+        assert rows[1]["retry_reason"] == "Investigated transient provider failure"
+        assert rows[1]["accounted_usd"] == rows[1]["reservation_usd"] == hosted.RESERVATION
+        return response(json.dumps(result()).encode())
+
+    mock = MagicMock(side_effect=transmit)
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    answer = client.request(
+        body(), tag="explicit", retry_failed_index=0, retry_reason="Investigated transient provider failure"
+    )
+    assert not answer["replayed"]
+    assert answer["entry"]["force_transmission"] is True
+    rows = json.loads(client.ledger.read_text())["requests"]
+    assert rows[0] == original
+    assert sum(row["accounted_usd"] for row in rows) == pytest.approx(hosted.RESERVATION + 0.01)
+    with pytest.raises(RuntimeError, match="already been consumed"):
+        client.request(body(), tag="reuse", replay=False, retry_failed_index=0, retry_reason="Investigated")
+    mock.assert_called_once()
+
+
+@pytest.mark.parametrize("replay", [True, False])
+def test_failed_http500_stays_blocked_by_default(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch, *, replay: bool
+) -> None:
+    failed_retry_entry(client)
+    before = client.ledger.read_bytes()
+    mock = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    with pytest.raises(RuntimeError, match="previous identical call failed"):
+        client.request(body(), tag="default", replay=replay)
+    assert client.ledger.read_bytes() == before
+    mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"error": "HTTP 429"},
+        {"error": "HTTP 401"},
+        {"error": "HTTP 400"},
+        {"error": "TimeoutError"},
+        {"request_sha256": "different"},
+        {"response_file": None},
+        {"index": 3},
+        {"gateway": "vercel"},
+    ],
+)
+def test_retry_refuses_ineligible_failure(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch, change: dict[str, Any]
+) -> None:
+    entry = failed_retry_entry(client)
+    entry.update(change)
+    hosted.checkpoint(client.ledger, {"requests": [entry]})
+    before = client.ledger.read_bytes()
+    mock = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    with pytest.raises(RuntimeError, match="same response-free HTTP 5xx"):
+        client.request(body(), tag="bad", retry_failed_index=0, retry_reason="Investigated")
+    assert client.ledger.read_bytes() == before
+    mock.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("index", "reason"),
+    [
+        (None, "Reason"),
+        (0, None),
+        (-1, "Reason"),
+        (True, "Reason"),
+        (0, " "),
+        (0, "x" * 241),
+        (0, "line\nbreak"),
+        (0, "fake-test-key-only"),
+    ],
+)
+def test_retry_refuses_unsafe_or_incomplete_approval(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch, index: int | None, reason: str | None
+) -> None:
+    mock = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    with pytest.raises(ValueError, match="safe nonempty reason"):
+        client.request(body(), tag="bad", retry_failed_index=index, retry_reason=reason)
+    mock.assert_not_called()
+    assert not client.ledger.exists()
+
+
+@pytest.mark.parametrize("limit", ["CAMPAIGN_LIMIT", "TOTAL_LIMIT"])
+def test_retry_preserves_history_and_requires_fresh_budget(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch, limit: str
+) -> None:
+    failed_retry_entry(client)
+    before = client.ledger.read_bytes()
+    monkeypatch.setattr(hosted, limit, hosted.RESERVATION + 0.1)
+    mock = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    with pytest.raises(RuntimeError, match="authorized spend"):
+        client.request(body(), tag="over-cap", retry_failed_index=0, retry_reason="Investigated")
+    mock.assert_not_called()
+    assert client.ledger.read_bytes() == before
+
+
+def test_retry_cannot_bypass_another_matching_failure(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    first = failed_retry_entry(client)
+    hosted.checkpoint(client.ledger, {"requests": [first, {**first, "index": 1}]})
+    mock = MagicMock()
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    with pytest.raises(RuntimeError, match="previous identical call failed"):
+        client.request(body(), tag="other-failure", retry_failed_index=0, retry_reason="Investigated")
+    mock.assert_not_called()
+
+
+def test_failed_replacement_also_consumes_retry_approval(
+    client: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original = failed_retry_entry(client)
+    mock = MagicMock(side_effect=urllib.error.HTTPError("https://openrouter.ai", 503, "failure", Message(), None))
+    monkeypatch.setattr(hosted.urllib.request, "urlopen", mock)
+    with pytest.raises(RuntimeError, match="HTTP 503"):
+        client.request(body(), tag="replacement", retry_failed_index=0, retry_reason="Investigated")
+    with pytest.raises(RuntimeError, match="already been consumed"):
+        client.request(body(), tag="reuse", retry_failed_index=0, retry_reason="Investigated")
+    rows = json.loads(client.ledger.read_text())["requests"]
+    assert rows[0] == original
+    assert sum(row["accounted_usd"] for row in rows) == pytest.approx(2 * hosted.RESERVATION)
+    mock.assert_called_once()
