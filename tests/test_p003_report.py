@@ -860,3 +860,33 @@ def test_reviewed_pre_status_fix_runner_rejects_undeclared_future_controls() -> 
     frozen["config"]["new_treatment"] = True
     with pytest.raises(ValueError, match="candidate replay helper"):
         p003_report.verify_candidate_helpers(frozen)
+
+
+def test_reviewed_pre_count_runner_requires_exact_original_sixteen(monkeypatch: pytest.MonkeyPatch) -> None:
+    from bench import p003_report
+
+    names = ("p003_candidate_run.py", "p003_candidate_choice.py", "pipeline_vision_transcription.py")
+    folder = Path(p003_report.__file__).parent
+    hashes = {name: sha((folder / name).read_bytes()) for name in names}
+    historical = "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d"
+    current_runner = (folder / "p003_candidate_run.py").read_bytes()
+    original_sha = p003_report.sha
+    monkeypatch.setattr(
+        p003_report, "sha", lambda raw: "changed-count-admission" if raw == current_runner else original_sha(raw)
+    )
+    hashes["p003_candidate_run.py"] = historical
+    frozen = {
+        "config": {"campaign": "P003", "processor": "p003_candidate_choice", "image_edge": 128},
+        "code_sha256": hashes,
+        "records": [{"id": str(i)} for i in range(16)],
+    }
+    p003_report.verify_candidate_helpers(frozen)
+    frozen["config"]["expected_pages"] = 16
+    p003_report.verify_candidate_helpers(frozen)
+    frozen["records"].append({"id": "extra"})
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)
+    frozen["records"] = [{"id": str(i)} for i in range(48)]
+    frozen["config"]["expected_pages"] = 48
+    with pytest.raises(ValueError, match="candidate replay helper"):
+        p003_report.verify_candidate_helpers(frozen)

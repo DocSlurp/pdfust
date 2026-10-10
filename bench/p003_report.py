@@ -251,6 +251,34 @@ def verify_candidate_helpers(frozen: dict[str, Any]) -> None:
             continue
         if (
             name == "p003_candidate_run.py"
+            and digest == "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d"
+            and frozen["config"].get("expected_pages", 16) == 16
+            and len(frozen.get("records", [])) == 16
+            and frozen["config"].get("campaign") == "P003"
+            and frozen["config"].get("processor") == "p003_candidate_choice"
+            and set(frozen["config"])
+            <= {
+                "campaign",
+                "processor",
+                "model",
+                "run_id",
+                "run_hosted",
+                "seed",
+                "fallback",
+                "scope",
+                "image_edge",
+                "image_mode",
+                "image_visibility",
+                "evidence_mode",
+                "evidence_max_bytes",
+                "reviewed_parser_sha256",
+                "transport_concurrency",
+                "expected_pages",
+            }
+        ):
+            continue  # Root reviewed e16332d: only explicit corpus-count run/main admission changes.
+        if (
+            name == "p003_candidate_run.py"
             and digest == ROOT_REVIEWED_PENDING_CANDIDATE_RUNNER
             and frozen["config"].get("campaign") == "P003"
             and frozen["config"].get("processor") == "p003_candidate_choice"
@@ -582,6 +610,15 @@ def verify_candidate_run(
     from bench import pipeline_vision_transcription as transcription
 
     config = frozen["config"]
+    expected_pages = config.get("expected_pages", 16)
+    if type(expected_pages) is not int or not 1 <= expected_pages <= 512 or len(frozen["records"]) != expected_pages:
+        raise ValueError("Candidate frozen corpus differs from explicit complete expected-pages admission")
+    if (
+        frozen["code_sha256"]["p003_candidate_run.py"]
+        == "1e2f92afc1a284954f25cba50eca5029eca7f34fd74ae94b60a5acba4a62125d"
+        and expected_pages != 16
+    ):
+        raise ValueError("Historical candidate runner admitted only complete natural16")
     reviewed = config.get("reviewed_parser_sha256", [])
     if (
         not isinstance(reviewed, list)
