@@ -40,6 +40,7 @@ Dataset SHA-256: `68d1800d4c7f83dd0aeeadeab6362edc84aa7aaa56c1c1a740ee9fafb90b8c
 | natural16-vision-crops-haiku-768 | 16/16 | 0 | 2/12 | 3 | 13 | 533/2333 | 403/2333 | 13298/16640 | 14 | 0 | 9.86646 | 1849.2 | 0.0086524 |
 | natural16-vision-crops-haiku-512 | 16/16 | 0 | 2/12 | 2 | 12 | 364/2333 | 290/2333 | 13879/16640 | 14 | 1 | 9.7988 | 1979.73 | 0.0080819 |
 | natural16-vision-crops-haiku-400 | 16/16 | 0 | 2/12 | 3 | 12 | 359/2333 | 225/2333 | 14420/16640 | 12 | 2 | 8.49134 | 1779.68 | 0.0089904 |
+| natural16-hybrid-haiku-1024 | 14/16 | 2 | 2/12 | 3 | 11 | 339/2333 | 289/2333 | 13601/16640 | 11 | 1 | 4.47476 | 1534.1 | 0.0091259 |
 
 ### natural16-whole-reviewed
 
@@ -1101,6 +1102,40 @@ Ledger attempts 19; reported USD subtotal 0.0089904; missing reported charges 0;
 
 Separate CPU detector worker: initialization wall 2.56095s, CPU 5.23286s; 16 per-page measurement entries, request CPU total 14.5423s; maximum sampled request RSS 1202163712 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
 
+
+### natural16-hybrid-haiku-1024
+
+Scope: complete retained-source assembly with explicit mixed text provenance; text: mixed native-source/model-transcribed; source-conserved pages: 4/16.
+
+Failure categories: `{"invalid_table_geometry": 1, "invalid_table_topology": 1}`.
+
+Supplementary positive-page macro recall (12 pages): exact cells 56.06%; complete tables 20.83%. Equal page weights; failures contribute zero; negatives remain separately scored. Primary cell/table totals and false-positive metrics remain unchanged.
+
+Posthoc density diagnostic only; all sixteen pages and all targets remain primary. The remaining fourteen include four negative pages; this is not a new selected evaluation cohort.
+
+| Posthoc group | Complete tables / expected | Exact positive pages / positive pages | Exact text cells |
+|---|---:|---:|---:|
+| two_dense_newspapers | 0/39 | 0/2 | 0 |
+| remaining_fourteen | 3/14 | 2/10 | 289 |
+
+Policy `gated`; assembly `select`; configured gate/selector `anthropic/claude-haiku-5.5`; review `unmeasured`; generation `anthropic/claude-haiku-5.5`. Actual request models are listed below; a configured default does not prove it was called.
+
+| Actual model | Retained request bodies | Returned calls | Returned reported USD subtotal | Cached prompt observations: positive / zero / missing |
+|---|---:|---:|---:|---:|
+| anthropic/claude-haiku-5.5 | 19 | 19 | 0.0091259 | 0 / 19 / 0 |
+
+Per-model usage/cost are returned-call observations, including calls on failed pages. All-attempt ledger costs in the summary include failures; per-model failed-attempt charges remain unattributed when unavailable. Provider cache fields are literal observations, with absent fields marked missing and no local inference cache.
+
+| Cohort | Pages / scored | Complete tables | Exact topology | Structure cells / expected | Text edits / reference chars | Negative false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|
+| omnidoc | 16/16 | 3 | 11 | 339/2333 | 13601/16640 | 1/4 |
+
+Page-processing run wall (excludes freeze/client setup) 187.72s; CPU 308.846s; sampled RSS 603193344 bytes; verified output pages/min 4.47476; exact positive pages/min 0.639251. Measurement: psutil.Process RSS sampled every 100 ms; process_time CPU; one process, no subprocesses. Per-run concurrency 1; logical CPUs 8.
+
+Ledger attempts 19; reported USD subtotal 0.0091259; missing reported charges 0; cost bases `{"provider-reported USD": 19}`. Reservation amount 0; estimate amount 0.
+
+Separate CPU detector worker: initialization wall 2.58069s, CPU 5.32563s; 16 per-page measurement entries, request CPU total 14.5005s; maximum sampled request RSS 1208565760 bytes. Separate CPU subprocess measurements; parent CPU/RSS excludes this worker. Parent elapsed time includes initialization and requests; RSS peaks are not summed.
+
 ## Corrected full corpus-r2 DEV baseline and fixed expansion
 
 Dataset SHA-256: `e0a86f712fb7eda5f5ceb64fa19eb72c055694106a006b086fd9d09284295537`.
@@ -1866,3 +1901,30 @@ quality. The 400 arm is slower and costs more than 512 in this sample; image siz
 alone does not determine stochastic output length or service latency. No prompts,
 thresholds or reference-selected routing were changed. All sixteen pages and the
 53-table/2,333-cell primary denominators remain fixed.
+
+
+## Hybrid Haiku with corrected renderer
+
+The fresh renderer-v2 hybrid Haiku run produces 14/16 verified atomic outputs,
+289/2333 exact cells, 339 structural cells and eleven exact topologies. Three
+complete tables occur on two exact positive pages. Four outputs conserve source
+text because no model tables are accepted; other successes carry mixed native
+and model provenance with complete source accounting. One extra table is a
+negative-page false positive, and 41 reference tables remain missing. The dense
+pair contributes zero; all 289 recovered cells are on the remaining fourteen.
+
+Two normal-stop crop responses cause atomic child failure: p98 has invalid merged
+span bounds; p9f92 has an out-of-range normalized bbox. Failed parent pages
+contribute zero quality even where sibling crop calls succeeded. All nineteen
+reported charges, including those pages, total USD 0.0091259. Throughput is 4.47
+operational pages/minute and 1,534.10 pages/API USD. Supplementary positive-page
+macro recall is 56.06% cells and 20.83% complete tables. Every frozen runtime
+dependency matches trusted current bytes, and verified Markdown uses renderer v2.
+
+The standalone Haiku1024 crop comparator recovered 687 cells in a different fresh
+response sample, with its own two strict failures. The Sonnet request identity
+audit above demonstrates how identical input requests can yield substantial
+page-atomic quality differences; this Haiku result likewise cannot isolate a
+causal hybrid-versus-transcription quality effect. The separately frozen full276
+hybrid expansion will test broader coverage without changing the natural16
+references, admissions, or parser.
