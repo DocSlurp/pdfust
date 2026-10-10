@@ -72,10 +72,17 @@ def load_evaluations(paths: list[Path], report_directory: Path | None = None) ->
                     "p003_gate": ("incremental_gate", "calls"),
                     "p003_topology_source": ("incremental_ownership", "topology_calls"),
                 }.get(report["config"].get("processor"), (None, "calls"))
-                run["provider_cache_usage"] = cache_usage(
-                    [call for page in report["results"] for call in page.get(call_key, [])],
-                    (report[incremental_key] if incremental_key else report).get("ledger_attempts"),
-                )
+                measured_calls = [call for page in report["results"] for call in page.get(call_key, [])]
+                measured_attempts = (report[incremental_key] if incremental_key else report).get("ledger_attempts")
+                if report["config"].get("transcript_replay") is True:
+                    if measured_attempts != 0:
+                        raise ValueError("Transcript replay declares new provider attempts")
+                    original_report = report["transcript_origin"]["original_report"]
+                    run["retained_transcript_provider_cache_usage"] = cache_usage(
+                        measured_calls, original_report["incremental_ownership"].get("ledger_attempts")
+                    )
+                    measured_calls = []
+                run["provider_cache_usage"] = cache_usage(measured_calls, measured_attempts)
                 baseline_reports = report.get("candidate_generation_reports", [])
                 if report.get("baseline_report") is not None:
                     baseline_reports = [report["baseline_report"]]
@@ -113,9 +120,15 @@ def cache_usage(calls: list[dict[str, Any]], ledger_attempts: int | None) -> dic
         if type(index) is not int:
             unattributed += 1
             continue
-        if index in indexed and indexed[index] != call.get("usage", {}):
+        direct_usage = call.get("usage")
+        nested_usage = call.get("result", {}).get("usage")
+        if isinstance(direct_usage, dict) and isinstance(nested_usage, dict) and direct_usage != nested_usage:
+            raise ValueError("Conflicting provider usage within returned response wrapper")
+        usage = direct_usage if isinstance(direct_usage, dict) else nested_usage
+        usage = usage if isinstance(usage, dict) else {}
+        if index in indexed and indexed[index] != usage:
             raise ValueError("Conflicting provider usage for the same ledger attempt")
-        indexed[index] = call.get("usage", {})
+        indexed[index] = usage
     counters = {}
     for key in ("cached_tokens", "cache_write_tokens"):
         values = [usage.get("prompt_tokens_details", {}).get(key) for usage in indexed.values()]
@@ -183,9 +196,24 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
                         "processor",
                         "preset",
                         "transcription_representation",
+                        "transcription_wire_schema",
                         "image_edge",
+                        "image_mode",
+                        "image_visibility",
+                        "gate_image",
+                        "gate_image_edge",
                         "gate_packet",
                         "gate_image_mode",
+                        "gate_instructions",
+                        "evidence_mode",
+                        "evidence_max_bytes",
+                        "geometry_first",
+                        "ownership_protocol",
+                        "chunked_inventory",
+                        "topology_evidence",
+                        "band_mode",
+                        "boundary_words",
+                        "crossed_tables",
                     )
                     if key in run["config"]
                 ),
@@ -353,6 +381,8 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
                 for index, usage in enumerate(run.get("historical_provider_cache_usage", []))
             ),
         ]
+        if run.get("retained_transcript_provider_cache_usage") is not None:
+            usages.append(("historical retained ownership decisions", run["retained_transcript_provider_cache_usage"]))
         for scope, usage in usages:
             if usage is None:
                 cache_rows.append([run["name"], scope, None, None, None, None, None, None])
@@ -375,7 +405,7 @@ def render(runs: list[dict[str, Any]], pending: list[str]) -> str:
         [
             "Run",
             "Cache scope",
-            "Observed fresh/all attempts",
+            "Observed returned/all attempts",
             "Reported read tokens subtotal",
             "Reported write tokens subtotal",
             "Read counter missing calls",

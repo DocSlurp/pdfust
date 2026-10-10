@@ -136,3 +136,62 @@ def test_gate_and_ownership_cache_scope_excludes_historical_usage(
     runs, _ = load_evaluations([tmp_path / "evaluation.json"])
     assert runs[0]["provider_cache_usage"]["counters"]["cached_tokens"]["complete_counter_total"] == 7
     assert runs[0]["historical_provider_cache_usage"][0]["counters"]["cached_tokens"]["complete_counter_total"] == 999
+
+
+def test_cache_usage_normalizes_nested_provider_wrappers_before_deduplication() -> None:
+    usage = {"prompt_tokens_details": {"cached_tokens": 7, "cache_write_tokens": 11}}
+    wrapped = {"entry": {"index": 1}, "result": {"usage": usage}, "replayed": False}
+    flattened = {"entry": {"index": 1}, "usage": usage, "replayed": False}
+    observed = cache_usage([wrapped, flattened], 1)
+    assert observed["unique_fresh_returned_attempts"] == 1
+    assert observed["counters"]["cached_tokens"]["complete_counter_total"] == 7
+    assert observed["counters"]["cache_write_tokens"]["complete_counter_total"] == 11
+    conflicting = deepcopy(wrapped)
+    conflicting["result"]["usage"]["prompt_tokens_details"]["cached_tokens"] = 8
+    with pytest.raises(ValueError, match="Conflicting provider usage"):
+        cache_usage([wrapped, conflicting], 1)
+
+
+def test_transcript_usage_is_historical_with_original_attempt_denominator(tmp_path: Path) -> None:
+    call = {
+        "entry": {"index": 11},
+        "result": {"usage": {"prompt_tokens_details": {"cached_tokens": 7, "cache_write_tokens": 11}}},
+        "replayed": False,
+    }
+    report = {
+        "config": {"processor": "p003_topology_source", "transcript_replay": True},
+        "results": [{"topology_calls": [call]}],
+        "incremental_ownership": {"ledger_attempts": 0},
+        "transcript_origin": {"original_report": {"incremental_ownership": {"ledger_attempts": 2}}},
+    }
+    write_json(tmp_path / "report.json", report)
+    record = {**run_record(), "report_sha256": sha((tmp_path / "report.json").read_bytes())}
+    write_json(tmp_path / "evaluation.json", {"runs": [record]})
+    runs, _ = load_evaluations([tmp_path / "evaluation.json"])
+    current = runs[0]["provider_cache_usage"]
+    historical = runs[0]["retained_transcript_provider_cache_usage"]
+    assert current["unique_fresh_returned_attempts"] == current["ledger_attempts"] == 0
+    assert historical["unique_fresh_returned_attempts"] == 1
+    assert historical["ledger_attempts"] == 2
+    assert historical["counters"]["cached_tokens"]["provider_reported_known_subtotal"] == 7
+    assert historical["counters"]["cached_tokens"]["complete_counter_total"] is None
+    text = render(runs, [])
+    assert "current measured stage | 0/0" in text
+    assert "historical retained ownership decisions | 1/2 | 7 | 11" in text
+
+
+def test_progress_displays_explicit_new_treatments() -> None:
+    record = run_record()
+    record["config"].update(
+        image_visibility="blur",
+        image_mode="rgb_palette16",
+        gate_instructions="recall_first",
+        evidence_mode="differences",
+        ownership_protocol="direct_cell",
+        topology_evidence="neighbors",
+    )
+    record.update(evaluation_sha256="fixture")
+    text = render([record], [])
+    for key, value in record["config"].items():
+        if key != "transport_concurrency":
+            assert f"{key}={value}" in text
