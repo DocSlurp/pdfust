@@ -1,6 +1,7 @@
 """Independent source fixtures for optional consensus column alternatives."""
 
 from copy import deepcopy
+from typing import Any
 
 import pytest
 from bench.pipeline_assembly import propose as baseline_propose
@@ -8,9 +9,9 @@ from bench.pipeline_assembly import validate
 from bench.pipeline_column_consensus import propose
 
 
-def source() -> dict:
-    page = {"page_size": [400, 300], "words": [], "vector_candidates": []}
-    rows = [
+def source() -> dict[str, Any]:
+    page: dict[str, Any] = {"page_size": [400, 300], "words": [], "vector_candidates": []}
+    rows: list[list[tuple[str, int, int]]] = [
         [("Name", 20, 50), ("Notes", 170, 205), ("Amount", 310, 350)],
         [("Oak", 20, 45), ("dry", 168, 192), ("12", 330, 346)],
         [("Pine", 21, 50), ("wet", 169, 194)],
@@ -23,7 +24,7 @@ def source() -> dict:
     return page
 
 
-def values(candidates: list) -> list:
+def values(candidates: list[dict[str, Any]]) -> list[list[list[str | None]]]:
     return [t["values"] for c in candidates for t in c["tables"]]
 
 
@@ -99,7 +100,7 @@ def test_extra_labels_and_annotations_cannot_change_new_candidates() -> None:
 
 
 def test_empty_and_single_row_inputs_add_nothing() -> None:
-    page = {"page_size": [400, 300], "words": [], "vector_candidates": []}
+    page: dict[str, Any] = {"page_size": [400, 300], "words": [], "vector_candidates": []}
     existing = baseline_propose(page)
     assert propose(page, existing) == existing
     page = source()

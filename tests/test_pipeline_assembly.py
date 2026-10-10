@@ -2,14 +2,15 @@
 
 from collections import Counter
 from copy import deepcopy
+from typing import Any
 
 import bench.pipeline_assembly as assembly
 import pytest
 from bench.pipeline_assembly import packet, propose, validate
 
 
-def source() -> dict:
-    words = [
+def source() -> dict[str, Any]:
+    words: list[dict[str, Any]] = [
         {"id": "w0", "text": "Category", "bbox": [10, 10, 50, 20]},
         {"id": "w1", "text": "Measure", "bbox": [110, 10, 150, 20]},
         {"id": "w2", "text": "Node", "bbox": [10, 50, 35, 60]},
@@ -36,7 +37,7 @@ def test_complete_source_conservation_and_wrapped_alternatives() -> None:
 
 
 def test_ambiguous_multicolumn_prose_retains_no_table_option() -> None:
-    page = {"page_size": [300, 500], "words": [], "vector_candidates": []}
+    page: dict[str, Any] = {"page_size": [300, 500], "words": [], "vector_candidates": []}
     for row in range(4):
         for column in range(2):
             page["words"].append(
@@ -53,8 +54,8 @@ def test_ambiguous_multicolumn_prose_retains_no_table_option() -> None:
     assert '"choice":"unresolved"' in packet(page, candidates)
 
 
-def native_source() -> dict:
-    page = {"page_size": [300, 500], "words": [], "vector_candidates": []}
+def native_source() -> dict[str, Any]:
+    page: dict[str, Any] = {"page_size": [300, 500], "words": [], "vector_candidates": []}
     for table in range(2):
         y = 20 + table * 200
         boxes = [[10, y, 60, y + 20], [60, y, 110, y + 20], [10, y + 20, 60, y + 40], [60, y + 20, 110, y + 40]]
@@ -122,7 +123,7 @@ def test_fabricated_values_and_partial_context_are_refused() -> None:
 
 
 def test_empty_page_is_a_complete_no_table_alternative() -> None:
-    page = {"page_size": [300, 500], "words": [], "vector_candidates": []}
+    page: dict[str, Any] = {"page_size": [300, 500], "words": [], "vector_candidates": []}
     assert propose(page) == [
         {
             "id": "c0",
@@ -135,7 +136,7 @@ def test_empty_page_is_a_complete_no_table_alternative() -> None:
 
 
 def test_separated_text_tables_can_coexist_in_one_complete_assembly() -> None:
-    page = {"page_size": [300, 500], "words": [], "vector_candidates": []}
+    page: dict[str, Any] = {"page_size": [300, 500], "words": [], "vector_candidates": []}
     for block in range(2):
         for row in range(3):
             for column in range(2):
