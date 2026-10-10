@@ -156,6 +156,9 @@ def generate_region(
     from bench.decision_hosted import accounted_cost
     from bench.pipeline_generation import parse, request
 
+    if config.get("generation_format") == "matrix":
+        from bench.pipeline_matrix_generation import parse, request
+
     if client is None:
         raise ValueError("Generative assembly requires the coordinated metered client")
     ledger = json.loads(client.ledger.read_bytes())
@@ -406,6 +409,7 @@ def main() -> None:
     parser.add_argument("--assembly-method", choices=("select", "generate", "gated_generate"), default="select")
     parser.add_argument("--generation-model", choices=baseline.CHAT_MODELS, default="anthropic/claude-sonnet-5.5")
     parser.add_argument("--generation-tokens", type=int, choices=(4096, 8192, 16384), default=8192)
+    parser.add_argument("--generation-format", choices=("anchors", "matrix"), default="anchors")
     parser.add_argument("--raster-rules", action="store_true")
     parser.add_argument("--raster-edge", type=int, choices=(1024, 1536, 2048), default=1536)
     parser.add_argument("--original-packet", action="store_true")

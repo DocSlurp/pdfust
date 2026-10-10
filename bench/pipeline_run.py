@@ -476,6 +476,7 @@ def run(manifest_path: Path, output: Path, config: dict[str, Any]) -> dict[str, 
                         "generalization_run.py",
                         "pipeline_regions.py",
                         "pipeline_generation.py",
+                        "pipeline_matrix_generation.py",
                         "pipeline_dense_candidates.py",
                         "pipeline_ocr_sources.py",
                     ]
