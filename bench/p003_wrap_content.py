@@ -47,10 +47,6 @@ def _texts(table: dict[str, Any], start: int, size: int) -> list[str]:
 
 def _wrap_allowed(a: dict[str, Any], b: dict[str, Any], i: int, j: int, left: int, right: int) -> bool:  # noqa: PLR0913, PLR0917
     """Admit only exact joins with one unambiguous anchor inside this block."""
-    multi, start, size = (a, i, left) if left > 1 else (b, j, right)
-    original = multi["row_map"][start : start + size]
-    if original != list(range(original[0], original[0] + size)):
-        return False
     joined = _texts(a, i, left)
     if joined != _texts(b, j, right):
         return False
@@ -97,6 +93,12 @@ def _align(a: dict[str, Any], b: dict[str, Any], edits: WrapEdits) -> list[tuple
     return list(reversed(path))
 
 
+def _crossed_blank_rows(table: dict[str, Any], start: int, size: int) -> list[int]:
+    """Retain formatting-only blank spacers crossed by a nonblank row join."""
+    rows = table["row_map"][start : start + size]
+    return [row for row in table["blank_inventory"]["rows"] if rows and rows[0] < row < rows[-1]]
+
+
 def _compare(a: dict[str, Any], b: dict[str, Any], edits: WrapEdits) -> dict[str, Any]:
     if len(a["column_map"]) != len(b["column_map"]):
         raise Unsupported("Unequal nonblank column counts are unsupported")
@@ -126,6 +128,10 @@ def _compare(a: dict[str, Any], b: dict[str, Any], edits: WrapEdits) -> dict[str
             {
                 "reference_rows": a["row_map"][i : i + left],
                 "prediction_rows": b["row_map"][j : j + right],
+                "crossed_blank_rows": {
+                    "reference": _crossed_blank_rows(a, i, left),
+                    "prediction": _crossed_blank_rows(b, j, right),
+                },
                 "kind": "wrap" if max(left, right) > 1 else "paired" if left and right else "gap",
                 "cells": cells,
             }
@@ -156,6 +162,8 @@ def _transpose(result: dict[str, Any]) -> None:
     result["precision"], result["recall"] = result["recall"], result["precision"]
     for row in result["row_alignment"]:
         row["reference_rows"], row["prediction_rows"] = row["prediction_rows"], row["reference_rows"]
+        crossed = row["crossed_blank_rows"]
+        crossed["reference"], crossed["prediction"] = crossed["prediction"], crossed["reference"]
         for cell in row["cells"]:
             for suffix in ("columns", "text"):
                 cell["reference_" + suffix], cell["prediction_" + suffix] = (

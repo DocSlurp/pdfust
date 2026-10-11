@@ -97,11 +97,7 @@ def test_canonical_orientation_symmetry_and_conservation(ref: list, pred: list) 
         assert consumed == forward["coordinate_maps"][side]["row_map"]
 
 
-def test_no_many_to_many_pooling_or_blank_bridge() -> None:
-    reference = [["Alpha beta", "10"]]
-    assert not compare_wrap_content(reference, [["Alpha", "10"], ["", ""], ["beta", ""]])[
-        "content_recovered_with_row_order"
-    ]
+def test_no_many_to_many_pooling_or_over_limit_wrap() -> None:
     assert not compare_wrap_content([["Alpha beta", "10"], ["gamma", ""]], [["Alpha", "10"], ["beta gamma", ""]])[
         "content_recovered_with_row_order"
     ]
@@ -123,3 +119,17 @@ def test_schema_and_resources_refuse_with_null_metric(monkeypatch: pytest.Monkey
     assert "work" in refusal["unsupported_reason"]
     assert refusal["precision"] is refusal["recall"] is refusal["counts"] is None
     assert refusal["row_alignment"] is None
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_blank_spacer_is_content_padding_with_explicit_wrap_witness(*, reverse: bool) -> None:
+    reference = [["Deferred tail", "340"]]
+    prediction = [["Deferred", "340"], ["", ""], ["tail", ""]]
+    result = compare_wrap_content(prediction, reference) if reverse else compare_wrap_content(reference, prediction)
+    side = "reference" if reverse else "prediction"
+    assert result["content_recovered_with_row_order"]
+    assert result["precision"] == result["recall"] == 1
+    assert result["coordinate_maps"][side]["row_map"] == [0, 2]
+    assert result["blank_inventory"][side]["rows"] == [1]
+    assert result["row_alignment"][0][side + "_rows"] == [0, 2]
+    assert result["row_alignment"][0]["crossed_blank_rows"][side] == [1]
