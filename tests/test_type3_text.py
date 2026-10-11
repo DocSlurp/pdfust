@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import pylopdf
 from conftest import build_raw_pdf
+
+import pylopdf
 
 
 def _tounicode(mapping: dict[int, str]) -> str:
@@ -20,14 +21,20 @@ def _tounicode(mapping: dict[int, str]) -> str:
 
 
 def build_type3_pdf(
-    mapping: dict[int, str], codes: bytes, *, width: int = 1000, content: str | None = None
+    mapping: dict[int, str],
+    codes: bytes,
+    *,
+    width: int = 1000,
+    content: str | None = None,
+    per_code_widths: dict[int, int] | None = None,
 ) -> bytes:
     """One Chromium-style Type 3 font: flipped 0.001 FontMatrix, per-code widths, ToUnicode."""
     proc = f"{width} 0 0 -880 {width} 120 d1\n60 -800 {width - 120} 760 re f"
     names = " ".join(f"/g{code}" for code in mapping)
     procs = " ".join(f"/g{code} 6 0 R" for code in mapping)
     first, last = min(mapping), max(mapping)
-    widths = " ".join(str(width) for _ in range(first, last + 1))
+    per_code = per_code_widths or {}
+    widths = " ".join(str(per_code.get(code, width)) for code in range(first, last + 1))
     if content is None:
         content = f"BT /F1 12 Tf 72 700 Td <{codes.hex().upper()}> Tj ET"
     return build_raw_pdf({
@@ -99,3 +106,12 @@ def test_named_property_spans_keep_glyph_unicode() -> None:
     )
     doc = pylopdf.open(stream=build_type3_pdf(mapping, b"", width=500, content=content))
     assert doc.get_text().strip() == "XB"
+
+
+def test_proportional_type3_widths_do_not_gain_inferred_spaces() -> None:
+    # Chromium writes Latin runs inside CJK documents as Type 3 too; a fixed
+    # half-em estimate made "NT$1,200" extract as "N T$1,200".
+    mapping = {1: "N", 2: "T", 3: "$", 4: "1", 5: "m", 6: "L"}
+    widths = {1: 722, 2: 611, 3: 556, 4: 556, 5: 833, 6: 556}
+    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5, 6]), per_code_widths=widths))
+    assert doc.get_text().strip() == "NT$1mL"

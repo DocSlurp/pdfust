@@ -6,6 +6,17 @@ generation and font subsetting. krilla is available under MIT OR Apache-2.0:
 - Source: <https://github.com/LaurenzV/krilla>
 - Package: <https://crates.io/crates/krilla/0.8.2>
 
+The source tree vendors hayro-interpret 0.7.0 in `rust/vendor/hayro-interpret`
+with one added public method, `Type3Glyph::advance_width`, so text extraction
+can space Type 3 glyphs by their `/Widths`. hayro-interpret is available under
+Apache-2.0 OR MIT; both license files are retained in the vendored directory.
+The Unicode CJK radical mapping in `rust/src/cjk_radicals.rs` is derived from
+the Unicode Character Database (NFKC data and EquivalentUnifiedIdeograph.txt),
+used under the Unicode License v3.
+
+- Source: <https://github.com/LaurenzV/hayro>
+- Package: <https://crates.io/crates/hayro-interpret/0.7.0>
+
 pylopdf uses HarfRust 0.12 for OpenType shaping. HarfRust is available under
 the MIT license:
 

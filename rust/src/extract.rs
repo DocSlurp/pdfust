@@ -614,7 +614,7 @@ impl Device<'_> for TextCollector {
             (1.0, 0.0)
         };
         // Advance is the glyph-space advance transformed by the x basis.
-        // Type 3 glyphs expose no advance; see the fallback below.
+        // Type 3 advances come from /Widths via the vendored hayro patch.
         let (advance_width, font_key, font) = match glyph {
             Glyph::Outline(g) => {
                 let key = g.font_cache_key();
@@ -641,11 +641,11 @@ impl Device<'_> for TextCollector {
                 };
                 (g.advance_width().map(f64::from), key, info)
             }
-            Glyph::Type3(_) => (None, 0, FontInfo::default()),
+            Glyph::Type3(g) => (g.advance_width().map(f64::from), 0, FontInfo::default()),
         };
-        // hayro keeps Type 3 widths private. Full-width East Asian glyphs are
-        // set on a square body, so one em is exact for them; half an em remains
-        // the estimate for everything else.
+        // A Type 3 font may still lack a usable width. Full-width East Asian
+        // glyphs are set on a square body, so one em is exact for them; half an
+        // em remains the estimate for everything else.
         let fallback_advance = match &text {
             GlyphText::Char(c) if crate::cjk_radicals::is_full_width(*c) => size,
             _ => size * 0.5,
@@ -774,6 +774,21 @@ const TEXT_TABLE_ALIGNMENT_TOLERANCE: f64 = 1.0;
 
 /// Maximum gap between consecutive borderless table rows.
 const TEXT_TABLE_ROW_GAP: f64 = 2.5;
+
+/// Minimum inline gap, in em, separating borderless-table cells.
+///
+/// Narrower than `LINE_SEGMENT_GAP` because CSS and word-processor tables pad
+/// columns by about one em. Rows still need equal segment counts and
+/// left- or right-aligned segments across at least `MIN_TEXT_TABLE_ROWS`
+/// consecutive lines, which ordinary prose does not satisfy.
+const TEXT_TABLE_CELL_GAP: f64 = 0.8;
+
+/// Median non-space characters per cell at which a column reads as prose.
+///
+/// A run whose every column is prose-like is side-by-side text columns, not a
+/// table: real tables keep at least one short column such as dates, amounts,
+/// identifiers or labels.
+const TEXT_TABLE_PROSE_CELL_CHARS: usize = 20;
 
 /// Minimum aligned physical lines needed to refine one coarse grid interval.
 const MIN_HYBRID_GRID_ROWS: usize = 3;
@@ -1437,13 +1452,16 @@ fn materialize_lines(
 }
 
 /// Borrow independently positioned columns or table cells sharing one baseline.
-fn split_line_segment_slices(line: &[GlyphRecord]) -> Result<Vec<&[GlyphRecord]>, TextPageLimit> {
+fn split_line_segment_slices(
+    line: &[GlyphRecord],
+    gap: f64,
+) -> Result<Vec<&[GlyphRecord]>, TextPageLimit> {
     let mut segments = Vec::new();
     let mut segment_start = 0;
     let mut previous_end: Option<f64> = None;
     let mut previous_size = 0.0_f64;
     for (index, glyph) in line.iter().enumerate() {
-        let threshold = previous_size.max(glyph.size).max(1.0) * LINE_SEGMENT_GAP;
+        let threshold = previous_size.max(glyph.size).max(1.0) * gap;
         if previous_end.is_some_and(|end| glyph_progress(glyph) - end > threshold) {
             try_push_text(
                 &mut segments,
@@ -1494,11 +1512,16 @@ fn split_line_segments_owned(
 
 /// Count widely separated segments without cloning their glyphs.
 fn line_segment_count(line: &[GlyphRecord]) -> usize {
+    line_segment_count_at(line, LINE_SEGMENT_GAP)
+}
+
+/// Count segments separated by more than `gap` em.
+fn line_segment_count_at(line: &[GlyphRecord], gap: f64) -> usize {
     let mut count = usize::from(!line.is_empty());
     let mut previous_end: Option<f64> = None;
     let mut previous_size = 0.0_f64;
     for glyph in line {
-        let threshold = previous_size.max(glyph.size).max(1.0) * LINE_SEGMENT_GAP;
+        let threshold = previous_size.max(glyph.size).max(1.0) * gap;
         if previous_end.is_some_and(|end| glyph_progress(glyph) - end > threshold) {
             count += 1;
         }
@@ -3962,10 +3985,51 @@ fn text_table_from_rows(rows: &[Vec<&[GlyphRecord]>]) -> Result<Option<TableTupl
     )))
 }
 
+/// Whether every column of a candidate run reads as running prose.
+fn text_run_is_prose_columns(run: &[Vec<&[GlyphRecord]>]) -> Result<bool, TextPageLimit> {
+    let columns = run.first().map_or(0, Vec::len);
+    let mut lengths = Vec::new();
+    for column in 0..columns {
+        lengths.clear();
+        for row in run {
+            let count = row[column]
+                .iter()
+                .flat_map(|glyph| glyph.text.chars())
+                .filter(|c| !c.is_whitespace())
+                .count();
+            try_push_text(&mut lengths, count, "borderless prose check")?;
+        }
+        lengths.sort_unstable();
+        // Running prose continues from line to line, so its later cells
+        // usually start with a lowercase letter; wrapped table cells do not
+        // reach this check because their continuation lines break the run.
+        let continuations = run[1..]
+            .iter()
+            .filter(|row| {
+                row[column]
+                    .iter()
+                    .flat_map(|glyph| glyph.text.chars())
+                    .find(|c| !c.is_whitespace())
+                    .is_some_and(char::is_lowercase)
+            })
+            .count();
+        let long = lengths[lengths.len() / 2] >= TEXT_TABLE_PROSE_CELL_CHARS;
+        if !long && continuations * 2 < run.len() - 1 {
+            return Ok(false);
+        }
+    }
+    Ok(columns > 0)
+}
+
 fn flush_text_table_run(
     run: &mut Vec<Vec<&[GlyphRecord]>>,
     tables: &mut Vec<TableTuple>,
+    reject_prose: bool,
 ) -> Result<(), TextPageLimit> {
+    if reject_prose && run.len() >= MIN_TEXT_TABLE_ROWS && text_run_is_prose_columns(run)? {
+        run.clear();
+        return Ok(());
+    }
     if let Some(table) = text_table_from_rows(run)? {
         try_push_text(tables, table, "borderless tables")?;
     }
@@ -3974,25 +4038,54 @@ fn flush_text_table_run(
 }
 
 /// Detect opt-in borderless tables from sustained aligned text segments.
+///
+/// Rows are first segmented at the one-em padding of CSS-style tables. Coarser
+/// segmentation at `LINE_SEGMENT_GAP` then adds any table it finds that does
+/// not overlap a fine-grained one, so forms whose checkbox gaps break the fine
+/// row structure keep their established detection.
 fn detect_text_tables(
     physical_lines: &[Vec<GlyphRecord>],
+) -> Result<Vec<TableTuple>, TextPageLimit> {
+    let mut tables = detect_text_tables_at(physical_lines, TEXT_TABLE_CELL_GAP, true)?;
+    let fine_count = tables.len();
+    for table in detect_text_tables_at(physical_lines, LINE_SEGMENT_GAP, false)? {
+        let (x0, y0, x1, y1) = table.0;
+        let overlaps = tables[..fine_count].iter().any(|fine| {
+            let (fx0, fy0, fx1, fy1) = fine.0;
+            x0 < fx1 && fx0 < x1 && y0 < fy1 && fy0 < y1
+        });
+        if !overlaps {
+            try_push_text(&mut tables, table, "borderless tables")?;
+        }
+    }
+    Ok(tables)
+}
+
+/// Detect borderless tables whose cells are separated by more than `gap` em.
+///
+/// `reject_prose` drops runs whose every column reads as running text; the
+/// fine segmentation needs it because narrow prose gutters exceed its gap.
+fn detect_text_tables_at(
+    physical_lines: &[Vec<GlyphRecord>],
+    gap: f64,
+    reject_prose: bool,
 ) -> Result<Vec<TableTuple>, TextPageLimit> {
     let mut tables = Vec::new();
     let mut run = Vec::new();
 
     for line in physical_lines {
-        let segment_count = line_segment_count(line);
+        let segment_count = line_segment_count_at(line, gap);
         let segments = if !line.is_empty()
             && !has_vertical_baseline(&line[0])
             && (2..=MAX_TEXT_TABLE_COLUMNS).contains(&segment_count)
         {
-            let segments = split_line_segment_slices(line)?;
+            let segments = split_line_segment_slices(line, gap)?;
             (segments.len() == segment_count).then_some(segments)
         } else {
             None
         };
         let Some(segments) = segments else {
-            flush_text_table_run(&mut run, &mut tables)?;
+            flush_text_table_run(&mut run, &mut tables, reject_prose)?;
             continue;
         };
         if run.is_empty()
@@ -4004,11 +4097,11 @@ fn detect_text_tables(
         {
             try_push_text(&mut run, segments, "borderless table row run")?;
         } else {
-            flush_text_table_run(&mut run, &mut tables)?;
+            flush_text_table_run(&mut run, &mut tables, reject_prose)?;
             try_push_text(&mut run, segments, "borderless table row run")?;
         }
     }
-    flush_text_table_run(&mut run, &mut tables)?;
+    flush_text_table_run(&mut run, &mut tables, reject_prose)?;
     Ok(tables)
 }
 

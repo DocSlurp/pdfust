@@ -205,9 +205,12 @@ overview.
   static `PylopdfWarning` through the pending-warnings sink, and
   `pdfium-type3.pdf` pins the extraction gap as an upstream-linked expected
   failure. A U+0000 ToUnicode mapping is treated as unmapped. Type 3 glyphs
-  expose no advance in hayro 0.7, so they advance one em when their text is a
-  single full-width CJK, kana, Hangul or full-width-form character
-  (`rust/src/cjk_radicals.rs`) and half an em otherwise. Single-character
+  advance by their `/Widths` through `Type3Glyph::advance_width`, a method
+  added in the vendored `rust/vendor/hayro-interpret` (hayro-interpret 0.7.0
+  via `[patch.crates-io]`; drop the vendor copy once upstream exposes it).
+  Without a usable width they advance one em for a single full-width CJK,
+  kana, Hangul or full-width-form character (`rust/src/cjk_radicals.rs`) and
+  half an em otherwise. Single-character
   mappings to Kangxi Radicals or CJK Radicals Supplement code points are
   normalized to their equivalent unified ideographs, because Skia-built
   ToUnicode maps choose the lowest code point sharing a glyph. hayro's Device
@@ -310,7 +313,14 @@ overview.
   without allocation. The opt-in borderless `strategy="text"` requires at
   least three consecutive physical rows with the
   same segment count, aligned left or right edges, compatible leading, and
-  clear gaps. Candidate segments borrow physical-line glyph slices rather than
+  clear gaps. Rows are segmented first at 0.8 em (`TEXT_TABLE_CELL_GAP`, the
+  one-em padding of CSS and word-processor tables) and then at
+  `LINE_SEGMENT_GAP`; coarse tables are kept only where they do not overlap a
+  fine one, so established form detections remain. Fine runs whose every
+  column reads as running prose (median cell of at least 20 non-space
+  characters, or most continuation cells starting lowercase) are rejected;
+  aligned label/value form grids may still be detected. Candidate segments
+  borrow physical-line glyph slices rather than
   cloning text and font metadata for every qualifying row. Candidate runs,
   bounds, cells, anchors, and cell text grow fallibly, and an allocation
   refusal invalidates the complete table interpretation instead of returning
