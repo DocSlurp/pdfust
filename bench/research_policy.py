@@ -6,10 +6,10 @@ import math
 import time
 from typing import Any
 
-P003_LIMIT_USD = 180.0
+P003_LIMIT_USD = 280.0
 P003_PAID_CUTOFF = 1791684720.0  # 2026-10-11 02:12 UTC; final report due 02:27.
 P003_EXTENSION_PREFIX = "P003/extension-v1-"
-P003_EXTENSION_CUTOFF = 1791741120.0  # 2026-10-11 17:52 UTC; report due 18:07.
+P003_EXTENSION_CUTOFF = 1791823920.0  # 2026-10-12 16:52 UTC; report due 17:07.
 
 
 def admit_wave(ledger: dict[str, Any], tag: str, reservation: float) -> None:
@@ -20,7 +20,7 @@ def admit_wave(ledger: dict[str, Any], tag: str, reservation: float) -> None:
     """
     if tag.split("/", 1)[0] != "P003":
         return
-    # The user's continuation (extended 2026-10-11 to 18:07 UTC) authorizes new
+    # The user's continuation (extended to 2026-10-12 17:07 UTC) authorizes new
     # extension experiments without reviving historical queues.
     cutoff = P003_EXTENSION_CUTOFF if tag.startswith(P003_EXTENSION_PREFIX) else P003_PAID_CUTOFF
     if time.time() >= cutoff:
@@ -34,5 +34,5 @@ def admit_wave(ledger: dict[str, Any], tag: str, reservation: float) -> None:
         message = "P003 accounting requires finite nonnegative amounts"
         raise ValueError(message)
     if math.fsum(amounts) > P003_LIMIT_USD:
-        message = "P003 reservation exceeds its USD 180 wave cap"
+        message = "P003 reservation exceeds its USD 280 wave cap"
         raise RuntimeError(message)

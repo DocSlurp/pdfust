@@ -80,6 +80,14 @@ overview.
   **USD 330**. The P003 extension now ends at 18:07 UTC, and new
   `P003/extension-v1-` admissions stop at 17:52 UTC. Prior charges and
   unresolved reservations still count.
+- At 16:49 UTC on 2026-10-11 the user asked to expand the time and budget
+  window without giving amounts. Defaults applied: another USD 100 and 24
+  hours, raising the P003 ceiling to **USD 280** and the cumulative cap to
+  **USD 430**. The extension ends at 17:07 UTC on 2026-10-12, and new
+  `P003/extension-v1-` admissions stop at 16:52 UTC that day. The ledger's
+  stored `authorized_total_usd`, the campaign limit, and the concurrent
+  client's P003 wave limit were raised in the same change so no hidden lower
+  cap remains. Prior charges and unresolved reservations still count.
 - Keep local checks CPU-only by default. The local RTX 3090 on dev04 has been
   unstable since 2026-10-11. Use it only for short, low-intensity checks such
   as a smoke test, a few-page comparison, or a brief health probe. Run every

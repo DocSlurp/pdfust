@@ -12,6 +12,15 @@ from bench.decision_hosted import DecisionClient
 from bench.p003_client import P003ConcurrentClient, P003DecisionClient
 
 
+@pytest.fixture(autouse=True)
+def _admission_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep P003 admission open so these mocks do not expire with the real deadlines."""
+    from bench import research_policy  # noqa: PLC0415
+
+    monkeypatch.setattr(research_policy, "P003_PAID_CUTOFF", float("inf"))
+    monkeypatch.setattr(research_policy, "P003_EXTENSION_CUTOFF", float("inf"))
+
+
 def test_stops_arm_without_second_reservation(tmp_path, monkeypatch):
     base = hosted.DecisionClient.__new__(hosted.DecisionClient)
     base.root, base.directory = tmp_path, tmp_path
@@ -21,7 +30,7 @@ def test_stops_arm_without_second_reservation(tmp_path, monkeypatch):
     opener = MagicMock(side_effect=OSError("mock transport failure"))
     client = P003ConcurrentClient(client=base, opener=opener)
     assert client._concurrent.policy == {
-        "max_inflight": 3, "wave_limits_usd": {"P003": 50.0}, "allow_matched_replicates": True,
+        "max_inflight": 3, "wave_limits_usd": {"P003": 280.0}, "allow_matched_replicates": True,
     }
     with pytest.raises(RuntimeError):
         client.request({"model": hosted.JEV, "questions": {}}, tag="P003/mock")

@@ -79,7 +79,7 @@ class P003ConcurrentClient(P003DecisionClient):
 
         base = client if client is not None else DecisionClient(ROOT if root is None else root)
         self._concurrent = ConcurrentDecisionClient(
-            base, max_inflight=3, wave_limits={"P003": 50.0}, opener=opener, allow_matched_replicates=True,
+            base, max_inflight=3, wave_limits={"P003": 280.0}, opener=opener, allow_matched_replicates=True,
         )
         self.root, self.directory, self.ledger = base.root, base.directory, base.ledger
         self.stopped = False

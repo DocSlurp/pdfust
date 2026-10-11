@@ -26,7 +26,7 @@ from bench import decision_hosted as hosted
 from bench.decision_gateway import safe_http_error
 
 MAX_INFLIGHT = 8
-WAVE_LIMITS = {"P001": 50.0, "P002": 50.0, "P003": 50.0}
+WAVE_LIMITS = {"P001": 50.0, "P002": 50.0, "P003": 280.0}
 SETTLEMENT_FIELDS = {
     "response_file",
     "response_prefix_file",

@@ -18,6 +18,15 @@ from bench import decision_hosted as hosted
 from bench.decision_concurrent import ConcurrentDecisionClient
 
 
+@pytest.fixture(autouse=True)
+def _admission_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep P003 admission open so these mocks do not expire with the real deadlines."""
+    from bench import research_policy  # noqa: PLC0415
+
+    monkeypatch.setattr(research_policy, "P003_PAID_CUTOFF", float("inf"))
+    monkeypatch.setattr(research_policy, "P003_EXTENSION_CUTOFF", float("inf"))
+
+
 @pytest.fixture
 def base(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> hosted.DecisionClient:
     client = hosted.DecisionClient.__new__(hosted.DecisionClient)
@@ -475,11 +484,8 @@ def test_matched_policy_cannot_admit_other_waves(base: hosted.DecisionClient) ->
 
 
 def test_interrupted_reservation_frees_slot_keeps_charge_and_allows_named_rerun(
-    base: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+    base: hosted.DecisionClient,
 ) -> None:
-    from bench import research_policy  # noqa: PLC0415
-
-    monkeypatch.setattr(research_policy.time, "time", lambda: research_policy.P003_EXTENSION_CUTOFF - 60)
     client = ConcurrentDecisionClient(
         base, max_inflight=1, opener=lambda request, *, timeout: response(payload()),  # noqa: ARG005
         wave_limits={"P003": 50.0}, allow_matched_replicates=True,
