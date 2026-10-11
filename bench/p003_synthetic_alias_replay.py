@@ -112,12 +112,15 @@ def main() -> None:
     parser.add_argument("--alias-sha256", required=True)
     parser.add_argument("--gold-sha256", required=True)
     args = parser.parse_args()
+    output = guard_path(args.output)
+    if output.exists():
+        raise ValueError("New secondary output required; retained artifacts cannot be overwritten")
     context = evaluator.source_context(args.source, args.source_map)
     result = replay(args.directory, args.runtime_map, context, args.aliases, args.alias_sha256)
     gold = evaluator.load_gold(args.gold, args.gold_sha256, context)
     result["original_scores"] = evaluator.score(result["original_verified"], gold, context)
     result["secondary_scores"] = evaluator.score(result["secondary_verified"], gold, context)
-    write_json(guard_path(args.output), result)
+    write_json(output, result)
 
 
 if __name__ == "__main__":
