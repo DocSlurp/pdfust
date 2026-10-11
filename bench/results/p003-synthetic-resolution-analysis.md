@@ -1,6 +1,6 @@
 # Synthetic relationship decisions at five additional crop resolutions
 
-15/25 predeclared arms independently verified at this checkpoint. All five models and all five new edges (256/400/500/768/1024) remain in the table, including pending arms. Each arm uses the same frozen 24 cases; these repeated cases are not independent quality samples. No additional API calls occurred during verification.
+18/25 predeclared arms independently verified at this checkpoint. All five models and all five new edges (256/400/500/768/1024) remain in the table, including pending arms. Each arm uses the same frozen 24 cases; these repeated cases are not independent quality samples. No additional API calls occurred during verification.
 
 Each completed arm passes independently approved runtime/source/image authorities, source PDF crop re-rendering, exact PNG and native encoded request replay, ledger tag/request identity, retained raw response and financial verification before labels are opened. The original protocol remains unchanged; secondary results change only the returned model identifier under the explicitly approved exact catalog alias map. Raw choices/probabilities/usage are preserved. Models are separate, with no retries or another model’s fallback.
 
@@ -13,27 +13,27 @@ All-case agreement counts all 24 intended cases, including abstention/error/unat
 | cloudflare/clef | 256 | 14 | 0 | 14 | 11 | 6/4/4 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef | 400 | 15 | 0 | 15 | 12 | 6/4/5 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef | 500 | 15 | 0 | 15 | 12 | 5/5/5 | 0 | 24 | 0 | 0/0/0 |
-| cloudflare/clef | 768 | — | — | unscored (running) | — | — | — | — | — | — |
+| cloudflare/clef | 768 | 14 | 0 | 14 | 11 | 5/5/4 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef | 1024 | — | — | unscored (not launched) | — | — | — | — | — | — |
 | cloudflare/clef-flash | 256 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef-flash | 400 | 14 | 0 | 14 | 11 | 4/6/4 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef-flash | 500 | 13 | 0 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0/0/0 |
-| cloudflare/clef-flash | 768 | — | — | unscored (not launched) | — | — | — | — | — | — |
-| cloudflare/clef-flash | 1024 | — | — | unscored (not launched) | — | — | — | — | — | — |
+| cloudflare/clef-flash | 768 | — | — | unscored (running) | — | — | — | — | — | — |
+| cloudflare/clef-flash | 1024 | — | — | unscored (running) | — | — | — | — | — | — |
 | cloudflare/clef-omni | 256 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef-omni | 400 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0/0/0 |
 | cloudflare/clef-omni | 500 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0/0/0 |
-| cloudflare/clef-omni | 768 | — | — | unscored (not launched) | — | — | — | — | — | — |
+| cloudflare/clef-omni | 768 | — | — | unscored (running) | — | — | — | — | — | — |
 | cloudflare/clef-omni | 1024 | — | — | unscored (not launched) | — | — | — | — | — | — |
 | openai/gpt-6-luna-decisions | 256 | 0 | 24 | 6 | 6 | 3/2/1 | 6 | 13 | 11 | 0/0/0 |
 | openai/gpt-6-luna-decisions | 400 | 0 | 24 | 7 | 7 | 1/3/3 | 6 | 17 | 7 | 0/0/0 |
 | openai/gpt-6-luna-decisions | 500 | 0 | 24 | 7 | 7 | 2/2/3 | 6 | 12 | 12 | 0/0/0 |
-| openai/gpt-6-luna-decisions | 768 | — | — | unscored (running) | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | 768 | 0 | 24 | 6 | 6 | 1/3/2 | 6 | 14 | 10 | 0/0/0 |
 | openai/gpt-6-luna-decisions | 1024 | — | — | unscored (not launched) | — | — | — | — | — | — |
 | perplexity/pplx-decider-v1.1-27b | 256 | 0 | 24 | 16 | 13 | 6/5/5 | 0 | 23 | 1 | 0/0/0 |
 | perplexity/pplx-decider-v1.1-27b | 400 | 0 | 24 | 19 | 16 | 7/6/6 | 0 | 24 | 0 | 0/0/0 |
 | perplexity/pplx-decider-v1.1-27b | 500 | 0 | 24 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0/0/0 |
-| perplexity/pplx-decider-v1.1-27b | 768 | — | — | unscored (running) | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | 768 | 0 | 24 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0/0/0 |
 | perplexity/pplx-decider-v1.1-27b | 1024 | — | — | unscored (not launched) | — | — | — | — | — | — |
 
 ## Retained original resolution controls
@@ -53,6 +53,31 @@ The existing crop128/512 controls below were independently verified in the origi
 | clefomni | 128 | 0 | 12 | 9 | 0 |
 | clefomni | 512 | 0 | 12 | 9 | 0 |
 
+## Paired counterfactual behavior
+
+All 12 opposite-label pairs are retained. The three indeterminate pairs have identical complete image requests; the nine cued pairs can differ in pixels. Consistency below is observed behavior, not correctness or calibrated uncertainty. No raw probabilities are renormalized.
+
+| Model | Edge | Identical complete request pairs /12 | Both valid pairs /12 | Same choice pairs /12 | Exact same raw probability pairs /12 | Both abstained pairs /12 |
+|---|---:|---:|---:|---:|---:|---:|
+| cloudflare/clef | 256 | 3 | 12 | 10 | 3 | 0 |
+| cloudflare/clef | 400 | 3 | 12 | 9 | 3 | 0 |
+| cloudflare/clef | 500 | 3 | 12 | 9 | 3 | 0 |
+| cloudflare/clef | 768 | 3 | 12 | 10 | 3 | 0 |
+| cloudflare/clef-flash | 256 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-flash | 400 | 3 | 12 | 10 | 3 | 0 |
+| cloudflare/clef-flash | 500 | 3 | 12 | 11 | 3 | 0 |
+| cloudflare/clef-omni | 256 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-omni | 400 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-omni | 500 | 3 | 12 | 12 | 3 | 0 |
+| openai/gpt-6-luna-decisions | 256 | 3 | 12 | 9 | 3 | 4 |
+| openai/gpt-6-luna-decisions | 400 | 3 | 12 | 10 | 3 | 3 |
+| openai/gpt-6-luna-decisions | 500 | 3 | 12 | 10 | 3 | 5 |
+| openai/gpt-6-luna-decisions | 768 | 3 | 12 | 7 | 3 | 3 |
+| perplexity/pplx-decider-v1.1-27b | 256 | 3 | 12 | 7 | 3 | 0 |
+| perplexity/pplx-decider-v1.1-27b | 400 | 3 | 12 | 5 | 3 | 0 |
+| perplexity/pplx-decider-v1.1-27b | 500 | 3 | 12 | 4 | 3 | 0 |
+| perplexity/pplx-decider-v1.1-27b | 768 | 3 | 12 | 4 | 3 | 0 |
+
 ## Fresh hosted resources and question costs
 
 Rates use original hosted wall time under the global three-request limit, not offline replay duration. Each original arm’s charges appear once; alias replay incurs zero new charges. Effective USD is complete only when all attempts have recognized resolved accounting; provider-reported zero remains preserved. CPU/RSS cover the hosted arm’s local process/preprocessing (100 ms RSS samples), remote inference hardware is unmeasured. Missing token counters are unknown. No PDF pages/minute or pages/APIUSD are inferred.
@@ -62,6 +87,7 @@ Rates use original hosted wall time under the global three-request limit, not of
 | cloudflare/clef | 256 | 24 | 0.0052805 | 0.0052805 | provider-reported USD:24 | 11.257 | 4545.041 | 22002 (24/24) | 0 (24/24) | 127.924 | 42.131 | 202.387 |
 | cloudflare/clef | 400 | 24 | 0.0055742 | 0.0055742 | provider-reported USD:24 | 14.557 | 4305.520 | 23226 (24/24) | 0 (24/24) | 98.924 | 34.613 | 202.750 |
 | cloudflare/clef | 500 | 24 | 0.0060638 | 0.0060638 | provider-reported USD:24 | 12.869 | 3957.888 | 25266 (24/24) | 0 (24/24) | 111.894 | 38.627 | 218.871 |
+| cloudflare/clef | 768 | 24 | 0.0076306 | 0.0076306 | provider-reported USD:24 | 11.285 | 3145.248 | 31794 (24/24) | 0 (24/24) | 127.604 | 43.007 | 203.953 |
 | cloudflare/clef-flash | 256 | 24 | 0.0008361 | 0.0008361 | provider-reported USD:24 | 15.176 | 28705.524 | 22002 (24/24) | 0 (24/24) | 94.885 | 33.694 | 202.543 |
 | cloudflare/clef-flash | 400 | 24 | 0.0008826 | 0.0008826 | provider-reported USD:24 | 13.310 | 27192.756 | 23226 (24/24) | 0 (24/24) | 108.190 | 38.053 | 203.887 |
 | cloudflare/clef-flash | 500 | 24 | 0.0009601 | 0.0009601 | provider-reported USD:24 | 10.998 | 24997.188 | 25266 (24/24) | 0 (24/24) | 130.934 | 44.396 | 205.578 |
@@ -71,9 +97,11 @@ Rates use original hosted wall time under the global three-request limit, not of
 | openai/gpt-6-luna-decisions | 256 | 24 | 0.0016358 | 0.0000000 | catalog estimate:24 | 14.821 | 14671.720 | 16358 (24/24) | 0 (24/24) | 97.158 | 33.444 | 203.109 |
 | openai/gpt-6-luna-decisions | 400 | 24 | 0.0018446 | 0.0000000 | catalog estimate:24 | 15.006 | 13010.951 | 18446 (24/24) | 0 (24/24) | 95.959 | 34.609 | 201.883 |
 | openai/gpt-6-luna-decisions | 500 | 24 | 0.0020326 | 0.0000000 | catalog estimate:24 | 11.264 | 11807.537 | 20326 (24/24) | 0 (24/24) | 127.846 | 45.718 | 204.008 |
+| openai/gpt-6-luna-decisions | 768 | 24 | 0.0027014 | 0.0000000 | catalog estimate:24 | 11.394 | 8884.282 | 27014 (24/24) | 0 (24/24) | 126.380 | 42.925 | 203.668 |
 | perplexity/pplx-decider-v1.1-27b | 256 | 24 | 0.0004151 | 0.0004151 | provider-reported USD:24 | 11.742 | 57820.179 | 20754 (24/24) | 24 (24/24) | 122.638 | 41.325 | 203.039 |
 | perplexity/pplx-decider-v1.1-27b | 400 | 24 | 0.0004396 | 0.0004396 | provider-reported USD:24 | 14.903 | 54600.055 | 21978 (24/24) | 24 (24/24) | 96.623 | 33.518 | 203.211 |
 | perplexity/pplx-decider-v1.1-27b | 500 | 24 | 0.0004804 | 0.0004804 | provider-reported USD:24 | 11.197 | 49962.528 | 24018 (24/24) | 24 (24/24) | 128.611 | 44.337 | 205.965 |
+| perplexity/pplx-decider-v1.1-27b | 768 | 24 | 0.0006109 | 0.0006109 | provider-reported USD:24 | 11.710 | 39285.013 | 30546 (24/24) | 24 (24/24) | 122.976 | 42.639 | 204.074 |
 
 ## Provenance and limits
 
@@ -86,6 +114,7 @@ Each original report remains immutable beside `synthetic-resolution-evaluation.j
 | synth-clef-resolution-crop256-r0-c3 | `fbac706045de7ae0b4f9b6941e0733fd2932d545dd3964dfac6b5b6c231180c5` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-clef-resolution-crop400-r0-c3 | `459e7d534e4ef352972c878ccc55fcbba0b82001c2d9339704a5632803b4ef0e` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-clef-resolution-crop500-r0-c3 | `384d9c5759f3ba76d392e409bb1c5ae2ac542ab4dc16d13bd48a7c6449dc1248` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
+| synth-clef-resolution-crop768-r0-c3 | `abe270ad81baf4a781c2d31420ab0d719e4b3be5a646b10d05b30b569df3dd7e` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-clefflash-resolution-crop256-r0-c3 | `3a5e511585838be816bfd5f3f50617cbbed9b52e5eabb11eeab6e9299a7dbc53` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-clefflash-resolution-crop400-r0-c3 | `d9beccb65a9d2a2d3068a1ac544040c760972429e49e555629783d42d67bee7f` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-clefflash-resolution-crop500-r0-c3 | `2bc710b77b8ddd840453183ed7751f4006890e039bb4d56121f2a9f342051e57` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
@@ -95,6 +124,8 @@ Each original report remains immutable beside `synthetic-resolution-evaluation.j
 | synth-lunadec-resolution-crop256-r0-c3 | `b199d593f0240f878420f08b4495653b22a381338e203517094561774521a90b` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-lunadec-resolution-crop400-r0-c3 | `0b1228dc9b772e6fc6cb0315ff83de1cadebcc467e75ea3664c59412af66297a` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-lunadec-resolution-crop500-r0-c3 | `818805094ef4076fe448bbd12a39c7d4f046b27d437085d7ff08954aacc373a1` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
+| synth-lunadec-resolution-crop768-r0-c3 | `3bc7c5fb0f7335ec63f3cd6a21fbc5b8134482cee6b7e38270638dfad58fc2bc` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-pplx-resolution-crop256-r0-c3 | `d8ab61cf8d51a6b5aeddcd3f8f5ed730c87d740ec910761137031b6dc3a962c2` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-pplx-resolution-crop400-r0-c3 | `f8d7071b721a093cd8350dfe274475b3f0b29d38af4cbc014fefc87c740c57ed` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
 | synth-pplx-resolution-crop500-r0-c3 | `df30336df4da62cd9d442a6069d0d6144963d7fa602d7849321178a7c9c96adf` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
+| synth-pplx-resolution-crop768-r0-c3 | `85d3f4cbae42b20ea60e2cfd88d79d9c6c481b708c7e8c0af916c95d83fc0a19` | `900bc0b56d94a5121b35560bb693b3e1dbbe48030ad3ca5873b4a47f868d1602` |
