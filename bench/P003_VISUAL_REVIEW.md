@@ -340,3 +340,33 @@ whole-table schema equivalence, not original coordinate-wise strict matching.
 The strict red comparison and every older batch remain separate and unchanged.
 `partial-content-control-T8.png` visibly separates missing/altered business values
 from dot leaders and fraction encodings that also contribute to character counts.
+
+## Authored random40 DEV adapter and form reference audit
+
+`bench.p003_random40_visual_review` explicitly admits the separate
+`random-office-values40-v1` corpus through the verified renderer. Its fixed sample
+contains the two previously source-reviewed pages and Sonnet640's retained
+negative false positive. This extension does not admit other corpora; natural16
+remains the default. Every PDF render passes an explicit white background, with
+that RGB value frozen in renderer settings.
+
+The two positive pages have exact strict cells: wrapped
+`r4fa2f36b57caf506679ba995` has 50/50; the paired-column page's full matrices and
+source images are retained. Original full source, full extracted output and
+readable regional comparisons remain available separately.
+
+The strict false positive `r46eb52c32e5e171d556ba38a` is an irregular “Internal
+Notes” form: eight vertically spaced label/value pairs. Visual source review
+finds the actual 8×2 output preserves Contact/$40,292.00, Office/ivory credit,
+Date/$64,231.42, Budget/0, Review/blank, Status/$32,276.12, Notes/Jan 1 2025 and
+Owner/04/16/2019. Title and footer sit outside the table body. This is a plausible
+structured form interpretation; no visible form-body content loss was observed.
+The frozen reference defines zero tables, and its strict false-positive count
+remains one. This case belongs in a reference-definition audit, without model
+tuning or automatic relabeling.
+
+A separate immutable `random40-form-*` batch shows actual source pixels cropped
+at the retained prediction bbox beside the actual output. Amber explicitly means
+a qualitative source review with no secondary correctness score. It retains the
+full unmodified page, actual values, dependency hashes and measured CPU/wall/RSS;
+the base batch preserves the strict red negative-reference disagreement.

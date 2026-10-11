@@ -44,6 +44,7 @@ RENDER_SETTINGS = {
     "cell_font_size": 18,
     "resampling": "Pillow BICUBIC default for RGB resize/thumbnail",
     "format": "RGB PNG",
+    "pdf_background_rgb": [255, 255, 255],
     "pillow_version": pillow_version,
     "colors": COLORS,
 }
@@ -335,7 +336,7 @@ def render_page(record: dict[str, Any], target: dict[str, Any], marks: dict[str,
     with pylopdf.Document(record["pdf_path"]) as document:
         page = document[record["page_number"]]
         rect = page.rect
-        pixmap = page.get_pixmap(scale=1600 / rect.width)
+        pixmap = page.get_pixmap(scale=1600 / rect.width, background=(255, 255, 255))
         original = Image.frombytes("RGBA", (pixmap.width, pixmap.height), pixmap.samples).convert("RGB")
         original.save(directory / "original.png")
         overlay = Image.new("RGBA", original.size)
@@ -424,10 +425,13 @@ def detector_inference_size(frozen: dict[str, Any], report: dict[str, Any]) -> i
     return observed if observed is not None else declared if declared is not None else "unrecorded"
 
 
-def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: PLR0912
+def run(  # noqa: PLR0912
+    run_dir: Path, corpus: Path, output: Path, identifiers: list[str], *, supplemental_random40: bool = False
+) -> Path:
     """Refresh a completed verified cohort once; identical provenance skips rendering."""
-    if corpus.name != "natural16":
-        raise ValueError("Initial diagnostics are restricted to the DEV natural16 cohort")
+    admitted = "random-office-values40-v1" if supplemental_random40 else "natural16"
+    if corpus.name != admitted:
+        raise ValueError("Diagnostics require the explicitly admitted DEV corpus")
     started, cpu = time.monotonic(), time.process_time()
     receipts: dict[str, str] = {}
     font_receipts = {str(path): digest(path.read_bytes()) for path in (FONT, LATIN_FONT)}
@@ -492,7 +496,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         (directory / "differences.json").write_text(json.dumps(diffs, indent=2) + "\n")
         difference_image(diffs).save(directory / "strict-differences.png")
         label = (
-            f"DEV {run_dir.name} | model {frozen['config'].get('generation_model')} | "
+            f"DEV {corpus.name} | {run_dir.name} | "
             f"detector inference {inference_size} | "
             f"raster edge {frozen['config'].get('detector_edge')} | crop {frozen['config'].get('image_edge')}"
         )
