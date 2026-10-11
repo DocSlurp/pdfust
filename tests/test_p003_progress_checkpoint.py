@@ -85,3 +85,22 @@ def test_coordinator_publication_receipt_does_not_claim_jobs_started(tmp_path: P
     assert snapshot["next_coordinator_publication_deadline_utc"] == "2026-10-11T00:29:00Z"
     assert snapshot["plans"][0]["required"] == 56
     assert "Job status not observed" in report.read_text()
+
+
+def test_synthetic_alias_audit_counts_preserve_original_scope(tmp_path: Path) -> None:
+    """Synthetic audit receipts must not disappear behind table-evaluation naming."""
+    arm = tmp_path / "synthetic" / "a"
+    arm.mkdir(parents=True)
+    (arm / "synthetic-alias-evaluation.json").write_text(
+        json.dumps(
+            {
+                "original_verified": {"report_sha256": "a" * 64},
+                "secondary_verified": {"report_sha256": "b" * 64, "scope": "Secondary alias replay"},
+            }
+        )
+    )
+    queue = {"frozen_order": [1], "arms": [{"name": "a", "kind": "synthetic_relations", "status": "completed"}]}
+    result = queue_summary(queue, arm.parent / "status.json")
+    assert result["synthetic_recorded_original_verified_jobs"] == 1
+    assert result["synthetic_recorded_secondary_verified_jobs"] == 1
+    assert result["synthetic_independent_alias_audits"][0]["secondary_scope"] == "Secondary alias replay"

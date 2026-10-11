@@ -263,3 +263,11 @@ question jobs have begun; planned queue cells remain `Job status not observed`
 until the actual queue status exists. Root's 00:24:33 UTC systemd observation is
 retained in ignored `progress-reports/coordinator-20261011T002433Z.json`; the
 reported prior publication is approximately 00:24 UTC, with deadline 00:29 UTC.
+
+For synthetic queues, the reporter reads the retained per-arm
+`synthetic-alias-evaluation.json` metadata rather than treating absence of a
+PDF `evaluation.json` as absence of an audit. Original independent verification
+and secondary catalog-alias replay are counted separately, with each receipt's
+hash, timestamp and recorded scope. These are evaluator-recorded verification
+counts; the reporter does not rerun scoring or replace original strict outcomes.
+Waiting launch wrappers remain distinct from observed queue jobs.

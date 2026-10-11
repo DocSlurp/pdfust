@@ -111,6 +111,33 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
         "worker_resources": queue.get("resources"),
     }
     question_kinds = {"micro", "synthetic_relations", "synthetic_shared_context"}
+    alias_receipts = []
+    for arm in completed:
+        if arm.get("kind") not in question_kinds:
+            continue
+        path = status.parent / arm["name"] / "synthetic-alias-evaluation.json"
+        if not path.exists():
+            continue
+        audit, receipt = observed(path)
+        original, secondary = audit.get("original_verified", {}), audit.get("secondary_verified", {})
+        alias_receipts.append(
+            {
+                **receipt,
+                "arm": arm["name"],
+                "original_verification_recorded": bool(original.get("report_sha256")),
+                "secondary_verification_recorded": bool(secondary.get("report_sha256")),
+                "secondary_scope": secondary.get("scope"),
+                "scope": "Retained independent evaluator receipt; reporter does not rerun scoring or inspect requests",
+            }
+        )
+    if alias_receipts:
+        result["synthetic_independent_alias_audits"] = alias_receipts
+        result["synthetic_recorded_original_verified_jobs"] = sum(
+            r["original_verification_recorded"] for r in alias_receipts
+        )
+        result["synthetic_recorded_secondary_verified_jobs"] = sum(
+            r["secondary_verification_recorded"] for r in alias_receipts
+        )
     pdf = [a for a in completed if a.get("kind") not in question_kinds]
     synthetic = [a for a in completed if a.get("kind") in question_kinds]
     if pdf:
@@ -134,7 +161,7 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
     return result
 
 
-def checkpoint(
+def checkpoint(  # noqa: C901
     statuses: list[Path], ledger: Path, output: Path, planned: list[str], metadata: Path | None = None
 ) -> Path:
     """Read one snapshot and write immutable JSON/Markdown plus latest local views."""
@@ -212,10 +239,18 @@ def checkpoint(
         text += "Coordinator-supplied observations (not independently verified service telemetry):\n"
         text += json.dumps(coordinator, sort_keys=True) + "\n\n"
     for q in summaries:
-        text += (
-            f"{q['name']}: evaluation files {q['completed_with_evaluation_file']}/{q['completed_jobs']} "
-            "(presence does not certify freshness).\n"
-        )
+        if "synthetic_independent_alias_audits" in q:
+            text += (
+                f"{q['name']}: independent synthetic original verification recorded "
+                f"{q['synthetic_recorded_original_verified_jobs']}/{q['completed_jobs']}; "
+                f"secondary alias replay {q['synthetic_recorded_secondary_verified_jobs']}/{q['completed_jobs']}. "
+                "Original strict outcomes preserved; reporter does not rerun verification.\n"
+            )
+        else:
+            text += (
+                f"{q['name']}: evaluation files {q['completed_with_evaluation_file']}/{q['completed_jobs']} "
+                "(presence does not certify freshness).\n"
+            )
         if "attempted_pdf_pages" in q:
             text += (
                 f"PDF outcomes: {q['attempted_pdf_pages']} attempted; {q['operational_pdf_pages']} operational; "
