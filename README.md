@@ -492,6 +492,51 @@ representation differences such as Unicode subscripts versus reference LaTeX.
 Original unmarked images remain available locally. Scores are unchanged by
 visual review, and raw document artifacts are excluded from Git.
 
+One reviewed newspaper table demonstrates why strict mismatch is not always an
+extraction error: the reference combines rank and team name into one column,
+while the output separates them into two. All 21 rows, including the header,
+preserve ordered content under one fixed adjacent-column grouping. The user
+accepts either three or four columns. The [image-backed scoring handoff](bench/SCORING_HANDOFF.md)
+and [reference audit plan](bench/results/p003-scorer-audit-plan.md) define the
+separate strict, schema-equivalence, and partial-content metrics. Existing gold
+and strict scores remain unchanged. The [content alignment metric](bench/results/p003-content-alignment.md)
+retains row order, exposes missing/extra text, and reports unsupported merged
+spans separately; perfect content recovery alone does not certify a schema.
+
+All 48 [synthetic decision treatments](bench/results/p003-synthetic48-analysis.md)
+are independently verified. The 24-case corpus has 18 visually distinguishable
+cases and six cases whose opposing construction labels have identical evidence.
+The latter measure appropriate abstention separately from label agreement.
+
+| Model / evidence | Cued agreement / 18 | Indeterminate abstentions / 6 |
+|---|---:|---:|
+| PPLX — text geometry | 8 | 0 |
+| PPLX — text with observed rows/rules | 12 | 0 |
+| PPLX — 128 px crop | 12 | 0 |
+| PPLX — 512 px page | 16 | 0 |
+| PPLX — 512 px crop | 17 | 0 |
+| Clef Flash — 128 px crop | 12 | 0 |
+| Clef Flash — 512 px crop | 10 | 0 |
+| Luna Decisions — 512 px crop | 6 | 6 |
+| d1 — text geometry | 9 | 0 |
+| Jev — text geometry | 9 | 0 |
+| CPU vector-rule control | 14 | 6 |
+
+These are single-run relationship decisions, not complete page extraction.
+Pages/minute and pages/dollar therefore do not apply; the full report retains
+question rates, token usage, costs, all models/treatments, and failures. Original
+returned-model alias mismatches remain recorded; a separate exact catalog-alias
+replay recovers native answers without changing choices or purchasing retries.
+The [geometry controls](bench/results/p003-synthetic-geometry-quality.md) make no
+API calls. PPLX benefits from larger images here; Clef Flash does not improve
+monotonically, and PPLX still guesses on all six evidence-indeterminate cases.
+
+The [new 40-page random-value DEV corpus](bench/results/p003-random-values-corpus.md)
+adds eight layout families with independently seeded words, USD values, dates,
+repeated literals, blanks, `N/A`, and `NULL`. Six full-pipeline treatments are
+frozen across Luna, Haiku matrix, and Sonnet at detector sizes 640/1280; their
+results are pending. Synthetic and natural document scores remain separate.
+
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering
 CPU time by 6.09–6.18 times through page reuse across crops and image sizes.
