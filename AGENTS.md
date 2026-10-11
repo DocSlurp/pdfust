@@ -70,11 +70,21 @@ overview.
   This extends time only: the same USD 50 P003 ceiling and USD 200 cumulative
   cap apply, including every prior charge and unresolved reservation. The
   starting P003 conservative exposure is USD 22.7828178975.
-- Keep local checks CPU-only by default. On 2026-10-08 the user explicitly
-  authorized bounded local-GPU benchmark comparisons where acceleration matters.
-  Verify GPU health first; record matched CPU/GPU quality, wall/CPU time, peak
-  VRAM and sampled utilization. This exception does not authorize local training.
-  Other GPU workloads use remote capacity within the authorized spending cap.
+- At 07:15 UTC on 2026-10-11 the user authorized another USD 30 and an extended
+  deadline, raising the P003 ceiling to **USD 80** and the cumulative cap to
+  **USD 230**. The P003 extension now ends at 13:04 UTC, and new
+  `P003/extension-v1-` admissions stop at 12:49 UTC. Every prior charge and
+  unresolved reservation still counts.
+- Keep local checks CPU-only by default. The local RTX 3090 on dev04 has been
+  unstable since 2026-10-11. Use it only for short, low-intensity checks such
+  as a smoke test, a few-page comparison, or a brief health probe. Run every
+  intense, sustained, batch, benchmark, OCR/model-serving or training workload
+  on remote GPU providers within the authorized spending cap. This narrows the
+  2026-10-08 authorization for bounded local-GPU benchmarks. Before any local
+  GPU use, verify health (`nvidia-smi` must enumerate the device without
+  errors); if the check fails, stay on CPU or remote capacity. Record matched
+  CPU/GPU quality, wall/CPU time, peak VRAM and sampled utilization for any
+  local GPU measurement. Local training is not authorized.
 - Prefer tracking CPU and RAM usage during benchmarks, performance tests, and
   optimization experiments alongside elapsed time, throughput, quality, and cost.
   Record CPU time/utilization and peak resident memory (RSS) where practical,

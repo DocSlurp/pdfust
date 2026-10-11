@@ -8,7 +8,7 @@ def test_wave_counts_all_providers_and_unresolved_reservations(monkeypatch: pyte
     monkeypatch.setattr(policy.time, "time", lambda: policy.P003_PAID_CUTOFF - 1)
     ledger = {"requests": [
         {"tag": "P002/old", "accounted_usd": 49},
-        {"tag": "P003/or", "accounted_usd": 49.5},
+        {"tag": "P003/or", "accounted_usd": 79.5},
         {"tag": "P003/gateway", "accounted_usd": 0.3, "cost_status": "reserved"},
     ]}
     with pytest.raises(RuntimeError, match="wave cap"):
@@ -31,10 +31,10 @@ def test_extension_admits_only_new_namespace(monkeypatch: pytest.MonkeyPatch) ->
             policy.admit_wave({"requests": []}, tag, 0.3)
 
 
-def test_extension_deadline_and_original_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_extension_deadline_and_wave_budget(monkeypatch: pytest.MonkeyPatch) -> None:
     tag = "P003/extension-v1-pilot/page0"
     monkeypatch.setattr(policy.time, "time", lambda: policy.P003_EXTENSION_CUTOFF - 1)
-    ledger = {"requests": [{"tag": "P003/historical", "accounted_usd": 49.8}]}
+    ledger = {"requests": [{"tag": "P003/historical", "accounted_usd": 79.8}]}
     with pytest.raises(RuntimeError, match="wave cap"):
         policy.admit_wave(ledger, tag, 0.3)
     monkeypatch.setattr(policy.time, "time", lambda: policy.P003_EXTENSION_CUTOFF)

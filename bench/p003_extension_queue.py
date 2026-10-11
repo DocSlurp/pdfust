@@ -15,6 +15,13 @@ from bench.research_policy import P003_EXTENSION_CUTOFF
 from bench.silver import write_json
 
 
+def _runner(value: object) -> str:
+    if not isinstance(value, str) or value not in {"bench.p003_extension_run", "bench.extension_local_run"}:
+        message = "Unregistered experiment runner"
+        raise ValueError(message)
+    return value
+
+
 def main() -> None:
     """Launch at most three independent model arms; preserve failed jobs."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -53,6 +60,7 @@ def main() -> None:
         while pending and len(active) < 3:
             arm = pending.pop(0)
             directory = Path(arm["directory"])
+            runner = _runner(arm.get("runner", "bench.p003_extension_run"))
             # Gateway's existing transport holds the shared ledger during HTTP;
             # run it serially after OpenRouter to avoid blocked slots and unfair timing.
             if arm["config"]["provider"] == "vercel" and active:
@@ -63,7 +71,7 @@ def main() -> None:
                 [
                     sys.executable,
                     "-m",
-                    "bench.p003_extension_run",
+                    runner,
                     "run",
                     "--directory",
                     str(directory),

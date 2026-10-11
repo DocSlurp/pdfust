@@ -82,3 +82,56 @@ Publish a table or visual checkpoint at least every five minutes and concise
 updates between checkpoints. Commit source, tests and Markdown summaries;
 retain raw PDFs, prompts, responses, targets, images and telemetry under ignored
 artifacts. Push reviewed progress only to private `origin/main`.
+
+## Layer 2, frozen 2026-10-11 05:55 UTC
+
+The initial broad screen completes 24 arms with 154 actual requests. Known new
+effective charges total USD 0.118037398; five failed routes retain USD 1.5 in
+unresolved reservations. The new P003 conservative total is USD 24.4008552955.
+One Tev page was refused before transmission. Three interrupted processes are
+recovered from exact retained requests/responses without new calls; absent
+requests retain their intended denominator and lost resource metrics stay
+unknown. Remaining work now runs under supervised user services.
+
+Next, freeze fourteen OpenRouter tiers other than the two unavailable Span
+routes, each on the same eight source-selected pages in two separate scenarios:
+unchanged native control and controlled neighboring-cell swaps. These are 28
+arms, at most three sequential local decisions per page, using 24-word compact
+arrays and three declared options. This is a controlled repair stress study,
+not a claim that native extraction naturally makes these injected errors.
+Unchanged, no-focus, repeated-state and three-step stops are target-free.
+Ownership completeness never decides semantic completion. Missing scenarios
+remain not-applicable observations, with no paid call. Kev's smaller local
+protocol is a new named design after the earlier full-menu HTTP 400; no original
+failed request is retried.
+
+A paired batch/singles derivative will use the same shared evidence and two
+independent questions, comparing one request with two. It tests fixed request
+costs and execution overhead; provider cache savings require actual receipt
+counters. Native model confidence is retained but is not calibrated accuracy.
+Arrays/readable text and full-page images will be separately named treatments
+once the first local results establish the observable failure mechanisms.
+
+A source-only sparse-header-band rule repaired the original 64 authored pages
+and a fresh 64-page seed transfer exactly. This is same-generator confirmation.
+Native natural16 input has no extractable words, so OCR-source transfer is being
+measured separately; no real-world success is inferred from synthetic accuracy.
+
+## Layer 3, frozen 2026-10-11 07:16 UTC
+
+At 07:15 UTC the user authorized another USD 30 and extended the deadline: the
+P003 ceiling rises to USD 80 and the cumulative cap to USD 230. New extension
+admissions stop at 12:49 UTC, with reporting due by 13:04 UTC. Starting P003
+conservative exposure is USD 24.4364797875, including prior unresolved
+reservations.
+
+The 8-page local study showed one model repairing controlled swaps without
+harming any page: pplx-decider took combined exact pages from 1/8 to 4/8, three
+improved and none regressed. On unchanged native input it retained 6/8.
+Layer 3 makes pplx-decider the primary hypothesis on all 64 DEV pages. Clef,
+Mercury, Tev and Kev, which each showed some repair gain, are separately named
+comparisons. Each model runs four separate scenarios: native,
+`swapped_cell_values`, `missing_table_value` and `wrapped_continuation_shift`.
+The protocol is unchanged: up to three local array decisions and a USD 5
+additional queue cap. Pages without a scenario or focus remain no-request
+observations in the 64-page denominator.
