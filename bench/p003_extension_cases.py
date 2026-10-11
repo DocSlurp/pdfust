@@ -10,13 +10,16 @@ import time
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
+from statistics import median
 from typing import Any
 
 import pylopdf
 from bench import p003_random_values_corpus as random_values
+from bench.decision_evidence_designs import fragments
 from bench.pipeline_assembly import _clean_table, _native
 from bench.pipeline_corpus import _table
 from bench.pipeline_repair import _sources, validate
+from bench.rolling_rows import assemble
 from bench.silver import canonical, guard_path, sha, write_json
 
 SEED = "p003-extension-inventor-source-ownership-20261011-v1"
@@ -122,12 +125,60 @@ def _clean(source: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def loose_row_states(source: dict[str, Any]) -> list[dict[str, Any]]:
+    """Generate admission alternatives from source-only physical and rolling rows.
+
+    A loose two-track midpoint proposal deliberately admits aligned prose. It
+    is an unaccepted geometry hypothesis, allowing false-positive rejection to
+    be measured on any source with an empty detector, without family labels.
+    """
+    lookup = _sources(source)
+    states = []
+    for variant in ("physical", "rolling"):
+        assembly = assemble(source, variant)
+        tables = []
+        for candidate in assembly["candidates"]:
+            ids = [ident for cell in candidate["cells"] for ident in cell["source_ids"]]
+            boxes = [lookup[ident]["bbox"] for ident in ids]
+            bounds = [min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes)]
+            tables.append({**_clean_table(candidate, lookup), "bbox": bounds})
+        state = {"id": "c0", "tables": tables, "unresolved_ids": assembly["unresolved_ids"]}
+        validate(source, state)
+        states.append(state)
+    parts = fragments(source["words"])
+    bands: dict[int, list[str]] = {}
+    for part in parts:
+        bands.setdefault(part["band"], []).extend(part["source_ids"])
+    if len(bands) >= 3:
+        split = median((word["bbox"][0] + word["bbox"][2]) / 2 for word in source["words"])
+        rows = []
+        for ids in bands.values():
+            row: list[list[str]] = [[], []]
+            for ident in ids:
+                box = lookup[ident]["bbox"]
+                row[int((box[0] + box[2]) / 2 >= split)].append(ident)
+            rows.append(row)
+        table = {"row_count": len(rows), "col_count": 2,
+                 "cells": [{"source_ids": ids, "role": "unknown"} for row in rows for ids in row],
+                 "spans": [{"row": r, "column": c, "row_span": 1, "column_span": 1}
+                           for r in range(len(rows)) for c in range(2)]}
+        boxes = [word["bbox"] for word in source["words"]]
+        bounds = [min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes)]
+        state = {"id": "c0", "tables": [{**_clean_table(table, lookup), "bbox": bounds}], "unresolved_ids": []}
+        validate(source, state)
+        states.append(state)
+    return states
+
+
 def candidate_menu(source: dict[str, Any], states: list[dict[str, Any]], identity: str) -> dict[str, Any]:
     """Enumerate bounded source-local ownership alternatives independently of any target."""
     baseline = states[0]
     validate(source, baseline)
     inventory = [deepcopy(state) for state in states]
     inventory.append({"id": "c0", "tables": [], "unresolved_ids": [w["id"] for w in source["words"]]})
+    if not baseline["tables"]:
+        inventory.extend(loose_row_states(source))
+    fixed_count = len(inventory)
     # One table at a time: adjacent row swaps, release-to-prose and observed orphan restoration.
     for ti, table in enumerate(baseline["tables"]):
         columns = table["col_count"]
@@ -163,7 +214,7 @@ def candidate_menu(source: dict[str, Any], states: list[dict[str, Any]], identit
                 inventory.append(_clean(source, state))
     unique = {sha(canonical(state)): state for state in inventory}
     # Preserve full initial source-native/text states before bounding local alternatives.
-    initial = list(dict.fromkeys(sha(canonical(state)) for state in inventory[:3]))
+    initial = list(dict.fromkeys(sha(canonical(state)) for state in inventory[:fixed_count]))
     remaining = sorted(set(unique) - set(initial), key=lambda digest: sha(f"{identity}/{digest}".encode()))
     selected = initial + remaining[:MAX_CANDIDATES - len(initial)]
     candidates = [{"id": "c" + sha(f"{identity}/candidate/{digest}".encode())[:16], "state": unique[digest]} for digest in selected]

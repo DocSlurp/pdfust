@@ -76,12 +76,27 @@ def test_complete64_source_frozen_before_separate_gold(tmp_path: Path) -> None:
         assert "treatment" not in str(menu)
         assert "family" not in menu
         assert len(menu["candidates"]) <= cases.MAX_CANDIDATES
+        if not menu["baseline"]["tables"]:
+            assert len(menu["candidates"]) >= 2
+            assert any(candidate["state"]["tables"] for candidate in menu["candidates"])
         assert len({candidate["id"] for candidate in menu["candidates"]}) == len(menu["candidates"])
         validate(menu["source"], menu["baseline"])
         for candidate in menu["candidates"]:
             validate(menu["source"], candidate["state"])
     with pytest.raises(FileExistsError, match="New versioned"):
         cases.build(output)
+
+
+def test_loose_midpoint_proposal_admits_prose_without_authored_family_metadata() -> None:
+    plan = next(plan for plan in cases.plans() if plan["family"] == "negative")
+    data, _targets, _receipt = cases.authored(plan)
+    source, _rules, states = cases.extract_source(data, plan["id"])
+    assert not states[0]["tables"]
+    menu = cases.candidate_menu(source, states, plan["id"])
+    assert any(candidate["state"]["tables"] for candidate in menu["candidates"])
+    assert any(not candidate["state"]["tables"] for candidate in menu["candidates"])
+    for candidate in menu["candidates"]:
+        validate(source, candidate["state"])
 
 
 def test_menu_refuses_unknown_or_duplicate_ids_before_candidate_generation() -> None:
