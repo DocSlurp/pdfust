@@ -469,6 +469,7 @@ def adaptive_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict
 
 FILL_OCR_LEVELS = ADAPTIVE_OCR_LEVELS
 FILL_MIN_CONFIDENCE = 0.7
+FILL_UNRELIABLE_RATIO = 0.5
 
 
 def _center_inside(native: tuple[float, float, float, float], box: Any, slack: float = 2.0) -> bool:  # noqa: ANN401
@@ -483,7 +484,9 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str
 
     Each page is recognized without modification; OCR boxes containing the
     centre of any native word are dropped, and the rest are inserted as an
-    invisible layer, so native text is not duplicated.
+    invisible layer, so native text is not duplicated. When glyphs lacked
+    Unicode and native text is under half of the OCR text, the native layer is
+    treated as unreliable and every OCR box is inserted.
     """
     directory = guard_path(directory)
     start = _measure()
@@ -500,9 +503,21 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str
             counts = {"recognized": 0, "inserted": 0}
             with jev_pdf.open(str(source)) as doc:
                 for page in doc:
-                    native = [tuple(w[:4]) for w in page.get_text("words")]
+                    with warnings.catch_warnings(record=True) as caught:
+                        warnings.simplefilter("always")
+                        native_words = page.get_text("words")
+                    unmapped = any("no Unicode mapping" in str(item.message) for item in caught)
+                    native = [tuple(w[:4]) for w in native_words]
                     words = engine.recognize(page, dpi=dpi, min_confidence=FILL_MIN_CONFIDENCE)
                     counts["recognized"] += len(words)
+                    native_chars = sum(len(w[4]) for w in native_words)
+                    ocr_chars = sum(len(word["text"].replace(" ", "")) for word in words)
+                    if unmapped and native_chars < FILL_UNRELIABLE_RATIO * ocr_chars:
+                        # Most glyphs lack Unicode: the native layer cannot gate OCR.
+                        page.insert_ocr_text_layer([(*word["bbox"], word["text"]) for word in words])
+                        counts["inserted"] += len(words)
+                        counts["replaced_pages"] = counts.get("replaced_pages", 0) + 1
+                        continue
                     # OCR boxes are usually whole lines and native boxes approximate the
                     # glyph body, so test whether any native word centre falls inside.
                     fresh = [
