@@ -108,3 +108,44 @@ def test_every_discovered_adapter_has_the_contract() -> None:
     for module in discover():
         assert isinstance(module.NAME, str)
         assert callable(module.collect)
+
+
+class LinkingClient(FakeClient):
+    """Serve existing run-item links for the repair path."""
+
+    def __init__(self, existing_traces: list[str]) -> None:
+        """Pretend these trace IDs are already linked."""
+        super().__init__()
+        self.existing_traces = existing_traces
+
+    def get(self, path: str) -> dict[str, Any]:
+        """Serve dataset, run-item, and item listings."""
+        if path.startswith("/api/public/v2/datasets/"):
+            return {"id": "dataset-1"}
+        if path.startswith("/api/public/dataset-run-items?"):
+            return {"data": [{"traceId": t} for t in self.existing_traces], "meta": {"totalPages": 1}}
+        return super().get(path)
+
+
+def test_first_link_is_posted_alone_and_repair_posts_only_missing_links(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(langfuse_backfill, "MARKERS", tmp_path / "markers")
+    value = experiment()
+    first = FakeClient()
+    export(first, value)
+    paths = [path for path, _ in first.sent]
+    links = [body for path, body in first.sent if path == "/api/public/dataset-run-items"]
+    assert len(links) == 2
+    # The run-creating link precedes every other link and the score batch.
+    assert paths.index("/api/public/dataset-run-items") < paths.index("/api/public/ingestion")
+
+    repair = LinkingClient([links[0]["traceId"]])
+    status = export(repair, value, repair=True)
+    reposted = [body for path, body in repair.sent if path == "/api/public/dataset-run-items"]
+    assert status["links_repaired"] == 1
+    assert [body["traceId"] for body in reposted] == [links[1]["traceId"]]
+    assert "/api/public/otel/v1/traces" not in [path for path, _ in repair.sent]
+
+    complete = LinkingClient([link["traceId"] for link in links])
+    assert export(complete, value, repair=True)["links_repaired"] == 0

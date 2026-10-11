@@ -667,6 +667,7 @@ def main() -> None:  # noqa: C901 - one dispatch per step.
     parser.add_argument("--only", action="append", help="Adapters step: run only these adapter NAMEs")
     parser.add_argument("--dry-run", action="store_true", help="Adapters step: collect and validate without network")
     parser.add_argument("--force", action="store_true", help="Adapters step: re-send runs already exported")
+    parser.add_argument("--repair", action="store_true", help="Adapters step: re-post missing run-item links")
     args = parser.parse_args()
     if args.step == "adapters" and args.dry_run:
         for name, experiment in collect_all(discover(), set(args.only or []) or None):
@@ -690,7 +691,7 @@ def main() -> None:  # noqa: C901 - one dispatch per step.
         elif step == "adapters":
             result = []
             for name, experiment in collect_all(discover(), set(args.only or []) or None):
-                status = export(client, experiment, force=args.force)
+                status = export(client, experiment, force=args.force, repair=args.repair)
                 status.pop("score_names", None)
                 print(name, json.dumps(status, ensure_ascii=False), flush=True)
                 result.append({"adapter": name, "dataset": experiment.dataset, "runs": status["runs"]})

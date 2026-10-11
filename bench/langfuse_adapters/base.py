@@ -189,8 +189,12 @@ def validate(experiment: Experiment) -> dict[str, Any]:
     }
 
 
-def export(client: Client, experiment: Experiment, *, force: bool = False) -> dict[str, Any]:
-    """Upsert the dataset, items, runs, traces, and scores for one experiment."""
+def export(client: Client, experiment: Experiment, *, force: bool = False, repair: bool = False) -> dict[str, Any]:  # noqa: C901
+    """Upsert the dataset, items, runs, traces, and scores for one experiment.
+
+    With ``repair``, already-exported runs re-post only the run-item links that
+    Langfuse is missing (traces and scores are written independently).
+    """
     from bench.langfuse_backfill import _done, _mark, span  # noqa: PLC0415 - avoid an import cycle.
 
     counts = validate(experiment)
@@ -210,31 +214,33 @@ def export(client: Client, experiment: Experiment, *, force: bool = False) -> di
         list(pool.map(put_item, experiment.items))
     archived = client.archive_stale(experiment.dataset, set(ids.values()))
 
-    def export_run(run: Run) -> str:
-        content = digest([run.name, run.metadata, run.scores, [(r.item_key, r.output, r.scores) for r in run.rows]])
-        marker = f"{experiment.dataset}|{run.name}|{content}"
-        if not force and _done("adapter-run", marker):
-            return "replayed"
-        started = run.started or time.time()
-        traces = []
-        spans = []
-        for index, row in enumerate(run.rows):
-            trace = digest([experiment.dataset, run.name, content, row.item_key, index])
-            traces.append((trace, row))
-            attributes = {
-                "langfuse.trace.name": row.name or f"{experiment.dataset}/{row.item_key}",
-                "langfuse.trace.tags": ["experiment-run", experiment.dataset.split("/")[0]],
-                "langfuse.trace.input": _compact({"item": row.item_key, **({"input": row.input} if row.input else {})}),
-                "langfuse.trace.output": _compact(row.output),
-                **{f"langfuse.trace.metadata.{k}": _scalar(v) for k, v in row.metadata.items() if v is not None},
-                "langfuse.trace.metadata.run": run.name,
-            }
-            spans.append(span(trace, run.name, row.started or started, attributes, row.wall_ms or 0))
-        for start in range(0, len(spans), SPAN_BATCH):
-            client.traces(spans[start : start + SPAN_BATCH], "bench.langfuse_adapters")
+    dataset_id: list[str] = []
+
+    def existing_links(run: Run) -> set[str]:
+        if not dataset_id:
+            dataset_id.append(client.get(f"/api/public/v2/datasets/{quote(experiment.dataset, safe='')}")["id"])
+        found: set[str] = set()
+        page = 1
+        while True:
+            listing = client.get(
+                f"/api/public/dataset-run-items?datasetId={dataset_id[0]}&runName={quote(run.name, safe='')}"
+                f"&page={page}&limit=100"
+            )
+            found.update(entry["traceId"] for entry in listing.get("data", []))
+            if page >= int(listing.get("meta", {}).get("totalPages", 1) or 1):
+                return found
+            page += 1
+
+    def run_links(run: Run, content: str) -> list[tuple[str, Row]]:
+        return [
+            (digest([experiment.dataset, run.name, content, row.item_key, index]), row)
+            for index, row in enumerate(run.rows)
+        ]
+
+    def post_links(run: Run, pairs: list[tuple[str, Row]]) -> None:
         run_meta = {k: _scalar(v) for k, v in run.metadata.items()}
 
-        def link(pair: tuple[str, Row], run: Run = run, run_meta: dict[str, Any] = run_meta) -> None:
+        def link(pair: tuple[str, Row]) -> None:
             trace, row = pair
             client.post(
                 "/api/public/dataset-run-items",
@@ -247,8 +253,40 @@ def export(client: Client, experiment: Experiment, *, force: bool = False) -> di
                 },
             )
 
+        if not pairs:
+            return
+        # The first run item creates the dataset run; posting it alone avoids a
+        # create race that makes Langfuse drop concurrent links.
+        link(pairs[0])
         with ThreadPoolExecutor(WORKERS) as pool:
-            list(pool.map(link, traces))
+            list(pool.map(link, pairs[1:]))
+
+    def export_run(run: Run) -> str:
+        content = digest([run.name, run.metadata, run.scores, [(r.item_key, r.output, r.scores) for r in run.rows]])
+        marker = f"{experiment.dataset}|{run.name}|{content}"
+        if not force and _done("adapter-run", marker):
+            if not repair:
+                return "replayed"
+            present = existing_links(run)
+            missing = [pair for pair in run_links(run, content) if pair[0] not in present]
+            post_links(run, missing)
+            return f"repaired:{len(missing)}" if missing else "replayed"
+        started = run.started or time.time()
+        traces = run_links(run, content)
+        spans = []
+        for trace, row in traces:
+            attributes = {
+                "langfuse.trace.name": row.name or f"{experiment.dataset}/{row.item_key}",
+                "langfuse.trace.tags": ["experiment-run", experiment.dataset.split("/")[0]],
+                "langfuse.trace.input": _compact({"item": row.item_key, **({"input": row.input} if row.input else {})}),
+                "langfuse.trace.output": _compact(row.output),
+                **{f"langfuse.trace.metadata.{k}": _scalar(v) for k, v in row.metadata.items() if v is not None},
+                "langfuse.trace.metadata.run": run.name,
+            }
+            spans.append(span(trace, run.name, row.started or started, attributes, row.wall_ms or 0))
+        for start in range(0, len(spans), SPAN_BATCH):
+            client.traces(spans[start : start + SPAN_BATCH], "bench.langfuse_adapters")
+        post_links(run, traces)
         client.scores(
             [
                 {"id": digest([trace, name]), "traceId": trace, "name": name, "value": value, "dataType": "NUMERIC"}
@@ -282,7 +320,14 @@ def export(client: Client, experiment: Experiment, *, force: bool = False) -> di
     with ThreadPoolExecutor(RUN_WORKERS) as runs_pool:
         outcomes = list(runs_pool.map(export_run, experiment.runs))
     exported, replayed = outcomes.count("exported"), outcomes.count("replayed")
-    return {**counts, "archived": archived, "runs_exported": exported, "runs_replayed": replayed}
+    repaired = sum(int(outcome.split(":", 1)[1]) for outcome in outcomes if outcome.startswith("repaired:"))
+    return {
+        **counts,
+        "archived": archived,
+        "runs_exported": exported,
+        "runs_replayed": replayed,
+        "links_repaired": repaired,
+    }
 
 
 def collect_all(adapters: Iterable[Any], only: set[str] | None = None) -> Iterable[tuple[str, Experiment]]:

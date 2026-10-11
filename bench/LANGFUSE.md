@@ -162,3 +162,17 @@ batched ingestion in groups of 250, and transient failures are retried with
 backoff. Because Langfuse shares this host, running more than about four sync
 processes lowered throughput. Runs are content-addressed, so an interrupted
 or repeated sync re-sends only unfinished or changed runs.
+
+Langfuse v4 indexes dataset run items asynchronously. After a large sync, the
+dataset-run-items listing can lag behind for several minutes while the worker
+queue drains. On 2026-10-11 the 175 runs that were briefly incomplete all
+caught up without help. Check again before repairing. If a run is still
+missing links after the queue drains, `adapters --repair` lists each run's
+existing links and re-posts only the missing ones. The writer posts a run's
+first link by itself before the rest because that link creates the dataset
+run; concurrent first links raced on the run's unique constraint and depended
+on retries.
+
+The verified backfill on 2026-10-11 holds 109 adapter datasets, 2,175 runs,
+4,299 items, 76,116 scored rows, and 838,104 row scores. Every run is fully
+linked, and the project contains 117 datasets and 938,483 scores in total.
