@@ -164,3 +164,29 @@ applicable. The other models fix a similar number of pages but break many
 more. A repair step is worthwhile only with a low break rate. These remain
 controlled damage scenarios on authored DEV pages; wild-v1 is the next
 realism check.
+
+### Wild-v1 transfer, 2026-10-11 16:42 UTC
+
+After the user's USD 100 / five-hour extension, local repair ran on 37
+realistic wild-v1 table pages (born-digital L0 and re-distilled L1), frozen
+and pinned before any request (`bench/wild_repair.py`). The host rebooted at
+13:12 UTC, three minutes into the first queue. Interrupted pplx arms keep their
+partial receipts. One reservation left in flight was reconciled offline as
+interrupted and stays counted (USD 0.3). The continuation then lost 10 of 12
+arms to admission refusal before transmission; those reran as `-c2`. The Clef
+missing and wrap arms completed in the continuation and are reported as run.
+P003 conservative exposure ended at USD 26.518.
+
+| Model | Native control broken | Swap strict +/− | Swap v2 +/− | Missing strict +/− | Wrap strict +/− | Effective USD |
+|---|---:|---|---|---|---|---:|
+| pplx-decider-v1.1-27b | 0 | +1/−0 | +14/−3 | +2/−0 | +1/−0 | 0.0066 |
+| mercury-decide | 0 | +0/−6 | +8/−4 | +2/−0 | +2/−0 | 0.0063 |
+| clef | 1 | +1/−2 | +12/−3 | +2/−1 | +1/−1 | 0.0807 |
+
+Exact pages barely move because native extraction is exact on only 13 of 37
+wild pages before any damage. A repair can fix the injected swap (pplx
+improves content on 14 of 31 swapped pages) while the page stays wrong for
+other reasons. pplx-decider again changes nothing on undamaged pages and makes
+no strict regressions; Mercury's six swap regressions and Clef's breaks
+repeat their synthetic pattern. The bottleneck on realistic documents is
+native table detection and structure, not the decision step.
