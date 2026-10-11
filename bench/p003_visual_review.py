@@ -236,6 +236,9 @@ def column_partition_audit(reference: dict[str, Any], actual: dict[str, Any]) ->
     n, m = reference["col_count"], actual["col_count"]
     if n >= m or m > 12 or reference["row_count"] != actual["row_count"]:
         return result
+    # A wholly empty added column preserves text but has no lexical evidence for an accepted partition.
+    if any(all(not lexical_tokens(row[c]) for row in actual["values"]) for c in range(m)):
+        return {**result, "reason": "unsupported wholly empty prediction column"}
     # Merged cells require a separate equivalence treatment, not matrix flattening.
     if any(cell is None for row in reference["values"] + actual["values"] for cell in row):
         return result
@@ -403,9 +406,9 @@ def regional_views(  # noqa: PLR0913, PLR0917
             lines(
                 draw,
                 (20, 114),
-                f"Accepted alternative column granularity: {audit['reference_columns']} versus "
+                f"Verified lexical column partition: {audit['reference_columns']} versus "
                 f"{audit['prediction_columns']} columns. All {audit['verified_rows_including_header']} rows "
-                "including header preserve ordered lexical tokens under one fixed column partition.",
+                "including header preserve ordered lexical tokens. Physical boundary ambiguity needs source review.",
                 1760,
                 20,
             )

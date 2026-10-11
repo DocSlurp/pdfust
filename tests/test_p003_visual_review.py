@@ -92,3 +92,10 @@ def test_detector_caption_uses_actual_worker_configuration() -> None:
     assert detector_inference_size({"config": {}}, report) == 640
     with pytest.raises(ValueError, match="inference sizes differ"):
         detector_inference_size({"config": {"detector_inference_size": 1024}}, report)
+
+
+def test_wholly_empty_added_column_is_not_accepted_schema() -> None:
+    """Perfect text recovery cannot certify an unsupported physical blank column."""
+    gold = {"col_count": 2, "row_count": 2, "values": [["Item", "Amount"], ["A", "$1"]]}
+    actual = {"col_count": 3, "row_count": 2, "values": [["Item", "Amount", ""], ["A", "$1", ""]]}
+    assert not column_partition_audit(gold, actual)["verified"]
