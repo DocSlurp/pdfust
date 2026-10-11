@@ -1,0 +1,37 @@
+# A001 physical and rolling candidate dual-score audit
+
+Both complete frozen alternatives passed the approved CPU retained-output audit on all 28 authored DEV pages. Every one of the 56 original per-page `borderless_challenge.score` dictionaries reproduced exactly before the new strict/schema/content diagnostics. The cohort retains twelve borderless positives, twelve aligned-prose negatives and four merged vector controls. These are unaccepted deterministic source-owned candidate alternatives, not achieved model decisions or automatic admission policies.
+
+| Alternative | Strict anchors | Strict / equivalent / expected tables | Content recovered | Content P % | Content R % | Missing / extra tables | Prose false-positive pages |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| physical | 154/200 | 6 / 6 / 16 | 10/16 | 31.88 | 90.67 | 0 / 12 | 12/12 |
+| rolling | 196/200 | 12 / 12 / 16 | 16/16 | 34.96 | 100.00 | 0 / 12 | 12/12 |
+
+The full-cohort content recall rises from 90.67% to 100% under rolling row assembly, while content precision remains 31.88%/34.96% because either candidate inventory proposes a false table on every prose negative. Both emit 28 tables against 16 expected tables. Removing these negatives would inflate the apparent opportunity; all remain in the primary denominator. The conservative schema companion adds zero equivalent complete-table acceptances to either alternative. All 32 matched table/alternative comparisons are content-supported and none is unsupported.
+
+The known original cohort labels were used only after scoring, without changing candidate generation or reference labels:
+
+| Alternative | Original cohort | Pages | Legacy exact pages | Legacy intended slot values / words | New strict anchors | Strict / equivalent tables | Content recovered | Content P / R % | Extra tables |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| physical | borderless | 12 | 6 | 72 / 90 | 102/144 | 6 / 6 | 6 | 86.28 / 83.98 | 0 |
+| physical | prose | 12 | 0 | 0 / 0 | 0/0 | 0 / 0 | 0 | 0.00 / N/A | 12 |
+| physical | ruled-control | 4 | 0 | 56 / 132 | 52/56 | 0 / 0 | 4 | 100.00 / 100.00 | 0 |
+| rolling | borderless | 12 | 12 | 144 / 180 | 144/144 | 12 / 12 | 12 | 100.00 / 100.00 | 0 |
+| rolling | prose | 12 | 0 | 0 / 0 | 0/0 | 0 / 0 | 0 | 0.00 / N/A | 12 |
+| rolling | ruled-control | 4 | 0 | 56 / 132 | 52/56 | 0 / 0 | 4 | 100.00 / 100.00 | 0 |
+
+Rolling recovers all twelve borderless positives exactly, preserving the original six-to-twelve exact-table result. Physical rows recover six exact borderless tables, 102/144 strict anchor cells and 86.28%/83.98% row-aware content precision/recall. The historical intended-slot metric requires compatible complete table shape and unique slot ownership, giving only 72/144 owned values for physical rows; the new strict anchor metric can credit matching individual anchor positions despite an incorrect overall row count. Those metrics remain separately named and neither replaces the original score dictionary.
+
+Both alternatives conserve the same 720 owned source IDs and 112 unresolved IDs. The physical borderless content comparison records 108 missing and 90 extra alignment units despite complete literal source conservation: hanging text occupies different rows. These counts represent the fixed row-aware normalized alignment, not physical deletion of source words. Rolling repairs that row grouping in this frozen candidate language. The controls retain all 56 literal anchor strings/132 source words and 100% conditional content P/R, but have zero strict or equivalent complete tables because unit spans lose the four covered-None/merged-span relationships. Content recovery therefore does not certify merged topology.
+
+On the twelve prose negatives both alternatives emit the same 2,154 normalized extra character units and twelve false tables. Precision is zero; recall has no positive-table denominator and is displayed as N/A in the cohort table (raw scorer output preserves zero). These authored aligned prose pages show why candidate completeness requires a separately validated admission decision. No hosted A002 admission output is included in this audit and no hosted success is inferred from the candidate ceiling.
+
+All original header/cell roles remain unknown. The new strict matching uses the scorer's existing single-table correspondence because neither the original candidates nor the original target contract supplies table bboxes; no geometry was invented. The schema companion's conservative first-row proxy is not semantic header correctness. All eight merged-control comparisons are content-supported through the span adapter and ineligible for the unit-span schema-equivalence diagnostic. They do not become schema successes from literal recovery.
+
+Original source/candidate/manifest/evaluation bytes, thresholds and outputs are unchanged. Source-only admission froze both full 28-page prediction inventories before target access, verified PDFs against corpus manifest hashes, and checked every literal cell join and complete disjoint owned/unresolved source partition. Actual PNG hashes are newly source-frozen observations; original source exports supply paths without independently authenticated historical PNG hashes. The exact original artifact identities and this limitation are retained in [the preparation report](p003-rolling-candidate-preparation.md).
+
+The complete two-alternative replay measured 0.218852 seconds wall and 0.218153 seconds CPU, with 46,485,504 bytes peak sampled process RSS. The sum of its two inner legacy/new scoring intervals is 0.179754 seconds wall and 0.179167 seconds CPU. These overlapping scopes are not additive. Separate post-score cohort derivation took 0.187223 seconds wall and 0.186519 seconds CPU, with 43,917,312 bytes sampled peak RSS. All use one CPU-only process, process_time CPU, perf_counter wall and psutil RSS every 100 ms, with OMP/OpenBLAS/MKL limited to one thread. These short intervals have limited RSS samples, not lifetime peaks. No subprocess, local GPU or hosted resource usage is inferred. No new API cost occurred; these local replay timings do not imply hosted inference performance or savings.
+
+Approved source-only plan SHA256: `ea0cc2171bb981ed7471511fa8bcd06b4283ef5f2abff65361ac4eea50b920a0`. External twelve-helper Git authority SHA256: `1e5f90228c1538bfc2ef2c58a9a5ef874c6d29c1d10442f504a73c1ccee31f0a`. After-source-freeze root-approved original reference SHA256: `a1049f217c3a9caab6d207bb86f884ff79b8258380b309da4a448a7fabf56c0a`. Audit report SHA256: `0520c657f375aceac2c2dabfc112110cb2011b385a17ae2fdf6e85e8408e8949`. Complete-resource receipt SHA256: `6b21cf5759c5979325f2ded6b77892bdcd1b429c8b2a843fb3db4ccbb54904cb`. Post-score cohort receipt SHA256: `560c8e49af1c6b1dfa8439253029db0df495fc5d11522022eeb54ae3ea217028`. Full predictions, original legacy dictionaries, per-page strict/schema/content witnesses and source receipts remain in ignored `pipeline-p003/continuation-rolling28-rescore-v1/` and `continuation-rolling28-prepared-v3/`.
+
+Ten source-conservation and authorization-gate tests pass, as do scoped Ruff and mypy. Original legacy per-page equality and all-page inventory checks pass in the scoring adapter. Independent root count review remains separate. No candidate was regenerated, no archived code executed and no new golden labels or target-derived candidate strings were introduced. The result confirms bounded row-grouping opportunity while preserving the negative-page admission failure and merged-topology limitation.
