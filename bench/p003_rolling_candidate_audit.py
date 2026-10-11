@@ -25,6 +25,7 @@ ORIGINAL_HASHES = {
 CODE_FILES = (
     "p003_rolling_candidate_audit.py",
     "borderless_challenge.py",
+    "silver_structure.py",
     "p003_scoring_audit.py",
     "p003_report.py",
     "generalization_scoring.py",
