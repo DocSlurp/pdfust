@@ -1,5 +1,5 @@
 """Exact alias authority cannot relax model identity or strict numeric choices."""
-# ruff: noqa: E501, FBT001
+# ruff: noqa: E501, FBT001, PLC0415
 from __future__ import annotations
 
 from copy import deepcopy
@@ -87,4 +87,38 @@ def test_secondary_requires_original_verification_and_exact_receipt(
         assert result["secondary_verified"]["rows"][0]["secondary_parse_error"] == "ValueError"
         assert result["new_api_calls"] == 0
     assert called == ["original_verified"]
+    assert response_path.read_bytes() == before
+
+
+@pytest.mark.parametrize("invalid_member", [False, True])
+def test_shared_replay_preserves_atomic_group_validation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, invalid_member: bool
+) -> None:
+    from bench import p003_synthetic_relations_multi as protocol
+    from bench import p003_synthetic_relations_multi_eval as multi_eval
+
+    alias_path = tmp_path / "aliases.json"
+    write_json(alias_path, {"schema": 1, "aliases": {"liquid/d1": ["liquid/d1-20260930"]}})
+    records = [{"id": f"case{i}", "kind": "cell", "pair_source_ids": ["w0", "w1"], "source": {}} for i in range(4)]
+    cfg = {"model": "liquid/d1", "question_group_size": 4}
+    body = {"model": "liquid/d1", "questions": {f"q{i}": {"criteria": runner.evidence.CRITERIA["cell"]} for i in range(4)}}
+    answers = {f"q{i}": {"type": "choice", "choice": "same", "probabilities": {"same": .7, "separate": .3, "unresolved": 0}} for i in range(4)}
+    if invalid_member:
+        answers["q3"]["probabilities"]["same"] = .9
+    response = {"entry": {"requested_model": "liquid/d1", "tag": "exact", "request_sha256": "wire"}, "replayed": False, "result": {"model": "liquid/d1-20260930", "answers": answers}}
+    response_path = tmp_path / "group-0-response.json"
+    write_json(response_path, response)
+    write_json(tmp_path / "frozen.json", {"selected": [{"index": 0}]})
+    report_path = tmp_path / "report.json"
+    write_json(report_path, {"metrics": {"wall_seconds": 1}})
+    original = {"config": cfg, "groups": [{"index": 0, "status": "malformed_response", "tag": "exact", "wire_encoded_sha256": "wire"}], "rows": [{"id": r["id"], "group_index": 0, "status": "malformed_response"} for r in records], "rates": {}, "charges": {"effective_usd": .01}, "report_sha256": sha(report_path.read_bytes())}
+    monkeypatch.setattr(multi_eval, "verify_run", lambda *_args: deepcopy(original))
+    monkeypatch.setattr(protocol, "groups", lambda *_args: [records])
+    monkeypatch.setattr(protocol, "request", lambda *_args: body)
+    before = response_path.read_bytes()
+    result = replay.replay_shared(tmp_path, tmp_path / "unused", {"records": records}, alias_path, sha(alias_path.read_bytes()))
+    expected = "malformed_response" if invalid_member else "valid_nonabstaining"
+    assert all(r["status"] == expected for r in result["secondary_verified"]["rows"])
+    assert result["secondary_verified"]["charges"] == original["charges"]
+    assert result["original_verified"] == original
     assert response_path.read_bytes() == before
