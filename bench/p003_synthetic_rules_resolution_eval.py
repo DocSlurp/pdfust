@@ -24,9 +24,8 @@ def charges(entries: list[dict[str, Any]], attempted: int) -> dict[str, Any]:
     def number(value: object) -> float | None:
         if value is None:
             return None
-        if type(value) not in (int, float):
+        if not isinstance(value, (int, float)) or type(value) not in (int, float):
             raise ValueError("Invalid retained financial amount")
-        assert isinstance(value, (int, float))
         if not math.isfinite(value) or value < 0:
             raise ValueError("Invalid retained financial amount")
         return float(value)
