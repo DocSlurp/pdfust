@@ -134,7 +134,9 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
     return result
 
 
-def checkpoint(statuses: list[Path], ledger: Path, output: Path, planned: list[str]) -> Path:
+def checkpoint(
+    statuses: list[Path], ledger: Path, output: Path, planned: list[str], metadata: Path | None = None
+) -> Path:
     """Read one snapshot and write immutable JSON/Markdown plus latest local views."""
     started, cpu = time.monotonic(), time.process_time()
     pairs = [(status, *observed(status)) for status in statuses]
@@ -149,6 +151,19 @@ def checkpoint(statuses: list[Path], ledger: Path, output: Path, planned: list[s
         plans.append(
             {"name": name, "required": int(count), "scope": "coordinator-declared plan; launch telemetry unavailable"}
         )
+    coordinator = {}
+    if metadata is not None:
+        coordinator, receipt = observed(metadata)
+        sources.append(receipt)
+        allowed = {
+            "coordinator_last_published_utc",
+            "publication_precision",
+            "next_coordinator_publication_deadline_utc",
+            "service_observations",
+        }
+        if set(coordinator) - allowed:
+            message = "Coordinator receipt must contain only publication/service metadata"
+            raise ValueError(message)
     now = datetime.now(UTC)
     snapshot = {
         "reported_at_utc": now.isoformat(),
@@ -174,6 +189,7 @@ def checkpoint(statuses: list[Path], ledger: Path, output: Path, planned: list[s
         "next": "Finish the active queue, independently verify outputs, root admits the next reviewed queue",
         "cadence": "Coordinator publishes within five minutes and on material changes; no autonomous timer",
     }
+    snapshot.update(coordinator)
     display = {
         key: f"{Decimal(value):.10f}" if isinstance(value, str) and key.endswith("_usd") else value
         for key, value in costs.items()
@@ -188,10 +204,13 @@ def checkpoint(statuses: list[Path], ledger: Path, output: Path, planned: list[s
         )
     for plan in plans:
         text += (
-            f"| {plan['name']} plan | {plan['required']} | Not launched/unknown | "
-            "Unknown | Unknown | Plan only | Unknown |\n"
+            f"| {plan['name']} plan | {plan['required']} | Job status not observed | "
+            "Unknown | Unknown | Job status not observed | Unknown |\n"
         )
     text += "\n"
+    if coordinator:
+        text += "Coordinator-supplied observations (not independently verified service telemetry):\n"
+        text += json.dumps(coordinator, sort_keys=True) + "\n\n"
     for q in summaries:
         text += (
             f"{q['name']}: evaluation files {q['completed_with_evaluation_file']}/{q['completed_jobs']} "
@@ -259,8 +278,9 @@ def main() -> None:
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--planned", action="append", default=[])
+    parser.add_argument("--coordinator-metadata", type=Path)
     args = parser.parse_args()
-    print(checkpoint(args.status, args.ledger, args.output, args.planned))
+    print(checkpoint(args.status, args.ledger, args.output, args.planned, args.coordinator_metadata))
 
 
 if __name__ == "__main__":

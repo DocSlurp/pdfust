@@ -1,8 +1,9 @@
 """Keep reporter accounting categories separate without filling unknown charges."""
 
+import json
 from pathlib import Path
 
-from bench.p003_progress_checkpoint import money, queue_summary
+from bench.p003_progress_checkpoint import checkpoint, money, queue_summary
 
 
 def test_reporter_money_separates_reported_estimated_and_reserved() -> None:
@@ -59,3 +60,28 @@ def test_synthetic_questions_do_not_become_pdf_pages(tmp_path: Path) -> None:
     assert result["synthetic_question_counts"]["attempted_questions"] == 24
     assert result["question_status_counts"] == {"malformed_response": 24}
     assert result["starting_jobs"] == 1
+
+
+def test_coordinator_publication_receipt_does_not_claim_jobs_started(tmp_path: Path) -> None:
+    """A running wrapper observation preserves publication precision and unknown jobs."""
+    status = tmp_path / "status.json"
+    ledger = tmp_path / "ledger.json"
+    receipt = tmp_path / "coordinator.json"
+    status.write_text(json.dumps({"arms": [], "frozen_order": []}))
+    ledger.write_text(json.dumps({"requests": []}))
+    receipt.write_text(
+        json.dumps(
+            {
+                "coordinator_last_published_utc": "2026-10-11T00:24Z",
+                "publication_precision": "Approximate minute",
+                "next_coordinator_publication_deadline_utc": "2026-10-11T00:29:00Z",
+                "service_observations": [{"name": "shared56 wrapper", "state": "running"}],
+            }
+        )
+    )
+    report = checkpoint([status], ledger, tmp_path / "reports", ["shared56=56"], receipt)
+    snapshot = json.loads(report.with_suffix(".json").read_text())
+    assert snapshot["coordinator_last_published_utc"] == "2026-10-11T00:24Z"
+    assert snapshot["next_coordinator_publication_deadline_utc"] == "2026-10-11T00:29:00Z"
+    assert snapshot["plans"][0]["required"] == 56
+    assert "Job status not observed" in report.read_text()

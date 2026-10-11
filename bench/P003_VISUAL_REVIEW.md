@@ -254,3 +254,12 @@ explicit diagram selected-crop scoring is a separate scope.
 
 A font-measured matched TATR refresh is retained in `35f004fede3a408bc58d` with
 the same three actual input IDs and unchanged independently verified scores.
+
+The reporter also accepts `--coordinator-metadata <ignored-receipt.json>` to
+retain explicitly supplied publication time/precision, next deadline and service
+observations. These are labelled coordinator-supplied rather than independently
+verified service telemetry. An active launch wrapper does not imply that shared
+question jobs have begun; planned queue cells remain `Job status not observed`
+until the actual queue status exists. Root's 00:24:33 UTC systemd observation is
+retained in ignored `progress-reports/coordinator-20261011T002433Z.json`; the
+reported prior publication is approximately 00:24 UTC, with deadline 00:29 UTC.
