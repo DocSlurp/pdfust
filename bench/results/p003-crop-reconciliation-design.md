@@ -1,0 +1,16 @@
+# Source-only crop reconciliation proposal
+
+The existing pipeline errors remain unchanged. A separate offline derivative can authenticate frozen source PDFs, detector crops, exact transmitted bodies and retained raw responses, then freeze all rules and source receipts before evaluating any derived predictions. No model, retry, additional paid call, reference or score enters the rules.
+
+The inspected randomized-office receipts do not support broad automatic repair. Three independent model runs return overlapping 20×3 and 19×4 tables from two strongly overlapping crops on the same page. Their complete structures differ. The retained Sonnet bounds `[0,3,992,1024]` exceed the explicitly declared 0–1000 coordinate space by 24 units; this is 2.4%, not subpixel rounding. Inferring a different coordinate convention would be ambiguous.
+
+Two narrowly predeclared mechanisms are defensible as controls:
+
+1. **Exact duplicate reconciliation.** Require identical complete matrix and span payloads, near-identical display bboxes within half an actual render pixel on every edge, and the same nonempty set of whole native source words contained in both boxes. Refuse boundary-straddling source words, absent native evidence, ambiguous source identity, different structures or literals. Retain the first receipt in frozen crop/table order; preserve both raw origins and an explicit duplicate-removal receipt. Do not union or synthesize bboxes, merge cells, choose by model probability, or claim source-conserved transcription.
+2. **Subpixel boundary normalization.** For a finite numeric bbox, permit overshoot of at most half an actual crop-image pixel on each axis, derived from authenticated raster dimensions and viewport. Clip only that bbox edge to the declared frame, then rerun the unchanged strict parser and complete-page composition. Preserve the original coordinate and exact displacement. Invalid dimensions, reversed boxes, larger overshoot, malformed matrices/spans and all other parser failures remain refused.
+
+All unresolved overlaps remain page-atomic failures. A duplicate exception must not drop a conflicting alternative or rescue other invalid crops. A subpixel exception must not repair values, rows, columns, spans or normalized/pixel coordinate ambiguity. The observed randomized-office failures would likely remain refused under these rules; this is a source-only expectation, not a scored result.
+
+The image-only baseline has no source-word ownership identifiers. A derivative would need a separately authenticated native-word snapshot from the original PDF, display rotation and viewport, using bounded CPU extraction. Freeze complete source IDs, boxes, strings, crop-image hashes, eligibility/refusal receipts and exact rule version before references. Word support is corroborating evidence, not proof of cell membership or semantic correctness. Scan-only or incomplete sources abstain.
+
+Evaluation should retain baseline and derivative separately, over the same full corpus denominator, with actual original model cost and zero new API calls. Report changed/refused/unchanged pages, duplicate removals and displacements before quality. Score only after the entire proposal inventory is frozen. Do not use fresh confirmation references to choose thresholds or generalize a repaired subset into a fresh throughput claim.
