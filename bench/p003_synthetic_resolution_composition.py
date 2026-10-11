@@ -111,7 +111,12 @@ def prepare(
     preflight = Path(prepared["preflight"])
     if sha((preflight / "frozen.json").read_bytes()) != prepared["preflight_sha256"]:
         raise ValueError("Prepared request pool changed")
-    _, rows = queue.replay_preflight(preflight)
+    inputs, rows = queue.replay_preflight(preflight)
+    if (
+        inputs["source_frozen_sha256"] != context["frozen_sha256"]
+        or inputs["source_map_sha256"] != context["map_sha256"]
+    ):
+        raise ValueError("Vector and resolution preparation use different source authorities")
     if rows != prepared["plan"]:
         raise ValueError("Resolution plan differs from authenticated prepared bodies")
     all_arms = arm_plan(rows)
