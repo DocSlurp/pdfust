@@ -1,6 +1,6 @@
 # Synthetic native relationship decisions: original protocol and exact-alias replay
 
-Checkpoint: 23/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
+Checkpoint: 25/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
 
 Primary original outcomes remain unchanged. The separately labeled secondary replay accepts only exact requested-ID → canonical-slug mappings from the approved catalog attestation; it first authenticates archived runtime/source bytes, literal native request and transmitted bytes, fresh ledger tag/requested model/request hash, all responses and accounting. Only a copied returned `model` field changes. Raw choices, probabilities, confidence, usage, originals and charges remain unchanged. Invalid probability mass, wrong request identity and unrecognized aliases still fail.
 
@@ -18,8 +18,8 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | cloudflare/clef | text_geometry/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef | text_geometry/crop/128 | 13 | 0 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef | text_geometry/page/128 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
-| cloudflare/clef | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| cloudflare/clef | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef | text_geometry/crop/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| cloudflare/clef | text_geometry/page/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | cloudflare/clef-flash | rows_rules/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | text_geometry/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
@@ -27,7 +27,7 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | cloudflare/clef-flash | text_geometry/crop/512 | 13 | 0 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | cloudflare/clef-omni | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| cloudflare/clef-omni | text_geometry/page/0 | — | — | unscored (completed) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | cloudflare/clef-omni | text_geometry/page/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
@@ -40,7 +40,7 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | microsoft/microsoft-decision-1 | text_geometry/page/0 | 0 | 24 | 3 | 2 | 1/0/2 | 4 | 6 | 18 | 0 | 0 | 0 |
 | nace-ai/drex-v1.5 | rows_rules/page/0 | 0 | 24 | 11 | 8 | 4/4/3 | 0 | 21 | 3 | 0 | 0 | 0 |
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
-| openai/gpt-6-luna-decisions | rows_rules/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | rows_rules/page/0 | 0 | 24 | 2 | 2 | 1/1/0 | 6 | 6 | 18 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 0 | 24 | 1 | 1 | 0/1/0 | 6 | 2 | 22 | 0 | 0 | 0 |
@@ -51,7 +51,7 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | perplexity/pplx-decider-v1.1-27b | text_geometry/crop/128 | 0 | 24 | 15 | 12 | 5/6/4 | 0 | 23 | 1 | 0 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | text_geometry/page/128 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | perplexity/pplx-decider-v1.1-27b | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| perplexity/pplx-decider-v1.1-27b | text_geometry/page/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/page/512 | — | — | unscored (completed) | — | — | — | — | — | — | — | — |
 | respan/span-01 | rows_rules/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
 | respan/span-01 | text_geometry/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
 | togethercomputer/tev1-4b-experimental | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
@@ -77,6 +77,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | cloudflare/clef-flash | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
 | cloudflare/clef-flash | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-flash | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 0 |
+| cloudflare/clef-omni | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
 | cloudflare/clef-omni | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
 | inception/mercury-decide | text_geometry/page/0 | 12 | 12 | 12 | 11 | 10 |
 | liquid/d1 | text_geometry/page/0 | 12 | 12 | 12 | 5 | 0 |
@@ -84,6 +85,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | microsoft/microsoft-decision-1 | text_geometry/page/0 | 12 | 12 | 12 | 2 | 9 |
 | nace-ai/drex-v1.5 | rows_rules/page/0 | 3 | 12 | 11 | 3 | 1 |
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 12 | 12 | 12 | 12 | 12 |
+| openai/gpt-6-luna-decisions | rows_rules/page/0 | 3 | 12 | 10 | 3 | 8 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 12 | 12 | 12 | 12 | 12 |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 3 | 12 | 12 | 3 | 11 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 5 |
@@ -107,6 +109,7 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | cloudflare/clef-flash | text_geometry/page/0 | 24 | 0.0006303 | 0.0006303 | provider-reported USD:24 | 16.544 | 38074.448 | 16588 (24/24) | 0 (24/24) | 87.040 | 32.102 | 200.043 |
 | cloudflare/clef-flash | text_geometry/page/128 | 24 | 0.0008292 | 0.0008292 | provider-reported USD:24 | 15.008 | 28944.956 | 21820 (24/24) | 0 (24/24) | 95.949 | 31.499 | 199.797 |
 | cloudflare/clef-flash | text_geometry/crop/512 | 24 | 0.0009638 | 0.0009638 | provider-reported USD:24 | 15.933 | 24902.569 | 25362 (24/24) | 0 (24/24) | 90.376 | 32.428 | 200.133 |
+| cloudflare/clef-omni | text_geometry/page/0 | 24 | 0.0024798 | 0.0024798 | provider-reported USD:24 | 17.164 | 9678.200 | 16532 (24/24) | 0 (24/24) | 83.898 | 31.358 | 198.254 |
 | cloudflare/clef-omni | text_geometry/page/128 | 24 | 0.0032646 | 0.0032646 | provider-reported USD:24 | 16.210 | 7351.590 | 21764 (24/24) | 0 (24/24) | 88.836 | 31.341 | 198.914 |
 | inception/mercury-decide | text_geometry/page/0 | 24 | 0.0003118 | 0.0003118 | provider-reported USD:24 | 15.870 | 12830.382 | 15588 (24/24) | 24 (24/24) | 90.737 | 31.888 | 197.684 |
 | liquid/d1 | text_geometry/page/0 | 24 | 0.0004431 | 0.0004431 | provider-reported USD:24 | 15.797 | 54161.401 | 11078 (24/24) | 0 (24/24) | 91.156 | 30.715 | 198.832 |
@@ -114,6 +117,7 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | microsoft/microsoft-decision-1 | text_geometry/page/0 | 24 | 0.0006292 | 0.0006292 | provider-reported USD:24 | 15.940 | 9536.525 | 14980 (24/24) | 24 (24/24) | 90.340 | 31.658 | 199.648 |
 | nace-ai/drex-v1.5 | rows_rules/page/0 | 24 | 0.0026665 | 0.0026665 | provider-reported USD:24 | 15.873 | 7875.551 | 66662 (24/24) | 1592 (24/24) | 90.721 | 31.991 | 199.922 |
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 24 | 0.0005502 | 0.0005502 | provider-reported USD:24 | 15.563 | 0.000 | 13756 (24/24) | 1596 (24/24) | 92.527 | 30.850 | 199.625 |
+| openai/gpt-6-luna-decisions | rows_rules/page/0 | 24 | 0.0054208 | 0.0000000 | catalog estimate:24 | 16.660 | 1106.848 | 54208 (24/24) | 0 (24/24) | 86.434 | 31.360 | 200.379 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 24 | 0.0012854 | 0.0000000 | catalog estimate:24 | 17.050 | 0.000 | 12854 (24/24) | 0 (24/24) | 84.457 | 30.885 | 198.922 |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 24 | 0.0015302 | 0.0000000 | catalog estimate:24 | 16.460 | 1307.019 | 15302 (24/24) | 0 (24/24) | 87.482 | 31.495 | 198.031 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/512 | 24 | 0.0020390 | 0.0000000 | catalog estimate:24 | 15.992 | 6375.674 | 20390 (24/24) | 0 (24/24) | 90.043 | 31.274 | 200.191 |
@@ -141,6 +145,7 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-clefflash-text-geometry-text-r0-c3 | `2c6bb44d44f0dc5b5b61e4eb15a208111e41b2782d60f8d697704ed9eb58d3ba` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
 | synth-clefflash-geometry-page128-r0-c3 | `ef925b39bede7803f8e9d546e4b56f4fdaf3398243c6b5d806e4d3c05cc0f302` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
 | synth-clefflash-geometry-crop512-r0-c3 | `f9f6c4e4886d7fb8144bd6e57d10d4d0ed4066b3951117d00db11a1a681ed20e` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
+| synth-clefomni-text-geometry-text-r0-c3 | `fea74f881a0cb3773ea11e066f9121cf47d9b1a38bbc62ad4eb01385ffb3e457` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-clefomni-geometry-page128-r0-c3 | `d9c1449a177c341eecd9fc68ab9d7dd60e8808a75f5a0b8d0c5d9ffce2d42cf6` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
 | synth-mercury-text-geometry-text-r0-c3 | `666b9665c398808b5221f94d9d02a9a86011f0c5d74fccab85687057cde8447a` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-d1-text-geometry-text-r0-c3 | `0909b1e973f957f18f97d1edaf8980048eec327ba6981823d2f917b2de6d1ff4` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
@@ -148,6 +153,7 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-msdecision-text-geometry-text-r0-c3 | `e85a680462c7cbda962a1024b87ae66a258f886fe2de85912844718ac24f84df` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-drex-rows-rules-text-r0-c3 | `9d816ca920bfe367c18212f7bd3fea6b6675bebdb40f1119b2a816bdd157a010` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
 | synth-drex-text-geometry-text-r0-c3 | `8b8a4b6f422912efc02306852a26860d46632585f3135677267724fe89106065` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-lunadec-rows-rules-text-r0-c3 | `970a2a58de1b9084267918c25a4f4dff367636dc457302bd3fdc0b88b643a340` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-lunadec-text-geometry-text-r0-c3 | `6c80a7f07623e11c40de82b1219fee050c411d36abc3031696498ccefd1552a8` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
 | synth-lunadec-geometry-page128-r0-c3 | `07fae35534463a32f7a8dfcf395e08d25349146eb0d4a4535bcf4881b354bf5b` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-lunadec-geometry-crop512-r0-c3 | `19c2550e5ae3701ef8609c27e6bfbd6cc8eb75c58d100c50c4739b2b3f251905` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
