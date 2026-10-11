@@ -22,7 +22,7 @@ All generated artifacts are ignored by Git and live under
 ```
 photos/{photo_id}.jpg          public-domain or CC0 photos, ≤1600 px long edge
 photos/photos.json             license and provenance records
-docs/{doc_id}/source.html      authored HTML (Chromium producer) or .odt/.html (LibreOffice)
+docs/{doc_id}/source.html      authored HTML (Chromium); LibreOffice documents use source.fodt
 docs/{doc_id}/assets/          rendered screenshots and charts used by the document
 docs/{doc_id}/source.pdf       born-digital level L0
 docs/{doc_id}/truth.json       ground truth (schema below)
@@ -156,3 +156,12 @@ github.com/tesseract-ocr/tessdata_fast) for ara, chi_sim, chi_tra, deu, ell,
 fra, heb, hin, jpn, jpn_vert, kor, pol, rus, spa, tha, tur, ukr and vie, plus
 copies of the system `eng`, `osd`, `pdf.ttf` and configs. It sets
 `TESSDATA_PREFIX` for the build steps.
+
+## Producer notes
+
+LibreOffice documents are authored as flat ODF (`source.fodt`) because its
+HTML import drops images, page size and language. LibreOffice records the
+conversion time as CreationDate and writes no `dc:language`; truth keeps the
+authored values. Chromium embeds CJK fonts as Type 3 fonts with ToUnicode
+maps. Removing ToUnicode (L9) leaves standard-encoded, unembedded fonts
+readable, so L9 is measured per document rather than assumed broken.
