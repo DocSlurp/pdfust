@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import pytest
 from bench.p003_progress_checkpoint import checkpoint, money, queue_summary
 
 
@@ -38,14 +39,15 @@ def test_unknown_cost_basis_does_not_become_reliable_budget() -> None:
     assert costs["wave_remaining_usd"] is None
 
 
-def test_synthetic_questions_do_not_become_pdf_pages(tmp_path: Path) -> None:
+@pytest.mark.parametrize("kind", ["micro", "synthetic_relations", "synthetic_shared_context", "synthetic_resolution"])
+def test_synthetic_questions_do_not_become_pdf_pages(tmp_path: Path, kind: str) -> None:
     """Operational question counters preserve their own denominator and launch state."""
     queue = {
         "frozen_order": [1, 2],
         "arms": [
             {
                 "name": "a",
-                "kind": "synthetic_relations",
+                "kind": kind,
                 "status": "completed",
                 "intended_questions": 24,
                 "attempted_questions": 24,

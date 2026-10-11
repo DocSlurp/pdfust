@@ -110,7 +110,7 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
         "running": [a["name"] for a in queue["arms"] if a["status"] == "running"],
         "worker_resources": queue.get("resources"),
     }
-    question_kinds = {"micro", "synthetic_relations", "synthetic_shared_context"}
+    question_kinds = {"micro", "synthetic_relations", "synthetic_shared_context", "synthetic_resolution"}
     alias_receipts = []
     for arm in completed:
         if arm.get("kind") not in question_kinds:
