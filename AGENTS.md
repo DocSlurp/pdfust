@@ -75,6 +75,11 @@ overview.
   **USD 230**. The P003 extension now ends at 13:04 UTC, and new
   `P003/extension-v1-` admissions stop at 12:49 UTC. Every prior charge and
   unresolved reservation still counts.
+- At 13:07 UTC on 2026-10-11 the user authorized another USD 100 and five
+  hours, raising the P003 ceiling to **USD 180** and the cumulative cap to
+  **USD 330**. The P003 extension now ends at 18:07 UTC, and new
+  `P003/extension-v1-` admissions stop at 17:52 UTC. Prior charges and
+  unresolved reservations still count.
 - Keep local checks CPU-only by default. The local RTX 3090 on dev04 has been
   unstable since 2026-10-11. Use it only for short, low-intensity checks such
   as a smoke test, a few-page comparison, or a brief health probe. Run every
