@@ -16,6 +16,32 @@ repeated documents, not 208 independent complete extraction systems. The
 Header semantics and span topology still require separate checks; content
 precision/recall alone cannot certify them.
 
+## Follow-up: wrapped rows and blank padding
+
+The user identified another harsh penalty in the R002 progress image: the
+reference stores `Deferred revenue contract adjustments` and `340` in one row;
+the output stores `Deferred revenue` / `340`, followed by
+`contract adjustments` / an empty cell. All strings remain, but v2's row-sensitive
+alignment reports 50% content precision/recall. Entirely blank extra rows could
+also fail its content-recovered flag despite perfect character precision/recall.
+
+![Actual source and output with wrap-aware content, original structure, and session status shown separately](results/pdf-master-artifacts/pipeline-p003/progress-reports/continuation-oplog-comparison-v3.png)
+
+The [new wrap-aware diagnostic](results/p003-wrap-content-analysis.md) gives this
+example 100% content credit, retains its original two-versus-one row difference,
+and leaves the abstained session unfinished. It permits exact anchored joins of
+up to three adjacent nonblank rows, inventories blank padding, and preserves
+literal order and column associations. Strict references, old scores and outputs
+are unchanged. This is content recoverability under a declared transformation,
+not proof that the logical row interpretation is correct.
+
+Independent review covers 166 retained comparisons and unchanged negative-page
+penalties. Twenty-three comparisons gain content recovery. The new diagnostic
+does not replace the existing adjacent-column metric: unequal nonblank column
+counts, multi-to-multi row pooling and longer wraps remain outside its scope.
+Original v2 images remain available for provenance; use v3 when explaining this
+formatting issue so red alignment groups are not mistaken for literal text loss.
+
 ## The actual example
 
 ![Actual newspaper table on the left and extracted table on the right. Most cells are red because of strict reference-column mismatches, despite a plausible four-column extraction.](results/pdf-master-artifacts/pipeline-p003/visual-review-v1/df68e524b590fcc84c29/p1bfa52a41a5e15015698/regional-T0.png)

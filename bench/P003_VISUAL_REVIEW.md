@@ -42,6 +42,15 @@ correctness. Table-level views use `bench.p003_content_visual_review`; the
 caption identifies the score scope. A high content score cannot erase a real
 header, ordering or span error. Original strict views remain available.
 
+The R002 [wrap-aware comparison](results/pdf-master-artifacts/pipeline-p003/progress-reports/continuation-oplog-comparison-v3.png)
+uses the independently reviewed `p003-wrap-content-v1` witness. Actual input and
+emitted output remain unchanged. Content F1 controls the gradient, blank cells
+are gray, and original row counts plus session status are separate amber
+annotations. Its previous 50% row-sensitive score is retained as historical
+context, not labeled as missing literal text or a strict structure percentage.
+The [166-pair audit](results/p003-wrap-content-analysis.md) records the bounded
+join rules, limitations, negative-page penalties and resource measurements.
+
 The bounded `bench.p003_candidate_visual_review` adapter additionally compares
 selected-only output with a matched blank-image control. It authenticates the
 primary prediction list and excludes inherited fallback tables. See the

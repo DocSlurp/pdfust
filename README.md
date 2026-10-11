@@ -593,6 +593,33 @@ successfully; Luna retains five and finishes all five. The [stopping-policy repl
 shows why source conservation alone cannot declare success: stopping after all
 words are assigned removes one correct PPLX body. No stopping policy is promoted.
 
+A later [wrap-aware content audit](bench/results/p003-wrap-content-analysis.md)
+addresses the user's observation that wrapped descriptions and blank padding
+were still penalized. Exact anchored continuations now receive full content
+credit, with row structure and session completion reported separately. The
+flagged example rises from 50% to 100% content recovery without changing its
+output or original strict score. Across 166 retained matched comparisons, 23
+gain content recovery; prose false positives remain penalized.
+
+The [four historical admission treatments](bench/results/p003-rolling-admission-dual-score.md)
+show why that separation matters. Each model sees 24 authored pages: twelve
+borderless tables and twelve prose negatives. Four native grid controls are
+excluded from these model scores.
+
+| Model / evidence | Original strict complete / 12 | Wrap content precision / recall | Prose false positives / 12 | Conditional pages/min | Conditional pages/API USD |
+|---|---:|---:|---:|---:|---:|
+| PPLX text | 12 | 23.83% / 100% | 12 | 155.48 | 15,621.95 |
+| PPLX image512 | 12 | 37.53% / 100% | 6 | 147.75 | 16,051.58 |
+| Luna text | 7 | 34.51% / 100% | 7 | 222.34 | 4,834.62 |
+| Luna image512 | 12 | 100% / 100% | 0 | 197.23 | 4,178.42 |
+
+These conditional rates count one admission request per intended page and use
+summed historical HTTP time; extraction, candidate generation and local overhead
+are excluded. PPLX costs are provider-reported; Luna's reported zeros retain
+labeled catalog-token estimates. Exact finite candidate selection on this small
+authored cohort does not establish general PDF extraction quality. The new
+metric remains a bounded content diagnostic alongside strict and v2 scores.
+
 The [matched candidate images](bench/results/p003-candidate-visual-review.md)
 show actual source crops beside selected output and a blank-image control,
 with numeric scores and the new per-alignment gradient.
