@@ -115,3 +115,13 @@ def test_proportional_type3_widths_do_not_gain_inferred_spaces() -> None:
     widths = {1: 722, 2: 611, 3: 556, 4: 556, 5: 833, 6: 556}
     doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5, 6]), per_code_widths=widths))
     assert doc.get_text().strip() == "NT$1mL"
+
+
+def test_presentation_form_ligatures_expand_to_letters() -> None:
+    # Without ActualText, a ligature glyph maps to U+FB01; extraction expands
+    # it like PyMuPDF and pdftotext so "ﬁnal" reads and searches as "final".
+    mapping = {1: "ﬁ", 2: "n", 3: "a", 4: "l", 5: "ﬄ"}
+    widths = {1: 556, 2: 556, 3: 556, 4: 222, 5: 834}
+    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5]), per_code_widths=widths))
+    assert doc.get_text().strip() == "finalffl"
+    assert doc[0].search_for("final")

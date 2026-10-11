@@ -550,6 +550,17 @@ impl Device<'_> for TextCollector {
             return;
         };
         let text = match unicode {
+            BfString::Char(c) if let Some(letters) = crate::cjk_radicals::expanded_ligature(c) => {
+                let mut owned = String::new();
+                if let Err(error) = owned.try_reserve_exact(letters.len()) {
+                    self.limit_error = Some(TextPageLimit::Allocation(format!(
+                        "failed to allocate expanded ligature: {error}"
+                    )));
+                    return;
+                }
+                owned.push_str(letters);
+                GlyphText::Heap(owned.into_boxed_str())
+            }
             BfString::Char(c) => {
                 GlyphText::Char(crate::cjk_radicals::unified_ideograph(c).unwrap_or(c))
             }

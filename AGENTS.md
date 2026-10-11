@@ -134,6 +134,13 @@ overview.
   Commit Markdown summaries and the compact layout timing/hash baseline only;
   full feature JSON, copied inputs, raw outputs, sidecars, images, and logs are
   generated locally and ignored by Git.
+- `uv run python -m bench.markdown_scores --build --run --score` — score
+  Markdown element recovery (text, order, headings, emphasis, code, lists,
+  escaping, tables, math, images, links) against exact ground truth in
+  `bench/markdown_score_cases.py`. Isolated converters (MarkItDown, Docling,
+  Marker) run through `bench/markdown_score_run.py TOOL INPUTS OUTPUTS` in their
+  own environments before `--score`. Only `bench/results/markdown-scores.md` is
+  committed; inputs, outputs, and JSON stay in ignored artifacts.
 - `bench/MODEL_BENCHMARKS.md` — isolated CPU Docling/Marker setup and rich-content
   measurements. Retain original lightweight timings and model run provenance
   separately in `bench/results/features-models.{md,json}`; publish model settings,
@@ -212,7 +219,8 @@ overview.
   kana, Hangul or full-width-form character (`rust/src/cjk_radicals.rs`) and
   half an em otherwise. Single-character
   mappings to Kangxi Radicals or CJK Radicals Supplement code points are
-  normalized to their equivalent unified ideographs, because Skia-built
+  normalized to their equivalent unified ideographs, and Latin presentation
+  ligatures U+FB00–U+FB06 expand to their NFKC letters, because Skia-built
   ToUnicode maps choose the lowest code point sharing a glyph. hayro's Device
   receives only marked-content tags, so `rust/src/actual_text.rs` pre-scans the
   page content with hayro's own parser for inline `/ActualText` BDC

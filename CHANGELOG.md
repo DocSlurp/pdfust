@@ -55,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Half-em word-processor padding splits a column when the gap is open at
   the same position in every row, and centered or left-aligned header rows
   join the table below them.
+- Latin presentation-form ligatures (U+FB00–U+FB06) in extracted text expand
+  to their letters, as PyMuPDF and pdftotext do, so `ﬁnal` reads and
+  searches as `final`.
 - Ruled table detection connects touching or overlapping collinear fragments,
   preserving grids whose outer borders are painted as separate line segments.
   Existing snap tolerances and complete-edge checks still apply.

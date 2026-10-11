@@ -371,3 +371,19 @@ pub(crate) fn is_full_width(c: char) -> bool {
             | 0x20000..=0x3FFFD
     )
 }
+
+/// Letter sequence for a Latin presentation-form ligature (U+FB00–U+FB06).
+///
+/// Matches NFKC and the default ligature expansion of PyMuPDF and pdftotext,
+/// so `ﬁnal` extracts as `final`.
+pub(crate) fn expanded_ligature(c: char) -> Option<&'static str> {
+    Some(match c {
+        '\u{FB00}' => "ff",
+        '\u{FB01}' => "fi",
+        '\u{FB02}' => "fl",
+        '\u{FB03}' => "ffi",
+        '\u{FB04}' => "ffl",
+        '\u{FB05}' | '\u{FB06}' => "st",
+        _ => return None,
+    })
+}
