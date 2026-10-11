@@ -166,7 +166,7 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
     return result
 
 
-def checkpoint(  # noqa: C901
+def checkpoint(  # noqa: C901, PLR0912
     statuses: list[Path], ledger: Path, output: Path, planned: list[str], metadata: Path | None = None
 ) -> Path:
     """Read one snapshot and write immutable JSON/Markdown plus latest local views."""
@@ -197,6 +197,16 @@ def checkpoint(  # noqa: C901
             message = "Coordinator receipt must contain only publication/service metadata"
             raise ValueError(message)
     now = datetime.now(UTC)
+    unfinished = any(q["running_jobs"] or q["starting_jobs"] or q["queued_jobs"] for q in summaries)
+    if unfinished:
+        next_action = "Finish the active queue, independently verify outputs, root admits the next reviewed queue"
+        eta = "Unknown: no aggregate queue rate; mixed arm kinds and individual time limits"
+    elif plans:
+        next_action = "Root confirms admission of the declared next phase; verify and summarize completed cohorts"
+        eta = "Next-phase launch is not observed; completion ETA is unknown"
+    else:
+        next_action = "Verify and summarize completed cohorts; root decides the next reviewed work"
+        eta = "Observed queues have drained; no active queue completion remains to estimate"
     snapshot = {
         "reported_at_utc": now.isoformat(),
         "coordinator_last_published_utc": None,
@@ -217,8 +227,8 @@ def checkpoint(  # noqa: C901
         "new_hosted_calls": 0,
         "paid_cutoff_utc": "2026-10-11T02:12:00Z",
         "wave_finish_utc": "2026-10-11T02:27:00Z",
-        "eta": "Unknown: no aggregate queue rate; mixed arm kinds and individual time limits",
-        "next": "Finish the active queue, independently verify outputs, root admits the next reviewed queue",
+        "eta": eta,
+        "next": next_action,
         "cadence": "Coordinator publishes within five minutes and on material changes; no autonomous timer",
     }
     snapshot.update(coordinator)
