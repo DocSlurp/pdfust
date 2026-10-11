@@ -5,7 +5,7 @@ All 35 declared mixed-evidence selectors passed the approved retained-output rep
 The explicit inventory and selected-only predictions were source/output-admitted and frozen before reference files were opened. The source inventory covers 28 PPLX image arms (seven image edges × four encodings) and seven difference-evidence arms. No new inference, retries, changed outputs, provider fallback, archived Python execution or new reference labels occurred. The prior immutable attribution and historical strict-witness helpers were reused because all 35 processors satisfy the same candidate-choice contract. The new wrapper additionally requires an independently authenticated current-code map before admitting the approved plan.
 
 | Arm | Historical strict cells / complete tables | Selected strict cells | Selected complete / equivalent | Content recovered | Content P % | Content R % | Missing / extra tables | Primary / operational failed pages |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | choice-pplx-128-rgb_palette16-r1-c3 | 1086 / 4 | 979 | 3 / 4 | 3 | 94.60 | 55.75 | 28 / 0 | 0 / 0 |
 | choice-pplx-400-rgb_palette16-r1-c3 | 1081 / 5 | 978 | 5 / 6 | 5 | 94.58 | 55.53 | 27 / 0 | 0 / 0 |
 | choice-diff-d1-0-r0-c3 | 780 / 3 | 101 | 0 / 0 | 0 | 92.57 | 14.23 | 46 / 0 | 1 / 0 |

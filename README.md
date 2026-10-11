@@ -561,8 +561,37 @@ now have the same separate strict/content diagnostics. Selected-only candidate
 scores exclude retained baseline tables. Only two of 15 boundary arms applied
 changes, and neither completed a reference table. The report includes all zero
 and failed outcomes plus original rates with explicit page or question units.
-Together these audits cover 208 retained treatments across different scopes;
+At the original reconciliation these audits covered 208 retained treatments across different scopes;
 [remaining historical omissions](bench/results/p003-rescore-coverage.md) stay explicit.
+
+The CPU-only continuation adds [35 older mixed-evidence selectors](bench/results/p003-mixed-candidate-dual-score.md).
+All original strict witnesses reproduce; selected-only scores exclude fallback
+output. Selected examples from the same natural16 cohort follow. Complete
+tables use strict / conservative-equivalent counts out of 53.
+
+| PPLX selector | Content precision / recall | Complete tables | Processed pages/min | Processed pages/API USD |
+|---|---:|---:|---:|---:|
+| 128 px RGB | 94.62% / 55.85% | 5 / 6 | 16.36 | 26,746.01 |
+| 400 px RGB | 94.58% / 55.53% | 5 / 6 | 16.65 | 26,562.19 |
+| 512 px RGB | 95.13% / 61.22% | 5 / 6 | 15.37 | 26,055.24 |
+| 512 px grayscale | 94.98% / 61.43% | 5 / 6 | 8.10 | 26,055.24 |
+| 768 px RGB | 95.13% / 61.22% | 5 / 6 | 16.12 | 24,175.03 |
+| 1024 px RGB | 91.31% / 25.90% | 4 / 5 | 9.84 | 21,941.85 |
+
+These historical incremental rates include bypass pages and failures, exclude
+candidate generation, and were measured under contention. They are not full
+extraction rates or controlled evidence that smaller images cause better results.
+The full report retains all encodings, difference-evidence models and failures.
+
+[Rolling-row candidates](bench/results/p003-rolling-candidate-dual-score.md)
+recover all 12 authored borderless tables versus six for physical rows, but
+both alternatives falsely admit all 12 prose pages. Four merged controls retain
+their text while losing span structure. This is candidate opportunity, not
+achieved model filtering. In the separate [20-session editing pilot](bench/results/p003-oplog-content-analysis.md),
+PPLX retains six correct bodies out of nine known targets, yet only one ends
+successfully; Luna retains five and finishes all five. The [stopping-policy replay](bench/results/p003-oplog-termination-analysis.md)
+shows why source conservation alone cannot declare success: stopping after all
+words are assigned removes one correct PPLX body. No stopping policy is promoted.
 
 The [matched candidate images](bench/results/p003-candidate-visual-review.md)
 show actual source crops beside selected output and a blank-image control,
