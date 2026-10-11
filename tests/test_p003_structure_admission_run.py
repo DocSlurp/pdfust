@@ -9,7 +9,7 @@ import pytest
 from bench import p003_structure_admission as helper
 from bench import p003_structure_admission_run as runner
 from bench.silver import sha, write_json
-from tests.test_p003_structure_admission import example
+from test_p003_structure_admission import example
 
 
 def prepared(output: Path, *, same_page: bool = False, refusal: bool = False) -> tuple[dict, dict]:

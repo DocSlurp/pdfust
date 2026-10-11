@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from bench import p003_segment_oracle as oracle
-from tests.test_p003_report import table
+from test_p003_report import table
 
 
 def pools() -> tuple[dict, list[list[dict]], dict]:

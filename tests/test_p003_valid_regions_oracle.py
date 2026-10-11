@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 from bench import p003_valid_regions_oracle as oracle
-from tests.test_p003_report import table
+from test_p003_report import table
 
 
 def test_oracle_ties_choose_lowest_origin_after_declared_quality_objective() -> None:

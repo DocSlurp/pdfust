@@ -12,7 +12,7 @@ from bench import p003_header_proposals_prepare as prepare
 from bench import pipeline_vision_transcription as strict
 from bench.silver import sha, write_json
 from PIL import Image
-from tests.test_p003_header_proposals import page, table
+from test_p003_header_proposals import page, table
 
 import pylopdf
 

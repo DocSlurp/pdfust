@@ -8,7 +8,7 @@ from bench.p003_decision_evidence import (
     successful_ownership_predictions,
 )
 from bench.p003_report import strict_scores
-from tests.test_p003_report import table
+from test_p003_report import table
 
 
 def test_operational_first_output_with_abstention_is_not_fully_chosen_model_page() -> None:
