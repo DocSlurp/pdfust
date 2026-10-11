@@ -299,13 +299,23 @@ def summarize_unicode(audits: list[dict[str, Any]], level: str) -> dict[str, Any
         if row["level"] != level or "error" in row:
             continue
         for script, entry in row["scripts"].items():
-            scripts[script].append(entry["exact"])
-            scripts_nfkc[script].append(entry.get("nfkc", 0.0))
+            # A script may exist on only one side of NFKC (e.g. ligatures fold to ASCII).
+            if "exact" in entry:
+                scripts[script].append(entry["exact"])
+            if "nfkc" in entry:
+                scripts_nfkc[script].append(entry["nfkc"])
         for feature, entry in row["features"].items():
             features[feature][0] += entry["expected"]
             features[feature][1] += entry["exact_kept"]
     return {
-        "scripts": {s: {"docs": len(v), "exact": _mean(v), "nfkc": _mean(scripts_nfkc[s])} for s, v in scripts.items()},
+        "scripts": {
+            s: {
+                "docs": max(len(scripts[s]), len(scripts_nfkc[s])),
+                "exact": _mean(scripts[s]),
+                "nfkc": _mean(scripts_nfkc[s]),
+            }
+            for s in sorted(set(scripts) | set(scripts_nfkc))
+        },
         "features": {f: {"expected": e, "kept": k, "rate": k / e if e else None} for f, (e, k) in features.items()},
     }
 
