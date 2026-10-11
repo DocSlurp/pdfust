@@ -46,6 +46,8 @@ REQUESTED_DECISION_MODELS = (
     "microsoft/microsoft-decision-1",
     "nace-ai/drex-v1.5",
     "upstage/solar-decide",
+    "jaredpalmer/kev-4b",
+    "respan/span-01-lite",
 )
 DECISION_MODELS = (JEV, *REQUESTED_DECISION_MODELS)
 DEFAULT_MODELS = (

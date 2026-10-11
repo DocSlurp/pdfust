@@ -64,6 +64,12 @@ overview.
   Stop new paid admissions at 02:12 UTC to leave time for validation and reporting.
   Preserve the prior USD 44.9319455668 conservative accounting baseline, including
   unresolved reservations; it is not all confirmed spending.
+- The user's four-hour research continuation starts on 2026-10-11 at 05:04 UTC
+  and ends at 09:04 UTC. New `P003/extension-v1-` experiments may admit paid
+  requests until 08:49 UTC. Historical queues retain their expired deadline.
+  This extends time only: the same USD 50 P003 ceiling and USD 200 cumulative
+  cap apply, including every prior charge and unresolved reservation. The
+  starting P003 conservative exposure is USD 22.7828178975.
 - Keep local checks CPU-only by default. On 2026-10-08 the user explicitly
   authorized bounded local-GPU benchmark comparisons where acceleration matters.
   Verify GPU health first; record matched CPU/GPU quality, wall/CPU time, peak

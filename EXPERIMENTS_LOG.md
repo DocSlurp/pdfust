@@ -2152,3 +2152,57 @@ All unmatched-table literal penalties are retained exactly. Units are normalized
 Independent review verifies all 166 pairs, thirteen scope aggregates, 55 exact anchored wraps and 10,842 character operations, including complete monotone original coordinate/literal consumption and unchanged negative penalties. Eighty targeted tests pass, including independent swapped-value, missing-fragment, duplicate, numeric-boundary, symmetry, blank-padding and resource-limit checks. Whole-workspace Ruff and scoped mypy on five new source/test files pass; no fresh full-suite or whole-benchmark typing claim is made. Input SHA `c882849b7248a43ec85805329d121bd91a80f3b39b2108ce4ea75c01c61b18d8`; official result SHA `6d97882abe258c2d81841a5dfbb664a327e589e3a3328bbba111f48d08707396`; independent review SHA `3f55151cab319673ba309bcfc9d6ee34499f92821880f1104b7ed6524c4fb88e`.
 
 The new actual-source comparison `progress-reports/continuation-oplog-comparison-v3.png` shows 100% recovered content in green, blank cells in gray, and original row counts/session status separately in amber. Both source pixels and actual output are unchanged. The previous 50% row-sensitive score remains explicitly labeled; no literal loss is inferred from its red alignment groups. Root visually inspected v3 before publication. `bench/results/p003-wrap-content-analysis.md`, README, `bench/SCORING_HANDOFF.md` and `bench/P003_VISUAL_REVIEW.md` describe the distinction and limits. Raw images/receipts remain ignored; no new model labels or protected data entered tuning. New remote/API spend remains zero, and prior cost reservations are unchanged.
+
+## P003 four-hour decision repair extension, 2026-10-11 05:31 UTC
+
+The user authorized four more hours of research. New extension experiments stop
+paid admission at 08:49 UTC and reconcile by 09:04 UTC. Money is unchanged:
+P003 retains its USD 50 cap, with USD 22.7828178975 conservative exposure at
+startup, including USD 6.6 unresolved prior reservations. Historical queues
+retain their expired deadline; only the new `P003/extension-v1-` namespace uses
+the extended window. Nine admission-policy tests pass.
+
+The council compared source-owned repair menus (Genius Inventor), compact native
+model protocols (Unoriginalist / Performance Wizard), and independent coverage,
+leakage and regression controls (Detail Detective). All three dispositions and
+prospective hypotheses are in `bench/P003_RESEARCH_EXTENSION.md`.
+
+A fresh 64-page DEV corpus covers eight families, with randomized words, currency,
+dates, repeated amounts and office noise. Neutral titles occur across positives
+and negatives. All 56 positive and eight negative pages retain source PDFs,
+geometry, complete ownership states and separate authored targets. V3 adds loose
+source-only row candidates on every native-empty page, including negatives;
+family labels do not select proposals. V1's text-fit failure and V2 remain local
+provenance. The dataset hash is
+`d9688ca3ed1e8dbcb9849824e2f4ce0f5ab87fd36cfe39d5224aede19829015e`.
+Native detection sees 48 positive pages and text detection sees the eight
+borderless pages; these are detection observations, not accuracy claims.
+
+Public catalogs add Kev 4B and Span Lite, for 16 distinct OpenRouter decision
+models/tiers. Aliases and duplicated free routes do not inflate this count.
+The first frozen screen contains 24 arms and 178 intended decisions: 16 text
+routes (the two Span routes receive one compatibility page each), five matched
+512-pixel vision arms, and Vercel d1 text/image plus Laya text. One Tev page
+exceeds its total-choice limit and is retained as an unattempted preparation
+failure; 177 packets are ready. Root coordinates at most three OpenRouter
+requests; existing Gateway transports run serially because they hold the shared
+ledger lock during HTTP. Every arm retains failures and abstentions, with no
+inline retries or alternate-model fallback. First calls are now running;
+quality, throughput and new costs are pending.
+
+Complete source-ID dictionaries and reconstructible ownership edits fit all 64
+menus: difference evidence median 13,643 bytes, maximum 22,418 bytes. Full
+packets need up to 32,204 bytes. A separate local one-word repair protocol
+reduces median packets to 2,739 bytes for arrays or 3,638 bytes for readable
+text, with 48 applicable pages and 16 no-request cases. These are representation
+sizes, not proven provider-delivered token counts. Clef's documented truncation
+makes compact local evidence a specific hypothesis to test. Conservation alone
+receives no semantic-quality credit.
+
+Twenty-one focused runner/protocol/admission tests pass. Corpus generation and
+pure local-protocol resource measurements are documented separately; local work
+uses CPU only. Langfuse synchronization registered Kev and Span Lite, found 29
+existing matching definitions, and preserved one conflicting Clef Flash price
+definition. Fresh fallback accounting catalog rates are available; the conflict
+must remain visible until reconciled. Raw payloads, targets, imagery, telemetry
+and receipts remain ignored. No protected corpus was read.
