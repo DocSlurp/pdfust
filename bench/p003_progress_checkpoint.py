@@ -110,7 +110,13 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
         "running": [a["name"] for a in queue["arms"] if a["status"] == "running"],
         "worker_resources": queue.get("resources"),
     }
-    question_kinds = {"micro", "synthetic_relations", "synthetic_shared_context", "synthetic_resolution"}
+    question_kinds = {
+        "micro",
+        "synthetic_relations",
+        "synthetic_shared_context",
+        "synthetic_resolution",
+        "synthetic_rules_resolution",
+    }
     alias_receipts = []
     for arm in completed:
         if arm.get("kind") not in question_kinds:
@@ -118,6 +124,7 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
         filename = {
             "synthetic_shared_context": "synthetic-shared-alias-evaluation.json",
             "synthetic_resolution": "synthetic-resolution-evaluation.json",
+            "synthetic_rules_resolution": "synthetic-rules-resolution-evaluation.json",
         }.get(arm.get("kind"), "synthetic-alias-evaluation.json")
         path = status.parent / arm["name"] / filename
         if not path.exists():

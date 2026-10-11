@@ -155,6 +155,7 @@ def output_grid(
     marks: dict[str, Any],
     width: int = 940,
     table_indexes: list[int] | None = None,
+    palette: dict[str, tuple[int, int, int]] | None = None,
 ) -> Image.Image:
     """Draw the actual extracted values and merged spans; these are schematic boxes."""
     face = font(18)
@@ -200,7 +201,7 @@ def output_grid(
             r, c, rs, cs = key
             box = (15 + c * cw, offsets[r], 15 + (c + cs) * cw, offsets[r + rs])
             state = marks["output_cells"][index][key]
-            color = COLORS[state]
+            color = (palette or COLORS)[state]
             pale = tuple(round(v * 0.15 + 255 * 0.85) for v in color)
             draw.rectangle(box, fill=pale, outline=color, width=2)
             for row_index, chunk in enumerate(chunks):

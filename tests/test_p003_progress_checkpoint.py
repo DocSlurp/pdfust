@@ -39,7 +39,10 @@ def test_unknown_cost_basis_does_not_become_reliable_budget() -> None:
     assert costs["wave_remaining_usd"] is None
 
 
-@pytest.mark.parametrize("kind", ["micro", "synthetic_relations", "synthetic_shared_context", "synthetic_resolution"])
+@pytest.mark.parametrize(
+    "kind",
+    ["micro", "synthetic_relations", "synthetic_shared_context", "synthetic_resolution", "synthetic_rules_resolution"],
+)
 def test_synthetic_questions_do_not_become_pdf_pages(tmp_path: Path, kind: str) -> None:
     """Operational question counters preserve their own denominator and launch state."""
     queue = {
@@ -113,6 +116,7 @@ def test_synthetic_alias_audit_counts_preserve_original_scope(tmp_path: Path) ->
     [
         ("synthetic_shared_context", "synthetic-shared-alias-evaluation.json"),
         ("synthetic_resolution", "synthetic-resolution-evaluation.json"),
+        ("synthetic_rules_resolution", "synthetic-rules-resolution-evaluation.json"),
     ],
 )
 def test_question_audit_uses_its_own_receipt_filename(tmp_path: Path, kind: str, filename: str) -> None:
