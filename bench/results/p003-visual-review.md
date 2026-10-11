@@ -30,3 +30,20 @@ five declared cases and verifies frozen plan, trusted runtime, report, evaluatio
 reference and source hashes before rendering. Font digests, renderer settings and
 local wall/CPU time and lifetime peak RSS remain in provenance. This is CPU-only
 local diagnostics with no new inference or reference edits.
+
+The follow-up batch `visual-review-v1/content-gradient-6fba505b4c10afba3e11/`
+adds `*-groups.png` views. Each color uses a retained alignment group's exact
+matched, reference-unit and prediction-unit counts, with F1 `2M/(R+P)`.
+The scored unit is normalized Unicode characters including declared join spaces;
+representation differences such as reference math markup versus Unicode fractions
+can therefore be red without implying a wrong business value. Empty groups with
+zero character units are gray. A reference-only missing row is an explicit red
+callout, not fabricated output or an inferred source mask. Changed merged-anchor
+membership receives an amber border separately from character color.
+
+The T8 witnesses additionally reveal Maine W `4` versus actual `3`, alongside
+changed Grand Rapids values and the missing Motor City row. T0 groups preserve
+all 21 rows, including the header, under the accepted fixed rank/team partition.
+Full original rasters, native reference-bbox crops and scaled diagnostic crops
+are retained separately with coordinates, resampling settings and image digests.
+The scaled T0 source crop visibly includes all 20 data rows through Canton.

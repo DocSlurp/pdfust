@@ -109,7 +109,13 @@ def build(root: Path, output: Path) -> Path:
         if receipts[str(pdf)] != record["pdf_sha256"]:
             raise ValueError("Source PDF changed")
         admitted.append((scope, name, identifier, index, reference["tables"][index], tables, pair, record, strict))
-    for path in (FONT, LATIN_FONT, Path(__file__), Path(__file__).with_name("p003_visual_review.py")):
+    for path in (
+        FONT,
+        LATIN_FONT,
+        Path(__file__),
+        Path(__file__).with_name("p003_visual_review.py"),
+        Path(__file__).with_name("p003_alignment_visual_review.py"),
+    ):
         receipts[str(path.resolve())] = digest(path.read_bytes())
     identity = digest(json.dumps(receipts, sort_keys=True).encode())
     destination = output / ("content-gradient-" + identity[:20])
@@ -139,9 +145,12 @@ def build(root: Path, output: Path) -> Path:
         grid = output_grid(
             actual, marks, table_indexes=[pair["prediction"]] if pair else [], palette={"success": color}
         )
-        crop = source.crop(tuple(round(v * scale) for v in reference_table["bbox"]))
+        crop_box = tuple(round(v * scale) for v in reference_table["bbox"])
+        crop = source.crop(crop_box)
+        crop.save(destination / (identifier + f"-T{index}-native-source-crop.png"))
         zoom = min(900 / crop.width, 1400 / crop.height)
         crop = crop.resize((round(crop.width * zoom), round(crop.height * zoom)))
+        crop.save(destination / (identifier + f"-T{index}-scaled-source-crop.png"))
         grid.thumbnail((980, 1400))
         panel = Image.new("RGB", (2000, max(crop.height, grid.height) + 340), "#f5f7fa")
         draw = ImageDraw.Draw(panel)
@@ -156,7 +165,13 @@ def build(root: Path, output: Path) -> Path:
         )
         for x in range(500):
             draw.line((20 + x, 135, 20 + x, 160), fill=quality_color(x / 499))
-        lines(draw, (540, 130), "0 red: absent | 0.5 yellow: partial | 1 green: complete literal recovery", 1420, 19)
+        lines(
+            draw,
+            (540, 130),
+            "0 red: no character match | 0.5 yellow: partial | 1 green: complete normalized-character match",
+            1420,
+            19,
+        )
         structural_label = (
             "Accepted by pinned strict/schema policy"
             if structure_ok
@@ -165,8 +180,8 @@ def build(root: Path, output: Path) -> Path:
         )
         if identifier == "r838a65ca30bafa563b7e10d4":
             structural_label = (
-                "AMBER: source-verified lost vertical merge at row1, column4, rowspan2. "
-                "Literal content1 does not preserve row membership."
+                "AMBER: source-verified lost vertical merge at row 1, column 4, row span 2. "
+                "Literal content 1.0000 does not preserve row membership."
             )
         elif identifier == "r536e002b19beb540f99f33e9":
             structural_label = (
@@ -191,7 +206,7 @@ def build(root: Path, output: Path) -> Path:
         detail = "Character metric includes retained spaces and decoration; it is not semantic business-value quality."
         if scope == "natural" and index == PARTIAL_NEWSPAPER_TARGET:
             detail += (
-                " Source review: Motor City missing; Grand Rapids values changed. "
+                " Source review: Motor City missing; Maine W and Grand Rapids values changed. "
                 "Dot leaders/fraction encoding also count."
             )
         lines(draw, (20, 285), detail, 1960, 16)
@@ -199,6 +214,25 @@ def build(root: Path, output: Path) -> Path:
         draw.rectangle((20, 330, 20 + crop.width, 330 + crop.height), outline=color, width=4)
         panel.paste(grid, (1010, 330))
         panel.save(destination / (identifier + f"-T{index}-gradient.png"))
+        if pair:
+            from bench.p003_alignment_visual_review import alignment_grid
+
+            groups = alignment_grid(pair["content"], reference_table, actual[0])
+            grouped = Image.new("RGB", (2000, max(crop.height, groups.height) + 330), "#f5f7fa")
+            grouped.paste(panel.crop((0, 0, 2000, 330)), (0, 0))
+            group_draw = ImageDraw.Draw(grouped)
+            group_draw.rectangle((0, 60, 2000, 115), fill="#f5f7fa")
+            lines(
+                group_draw,
+                (20, 65),
+                f"Overall character P {precision:.4f}, R {recall:.4f}, F1 {score:.4f}. "
+                "Grouped colors below use each trusted normalized-character witness; not physical cell probabilities.",
+                1960,
+                20,
+            )
+            grouped.paste(crop, (20, 330))
+            grouped.paste(groups, (1010, 330))
+            grouped.save(destination / (identifier + f"-T{index}-groups.png"))
         evidence.append(
             {
                 "id": identifier,
@@ -210,6 +244,17 @@ def build(root: Path, output: Path) -> Path:
                 "structure_accepted": structure_ok,
                 "pair": pair,
                 "strict": strict,
+                "source_view": {
+                    "full_original": identifier + "-original.png",
+                    "source_pixel_size": list(source.size),
+                    "native_scale": scale,
+                    "reference_bbox": reference_table["bbox"],
+                    "native_crop_box": list(crop_box),
+                    "scaled_crop_pixel_size": list(crop.size),
+                    "resampling": "Pillow default RGB BICUBIC, no content replacement",
+                    "reference_table_rows": reference_table["row_count"],
+                    "mask_scope": "Whole-table outline; no physical cell or missing-row coordinates invented",
+                },
             }
         )
     for receipt_path, expected in receipts.items():
@@ -220,6 +265,7 @@ def build(root: Path, output: Path) -> Path:
         json.dumps(
             {
                 "receipts": receipts,
+                "artifacts": {path.name: digest(path.read_bytes()) for path in destination.glob("*.png")},
                 "settings": RENDER_SETTINGS,
                 "scope": "Table-level character F1 display, not semantic or physical-cell correctness",
                 "resources": {
