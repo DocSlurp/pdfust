@@ -4,8 +4,13 @@ We need to audit our reference datasets and table scorers for cases where a
 reasonable extraction receives a harsh score because the reference encodes only
 one plausible table schema. Preserve the existing strict score and add a
 separately versioned tolerant score that measures retained content, row membership,
-order, wrapping, and header relationships. This is an evaluation change request;
-the broader audit and tolerant scorer are not yet complete.
+order, wrapping, and header relationships. This document preserves the original
+evaluation request. Strict, schema-equivalence and partial-content scorers are
+now implemented; the [26-run audit](results/p003-dual-score-audit.md) and
+[random40 review](results/p003-random40-dual-score-review.md) report their results.
+The current follow-up replays these scores and expands coverage to earlier
+decision and row-assembly experiments. Header semantics and span topology still
+require separate checks; content precision/recall alone cannot certify them.
 
 ## The actual example
 
@@ -93,4 +98,5 @@ do not collapse all distinctions into one unexplained score.
 
 Images and raw evidence are local ignored artifacts. For a portable handoff,
 share the accompanying local `scoring-handoff-v1` directory or ZIP, which includes
-this document with relative image links, both images, and the partition audit.
+the original request with relative image links, both images, and the partition
+audit. That frozen v1 package predates the completed scoring audits linked above.

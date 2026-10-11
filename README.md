@@ -582,6 +582,22 @@ different variable from decision-model image resolution. Rates count operational
 usable pages under contention, not exact pages. Luna prices include reported
 BYOK upstream charges while its gateway-reported zero remains visible.
 
+The [secondary random40 review](bench/results/p003-random40-dual-score-review.md)
+separates recovered text from table structure. Haiku640 recovers the content of
+all 36 expected tables, although three retain real extra-column or merged-cell
+errors. Luna640 has perfect aggregate text precision/recall but an extra blank
+row still prevents whole-table completeness. The additional form emitted by
+Haiku640 and Sonnet640 remains in their precision denominator.
+
+| Model / detector | Strict complete / 36 | Content-complete / 36 | Content precision | Content recall |
+|---|---:|---:|---:|---:|
+| Luna / 640 | 35 | 35 | 100.00% | 100.00% |
+| Luna / 1280 | 28 | 28 | 100.00% | 93.80% |
+| Haiku matrix / 640 | 33 | 36 | 99.56% | 100.00% |
+| Haiku matrix / 1280 | 26 | 27 | 100.00% | 92.44% |
+| Sonnet / 640 | 36 | 36 | 99.56% | 100.00% |
+| Sonnet / 1280 | 29 | 29 | 100.00% | 90.49% |
+
 All 56 [shared-context treatments](bench/results/p003-synthetic-shared56-analysis.md)
 and 30 [vector/decision compositions](bench/results/p003-geometry-composition-analysis.md)
 are also independently verified. Vector rules followed by Luna Decisions512
@@ -591,10 +607,31 @@ evidence-indeterminate cases, versus Luna alone 6/18. Vector-first PPLX128 gives
 These offline combinations reuse charged component calls: they do not measure
 fresh end-to-end latency or realize hypothetical API savings.
 
-The next [source-frozen image sweep](bench/results/p003-synthetic-resolution.md)
+The completed [source-frozen image sweep](bench/results/p003-synthetic-resolution-analysis.md)
 adds 256, 400, 500, 768 and 1024 px crops for all five image-capable decision
-models, with retained 128/512 controls. It changes no source text or framing and
-does not repurchase the controls. Results are pending independent evaluation.
+models, with retained 128/512 controls. All 25 new arms pass independent replay;
+600 original requests cost USD 0.075824 in reported charges and labeled catalog
+estimates. The table shows agreement on the same 18 visibly cued cases. These
+are repeated conditions on one small corpus, not independent samples or stable
+causal estimates of image-size effects.
+
+| Model | 128 px | 256 px | 400 px | 500 px | 512 px | 768 px | 1024 px |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| PPLX Decider | 12 | 13 | 16 | 17 | 17 | 17 | 17 |
+| Luna Decisions | 6 | 6 | 7 | 7 | 6 | 6 | 8 |
+| Clef | 10 | 11 | 12 | 12 | 11 | 11 | 13 |
+| Clef Flash | 12 | 9 | 11 | 10 | 10 | 11 | 9 |
+| Clef Omni | 9 | 9 | 9 | 9 | 9 | 9 | 9 |
+
+PPLX reaches an observed plateau at 500 px here. Luna abstains on all six
+indeterminate cases at each new size; the other models guess. All 75 fixed
+[vector/decision compositions](bench/results/p003-resolution-composition-analysis.md)
+also pass independent evaluation. Vector-first Luna at 400, 500 and 1024 px
+matches 17/18 cued cases while abstaining on all six indeterminate cases.
+This is a combined geometry/model result, not Luna's standalone accuracy.
+Composition reuses original responses without new inference or measured savings.
+The separate [rows/rules with matched images](bench/results/p003-synthetic-rules-resolution.md)
+experiment tests richer source evidence at 400 and 768 px; results are pending.
 
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering
