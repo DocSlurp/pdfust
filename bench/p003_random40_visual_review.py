@@ -125,10 +125,12 @@ def main() -> None:
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--corpus", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--ids", nargs="+", default=IDS)
     args = parser.parse_args()
-    batch = run(args.run, args.corpus, args.output, list(IDS), supplemental_random40=True)
+    batch = run(args.run, args.corpus, args.output, list(args.ids), supplemental_random40=True)
     print(batch)
-    print(form_audit(batch, args.run, args.output))
+    if args.run.name == "random40-sonnet-yolo640-crop1024-r0-c3" and IDS[2] in args.ids:
+        print(form_audit(batch, args.run, args.output))
 
 
 if __name__ == "__main__":

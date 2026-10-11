@@ -527,6 +527,9 @@ def run(  # noqa: PLR0912
             id_label = "No extracted cell source IDs: empty table output"
         if not target["tables"]:
             id_label = f"Negative page: exact empty-output verdict = {score['exact_page']}; no physical mask exists."
+        if score["error"]:
+            rejected = read(run_dir / f"{identifier}-result.json", receipts)
+            id_label = "Generation error, page-atomic zero: " + str(rejected.get("error", "Unspecified error"))
         lines(draw, (20, 80), label, panel_width - 40, 16)
         lines(draw, (20, 108), id_label, panel_width - 40, 16)
         lines(

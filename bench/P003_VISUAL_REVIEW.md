@@ -370,3 +370,12 @@ at the retained prediction bbox beside the actual output. Amber explicitly means
 a qualitative source review with no secondary correctness score. It retains the
 full unmodified page, actual values, dependency hashes and measured CPU/wall/RSS;
 the base batch preserves the strict red negative-reference disagreement.
+
+The random40 adapter accepts an explicit bounded `--ids` sample for matched
+comparisons. On `r91200ef88804e8e21a9f4c15`, both Luna640 and Sonnet640 retain
+84/84 strict cells from the same actual source. Both 1280 arms instead encounter
+“Returned crop tables overlap; ownership is unverified” and expose empty accepted
+output with page-atomic zero, preserving the full reference denominator. Error
+captions show the retained reason; no invalid intermediate generation receives
+partial credit. This observed comparison is distinct from detector-only quality
+and does not establish a general causal conclusion about resolution.
