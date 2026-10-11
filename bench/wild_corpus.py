@@ -20,6 +20,7 @@ import subprocess
 import sys
 import time
 import unicodedata
+import warnings
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
@@ -412,6 +413,60 @@ def ocr_fallback(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict
     return report
 
 
+ADAPTIVE_OCR_LEVELS = ("L0_tagged", "L1_untagged", "L8_mixed", "L9_broken_tounicode")
+MIN_NATIVE_CHARS = 20
+MIN_IMAGE_AREA = 0.02
+
+
+def _page_needs_full_ocr(page: jev_pdf.Page) -> bool:
+    """Full-page OCR when native text is nearly absent or glyphs lacked Unicode."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        text = page.get_text()
+    unmapped = any("no Unicode mapping" in str(item.message) for item in caught)
+    return unmapped or len(text.strip()) < MIN_NATIVE_CHARS
+
+
+def adaptive_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str, Any]:
+    """Write `{level}+ocr-adaptive.pdf` variants with layer-aware OCR.
+
+    Pages whose text layer is unusable get full-page OCR; other pages get OCR
+    clipped to raster placements covering at least 2% of the page. Clipped OCR
+    keeps the default skip, so native text inside a region wins.
+    """
+    directory = guard_path(directory)
+    start = _measure()
+    engine = jev_pdf.OcrEngine(threads=threads)
+    report: dict[str, Any] = {"dpi": dpi, "threads": threads, "documents": {}}
+    for variant_dir in sorted((directory / "variants").iterdir()):
+        for level in ADAPTIVE_OCR_LEVELS:
+            source = variant_dir / f"{level}.pdf"
+            target = variant_dir / f"{level}+ocr-adaptive.pdf"
+            if not source.exists() or target.exists():
+                continue
+            item_start = _measure()
+            counts = {"full_pages": 0, "regions": 0, "words": 0}
+            with jev_pdf.open(str(source)) as doc:
+                for page in doc:
+                    if _page_needs_full_ocr(page):
+                        counts["full_pages"] += 1
+                        counts["words"] += len(page.apply_ocr(dpi=dpi, engine=engine, skip_existing=False))
+                        continue
+                    width, height = page.rect.width, page.rect.height
+                    for image in page.get_images():
+                        box = image["bbox"]
+                        if (box.x1 - box.x0) * (box.y1 - box.y0) < MIN_IMAGE_AREA * width * height:
+                            continue
+                        counts["regions"] += 1
+                        clip = [box.x0, box.y0, box.x1, box.y1]
+                        counts["words"] += len(page.apply_ocr(dpi=dpi, engine=engine, clip=clip))
+                doc.save(str(target))
+            report["documents"][f"{variant_dir.name}/{level}"] = {**counts, "resources": _delta(item_start)}
+    report["resources"] = _delta(start)
+    write_json(directory / "ocr-adaptive-report.json", report)
+    return report
+
+
 def build(directory: Path, *, steps: list[str], workers: int) -> None:
     """Run the requested pipeline steps as fresh subprocesses, then audit."""
     directory = guard_path(directory)
@@ -431,6 +486,8 @@ def build(directory: Path, *, steps: list[str], workers: int) -> None:
             subprocess.run(commands[step], check=True, cwd=ROOT, env=env)
         elif step == "ocr":
             ocr_fallback(directory)
+        elif step == "ocr-adaptive":
+            adaptive_ocr(directory)
     if "audit" in steps:
         audit(directory)
 
@@ -467,7 +524,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, default=DEFAULT_DIRECTORY)
     parser.add_argument("--steps", nargs="+", default=["photos", "documents", "flatten", "audit"],
-                        choices=["photos", "documents", "flatten", "ocr", "audit"])
+                        choices=["photos", "documents", "flatten", "ocr", "ocr-adaptive", "audit"])
     parser.add_argument("--workers", type=int, default=2)
     args = parser.parse_args()
     build(args.directory, steps=args.steps, workers=args.workers)
