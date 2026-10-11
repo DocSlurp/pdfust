@@ -8,9 +8,13 @@ order, wrapping, and header relationships. This document preserves the original
 evaluation request. Strict, schema-equivalence and partial-content scorers are
 now implemented; the [26-run audit](results/p003-dual-score-audit.md) and
 [random40 review](results/p003-random40-dual-score-review.md) report their results.
-The current follow-up replays these scores and expands coverage to earlier
-decision and row-assembly experiments. Header semantics and span topology still
-require separate checks; content precision/recall alone cannot certify them.
+The follow-up now independently verifies 32 current pipeline treatments, 64
+incremental decisions, 56 historical P001 pipelines, eight conditional row
+assemblies and 48 older incremental decisions. These are separate scopes with
+repeated documents, not 208 independent complete extraction systems. The
+[coverage inventory](results/p003-rescore-coverage.md) records remaining omissions.
+Header semantics and span topology still require separate checks; content
+precision/recall alone cannot certify them.
 
 ## The actual example
 
@@ -36,6 +40,21 @@ and punctuation tokens; it does not simply delete all whitespace.
 extraction failure.** The right side is a schematic rendering of actual extracted
 cells, not a reconstruction of their PDF coordinates. Display wrapping inside a
 cell is also not evidence that the extraction placed its contents in different rows.
+
+## Continuous score overlays
+
+New progress images interpolate **red → yellow → green** at aligned-content
+F1 values of 0, 0.5 and 1. Numeric match counts and precision/recall accompany the
+colors. Gray means no character units; amber borders separately flag structural
+problems. These are measured content matches, not model confidence or semantic
+correctness probabilities. Strict scores and original red/green images remain
+unchanged.
+
+[Accepted three/four-column case with score groups](results/pdf-master-artifacts/pipeline-p003/visual-review-v1/content-gradient-6fba505b4c10afba3e11/p1bfa52a41a5e15015698-T0-groups.png)
+and [a genuine missing-row and wrong-value example](results/pdf-master-artifacts/pipeline-p003/visual-review-v1/content-gradient-6fba505b4c10afba3e11/p1bfa52a41a5e15015698-T8-groups.png)
+show the actual source beside extracted output. The latter also has dot-leader
+and fraction-encoding disagreements; not every colored mismatch is a wrong
+business value. Full original source pixels and alignment witnesses are retained.
 
 ## Requested behavior
 
@@ -100,3 +119,5 @@ Images and raw evidence are local ignored artifacts. For a portable handoff,
 share the accompanying local `scoring-handoff-v1` directory or ZIP, which includes
 the original request with relative image links, both images, and the partition
 audit. That frozen v1 package predates the completed scoring audits linked above.
+The newer `scoring-handoff-v3.zip` includes the gradient examples and current
+separate-scope reports, with a file-hash manifest. Earlier packages stay intact.

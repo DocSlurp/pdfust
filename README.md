@@ -556,6 +556,14 @@ prose false positives in several high-recall runs. R001 gains no additional
 complete bodies either, and all eight treatments still guess on the one
 unresolved case. Historical request/runtime limitations remain explicit.
 
+The [48 earlier decision treatments](bench/results/p003-earlier-incremental-dual-score.md)
+now have the same separate strict/content diagnostics. Selected-only candidate
+scores exclude retained baseline tables. Only two of 15 boundary arms applied
+changes, and neither completed a reference table. The report includes all zero
+and failed outcomes plus original rates with explicit page or question units.
+Together these audits cover 208 retained treatments across different scopes;
+[remaining historical omissions](bench/results/p003-rescore-coverage.md) stay explicit.
+
 The [matched candidate images](bench/results/p003-candidate-visual-review.md)
 show actual source crops beside selected output and a blank-image control,
 with numeric scores and the new per-alignment gradient.
