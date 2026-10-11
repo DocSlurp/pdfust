@@ -487,10 +487,13 @@ published alongside the [next experiment hypotheses](bench/results/p003-council-
 
 The [visual review workflow](bench/P003_VISUAL_REVIEW.md) retains actual input
 pages, table-level source masks, extracted cell grids and exact mismatch details.
-Green marks strict matches; red marks strict mismatches, which can include
+Original strict views use green for matches and red for mismatches, including
 representation differences such as Unicode subscripts versus reference LaTeX.
-Original unmarked images remain available locally. Scores are unchanged by
-visual review, and raw document artifacts are excluded from Git.
+New comparison views add a green/yellow/red content-score gradient with numeric
+precision, recall and F1, while separate amber warnings identify structural
+errors. Each view labels whether its colors describe a table or an aligned
+cell group. Original unmarked images remain available locally. Scores are
+unchanged by visual review, and raw document artifacts are excluded from Git.
 
 One reviewed newspaper table demonstrates why strict mismatch is not always an
 extraction error: the reference combines rank and team name into one column,
@@ -525,6 +528,37 @@ scored pages and 56 diagnostics; cohorts overlap and must not be pooled. The
 small Sonnet/Opus complete-table reversal is metric-sensitive, not evidence
 of general model superiority. Original timing/cost rates remain in the linked
 audit and complete-pipeline reports.
+
+A fresh [32-run CPU replay](bench/results/p003-scoring-rerun32.md), including
+the six randomized-office runs below, exactly reproduces all strict scores,
+tolerant alignment witnesses and original inference rates. Its complete tables
+retain errors, missing/extra tables and natural versus authored cohorts. This
+evaluation rerun makes no new model calls. Earlier decision-only selector,
+ownership and header experiments require their separate attribution rules;
+they are not represented by these 32 complete-pipeline runs.
+
+The separate [64-run decision replay](bench/results/p003-rescore-coverage.md)
+now covers 24 candidate selectors, 20 source-ownership assemblers and 20 header
+choices over the same 16 DEV pages. It preserves each original attribution rule
+and strict page score. PPLX selection at 512 px recovers 61.22% of full-cohort
+content at 95.13% precision, with five strict or six equivalent complete tables
+out of 53. The RGB and 16-color palette runs match on these metrics. At 128 px,
+the RGB selector has 55.85% recall, versus 3.46% with the blank-image control.
+These are selections from prepared candidates, not standalone transcription.
+Ownership and header experiments gain no equivalent complete tables; their
+partial content and coverage failures remain in the full comparison.
+
+Historical coverage also includes [56 P001 pipeline runs](bench/results/p003-p001-retained-output-analysis.md)
+and [eight conditional row-assembly treatments](bench/results/p003-row-content-analysis.md).
+All original checked strict counts reproduce. P001 gains no additional complete
+tables under the tolerant scorer; its content precision reveals substantial
+prose false positives in several high-recall runs. R001 gains no additional
+complete bodies either, and all eight treatments still guess on the one
+unresolved case. Historical request/runtime limitations remain explicit.
+
+The [matched candidate images](bench/results/p003-candidate-visual-review.md)
+show actual source crops beside selected output and a blank-image control,
+with numeric scores and the new per-alignment gradient.
 
 All 48 [synthetic decision treatments](bench/results/p003-synthetic48-analysis.md)
 are independently verified. The 24-case corpus has 18 visually distinguishable
@@ -630,8 +664,13 @@ also pass independent evaluation. Vector-first Luna at 400, 500 and 1024 px
 matches 17/18 cued cases while abstaining on all six indeterminate cases.
 This is a combined geometry/model result, not Luna's standalone accuracy.
 Composition reuses original responses without new inference or measured savings.
-The separate [rows/rules with matched images](bench/results/p003-synthetic-rules-resolution.md)
-experiment tests richer source evidence at 400 and 768 px; results are pending.
+The separate [rows/rules with matched images](bench/results/p003-synthetic-rules-resolution-analysis.md)
+experiment completes ten arms at 400 and 768 px. Adding the observed rows and
+vector rules gives PPLX 15/16 cued matches versus 16/17 with plain images;
+Luna gives 7/7 versus 7/6, Flash 10/9 versus 11/11, Clef 8/7 versus 12/11,
+and Omni 9/9 in both conditions. No model improves at both sizes in these
+single runs. The 240 fresh attempts cost USD 0.088892; original reported zeros,
+catalog estimates and exact-alias secondary outcomes remain separate.
 
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering

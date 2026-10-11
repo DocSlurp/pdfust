@@ -27,6 +27,28 @@ expected/actual mismatches; `differences.json` preserves every mismatch. Reasons
 such as percent whitespace or reference math markup explain representation
 changes without changing primary colors or assigning semantic severity.
 
+## Score gradients for ongoing progress reports
+
+New scored progress comparisons use **red at F1 = 0, yellow at 0.5, and green
+at 1**, interpolated continuously. Numeric precision, recall, F1 and denominators
+accompany the colors. Gray means no character units are available; it never
+means a measured zero. Amber borders separately flag changed merge membership.
+Missing rows or selected outputs have explicit text labels.
+
+`bench.p003_alignment_visual_review.alignment_grid` consumes independently
+verified normalized-character alignment witnesses. Its groups are schematic
+row/column alignments, not physical PDF cell boxes or probabilities of semantic
+correctness. Table-level views use `bench.p003_content_visual_review`; the
+caption identifies the score scope. A high content score cannot erase a real
+header, ordering or span error. Original strict views remain available.
+
+The bounded `bench.p003_candidate_visual_review` adapter additionally compares
+selected-only output with a matched blank-image control. It authenticates the
+primary prediction list and excludes inherited fallback tables. See the
+[matched examples and full-cohort context](results/p003-candidate-visual-review.md).
+Keep the actual unmarked source, complete witnesses and provenance beside every
+new comparison; do not replace them with synthesized document images.
+
 ## One bounded refresh
 
 Run from a checkout containing the module, using the existing main environment:

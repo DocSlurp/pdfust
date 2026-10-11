@@ -6,9 +6,9 @@ This is an output-only retrospective calculation, not contemporaneous request re
 
 CPU replay took 15.94 s wall and 15.79 s process CPU, with 453,640,192 bytes peak sampled RSS. psutil sampled one process every 100 ms; the global interval includes all source/output admission, corpus verification and 56 scorer passes. No worker inference or GPU ran.
 
-Full runs contain181 pages:168 adjudicated (35 correlated single-table positives and133 negatives), plus13 diagnostic pages without complete references. Pilot runs contain32 pages:16 positives and16 negatives. This predominantly authored DEV corpus is separate from natural64, fresh confirmation48 and random40. Repeated native and exploratory hosted conditions are not independent samples.
+Full runs contain 181 pages: 168 adjudicated (35 correlated single-table positives and 133 negatives), plus 13 diagnostic pages without complete references. Pilot runs contain 32 pages: 16 positives and 16 negatives. This predominantly authored DEV corpus is separate from natural64, fresh confirmation48 and random40. Repeated native and exploratory hosted conditions are not independent samples.
 
-Historical slot credit includes covered `None` slots and uses its original shape/assignment contract. Mapped strict scoring counts actual span anchors (422 full /201 pilot), and its assignment/partial-credit rules differ; the two cell counts are not interchangeable. Missing/extra table counts also depend on matching rules, so both historical and mapped counts remain visible. Complete-table strict counts agree between the old and mapped scorer for all56 runs. Content P/R uses normalized alignment units, including synthetic join spaces, with missing and extra predictions penalized. It does not establish span/header correctness or literal character recovery.
+Historical slot credit includes covered `None` slots and uses its original shape/assignment contract. Mapped strict scoring counts actual span anchors (422 full /201 pilot), and its assignment/partial-credit rules differ; the two cell counts are not interchangeable. Missing/extra table counts also depend on matching rules, so both historical and mapped counts remain visible. Complete-table strict counts agree between the old and mapped scorer for all 56 runs. Content P/R uses normalized alignment units, including synthetic join spaces, with missing and extra predictions penalized. It does not establish span/header correctness or literal character recovery.
 
 Original pages/min and pages/APIUSD below count usable historical pipeline outputs, including diagnostic pages. They are not scorer throughput or correct-page rates. The original one reserved HTTP expense stays unresolved, with pages/APIUSD unknown. CPU-only no-API rates also remain undefined. Historical mixed-model review cascades are named separately from single-model arms; these are not new single-model decision experiments.
 
@@ -80,16 +80,16 @@ Original pages/min and pages/APIUSD below count usable historical pipeline outpu
 
 ## Interpretation
 
-The historical original+column+PPLX gate+Sonnet review and readable counterpart remain35/35 strict complete tables, zero negative false positives, and content P/R of1. This does not turn their181-page input cohort into181 perfect extractions: each still has three diagnostic failures. Their apparent success belongs to the historical composite pipeline, not PPLX alone.
+The historical original+column+PPLX gate+Sonnet review and readable counterpart remain 35/35 strict complete tables, zero negative false positives, and content P/R of 1. This does not turn their 181-page input cohort into 181 perfect extractions: each still has three diagnostic failures. Their apparent success belongs to the historical composite pipeline, not PPLX alone.
 
-High content recall can conceal excessive admissions unless precision stays visible. Full model-only PPLX has content recall0.997 but precision0.174 and27 extra tables; the column gate reaches recall1.000 but precision0.777 with four extras. Adaptive PPLX has recall0.983 and precision0.157. The dual diagnostics preserve these tradeoffs and do not award additional complete-table acceptance.
+High content recall can conceal excessive admissions unless precision stays visible. Full model-only PPLX has content recall 0.997 but precision 0.174 and 27 extra tables; the column gate reaches recall 1.000 but precision 0.777 with four extras. Adaptive PPLX has recall 0.983 and precision 0.157. The dual diagnostics preserve these tradeoffs and do not award additional complete-table acceptance.
 
 The compact/readable conditions were historically explored on this same DEV corpus. This replay changes neither those selected settings nor any source/target bytes, and provides no new repeat or confirmation evidence. Original page witnesses, both complete strict metric dictionaries, and tolerant alignments are retained in ignored per-run JSON.
 
 ## Provenance
 
 - Plan SHA: `ac2954e4a28c9210728b982a6789641635c2c0eee3cf7f30ce781493c01452f8`.
-- Independent13-file current scorer authority SHA: `ae50cd3782545539176c6bf1a426b8de78de7fc50a2bbf8417f1078cdeefdcd5`.
+- Independent 13-file current scorer authority SHA: `ae50cd3782545539176c6bf1a426b8de78de7fc50a2bbf8417f1078cdeefdcd5`.
 - Source manifest SHA: `7570272d524d68ff3aad59ac1b5ea080e48b77acf605ba8bb30bef27205b94c8`.
 - Original dataset identity: `3a1268f1d731a7c60a3fa91f1e90e887c3f41a84aec05beed81b797253afa9b2`.
 - New ignored artifact root: `pipeline-p003/p001-output-rescore56-v1`; original P001 outputs and tracked report remain unchanged.
