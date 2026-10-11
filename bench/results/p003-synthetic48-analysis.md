@@ -1,8 +1,8 @@
 # Synthetic native relationship decisions: original protocol and exact-alias replay
 
-Checkpoint: 47/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
+Checkpoint: 48/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
 
-Across these 47 reviewed runs (reused cases, not independent quality samples), original protocol outcomes are {'valid_nonabstaining': 288, 'malformed_response': 792, 'transport_error': 2, 'not_attempted': 46}; secondary outcomes are {'valid_nonabstaining': 841, 'valid_abstention': 239, 'transport_error': 2, 'not_attempted': 46}. The original malformed responses are known returned-model identifier incompatibilities; unchanged native shape/probability validation is still enforced in secondary replay.
+Across these 48 reviewed runs (reused cases, not independent quality samples), original protocol outcomes are {'valid_nonabstaining': 288, 'malformed_response': 816, 'transport_error': 2, 'not_attempted': 46}; secondary outcomes are {'valid_nonabstaining': 846, 'valid_abstention': 258, 'transport_error': 2, 'not_attempted': 46}. The original malformed responses are known returned-model identifier incompatibilities; unchanged native shape/probability validation is still enforced in secondary replay.
 
 Primary original outcomes remain unchanged. The separately labeled secondary replay accepts only exact requested-ID → canonical-slug mappings from the approved catalog attestation; it first authenticates archived runtime/source bytes, literal native request and transmitted bytes, fresh ledger tag/requested model/request hash, all responses and accounting. Only a copied returned `model` field changes. Raw choices, probabilities, confidence, usage, originals and charges remain unchanged. Invalid probability mass, wrong request identity and unrecognized aliases still fail.
 
@@ -60,7 +60,7 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 0 | 24 | 8 | 5 | 3/4/1 | 0 | 19 | 5 | 0 | 0 | 0 |
 | typesafe/jev-1.13 | text_geometry/page/0 | 0 | 24 | 13 | 9 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
-| upstage/solar-decide | rows_rules/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| upstage/solar-decide | rows_rules/page/0 | 0 | 24 | 5 | 2 | 2/1/2 | 3 | 5 | 19 | 0 | 0 | 0 |
 | upstage/solar-decide | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 | upstage/solar-decide-flash | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
@@ -115,6 +115,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | 12 | 12 | 12 | 5 | 0 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 3 | 12 | 10 | 0 | 2 |
 | typesafe/jev-1.13 | text_geometry/page/0 | 12 | 12 | 11 | 0 | 0 |
+| upstage/solar-decide | rows_rules/page/0 | 3 | 12 | 8 | 0 | 8 |
 | upstage/solar-decide | text_geometry/page/0 | 12 | 12 | 12 | 2 | 12 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 3 | 12 | 12 | 3 | 12 |
 | upstage/solar-decide-flash | text_geometry/page/0 | 12 | 12 | 12 | 1 | 12 |
@@ -169,6 +170,7 @@ The frozen queue policy allows six host arms but caps CPU-heavy arms and global 
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | 24 | 0.0006937 | 0.0006937 | provider-reported USD:24 | 18.381 | 34598.485 | 34598.485 | 16516 (24/24) | 48 (24/24) | 78.342 | 33.045 | 202.941 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 24 | 0.0031459 | 0.0031459 | provider-reported USD:24 | 16.790 | 7629.016 | 6039.638 | 74902 (24/24) | 1095 (24/24) | 85.764 | 33.420 | 198.539 |
 | typesafe/jev-1.13 | text_geometry/page/0 | 24 | 0.0008823 | 0.0008823 | provider-reported USD:24 | 14.029 | 27200.522 | 27200.522 | 21008 (24/24) | 1102 (24/24) | 102.645 | 35.370 | 203.754 |
+| upstage/solar-decide | rows_rules/page/0 | 24 | 0.0040117 | 0.0040117 | provider-reported USD:24 | 1.590 | 5982.501 | 1246.354 | 80234 (24/24) | 24 (24/24) | 905.897 | 36.393 | 206.164 |
 | upstage/solar-decide | text_geometry/page/0 | 24 | 0.0011165 | 0.0011165 | provider-reported USD:24 | 7.043 | 21495.746 | 0.000 | 22330 (24/24) | 24 (24/24) | 204.448 | 33.519 | 204.008 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 24 | 0.0040117 | 0.0040117 | provider-reported USD:24 | 12.957 | 5982.501 | 0.000 | 80234 (24/24) | 24 (24/24) | 111.139 | 32.303 | 198.434 |
 | upstage/solar-decide-flash | text_geometry/page/0 | 24 | 0.0011165 | 0.0011165 | provider-reported USD:24 | 11.813 | 21495.746 | 0.000 | 22330 (24/24) | 24 (24/24) | 121.898 | 34.967 | 199.773 |
@@ -227,6 +229,7 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-tev-text-geometry-text-r0-c3 | `a64c16a027423f165d8d8ef099e69760bfe7537b7e3eb5e795fcec8109d3fe3c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-jev-rows-rules-text-r0-c3 | `47c305c3f3e8e786b37387a85673db254b83de48ee98c5abd4f30501a1ca3a3c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-jev-text-geometry-text-r0-c3 | `c9edbc24610c880fd45f2dc69ba042ab488442c9fe3a6d021ecec8dd8c67c38c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
+| synth-solar-rows-rules-text-r0-c3 | `146d22f4832a23859a42d826a1105e3011278ff82fef65711b331c396ff5e6d1` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-solar-text-geometry-text-r0-c3 | `3db07df9e59b18c45dcef654b748f597c3c1534110ca6cfe9a832e65baff4ebf` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-solarflash-rows-rules-text-r0-c3 | `4f40b59727a0dbe7e02022e520f8c0927d8f95bfa8a09a07067dd2c0a9bb8268` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-solarflash-text-geometry-text-r0-c3 | `f488d5cf8d405ba79aadd919d0121e4847cc43e9e1a1f15e009bc0c83bdec329` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
