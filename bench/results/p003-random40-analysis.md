@@ -17,7 +17,11 @@ Plan SHA256: `501386a3636fbc37fafc9dbc6db9762c4cbf36c93900fceaecafe128b5e9420e`.
 |---|---|---:|---:|---:|---|---:|
 | random40-sonnet-yolo640-crop1024-r0-c3 | 0.353618/0.353618 | 41 | 7.39928 | 113.116 | 324.356/98.3132 | 374.32 |
 
-Rates describe complete hosted pipeline runs under contention, not serial execution or offline evaluation speed. CPU uses process_time; parent RSS uses psutil sampling every 100 ms. Worker/subprocess resources, where separately retained, remain distinct in evaluation JSON. Costs include all attributed attempts and retain their provider-reported or estimated basis; unknown values are not zero. Do not allocate whole-run cost or wall time to selected pages or claim perfect page quality from complete reference-table counts.
+| Run | Detector requests | Worker init/inference CPU s | Worker init/inference active wall s | Worker sampled peak MiB |
+|---|---:|---|---|---:|
+| random40-sonnet-yolo640-crop1024-r0-c3 | 40 | 18.4664/62.6824 | 11.3113/22.7779 | 1098.11 |
+
+Rates describe complete hosted pipeline runs under contention, not serial execution or offline evaluation speed. CPU uses process_time; parent RSS uses psutil sampling every 100 ms. Detector worker uses four CPU threads; its initialization and request CPU/active wall are shown separately. Worker RSS is sampled from its own /proc/self/statm every 100 ms plus endpoints. Worker and parent peaks must not be summed; worker active intervals overlap parent hosted pipeline wall. Costs include all attributed attempts and retain their provider-reported or estimated basis; unknown values are not zero. Do not allocate whole-run cost or wall time to selected pages or claim perfect page quality from complete reference-table counts.
 
 Single runs at each resolution do not isolate detector causality from stochastic transcription. No setting is selected from these confirmation results.
 
