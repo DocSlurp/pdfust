@@ -306,3 +306,29 @@ PNG, manifest, renderer and font hashes. It checks every dependency again before
 recording successful provenance. The actual detector and transcription renderer
 in `generalization_vision_regions.py` already passes an explicit white background;
 this inspection required no pipeline-helper change.
+
+## Pinned strict and secondary newspaper comparison
+
+`bench.p003_secondary_visual_review` adds a separate immutable view from the
+pinned `scoring-audit26-v1` declaration and per-arm audit. It checks the declaration,
+original report/evaluation/frozen corpus/targets/PDF hashes, replays the strict
+page through the original visual renderer, and records the trusted runtime
+receipt, renderer/font hashes, wall/CPU time and lifetime peak RSS. Source pixels
+are actual PDF renders over white; output cells retain strict colors and their
+actual values. No original batch is changed.
+
+For Sonnet detector 1024 target 0/prediction 1 on newspaper
+`p1bfa52a41a5e15015698`, all 21 rows including the header satisfy accepted 3/4-column
+schema equivalence under fixed partition `[[0,1],[2],[3]]`. Character evidence has
+393 equal, zero missing/substituted and eight extra characters; all eight extras
+are literal spaces. This explains content recall 1 and precision 0.98005 without
+calling the table semantically wrong. A separate exact witness image exposes
+quoted expected/actual strings and every changed character.
+
+Target 8/prediction 3 is an actual partial-content control: source review confirms
+missing Motor City and incorrect Grand Rapids values. The retained character
+metric also counts removed dot leaders and punctuation differences, so its
+242 equal/142 missing/17 substituted/one extra characters must not all be
+interpreted as lost business values. Its schema equivalence is false; content
+recall 0.60349 and precision 0.93077 remain representation metrics. Merged target 2
+is unsupported by this adapter and receives no fabricated secondary labels.
