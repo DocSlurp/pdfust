@@ -1,8 +1,8 @@
 # Synthetic native relationship decisions: original protocol and exact-alias replay
 
-Checkpoint: 44/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
+Checkpoint: 47/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
 
-Across these 44 reviewed runs (reused cases, not independent quality samples), original protocol outcomes are {'valid_nonabstaining': 240, 'malformed_response': 768, 'transport_error': 2, 'not_attempted': 46}; secondary outcomes are {'valid_nonabstaining': 769, 'valid_abstention': 239, 'transport_error': 2, 'not_attempted': 46}. The original malformed responses are known returned-model identifier incompatibilities; unchanged native shape/probability validation is still enforced in secondary replay.
+Across these 47 reviewed runs (reused cases, not independent quality samples), original protocol outcomes are {'valid_nonabstaining': 288, 'malformed_response': 792, 'transport_error': 2, 'not_attempted': 46}; secondary outcomes are {'valid_nonabstaining': 841, 'valid_abstention': 239, 'transport_error': 2, 'not_attempted': 46}. The original malformed responses are known returned-model identifier incompatibilities; unchanged native shape/probability validation is still enforced in secondary replay.
 
 Primary original outcomes remain unchanged. The separately labeled secondary replay accepts only exact requested-ID → canonical-slug mappings from the approved catalog attestation; it first authenticates archived runtime/source bytes, literal native request and transmitted bytes, fresh ledger tag/requested model/request hash, all responses and accounting. Only a copied returned `model` field changes. Raw choices, probabilities, confidence, usage, originals and charges remain unchanged. Invalid probability mass, wrong request identity and unrecognized aliases still fail.
 
@@ -24,10 +24,10 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | cloudflare/clef | text_geometry/page/512 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | rows_rules/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | text_geometry/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
-| cloudflare/clef-flash | text_geometry/crop/128 | — | — | unscored (completed) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-flash | text_geometry/crop/128 | 15 | 0 | 15 | 12 | 4/7/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | text_geometry/page/128 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-flash | text_geometry/crop/512 | 13 | 0 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
-| cloudflare/clef-flash | text_geometry/page/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-flash | text_geometry/page/512 | 14 | 0 | 14 | 11 | 4/6/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | rows_rules/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
@@ -56,7 +56,7 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | perplexity/pplx-decider-v1.1-27b | text_geometry/page/512 | 0 | 24 | 19 | 16 | 6/6/7 | 0 | 24 | 0 | 0 | 0 | 0 |
 | respan/span-01 | rows_rules/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
 | respan/span-01 | text_geometry/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
-| togethercomputer/tev1-4b-experimental | rows_rules/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| togethercomputer/tev1-4b-experimental | rows_rules/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 0 | 24 | 8 | 5 | 3/4/1 | 0 | 19 | 5 | 0 | 0 | 0 |
 | typesafe/jev-1.13 | text_geometry/page/0 | 0 | 24 | 13 | 9 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
@@ -79,8 +79,10 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | cloudflare/clef | text_geometry/page/512 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-flash | rows_rules/page/0 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-flash | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
+| cloudflare/clef-flash | text_geometry/crop/128 | 3 | 12 | 9 | 3 | 0 |
 | cloudflare/clef-flash | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-flash | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 0 |
+| cloudflare/clef-flash | text_geometry/page/512 | 3 | 12 | 10 | 3 | 0 |
 | cloudflare/clef-omni | rows_rules/page/0 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-omni | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/128 | 3 | 12 | 12 | 3 | 0 |
@@ -109,6 +111,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | perplexity/pplx-decider-v1.1-27b | text_geometry/page/512 | 3 | 12 | 5 | 3 | 0 |
 | respan/span-01 | rows_rules/page/0 | 3 | 0 | 0 | 0 | 0 |
 | respan/span-01 | text_geometry/page/0 | 12 | 0 | 0 | 0 | 0 |
+| togethercomputer/tev1-4b-experimental | rows_rules/page/0 | 3 | 12 | 12 | 3 | 0 |
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | 12 | 12 | 12 | 5 | 0 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 3 | 12 | 10 | 0 | 2 |
 | typesafe/jev-1.13 | text_geometry/page/0 | 12 | 12 | 11 | 0 | 0 |
@@ -130,8 +133,10 @@ The frozen queue policy allows six host arms but caps CPU-heavy arms and global 
 | cloudflare/clef | text_geometry/page/512 | 24 | 0.0058877 | 0.0058877 | provider-reported USD:24 | 16.753 | 4076.308 | 4076.308 | 24532 (24/24) | 0 (24/24) | 85.953 | 32.717 | 198.602 |
 | cloudflare/clef-flash | rows_rules/page/0 | 24 | 0.0026408 | 0.0026408 | provider-reported USD:24 | 15.505 | 9088.251 | 9088.251 | 69494 (24/24) | 0 (24/24) | 92.874 | 31.893 | 198.000 |
 | cloudflare/clef-flash | text_geometry/page/0 | 24 | 0.0006303 | 0.0006303 | provider-reported USD:24 | 16.544 | 38074.448 | 38074.448 | 16588 (24/24) | 0 (24/24) | 87.040 | 32.102 | 200.043 |
+| cloudflare/clef-flash | text_geometry/crop/128 | 24 | 0.0008361 | 0.0008361 | provider-reported USD:24 | 21.114 | 28705.524 | 28705.524 | 22002 (24/24) | 0 (24/24) | 68.202 | 33.011 | 204.051 |
 | cloudflare/clef-flash | text_geometry/page/128 | 24 | 0.0008292 | 0.0008292 | provider-reported USD:24 | 15.008 | 28944.956 | 28944.956 | 21820 (24/24) | 0 (24/24) | 95.949 | 31.499 | 199.797 |
 | cloudflare/clef-flash | text_geometry/crop/512 | 24 | 0.0009638 | 0.0009638 | provider-reported USD:24 | 15.933 | 24902.569 | 24902.569 | 25362 (24/24) | 0 (24/24) | 90.376 | 32.428 | 200.133 |
+| cloudflare/clef-flash | text_geometry/page/512 | 24 | 0.0009322 | 0.0009322 | provider-reported USD:24 | 19.763 | 25745.106 | 25745.106 | 24532 (24/24) | 0 (24/24) | 72.864 | 33.892 | 174.172 |
 | cloudflare/clef-omni | rows_rules/page/0 | 24 | 0.0104181 | 0.0104181 | provider-reported USD:24 | 17.296 | 2303.683 | 2303.683 | 69454 (24/24) | 0 (24/24) | 83.256 | 34.360 | 202.602 |
 | cloudflare/clef-omni | text_geometry/page/0 | 24 | 0.0024798 | 0.0024798 | provider-reported USD:24 | 17.164 | 9678.200 | 9678.200 | 16532 (24/24) | 0 (24/24) | 83.898 | 31.358 | 198.254 |
 | cloudflare/clef-omni | text_geometry/crop/128 | 24 | 0.0032919 | 0.0032919 | provider-reported USD:24 | 15.176 | 7290.622 | 7290.622 | 21946 (24/24) | 0 (24/24) | 94.888 | 34.876 | 203.207 |
@@ -160,6 +165,7 @@ The frozen queue policy allows six host arms but caps CPU-heavy arms and global 
 | perplexity/pplx-decider-v1.1-27b | text_geometry/page/512 | 24 | 0.0004657 | 0.0004657 | provider-reported USD:24 | 13.586 | 51537.537 | 51537.537 | 23284 (24/24) | 24 (24/24) | 105.991 | 31.420 | 198.359 |
 | respan/span-01 | rows_rules/page/0 | 1 | unknown | unknown | reserved:1 | 18.898 | unknown | unknown | unknown (0/0) | unknown (0/0) | 3.175 | 1.329 | 199.242 |
 | respan/span-01 | text_geometry/page/0 | 1 | unknown | unknown | reserved:1 | 17.931 | unknown | unknown | unknown (0/0) | unknown (0/0) | 3.346 | 1.372 | 199.316 |
+| togethercomputer/tev1-4b-experimental | rows_rules/page/0 | 24 | 0.0031072 | 0.0031072 | provider-reported USD:24 | 23.184 | 7724.095 | 7724.095 | 73980 (24/24) | 48 (24/24) | 62.112 | 32.889 | 204.211 |
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | 24 | 0.0006937 | 0.0006937 | provider-reported USD:24 | 18.381 | 34598.485 | 34598.485 | 16516 (24/24) | 48 (24/24) | 78.342 | 33.045 | 202.941 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 24 | 0.0031459 | 0.0031459 | provider-reported USD:24 | 16.790 | 7629.016 | 6039.638 | 74902 (24/24) | 1095 (24/24) | 85.764 | 33.420 | 198.539 |
 | typesafe/jev-1.13 | text_geometry/page/0 | 24 | 0.0008823 | 0.0008823 | provider-reported USD:24 | 14.029 | 27200.522 | 27200.522 | 21008 (24/24) | 1102 (24/24) | 102.645 | 35.370 | 203.754 |
@@ -185,8 +191,10 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-clef-geometry-page512-r0-c3 | `14fa93433d0a1c835c49d8d539f281131d9a21522cdbbfd4694976979e8a9655` | `4988cd3cf615c85ab9ce0cdf636bbb3baf02512b889a6cc3738852ec68fbe6a6` |
 | synth-clefflash-rows-rules-text-r0-c3 | `0935fff59bed9350272988aa479dec68ded5cef904e68c786e8748f5ba3ba34f` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-clefflash-text-geometry-text-r0-c3 | `2c6bb44d44f0dc5b5b61e4eb15a208111e41b2782d60f8d697704ed9eb58d3ba` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
+| synth-clefflash-geometry-crop128-r0-c3 | `265ab7db83ddb1bb50b6d980109bd29c4f3adb1301aa077202679d2ef0aa55bb` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-clefflash-geometry-page128-r0-c3 | `ef925b39bede7803f8e9d546e4b56f4fdaf3398243c6b5d806e4d3c05cc0f302` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
 | synth-clefflash-geometry-crop512-r0-c3 | `f9f6c4e4886d7fb8144bd6e57d10d4d0ed4066b3951117d00db11a1a681ed20e` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
+| synth-clefflash-geometry-page512-r0-c3 | `965f4c7b21b956d954917359a89e14fc601d0f582a34b561c1c0b95017ee607b` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-clefomni-rows-rules-text-r0-c3 | `48b0c29cd670ad44cb57f34e509b82214ceec4a320b2c5aa864f79ccdafb1dec` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-clefomni-text-geometry-text-r0-c3 | `fea74f881a0cb3773ea11e066f9121cf47d9b1a38bbc62ad4eb01385ffb3e457` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-clefomni-geometry-crop128-r0-c3 | `8031c1ae13d93a0778f1f18df3c3a19e9d35f9889ee4ae764b475c960d972adf` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
@@ -215,6 +223,7 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-pplx-geometry-page512-r0-c3 | `8df34e27ca2f7d59a9d3546bd3abf374b630f6582a49b1a637336debbe3fdf9f` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-span-rows-rules-text-r0-c3 | `80a91ba310587f8094146183e00f38db30563d4d3cb55964d7f876d075505eec` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-span-text-geometry-text-r0-c3 | `ca9fb3756a0cddddff1ed5fa075a482062f3d3fd8f4995a0fd9fc6c969cdc3c5` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-tev-rows-rules-text-r0-c3 | `67bb86ce1de8adc5604dddd5d5861b34d80dba377eac005908ad4000c1dc4ef0` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-tev-text-geometry-text-r0-c3 | `a64c16a027423f165d8d8ef099e69760bfe7537b7e3eb5e795fcec8109d3fe3c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-jev-rows-rules-text-r0-c3 | `47c305c3f3e8e786b37387a85673db254b83de48ee98c5abd4f30501a1ca3a3c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-jev-text-geometry-text-r0-c3 | `c9edbc24610c880fd45f2dc69ba042ab488442c9fe3a6d021ecec8dd8c67c38c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
