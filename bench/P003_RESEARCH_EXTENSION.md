@@ -135,3 +135,32 @@ comparisons. Each model runs four separate scenarios: native,
 The protocol is unchanged: up to three local array decisions and a USD 5
 additional queue cap. Pages without a scenario or focus remain no-request
 observations in the 64-page denominator.
+
+### Layer 3 results, 2026-10-11 08:00 UTC
+
+All 20 arms finished. Each was scored offline by authenticated replay
+(`bench.extension_local_score`, commit `b9f742d`). The queue ended at USD
+26.1206 P003 conservative exposure. Every failure stays in its 64-page
+denominator. "Exact pages" combines model output with baseline retention, so
+pages without an applicable scenario keep the baseline state. "Fixed" and
+"broken" are strict page-level changes against the damaged starting state.
+
+| Model | Undamaged control | Swap | Missing value | Wrap shift | Net pages | Effective USD |
+|---|---|---|---|---|---:|---:|
+| pplx-decider-v1.1-27b | 56→55, −1 | 9→23, +14/−0 | 8→17, +9/−1 | 42→50, +8/−0 | **+29** | 0.0089 |
+| mercury-decide | 56→50, −6 | 9→16, +7/−4 | 8→18, +10/−6 | 42→44, +2/−1 | +2 | 0.0088 |
+| clef | 56→41, −15 | 9→16, +8/−0 | 8→17, +9/−14 | 42→44, +3/−4 | −13 | 0.1359 |
+| tev1-4b-experimental | 56→49, −7 † | 9→14, +6/−18 | 8→16, +8/−33 | 42→43, +1/−3 † | −46 | 0.0261 + unknown |
+| kev-4b | first request timed out; arm stopped | same | same | same † | 0 | unknown |
+
+† Arm stopped after a transport failure: Kev timed out on the first request in
+every scenario (USD 1.2 in unresolved reservations), and Tev hit HTTP 502 in
+native and wrap (USD 0.3). Not-attempted pages keep the baseline state but
+receive no model credit.
+
+pplx-decider confirms the 8-page screen. It fixes damaged pages and broke only
+2 of 256 page outcomes; its false-edit rate on undamaged pages is 1 of 48
+applicable. The other models fix a similar number of pages but break many
+more. A repair step is worthwhile only with a low break rate. These remain
+controlled damage scenarios on authored DEV pages; wild-v1 is the next
+realism check.
