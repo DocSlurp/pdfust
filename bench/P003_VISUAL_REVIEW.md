@@ -234,3 +234,23 @@ exceeding the canvas limit still fails explicitly. The initially incomplete
 Luna1024 batch remains intact. Actual font-width wrapping replaces conservative
 character counts, keeping intact prices such as `540.50` on one line when they
 fit. This changes rendering only, retaining actual strings and primary scores.
+
+## Retained detector metadata and Haiku refresh
+
+Some legacy frozen configurations omit the detector inference-size field. The
+caption now first uses the verified report's actual worker
+`layout_detector_initialization.configuration.imgsz`, then a frozen declaration
+when no worker value exists. Conflicting declarations fail explicitly. The
+Haiku640 worker records 640; no caption infers this from the run name or the
+1536-pixel detector raster.
+
+The same six-page Haiku matrix cohorts are retained in `5f42775567ab2a8dcc62`
+(640), `394051b62188b30ef85d` (1024), and `184543d37787446facb9` (1280).
+On added dense page p98 the strict counts are 123, 0 and 0. Haiku1024 records
+`Invalid merged span bounds` and zero returned tables there. Its 22 strict cells
+in the analysis's **dense2 sum** belong to the other newspaper p1b, not p98.
+Generation error outcomes receive zero credit in this complete-pipeline scope;
+explicit diagram selected-crop scoring is a separate scope.
+
+A font-measured matched TATR refresh is retained in `35f004fede3a408bc58d` with
+the same three actual input IDs and unchanged independently verified scores.

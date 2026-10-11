@@ -246,9 +246,14 @@ def column_partition_audit(reference: dict[str, Any], actual: dict[str, Any]) ->
             for expected, observed in zip(reference["values"], actual["values"], strict=True)
             for c, group in enumerate(groups)
         ):
-            return {**result, "verified": True, "prediction_column_groups": groups,
-                    "verified_rows_including_header": reference["row_count"],
-                    "reference_columns": n, "prediction_columns": m}
+            return {
+                **result,
+                "verified": True,
+                "prediction_column_groups": groups,
+                "verified_rows_including_header": reference["row_count"],
+                "reference_columns": n,
+                "prediction_columns": m,
+            }
     return result
 
 
@@ -312,8 +317,9 @@ def difference_image(rows: list[dict[str, Any]]) -> Image.Image:
     image = Image.new("RGB", (1500, 130 + min(len(rows), 12) * 140), "white")
     draw = ImageDraw.Draw(image)
     lines(draw, (20, 12), f"Strict mismatch details: {len(rows)} total; first {min(len(rows), 12)} shown", 1460, 24)
-    lines(draw, (20, 54),
-          "Red means strict reference disagreement. These reasons do not measure semantic severity.", 1460)
+    lines(
+        draw, (20, 54), "Red means strict reference disagreement. These reasons do not measure semantic severity.", 1460
+    )
     for i, row in enumerate(rows[:12]):
         y = 130 + i * 140
         lines(draw, (20, y), f"Gold T{row['target_table']} anchor {row['anchor']} | {row['reason']}", 1460)
@@ -357,8 +363,12 @@ def render_page(record: dict[str, Any], target: dict[str, Any], marks: dict[str,
 
 
 def regional_views(  # noqa: PLR0913, PLR0917
-    directory: Path, tables: list[dict[str, Any]], score: dict[str, Any], marks: dict[str, Any], label: str,
-    audits: dict[int, dict[str, Any]] | None = None
+    directory: Path,
+    tables: list[dict[str, Any]],
+    score: dict[str, Any],
+    marks: dict[str, Any],
+    label: str,
+    audits: dict[int, dict[str, Any]] | None = None,
 ) -> None:
     """Keep dense table source and extracted matrix text readable in separate panels."""
     pairs = {pair["target"]: pair["prediction"] for pair in score.get("matches", [])}
@@ -389,15 +399,29 @@ def regional_views(  # noqa: PLR0913, PLR0917
         )
         lines(draw, (20, 82), label, 1760, 16)
         if audit.get("verified"):
-            lines(draw, (20, 114),
-                  f"Accepted alternative column granularity: {audit['reference_columns']} versus "
-                  f"{audit['prediction_columns']} columns. All {audit['verified_rows_including_header']} rows "
-                  "including header preserve ordered lexical tokens under one fixed column partition.", 1760, 20)
+            lines(
+                draw,
+                (20, 114),
+                f"Accepted alternative column granularity: {audit['reference_columns']} versus "
+                f"{audit['prediction_columns']} columns. All {audit['verified_rows_including_header']} rows "
+                "including header preserve ordered lexical tokens under one fixed column partition.",
+                1760,
+                20,
+            )
         panel.paste(source, (20, top))
         color = COLORS[marks["input_tables"][target_index]]
         draw.rectangle((20, top, 20 + source.width, top + source.height), outline=color, width=4)
         panel.paste(grid, (810, top))
         panel.save(directory / f"regional-T{target_index}.png")
+
+
+def detector_inference_size(frozen: dict[str, Any], report: dict[str, Any]) -> int | str:
+    """Prefer actual retained worker configuration and reject declared conflicts."""
+    declared = frozen["config"].get("detector_inference_size")
+    observed = report.get("layout_detector_initialization", {}).get("configuration", {}).get("imgsz")
+    if declared is not None and observed is not None and declared != observed:
+        raise ValueError("Declared and retained detector inference sizes differ")
+    return observed if observed is not None else declared if declared is not None else "unrecorded"
 
 
 def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: PLR0912
@@ -414,10 +438,12 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
     if evaluated.get("evaluation_scope") != "complete pipeline":
         raise ValueError("Initial visual workflow requires independently verified complete pipeline scope")
     report_path = guard_path((run_dir / "report.json").resolve())
-    if digest(report_path.read_bytes()) != evaluated["report_sha256"]:
+    report_bytes = report_path.read_bytes()
+    if digest(report_bytes) != evaluated["report_sha256"]:
         raise ValueError("Verified report changed; wait for independent re-evaluation")
     receipts[str(report_path)] = evaluated["report_sha256"]
     frozen = read(run_dir / "frozen.json", receipts)
+    inference_size = detector_inference_size(frozen, json.loads(report_bytes))
     read(corpus / "manifest.json", receipts)
     targets = read(corpus / "private-targets.json", receipts)
     if (
@@ -467,11 +493,13 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         difference_image(diffs).save(directory / "strict-differences.png")
         label = (
             f"DEV {run_dir.name} | model {frozen['config'].get('generation_model')} | "
-            f"detector inference {frozen['config'].get('detector_inference_size', 'unrecorded')} | "
+            f"detector inference {inference_size} | "
             f"raster edge {frozen['config'].get('detector_edge')} | crop {frozen['config'].get('image_edge')}"
         )
-        audits = {pair["target"]: column_partition_audit(target["tables"][pair["target"]], tables[pair["prediction"]])
-                  for pair in score.get("matches", [])}
+        audits = {
+            pair["target"]: column_partition_audit(target["tables"][pair["target"]], tables[pair["prediction"]])
+            for pair in score.get("matches", [])
+        }
         (directory / "column-partition-audit.json").write_text(json.dumps(audits, indent=2) + "\n")
         regional_views(directory, tables, score, marks, label, audits)
         panel_width = 1800
@@ -526,7 +554,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         draw,
         (20, 58),
         f"Model {frozen['config'].get('generation_model')} | "
-        f"detector inference size {frozen['config'].get('detector_inference_size', 'unrecorded')} | "
+        f"detector inference size {inference_size} | "
         f"raster edge {frozen['config'].get('detector_edge')} | "
         f"crop edge {frozen['config'].get('image_edge')} | complete pipeline, diagnostic only",
         1760,
@@ -561,6 +589,8 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         "renderer": renderer,
         "run": str(run_dir.resolve()),
         "corpus": str(corpus.resolve()),
+        "detector_inference_size": inference_size,
+        "detector_inference_size_basis": "retained report worker configuration, then frozen declared configuration",
         "quality_scope": (
             "complete pipeline; source masks table-level, output schematic cells strict topology and NFC text"
         ),
