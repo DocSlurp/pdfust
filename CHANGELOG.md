@@ -58,6 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Latin presentation-form ligatures (U+FB00–U+FB06) in extracted text expand
   to their letters, as PyMuPDF and pdftotext do, so `ﬁnal` reads and
   searches as `final`.
+- A separate nonspacing mark now stays with the base letter it follows in
+  drawing order, so a below-base mark whose origin lands just past the next
+  letter no longer moves onto it (`cọc` instead of `coc̣`).
 - Ruled table detection connects touching or overlapping collinear fragments,
   preserving grids whose outer borders are painted as separate line segments.
   Existing snap tolerances and complete-edge checks still apply.

@@ -125,3 +125,16 @@ def test_presentation_form_ligatures_expand_to_letters() -> None:
     doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5]), per_code_widths=widths))
     assert doc.get_text().strip() == "finalffl"
     assert doc[0].search_for("final")
+
+
+def test_combining_mark_stays_with_its_base_when_its_origin_passes_the_next_letter() -> None:
+    # A below-base mark drawn after "o" can start just right of the next "c";
+    # geometric order alone would give "oc̣" instead of "ọc".
+    mapping = {1: "o", 2: "̣", 3: "c"}
+    widths = {1: 556, 2: 0, 3: 500}
+    content = (
+        "BT /F1 10 Tf 1 0 0 1 72 700 Tm <01> Tj "
+        "1 0 0 1 77.8 700 Tm <02> Tj 1 0 0 1 77.56 700 Tm <03> Tj ET"
+    )
+    doc = pylopdf.open(stream=build_type3_pdf(mapping, b"", content=content, per_code_widths=widths))
+    assert doc.get_text().strip() == "ọc"

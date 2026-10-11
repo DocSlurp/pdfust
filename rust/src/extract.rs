@@ -1181,10 +1181,37 @@ struct PaintLayer {
     extent: (f64, f64),
 }
 
+/// Inline sort anchor: a separate nonspacing mark sorts with the base glyph it
+/// follows in drawing order, so a mark whose origin lands just past the next
+/// base (common for below-base marks) still follows its own base.
+fn inline_anchor(arena: &[GlyphRecord], index: usize) -> (f64, usize) {
+    let glyph = &arena[index];
+    if glyph_is_nonspacing_mark(glyph) {
+        let scale = glyph.size.max(1.0);
+        // Stacked marks (for example Vietnamese) may precede the mark itself.
+        for base in (index.saturating_sub(4)..index).rev() {
+            let candidate = &arena[base];
+            if glyph_is_nonspacing_mark(candidate) {
+                continue;
+            }
+            let near = (glyph_progress(glyph) - glyph_progress(candidate)).abs() <= scale * 2.0
+                && (glyph.y - candidate.y).abs() <= scale;
+            if near {
+                return (glyph_progress(candidate), base);
+            }
+            break;
+        }
+    }
+    (glyph_progress(glyph), index)
+}
+
 fn sort_line_inline(arena: &[GlyphRecord], line: &mut [usize]) {
     line.sort_unstable_by(|&left, &right| {
-        glyph_progress(&arena[left])
-            .total_cmp(&glyph_progress(&arena[right]))
+        let (left_progress, left_anchor) = inline_anchor(arena, left);
+        let (right_progress, right_anchor) = inline_anchor(arena, right);
+        left_progress
+            .total_cmp(&right_progress)
+            .then(left_anchor.cmp(&right_anchor))
             .then(left.cmp(&right))
     });
 }

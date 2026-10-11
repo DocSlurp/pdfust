@@ -272,7 +272,9 @@ overview.
   also restores that token's forward order. Edge tokens, multiple tokens,
   standalone marks, general neutral punctuation, and other mixed-direction
   paragraph layouts remain in producer visual order. Multi-character CMap
-  mappings remain intact, separate nonspacing-mark glyphs stay with their base,
+  mappings remain intact, separate nonspacing-mark glyphs stay with their base
+  (inline sorting anchors a mark to the nearby base it follows in drawing
+  order, within two em along and one em across the line),
   and symmetric inline-gap checks keep inferred spaces valid in either
   direction. Cache the required bidi properties once per collected glyph
   rather than repeating Unicode table lookups during each output

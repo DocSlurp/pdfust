@@ -1,20 +1,26 @@
 # Wild-v1 native extraction baseline
 
-Generated 2026-10-11 13:03 UTC from 24 base documents × 10 levels. Synthetic DEV documents; not a real-world quality claim.
+Generated 2026-10-11 17:47 UTC from 24 base documents × 16 levels. Synthetic DEV documents; not a real-world quality claim.
 Text F1 is character-bigram multiset overlap against the native text truth (order-insensitive).
 
 | Level | Docs | Errors | Text F1 | Text F1 (NFKC) | Markdown F1 | Tables matched / exact / total | Cell recall | Title | Outline |
 |---|---:|---:|---:|---:|---:|---|---:|---:|---:|
-| L0_tagged | 24 | 0 | 0.961 | 0.961 | 0.919 | 23 / 16 / 27 | 0.834 | 24 | 24 |
-| L1_untagged | 24 | 0 | 0.886 | 0.922 | 0.847 | 21 / 5 / 27 | 0.741 | 24 | 0 |
-| L2_stripped | 24 | 0 | 0.886 | 0.922 | 0.847 | 21 / 5 / 27 | 0.741 | 0 | 0 |
+| L0_tagged | 24 | 0 | 0.964 | 0.964 | 0.926 | 26 / 21 / 27 | 0.950 | 24 | 24 |
+| L1_untagged | 24 | 0 | 0.893 | 0.926 | 0.856 | 24 / 13 / 27 | 0.861 | 24 | 0 |
+| L2_stripped | 24 | 0 | 0.893 | 0.926 | 0.856 | 24 / 13 / 27 | 0.861 | 0 | 0 |
 | L3_outlined | 24 | 0 | 0.000 | 0.000 | 0.000 | 0 / 0 / 27 | 0.000 | 24 | 0 |
+| L3_outlined+ocr | 24 | 0 | 0.765 | 0.779 | 0.731 | 16 / 5 / 27 | 0.577 | 24 | 0 |
 | L4_raster | 24 | 0 | 0.000 | 0.000 | 0.000 | 0 / 0 / 27 | 0.000 | 0 | 0 |
-| L5_raster_ocr | 24 | 0 | 0.778 | 0.802 | 0.766 | 7 / 1 / 27 | 0.267 | 0 | 0 |
+| L4_raster+ocr | 24 | 0 | 0.763 | 0.778 | 0.741 | 7 / 2 / 27 | 0.342 | 0 | 0 |
+| L5_raster_ocr | 24 | 0 | 0.777 | 0.802 | 0.765 | 8 / 1 / 27 | 0.279 | 0 | 0 |
 | L6_phone_scan | 24 | 0 | 0.000 | 0.000 | 0.000 | 0 / 0 / 27 | 0.000 | 0 | 0 |
+| L6_phone_scan+ocr | 24 | 0 | 0.517 | 0.522 | 0.499 | 6 / 1 / 27 | 0.269 | 0 | 0 |
 | L7_photocopy | 24 | 0 | 0.000 | 0.000 | 0.000 | 0 / 0 / 27 | 0.000 | 0 | 0 |
-| L8_mixed | 24 | 0 | 0.700 | 0.728 | 0.683 | 11 / 2 / 27 | 0.381 | 16 | 0 |
+| L7_photocopy+ocr | 24 | 0 | 0.671 | 0.680 | 0.652 | 5 / 1 / 27 | 0.319 | 0 | 0 |
+| L8_mixed | 24 | 0 | 0.705 | 0.731 | 0.690 | 11 / 8 / 27 | 0.414 | 16 | 0 |
+| L8_mixed+ocr | 24 | 0 | 0.710 | 0.736 | 0.692 | 11 / 8 / 27 | 0.414 | 16 | 0 |
 | L9_broken_tounicode | 24 | 0 | 0.003 | 0.003 | 0.003 | 0 / 0 / 27 | 0.000 | 24 | 0 |
+| L9_broken_tounicode+ocr | 24 | 0 | 0.529 | 0.544 | 0.504 | 11 / 3 / 27 | 0.390 | 24 | 0 |
 
 ## Unicode survival at L0 (born-digital)
 
@@ -30,7 +36,7 @@ Text F1 is character-bigram multiset overlap against the native text truth (orde
 | HEBREW | 2 | 1.000 | 1.000 |
 | HIRAGANA | 1 | 1.000 | 1.000 |
 | KATAKANA | 1 | 1.000 | 1.000 |
-| LATIN | 9 | 1.000 | 1.000 |
+| LATIN | 9 | 0.889 | 1.000 |
 | OTHER | 3 | 1.000 | 1.000 |
 | THAI | 1 | 1.000 | 1.000 |
 
@@ -42,7 +48,7 @@ Text F1 is character-bigram multiset overlap against the native text truth (orde
 | dashes | 100 | 100 | 1.000 |
 | emoji | 17 | 17 | 1.000 |
 | fullwidth | 158 | 158 | 1.000 |
-| ligature | 2 | 2 | 1.000 |
+| ligature | 2 | 0 | 0.000 |
 | math_symbols | 29 | 29 | 1.000 |
 | narrow_nbsp | 35 | 35 | 1.000 |
 | nbsp | 107 | 107 | 1.000 |
@@ -51,6 +57,31 @@ Text F1 is character-bigram multiset overlap against the native text truth (orde
 | superscripts | 17 | 17 | 1.000 |
 | unicode_minus | 9 | 9 | 1.000 |
 | zero_width | 31 | 5 | 0.161 |
+
+## Table structure and OCR fallback, 2026-10-11 17:45 UTC
+
+The audit above uses the build after these changes. Born-digital (L0) exact
+tables rose from 16 to 21 of 27 and cell recall from 0.834 to 0.950;
+re-distilled (L1) exact tables from 5 to 13.
+
+| Change | L0 exact | L1 exact |
+|---|---:|---:|
+| Start of this phase | 16 | 5 |
+| Real Type 3 widths via vendored hayro patch; one-em cell gaps; prose rejection | 19 | 6 |
+| Half-em channels open in every row; header rows | 21 | 6 |
+| Latin presentation ligatures expand to letters | 21 | 13 |
+| Combining marks stay with their base | 21 | 13 |
+
+`+ocr` levels apply pylopdf's PP-OCRv6 small engine at 200 dpi, four
+threads, to pages with no extractable text. 144 variants took 875 s wall and
+2,928 s CPU with a 486 MiB peak RSS (getrusage, one process, no sampling).
+OCR recovers text F1 0.76 on outlined and clean raster pages, 0.67 on
+photocopies and 0.52 on phone scans, but table cell recall stays at
+0.27–0.58. `apply_ocr` skips any page with extractable text, so broken
+ToUnicode pages (garbage text) reach only 0.53 and mixed pages gain nothing.
+
+Remaining L0 misses: the Thai catering header row, the Hindi key/value
+table beside a photo caption, and two Traditional Chinese plan cells.
 
 ## Extraction fixes, 2026-10-11 13:00 UTC
 
