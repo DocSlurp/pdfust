@@ -500,8 +500,31 @@ accepts either three or four columns. The [image-backed scoring handoff](bench/S
 and [reference audit plan](bench/results/p003-scorer-audit-plan.md) define the
 separate strict, schema-equivalence, and partial-content metrics. Existing gold
 and strict scores remain unchanged. The [content alignment metric](bench/results/p003-content-alignment.md)
-retains row order, exposes missing/extra text, and reports unsupported merged
-spans separately; perfect content recovery alone does not certify a schema.
+retains row order and exposes missing/extra text. The validated span adapter
+counts each merged anchor once in its original row, with span correctness
+separate; perfect content recovery alone does not certify a schema.
+
+The completed [26-run scoring audit](bench/results/p003-dual-score-audit.md)
+reproduces every original strict page score and supports all 1,160 matched
+table/run pairs. Conservative token/schema equivalence adds 32 table/run matches
+across six distinct source tables, mostly spacing differences. The content
+metric counts normalized characters including declared join spaces; it measures
+recoverable ordered content, separately from exact cell structure.
+
+| Cohort / configuration | Strict complete | Strict or equivalent | Reference tables | Content precision | Content recall |
+|---|---:|---:|---:|---:|---:|
+| Natural64 — Sonnet standard | 14 | 17 | 93 | 89.38% | 63.79% |
+| Natural64 — Opus standard | 15 | 16 | 93 | 88.82% | 58.81% |
+| Fresh48 — Haiku matrix | 27 | 27 | 66 | 98.04% | 86.99% |
+| Fresh48 — Luna standard | 25 | 25 | 66 | 98.14% | 71.60% |
+| Fresh48 — Sonnet standard | 27 | 29 | 66 | 99.25% | 53.90% |
+| Full276 — Luna standard | 166 | 168 | 249 | 82.58% | 81.97% |
+
+All missing/extra tables stay in these content metrics. Full276 contains 220
+scored pages and 56 diagnostics; cohorts overlap and must not be pooled. The
+small Sonnet/Opus complete-table reversal is metric-sensitive, not evidence
+of general model superiority. Original timing/cost rates remain in the linked
+audit and complete-pipeline reports.
 
 All 48 [synthetic decision treatments](bench/results/p003-synthetic48-analysis.md)
 are independently verified. The 24-case corpus has 18 visually distinguishable
@@ -535,7 +558,43 @@ The [new 40-page random-value DEV corpus](bench/results/p003-random-values-corpu
 adds eight layout families with independently seeded words, USD values, dates,
 repeated literals, blanks, `N/A`, and `NULL`. Six full-pipeline treatments are
 frozen across Luna, Haiku matrix, and Sonnet at detector sizes 640/1280; their
-results are pending. Synthetic and natural document scores remain separate.
+results are now [independently verified](bench/results/p003-random40-analysis.md).
+Every arm retains 40 pages, 36 reference tables, 2,769 cells and eight negative
+pages. Synthetic and natural document scores remain separate.
+
+| Configuration | Strict cells / 2,769 | Complete tables / 36 | Errors / 40 | Negative FP / 8 | Pages/min | Pages/API USD |
+|---|---:|---:|---:|---:|---:|---:|
+| Luna standard, detector 640 | 2,769 | 35 | 0 | 0 | 5.52 | 1,761.29 |
+| Luna standard, detector 1280 | 2,602 | 28 | 1 | 0 | 5.09 | 1,708.68 |
+| Haiku matrix, detector 640 | 2,733 | 33 | 0 | 1 | 6.32 | 1,650.59 |
+| Haiku matrix, detector 1280 | 2,561 | 26 | 2 | 0 | 6.00 | 1,624.44 |
+| Sonnet standard, detector 640 | 2,769 | 36 | 0 | 1 | 7.40 | 113.12 |
+| Sonnet standard, detector 1280 | 2,499 | 29 | 2 | 0 | 6.01 | 112.04 |
+
+Luna640 retains every reference cell but adds six cell anchors, so it completes
+35 rather than 36 tables. Sonnet640 and Haiku640 each emit the same eight-row
+key-value form on a reference-negative page; visual inspection finds its labels
+and values preserved, but original false-positive counts remain unchanged.
+Larger detector inputs do not improve these single runs. Overlapping outputs,
+out-of-bounds geometry and an invalid merged span retain page-atomic errors.
+The fixed generation crop is 1024 px in all six arms; detector resolution is a
+different variable from decision-model image resolution. Rates count operational
+usable pages under contention, not exact pages. Luna prices include reported
+BYOK upstream charges while its gateway-reported zero remains visible.
+
+All 56 [shared-context treatments](bench/results/p003-synthetic-shared56-analysis.md)
+and 30 [vector/decision compositions](bench/results/p003-geometry-composition-analysis.md)
+are also independently verified. Vector rules followed by Luna Decisions512
+on unresolved cases match 16/18 visually cued labels and abstain on all six
+evidence-indeterminate cases, versus Luna alone 6/18. Vector-first PPLX128 gives
+16/18 versus 12/18 alone, but still guesses on all six indeterminate cases.
+These offline combinations reuse charged component calls: they do not measure
+fresh end-to-end latency or realize hypothetical API savings.
+
+The next [source-frozen image sweep](bench/results/p003-synthetic-resolution.md)
+adds 256, 400, 500, 768 and 1024 px crops for all five image-capable decision
+models, with retained 128/512 controls. It changes no source text or framing and
+does not repurchase the controls. Results are pending independent evaluation.
 
 The [CPU render-reuse experiment](bench/results/p003-render-reuse.md) preserves
 all 266 compared image byte streams exactly while reducing measured rendering
