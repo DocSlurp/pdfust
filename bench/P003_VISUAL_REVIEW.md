@@ -271,3 +271,31 @@ and secondary catalog-alias replay are counted separately, with each receipt's
 hash, timestamp and recorded scope. These are evaluator-recorded verification
 counts; the reporter does not rerun scoring or replace original strict outcomes.
 Waiting launch wrappers remain distinct from observed queue jobs.
+
+## Source-only transparency check
+
+`bench.p003_source_visual_check` reads only manifest source paths/families and
+actual PDFs/PNGs; it does not load reference tables or model outcomes. Two random40
+frozen previews contained all-zero RGB channels with ink encoded in alpha above
+an otherwise transparent background. Discarding alpha or viewing against black
+makes them appear entirely black. The saved files remain unchanged.
+
+Diagnostic batch `e31a42a4f380a709a633` includes the actual PDFs rendered at1800px
+width onto explicit opaque white, exact original512px PNG composites over white,
+and `source-contact-sheet.png` for source IDs `r4fa2f36b57caf506679ba995` and
+`r536e002b19beb540f99f33e9`. Direct image review confirmed readable English words,
+USD values, parenthesized negatives, dates, a wrapped label and two separate
+column tables. No expected values or quality colors were introduced.
+
+```bash
+/home/dan/code/oss/pylopdf/.venv/bin/python -m bench.p003_source_visual_check \
+  --corpus /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/random-office-values40-v1 \
+  --output /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/visual-review-v1 \
+  --ids r4fa2f36b57caf506679ba995 r536e002b19beb540f99f33e9
+```
+
+The bounded source check admits one through six explicit IDs and retains PDF,
+PNG, manifest, renderer and font hashes. It checks every dependency again before
+recording successful provenance. The actual detector and transcription renderer
+in `generalization_vision_regions.py` already passes an explicit white background;
+this inspection required no pipeline-helper change.
