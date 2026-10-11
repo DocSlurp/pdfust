@@ -136,3 +136,22 @@ def test_question_audit_uses_its_own_receipt_filename(tmp_path: Path, kind: str,
     assert result["synthetic_recorded_original_verified_jobs"] == 1
     assert "attempted_pdf_pages" not in result
     assert result["synthetic_independent_alias_audits"][0]["path"].endswith(filename)
+
+
+def test_offline_progress_stays_separate_from_inference_counts(tmp_path: Path) -> None:
+    """Completed scoring runs must not become newly inferred PDF pages or question arms."""
+    ledger = tmp_path / "ledger.json"
+    ledger.write_text(json.dumps({"requests": []}))
+    progress = tmp_path / "progress.json"
+    progress.write_text(json.dumps({"completed": 2, "intended": 4}))
+    result = checkpoint(
+        [], ledger, tmp_path / "reports", [], offline_progress=["Partial decision replay=" + str(progress)]
+    )
+    snapshot = json.loads(result.with_suffix(".json").read_text())
+    assert snapshot["queues"] == []
+    assert snapshot["new_hosted_calls"] == 0
+    assert snapshot["offline_replays"][0]["completed"] == 2
+    assert "Offline replay remains active" in snapshot["eta"]
+    progress.write_text(json.dumps({"completed": 5, "intended": 4}))
+    with pytest.raises(ValueError, match="bounded"):
+        checkpoint([], ledger, tmp_path / "reports", [], offline_progress=["Replay=" + str(progress)])

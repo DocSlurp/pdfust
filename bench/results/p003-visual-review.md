@@ -47,3 +47,11 @@ all 21 rows, including the header, under the accepted fixed rank/team partition.
 Full original rasters, native reference-bbox crops and scaled diagnostic crops
 are retained separately with coordinates, resampling settings and image digests.
 The scaled T0 source crop visibly includes all 20 data rows through Canton.
+
+The metadata checkpoint also accepts repeated `--offline-progress "Scope=path"`
+arguments. Its separate replay table keeps 32 full-pipeline score replays distinct
+from 64 partial decision-run replays and from hosted queue completion. Progress
+metadata captures hashes and timestamps; completion itself does not grant quality
+credit or imply new inference. Active replay ETA remains unknown when no measured
+rate is present. This reporting extension reads only explicitly supplied progress
+JSON and preserves worker outputs.

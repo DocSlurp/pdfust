@@ -172,14 +172,38 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
     return result
 
 
-def checkpoint(  # noqa: C901, PLR0912
-    statuses: list[Path], ledger: Path, output: Path, planned: list[str], metadata: Path | None = None
+def checkpoint(  # noqa: C901, PLR0912, PLR0913
+    statuses: list[Path],
+    ledger: Path,
+    output: Path,
+    planned: list[str],
+    metadata: Path | None = None,
+    *,
+    offline_progress: list[str] | None = None,
 ) -> Path:
     """Read one snapshot and write immutable JSON/Markdown plus latest local views."""
     started, cpu = time.monotonic(), time.process_time()
     pairs = [(status, *observed(status)) for status in statuses]
     summaries = [queue_summary(queue, status) for status, queue, _ in pairs]
     sources = [receipt for _, _, receipt in pairs]
+    offline: list[dict[str, Any]] = []
+    for declaration in offline_progress or []:
+        name, progress_path = declaration.rsplit("=", 1)
+        progress, receipt = observed(Path(progress_path))
+        completed, intended = progress["completed"], progress["intended"]
+        if type(completed) is not int or type(intended) is not int or not 0 <= completed <= intended:
+            message = "Offline replay counters must be bounded nonnegative integers"
+            raise ValueError(message)
+        sources.append(receipt)
+        offline.append(
+            {
+                "name": name,
+                "completed": completed,
+                "intended": intended,
+                "scope": "Retained offline replay completion metadata; no new inference or quality inferred",
+                "source": receipt,
+            }
+        )
     book, ledger_receipt = observed(ledger)
     rows = [r for r in book["requests"] if r.get("tag", "").startswith("P003/")]
     costs = money(rows)
@@ -207,6 +231,9 @@ def checkpoint(  # noqa: C901, PLR0912
     if unfinished:
         next_action = "Finish the active queue, independently verify outputs, root admits the next reviewed queue"
         eta = "Unknown: no aggregate queue rate; mixed arm kinds and individual time limits"
+    elif any(r["completed"] < r["intended"] for r in offline):
+        next_action = "Finish offline replay and independently verify it; root coordinates later admissions"
+        eta = "Offline replay remains active; source progress does not expose a measured completion ETA"
     elif plans:
         next_action = "Root confirms admission of the declared next phase; verify and summarize completed cohorts"
         eta = "Next-phase launch is not observed; completion ETA is unknown"
@@ -226,6 +253,7 @@ def checkpoint(  # noqa: C901, PLR0912
         },
         "queues": summaries,
         "plans": plans,
+        "offline_replays": offline,
         "costs": costs,
         "worker_resources": [q["worker_resources"] for q in summaries],
         "reporting_model_cost_usd": None,
@@ -256,6 +284,12 @@ def checkpoint(  # noqa: C901, PLR0912
             "Unknown | Unknown | Job status not observed | Unknown |\n"
         )
     text += "\n"
+    if offline:
+        text += "| Offline replay scope | Completed | Intended | New inference |\n"
+        text += "| --- | ---: | ---: | --- |\n"
+        for replay in offline:
+            text += f"| {replay['name']} | {replay['completed']} | {replay['intended']} | None |\n"
+        text += "\nCompletion metadata does not itself certify quality or independent verification.\n\n"
     if coordinator:
         text += "Coordinator-supplied observations (not independently verified service telemetry):\n"
         text += json.dumps(coordinator, sort_keys=True) + "\n\n"
@@ -335,8 +369,20 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--planned", action="append", default=[])
     parser.add_argument("--coordinator-metadata", type=Path)
+    parser.add_argument(
+        "--offline-progress", action="append", default=[], help="Explicit scope label=progress JSON path"
+    )
     args = parser.parse_args()
-    print(checkpoint(args.status, args.ledger, args.output, args.planned, args.coordinator_metadata))
+    print(
+        checkpoint(
+            args.status,
+            args.ledger,
+            args.output,
+            args.planned,
+            args.coordinator_metadata,
+            offline_progress=args.offline_progress,
+        )
+    )
 
 
 if __name__ == "__main__":
