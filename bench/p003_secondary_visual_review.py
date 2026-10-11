@@ -189,6 +189,39 @@ def build(audit_path: Path, output: Path) -> Path:
         panel.paste(crop, (20, 260))
         panel.paste(grid, (810, 260))
         panel.save(batch / f"comparison-T{target_index}.png")
+        if schema["schema_equivalent"]:
+            accepted = output_grid(
+                [result["tables"][pred]],
+                {"output_cells": {0: dict.fromkeys(marks["output_cells"][pred], "success")}},
+                table_indexes=[pred],
+            )
+            corrected = panel.copy()
+            accepted_draw = ImageDraw.Draw(corrected)
+            accepted_draw.rectangle((0, 80, 1800, 123), fill="#f5f7fa")
+            lines(
+                accepted_draw,
+                (20, 85),
+                "GREEN: accepted alternative schema (not strict reference coordinates). "
+                "All actual output cells belong to the verified whole-table schema; this is a separate secondary view.",
+                1760,
+                18,
+            )
+            corrected.paste(accepted, (810, 260))
+            accepted_draw.rectangle((20, 260, 20 + crop.width, 260 + crop.height), outline=(28, 145, 74), width=4)
+            corrected.save(batch / f"accepted-schema-T{target_index}.png")
+        else:
+            captioned = Image.new("RGB", (1800, panel.height + 75), "#f5f7fa")
+            captioned.paste(panel, (0, 0))
+            lines(
+                ImageDraw.Draw(captioned),
+                (20, panel.height + 10),
+                "Visible business-value losses: Motor City is absent; Grand Rapids values are altered. "
+                "Removed dot leaders and fraction/GB encodings also affect character counts; "
+                "decoration differences are not missing business values.",
+                1760,
+                18,
+            )
+            captioned.save(batch / f"partial-content-control-T{target_index}.png")
         rows = [
             f"R{e['reference_row']} -> P{e['prediction_row']} | reference {e['reference_text']!r} | "
             f"actual {e['prediction_text']!r}\n"

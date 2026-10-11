@@ -332,3 +332,11 @@ metric also counts removed dot leaders and punctuation differences, so its
 interpreted as lost business values. Its schema equivalence is false; content
 recall 0.60349 and precision 0.93077 remain representation metrics. Merged target 2
 is unsupported by this adapter and receives no fabricated secondary labels.
+
+A separate `accepted-schema-T0.png` uses green output cells and a whole-table
+source outline with the explicit legend “accepted alternative schema (not strict
+reference coordinates).” Green here represents the independently verified
+whole-table schema equivalence, not original coordinate-wise strict matching.
+The strict red comparison and every older batch remain separate and unchanged.
+`partial-content-control-T8.png` visibly separates missing/altered business values
+from dot leaders and fraction encodings that also contribute to character counts.
