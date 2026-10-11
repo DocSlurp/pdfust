@@ -67,3 +67,24 @@ def test_side_by_side_prose_columns_with_narrow_gutter_are_not_a_table() -> None
     lines += [(302, 100 + i * 14, text) for i, text in enumerate(right)]
     doc = pylopdf.open(stream=_pdf(lines, font="Courier"))
     assert len(doc[0].find_tables(strategy="text")) == 0
+
+
+def test_half_em_padding_splits_at_a_channel_open_in_every_row_and_keeps_header() -> None:
+    # Word-processor tables may pad cells by half an em, close to a word space;
+    # only a gap open at the same x in every row is a column boundary. The
+    # header is offset from its values, as centered or left-aligned headers are.
+    rows = [
+        ("14 Apr", "Main hall", "$5.00", "Opening talk and welcome"),
+        ("14 Apr", "Room 2", "$25.00", "Assessment workshop"),
+        ("15 Apr", "Library", "$5.00", "Round table on new tools"),
+        ("15 Apr", "Room 3", "$25.00", "Project based learning"),
+    ]
+    lines = [(70, 80, "Date"), (140, 80, "Room"), (205, 80, "Fee"), (300, 80, "Activity")]
+    for index, (date, room, fee, activity) in enumerate(rows):
+        y = 100 + index * 18
+        # The fee column is right-aligned at x=260; the activity starts 5 pt later.
+        lines += [(50, y, date), (130, y, room), (260 - _width(fee), y, fee), (265, y, activity)]
+    doc = pylopdf.open(stream=_pdf(lines))
+    tables = doc[0].find_tables(strategy="text")
+    assert len(tables) == 1
+    assert tables[0].extract() == [["Date", "Room", "Fee", "Activity"], *[list(row) for row in rows]]

@@ -52,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   processors produce: right-aligned amount columns no longer merge with the
   next column, header rows join their table, and grouped rows stay in one
   table. Side-by-side prose columns with narrow gutters are rejected.
+  Half-em word-processor padding splits a column when the gap is open at
+  the same position in every row, and centered or left-aligned header rows
+  join the table below them.
 - Ruled table detection connects touching or overlapping collinear fragments,
   preserving grids whose outer borders are painted as separate line segments.
   Existing snap tolerances and complete-edge checks still apply.

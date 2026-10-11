@@ -319,7 +319,14 @@ overview.
   fine one, so established form detections remain. Fine runs whose every
   column reads as running prose (median cell of at least 20 non-space
   characters, or most continuation cells starting lowercase) are rejected;
-  aligned label/value form grids may still be detected. Candidate segments
+  aligned label/value form grids may still be detected. Fine runs then split
+  a column at a gap of at least 0.4 em (`TEXT_TABLE_CHANNEL_GAP`) only when it
+  overlaps one interval in every row, which handles half-em word-processor
+  padding without splitting running words; RTL and vertical columns are left
+  unchanged. The line directly above a fine run joins as its header when it
+  splits into the same column count, each segment lies between its
+  neighbors' data, and it sits within the run's row spacing; a line already
+  in an emitted table is never reused. Candidate segments
   borrow physical-line glyph slices rather than
   cloning text and font metadata for every qualifying row. Candidate runs,
   bounds, cells, anchors, and cell text grow fallibly, and an allocation

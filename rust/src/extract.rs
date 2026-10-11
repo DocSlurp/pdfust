@@ -783,6 +783,13 @@ const TEXT_TABLE_ROW_GAP: f64 = 2.5;
 /// consecutive lines, which ordinary prose does not satisfy.
 const TEXT_TABLE_CELL_GAP: f64 = 0.8;
 
+/// Minimum in-column gap, in em, for a whitespace channel inside a fine run.
+///
+/// Word processors may pad cells by only half an em, close to a word space.
+/// Such a gap splits a column only when it overlaps one common interval in
+/// every row of the run, which running words in a cell do not produce.
+const TEXT_TABLE_CHANNEL_GAP: f64 = 0.4;
+
 /// Median non-space characters per cell at which a column reads as prose.
 ///
 /// A run whose every column is prose-like is side-by-side text columns, not a
@@ -4021,20 +4028,193 @@ fn text_run_is_prose_columns(run: &[Vec<&[GlyphRecord]>]) -> Result<bool, TextPa
     Ok(columns > 0)
 }
 
-fn flush_text_table_run(
-    run: &mut Vec<Vec<&[GlyphRecord]>>,
+/// Inline gap before glyph `index` when it is wide enough for a channel.
+fn channel_gap(segment: &[GlyphRecord], index: usize) -> Option<(f64, f64)> {
+    let previous = &segment[index - 1];
+    let glyph = &segment[index];
+    let start = glyph_end(previous);
+    let end = glyph_progress(glyph);
+    let scale = previous.size.max(glyph.size).max(1.0);
+    (end - start >= scale * TEXT_TABLE_CHANNEL_GAP).then_some((start, end))
+}
+
+/// Split run columns at whitespace channels that are open in every row.
+///
+/// Returns `None` when no channel exists. Columns with RTL or vertical text
+/// are left unchanged.
+fn refine_text_table_channels<'a>(
+    rows: &[Vec<&'a [GlyphRecord]>],
+) -> Result<Option<Vec<Vec<&'a [GlyphRecord]>>>, TextPageLimit> {
+    let columns = rows.first().map_or(0, Vec::len);
+    let mut total_columns = columns;
+    // splits[column * rows.len() + row] lists glyph indexes that start cells.
+    let mut splits: Vec<Vec<usize>> = Vec::new();
+    for _ in 0..columns.saturating_mul(rows.len()) {
+        try_push_text(&mut splits, Vec::new(), "borderless channel splits")?;
+    }
+    let mut found = false;
+    for column in 0..columns {
+        if rows.iter().any(|row| {
+            row[column].iter().any(|glyph| {
+                glyph.bidi_flags & BIDI_RTL_STRONG != 0 || has_vertical_baseline(glyph)
+            })
+        }) {
+            continue;
+        }
+        let first = rows[0][column];
+        for index in 1..first.len() {
+            if total_columns >= MAX_TEXT_TABLE_COLUMNS {
+                break;
+            }
+            let Some((mut low, mut high)) = channel_gap(first, index) else {
+                continue;
+            };
+            let mut picks = Vec::new();
+            try_push_text(&mut picks, index, "borderless channel picks")?;
+            let mut open = true;
+            for row in &rows[1..] {
+                let segment = row[column];
+                let matched = (1..segment.len()).find_map(|candidate| {
+                    let (start, end) = channel_gap(segment, candidate)?;
+                    (low.max(start) < high.min(end)).then_some((candidate, start, end))
+                });
+                let Some((candidate, start, end)) = matched else {
+                    open = false;
+                    break;
+                };
+                low = low.max(start);
+                high = high.min(end);
+                try_push_text(&mut picks, candidate, "borderless channel picks")?;
+            }
+            if !open {
+                continue;
+            }
+            for (row, pick) in picks.into_iter().enumerate() {
+                try_push_text(
+                    &mut splits[column * rows.len() + row],
+                    pick,
+                    "borderless channel splits",
+                )?;
+            }
+            total_columns += 1;
+            found = true;
+        }
+    }
+    if !found {
+        return Ok(None);
+    }
+    let mut refined = Vec::new();
+    for (row_index, row) in rows.iter().enumerate() {
+        let mut cells = Vec::new();
+        for (column, &segment) in row.iter().enumerate() {
+            let points = &mut splits[column * rows.len() + row_index];
+            points.sort_unstable();
+            points.dedup();
+            let mut start = 0;
+            for &point in points.iter() {
+                try_push_text(
+                    &mut cells,
+                    &segment[start..point],
+                    "borderless channel cells",
+                )?;
+                start = point;
+            }
+            try_push_text(&mut cells, &segment[start..], "borderless channel cells")?;
+        }
+        try_push_text(&mut refined, cells, "borderless channel rows")?;
+    }
+    Ok(Some(refined))
+}
+
+/// Header line segments when the line directly above a run labels its columns.
+///
+/// The line must split into the run's column count, each segment must lie
+/// between the neighboring columns' data, and the line must sit within the
+/// run's row spacing.
+fn text_table_header<'a>(
+    header: &'a [GlyphRecord],
+    rows: &[Vec<&[GlyphRecord]>],
+) -> Result<Option<Vec<&'a [GlyphRecord]>>, TextPageLimit> {
+    if header.is_empty() || has_vertical_baseline(&header[0]) {
+        return Ok(None);
+    }
+    let columns = rows.first().map_or(0, Vec::len);
+    if line_segment_count_at(header, TEXT_TABLE_CELL_GAP) != columns {
+        return Ok(None);
+    }
+    let segments = split_line_segment_slices(header, TEXT_TABLE_CELL_GAP)?;
+    let scale = segmented_row_size(&segments)
+        .max(segmented_row_size(&rows[0]))
+        .max(1.0);
+    let (_, _, _, header_y1) = segmented_row_bbox(&segments);
+    let (_, first_y0, _, _) = segmented_row_bbox(&rows[0]);
+    let gap = first_y0 - header_y1;
+    if gap < -scale * LINE_TOLERANCE || gap > scale * TEXT_TABLE_ROW_GAP {
+        return Ok(None);
+    }
+    // Headers may be left-, center- or right-aligned over their values, but each
+    // must stay clear of the neighboring columns' data.
+    for (column, segment) in segments.iter().enumerate() {
+        let (x0, _, x1, _) = line_bbox(segment);
+        if column > 0 {
+            let previous_right = rows
+                .iter()
+                .map(|row| line_bbox(row[column - 1]).2)
+                .fold(f64::NEG_INFINITY, f64::max);
+            if x0 <= previous_right {
+                return Ok(None);
+            }
+        }
+        if column + 1 < columns {
+            let next_left = rows
+                .iter()
+                .map(|row| line_bbox(row[column + 1]).0)
+                .fold(f64::INFINITY, f64::min);
+            if x1 >= next_left {
+                return Ok(None);
+            }
+        }
+    }
+    Ok(Some(segments))
+}
+
+fn flush_text_table_run<'a>(
+    run: &mut Vec<Vec<&'a [GlyphRecord]>>,
+    header: Option<&'a [GlyphRecord]>,
     tables: &mut Vec<TableTuple>,
-    reject_prose: bool,
-) -> Result<(), TextPageLimit> {
-    if reject_prose && run.len() >= MIN_TEXT_TABLE_ROWS && text_run_is_prose_columns(run)? {
+    fine: bool,
+) -> Result<bool, TextPageLimit> {
+    if fine && run.len() >= MIN_TEXT_TABLE_ROWS && text_run_is_prose_columns(run)? {
         run.clear();
-        return Ok(());
+        return Ok(false);
     }
-    if let Some(table) = text_table_from_rows(run)? {
+    let mut rows = None;
+    if fine && run.len() >= MIN_TEXT_TABLE_ROWS {
+        rows = refine_text_table_channels(run)?;
+        if let Some(header) = header {
+            let body: &[Vec<&[GlyphRecord]>] = rows.as_deref().unwrap_or(run);
+            if let Some(segments) = text_table_header(header, body)? {
+                let mut joined = Vec::new();
+                try_push_text(&mut joined, segments, "borderless header row")?;
+                for row in body {
+                    let mut copied = Vec::new();
+                    for &cell in row {
+                        try_push_text(&mut copied, cell, "borderless header row")?;
+                    }
+                    try_push_text(&mut joined, copied, "borderless header row")?;
+                }
+                rows = Some(joined);
+            }
+        }
+    }
+    let emitted = if let Some(table) = text_table_from_rows(rows.as_deref().unwrap_or(run))? {
         try_push_text(tables, table, "borderless tables")?;
-    }
+        true
+    } else {
+        false
+    };
     run.clear();
-    Ok(())
+    Ok(emitted)
 }
 
 /// Detect opt-in borderless tables from sustained aligned text segments.
@@ -4072,6 +4252,10 @@ fn detect_text_tables_at(
 ) -> Result<Vec<TableTuple>, TextPageLimit> {
     let mut tables = Vec::new();
     let mut run = Vec::new();
+    let mut header: Option<&[GlyphRecord]> = None;
+    // The line before the current run, unless it already belongs to a table.
+    let mut previous: Option<&[GlyphRecord]> = None;
+    let fine = reject_prose;
 
     for line in physical_lines {
         let segment_count = line_segment_count_at(line, gap);
@@ -4085,23 +4269,27 @@ fn detect_text_tables_at(
             None
         };
         let Some(segments) = segments else {
-            flush_text_table_run(&mut run, &mut tables, reject_prose)?;
+            let emitted = flush_text_table_run(&mut run, header, &mut tables, fine)?;
+            previous = (!emitted).then_some(line.as_slice());
             continue;
         };
-        if run.is_empty()
-            || text_rows_compatible(
-                run.first().expect("the run was checked as non-empty"),
-                run.last().expect("the run was checked as non-empty"),
-                &segments,
-            )
-        {
+        if run.is_empty() {
+            header = previous;
+            try_push_text(&mut run, segments, "borderless table row run")?;
+        } else if text_rows_compatible(
+            run.first().expect("the run was checked as non-empty"),
+            run.last().expect("the run was checked as non-empty"),
+            &segments,
+        ) {
             try_push_text(&mut run, segments, "borderless table row run")?;
         } else {
-            flush_text_table_run(&mut run, &mut tables, reject_prose)?;
+            let emitted = flush_text_table_run(&mut run, header, &mut tables, fine)?;
+            header = if emitted { None } else { previous };
             try_push_text(&mut run, segments, "borderless table row run")?;
         }
+        previous = Some(line.as_slice());
     }
-    flush_text_table_run(&mut run, &mut tables, reject_prose)?;
+    flush_text_table_run(&mut run, header, &mut tables, fine)?;
     Ok(tables)
 }
 
