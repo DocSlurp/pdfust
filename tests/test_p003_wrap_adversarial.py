@@ -102,10 +102,15 @@ def test_content_normalization_accepts_only_nfc_and_whitespace_equivalence() -> 
     assert _assert_symmetric([["Cafe\u0301 coat", "42"]], [["Café\tcoat", "42"]])["content_recovered_with_row_order"]
 
 
-def test_wrap_cannot_bridge_a_removed_blank_row() -> None:
+def test_blank_spacer_inside_wrap_is_content_only_and_remains_in_inventory() -> None:
     reference = [["Blue long coat", "42.00"]]
     prediction = [["Blue", "42.00"], ["", ""], ["long coat", ""]]
-    assert not _assert_symmetric(reference, prediction)["content_recovered_with_row_order"]
+    result = _assert_symmetric(reference, prediction)
+    assert result["content_recovered_with_row_order"]
+    assert result["blank_inventory"]["prediction"]["rows"] == [1]
+    assert result["coordinate_maps"]["prediction"]["row_map"] == [0, 2]
+    assert result["row_alignment"][0]["prediction_rows"] == [0, 2]
+    assert result["row_alignment"][0]["crossed_blank_rows"] == {"reference": [], "prediction": [1]}
 
 
 def test_split_columns_without_any_singleton_anchor_cannot_join() -> None:
