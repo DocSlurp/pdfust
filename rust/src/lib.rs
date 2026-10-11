@@ -1,4 +1,6 @@
 use pyo3::prelude::*;
+mod actual_text;
+mod cjk_radicals;
 mod document;
 mod draw;
 mod extract;

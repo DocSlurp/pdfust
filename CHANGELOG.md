@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ([LaurenzV/hayro#1331](https://github.com/LaurenzV/hayro/issues/1331)).
 
 ### Fixed
+- Text from Chromium/Skia-produced PDFs extracts correctly across scripts.
+  Full-width CJK, kana, Hangul and full-width-form glyphs in Type 3 fonts now
+  advance one em instead of an estimated half em, so Japanese, Chinese and
+  Korean no longer gain a space between every character. ToUnicode mappings
+  to Kangxi Radicals or CJK Radicals Supplement code points are normalized to
+  their equivalent unified ideographs (for example U+2F47 to U+65E5).
+  Inline `/ActualText` marked-content spans on the page now replace the
+  glyphs they cover, which restores Arabic, Devanagari, Thai and Vietnamese
+  text whose contextual glyphs map to U+0000; a U+0000 mapping outside any
+  span is treated as unmapped rather than emitted as a NUL character.
 - Ruled table detection connects touching or overlapping collinear fragments,
   preserving grids whose outer borders are painted as separate line segments.
   Existing snap tolerances and complete-edge checks still apply.

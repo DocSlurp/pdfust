@@ -172,7 +172,12 @@ struct GlyphRecord {
     font: FontInfo,
     /// Glyph callback order before geometric clustering.
     source_order: usize,
+    /// Outermost enclosing ActualText begin-event index, or `NO_ACTUAL_SPAN`.
+    actual_span: u32,
 }
+
+/// `GlyphRecord::actual_span` value for glyphs outside any ActualText span.
+const NO_ACTUAL_SPAN: u32 = u32::MAX;
 
 /// Resource boundary reached while collecting positioned Unicode glyphs.
 pub(crate) enum TextPageLimit {
@@ -257,9 +262,182 @@ struct TextCollector {
     /// Glyphs hayro delivered without any Unicode mapping, e.g. from a
     /// Type 3 font that has no ToUnicode CMap (LaurenzV/hayro#1331).
     skipped_no_unicode: usize,
+    /// Pre-scanned page marked-content events when any carries ActualText.
+    marked: Option<Vec<crate::actual_text::MarkedEvent>>,
+    /// Begin events reported by the interpreter so far.
+    marked_seen: usize,
+    /// Open begin-event indexes, outermost first.
+    marked_stack: Vec<usize>,
+    /// Set when interpreter events diverge from the scan (for example inside
+    /// a Form XObject); ActualText is then ignored for the whole page.
+    marked_mismatch: bool,
 }
 
 impl TextCollector {
+    /// Start a collector for one page interpretation.
+    fn new(
+        page: &Page<'_>,
+        collect_rules: bool,
+        max_text_size: Option<usize>,
+        max_glyph_count: Option<usize>,
+    ) -> Self {
+        Self {
+            glyphs: Vec::new(),
+            rules: Vec::new(),
+            collect_rules,
+            font_infos: HashMap::new(),
+            last_font: None,
+            text_size: 0,
+            max_text_size,
+            max_glyph_count,
+            limit_error: None,
+            skipped_no_unicode: 0,
+            marked: crate::actual_text::scan(page),
+            marked_seen: 0,
+            marked_stack: Vec::new(),
+            marked_mismatch: false,
+        }
+    }
+
+    /// Outermost open span carrying ActualText, when the scan still matches.
+    fn active_actual_span(&self) -> Option<u32> {
+        let events = self.marked.as_ref()?;
+        if self.marked_mismatch {
+            return None;
+        }
+        self.marked_stack
+            .iter()
+            .find(|&&index| events[index].actual_text.is_some())
+            .and_then(|&index| u32::try_from(index).ok())
+    }
+
+    fn marked_begin(&mut self, tag: &[u8]) {
+        let index = self.marked_seen;
+        self.marked_seen = self.marked_seen.saturating_add(1);
+        let Some(events) = &self.marked else {
+            return;
+        };
+        if self.marked_mismatch {
+            return;
+        }
+        if events.get(index).is_none_or(|event| &*event.tag != tag)
+            || (self.marked_stack.len() == self.marked_stack.capacity()
+                && self.marked_stack.try_reserve(1).is_err())
+        {
+            self.marked_mismatch = true;
+            return;
+        }
+        self.marked_stack.push(index);
+    }
+
+    fn marked_end(&mut self) {
+        if !self.marked_mismatch {
+            self.marked_stack.pop();
+        }
+    }
+
+    /// Replace each matched ActualText span's glyphs with one glyph carrying
+    /// the span text, or drop placeholders when the scan did not match.
+    ///
+    /// `parallel` is retained in lockstep with `glyphs`.
+    fn apply_actual_text(
+        &mut self,
+        parallel: Option<&mut Vec<&'static str>>,
+    ) -> Result<(), TextPageLimit> {
+        let Some(events) = self.marked.take() else {
+            return Ok(());
+        };
+        let valid = !self.marked_mismatch && self.marked_seen == events.len();
+        let mut keep: Vec<bool> = Vec::new();
+        keep.try_reserve_exact(self.glyphs.len()).map_err(|error| {
+            TextPageLimit::Allocation(format!("failed to allocate ActualText plan: {error}"))
+        })?;
+        let mut current: Option<(u32, usize)> = None;
+        for index in 0..self.glyphs.len() {
+            let span = self.glyphs[index].actual_span;
+            if span == NO_ACTUAL_SPAN {
+                current = None;
+                keep.push(true);
+                continue;
+            }
+            if !valid {
+                let placeholder = self.glyphs[index].text.is_empty();
+                if placeholder {
+                    self.skipped_no_unicode = self.skipped_no_unicode.saturating_add(1);
+                }
+                keep.push(!placeholder);
+                continue;
+            }
+            if let Some((open, first)) = current
+                && open == span
+            {
+                // Extend the span's representative glyph along its baseline.
+                let glyph = &self.glyphs[index];
+                let (gx, gy, gadvance) = (glyph.x, glyph.y, glyph.advance);
+                let head = &mut self.glyphs[first];
+                let (dx, dy) = head.direction;
+                let offset = (gx - head.x) * dx + (gy - head.y) * dy;
+                let start = offset.min(0.0);
+                let end = head.advance.max(offset + gadvance);
+                head.x += dx * start;
+                head.y += dy * start;
+                head.advance = end - start;
+                self.text_size = self.text_size.saturating_sub(self.glyphs[index].text.len());
+                keep.push(false);
+                continue;
+            }
+            current = Some((span, index));
+            let actual = events[span as usize]
+                .actual_text
+                .as_deref()
+                .unwrap_or_default();
+            let mut chars = actual.chars();
+            let text = match (chars.next(), chars.next()) {
+                (Some(c), None) => GlyphText::Char(c),
+                _ => {
+                    let mut owned = String::new();
+                    owned.try_reserve_exact(actual.len()).map_err(|error| {
+                        TextPageLimit::Allocation(format!(
+                            "failed to allocate ActualText glyph: {error}"
+                        ))
+                    })?;
+                    owned.push_str(actual);
+                    GlyphText::Heap(owned.into_boxed_str())
+                }
+            };
+            let glyph = &mut self.glyphs[index];
+            self.text_size = self
+                .text_size
+                .saturating_sub(glyph.text.len())
+                .saturating_add(text.len());
+            glyph.bidi_flags = glyph_bidi_flags(&text);
+            let empty = text.is_empty();
+            glyph.text = text;
+            keep.push(!empty);
+        }
+        if let Some(limit) = self.max_text_size
+            && self.text_size > limit
+        {
+            return Err(TextPageLimit::TextSize(limit));
+        }
+        let mut position = 0;
+        self.glyphs.retain(|_| {
+            position += 1;
+            keep[position - 1]
+        });
+        if let Some(values) = parallel {
+            let mut position = 0;
+            values.retain(|_| {
+                position += 1;
+                keep[position - 1]
+            });
+        }
+        for (order, glyph) in self.glyphs.iter_mut().enumerate() {
+            glyph.source_order = order;
+        }
+        Ok(())
+    }
+
     fn push_rule(&mut self, rule: RuleSegment) -> bool {
         if self.rules.len() >= MAX_TABLE_RULES {
             return false;
@@ -278,6 +456,12 @@ impl TextCollector {
 }
 
 impl Device<'_> for TextCollector {
+    fn begin_marked_content(&mut self, tag: &[u8], _: Option<i32>) {
+        self.marked_begin(tag);
+    }
+    fn end_marked_content(&mut self) {
+        self.marked_end();
+    }
     fn set_soft_mask(&mut self, _: Option<SoftMask<'_>>) {}
     fn set_blend_mode(&mut self, _: BlendMode) {}
     fn draw_path(
@@ -353,12 +537,22 @@ impl Device<'_> for TextCollector {
         if self.limit_error.is_some() {
             return;
         }
-        let Some(unicode) = glyph.as_unicode() else {
+        let actual_span = self.active_actual_span();
+        // A U+0000 mapping is a producer's "no text" marker (Chromium uses it
+        // for contextual forms whose text lives in ActualText).
+        let unicode = glyph
+            .as_unicode()
+            .filter(|unicode| !matches!(unicode, BfString::Char('\0')));
+        let Some(unicode) =
+            unicode.or_else(|| actual_span.map(|_| BfString::String(std::string::String::new())))
+        else {
             self.skipped_no_unicode = self.skipped_no_unicode.saturating_add(1);
             return;
         };
         let text = match unicode {
-            BfString::Char(c) => GlyphText::Char(c),
+            BfString::Char(c) => {
+                GlyphText::Char(crate::cjk_radicals::unified_ideograph(c).unwrap_or(c))
+            }
             // Keep hayro's owned string, but never shrink it with an
             // infallible realloc: copy fallibly when capacity exceeds length.
             BfString::String(s) => {
@@ -377,7 +571,7 @@ impl Device<'_> for TextCollector {
                 }
             }
         };
-        if text.is_empty() {
+        if text.is_empty() && actual_span.is_none() {
             return;
         }
         let Some(next_text_size) = self.text_size.checked_add(text.len()) else {
@@ -420,7 +614,7 @@ impl Device<'_> for TextCollector {
             (1.0, 0.0)
         };
         // Advance is the glyph-space advance transformed by the x basis.
-        // Approximate missing fonts such as Type 3 as half the font size.
+        // Type 3 glyphs expose no advance; see the fallback below.
         let (advance_width, font_key, font) = match glyph {
             Glyph::Outline(g) => {
                 let key = g.font_cache_key();
@@ -449,13 +643,20 @@ impl Device<'_> for TextCollector {
             }
             Glyph::Type3(_) => (None, 0, FontInfo::default()),
         };
+        // hayro keeps Type 3 widths private. Full-width East Asian glyphs are
+        // set on a square body, so one em is exact for them; half an em remains
+        // the estimate for everything else.
+        let fallback_advance = match &text {
+            GlyphText::Char(c) if crate::cjk_radicals::is_full_width(*c) => size,
+            _ => size * 0.5,
+        };
         let advance = advance_width
             .map(|adv| {
                 let moved = combined * Point::new(adv, 0.0);
                 ((moved.x - origin.x).powi(2) + (moved.y - origin.y).powi(2)).sqrt()
             })
             .filter(|a| a.is_finite() && *a > 0.0)
-            .unwrap_or(size * 0.5);
+            .unwrap_or(fallback_advance);
         if !origin.x.is_finite() || !origin.y.is_finite() {
             return;
         }
@@ -476,6 +677,7 @@ impl Device<'_> for TextCollector {
             font_key,
             font,
             source_order,
+            actual_span: actual_span.unwrap_or(NO_ACTUAL_SPAN),
         });
     }
 }
@@ -5317,22 +5519,12 @@ fn collect_page_marks<'a>(
     max_glyph_count: Option<usize>,
 ) -> Result<PageMarks, TextPageLimit> {
     let mut context = extraction_context(pdf, page, cache, settings);
-    let mut collector = TextCollector {
-        glyphs: Vec::new(),
-        rules: Vec::new(),
-        collect_rules,
-        font_infos: HashMap::new(),
-        last_font: None,
-        text_size: 0,
-        max_text_size,
-        max_glyph_count,
-        limit_error: None,
-        skipped_no_unicode: 0,
-    };
+    let mut collector = TextCollector::new(page, collect_rules, max_text_size, max_glyph_count);
     interpret_page(page, &mut context, &mut collector);
     if let Some(error) = collector.limit_error {
         return Err(error);
     }
+    collector.apply_actual_text(None)?;
     let glyph_count = collector.glyphs.len();
     Ok(PageMarks {
         glyphs: collector.glyphs,
@@ -5365,6 +5557,12 @@ struct GlyphSnapshotCollector {
 }
 
 impl<'a> Device<'a> for GlyphSnapshotCollector {
+    fn begin_marked_content(&mut self, tag: &[u8], _: Option<i32>) {
+        self.text.marked_begin(tag);
+    }
+    fn end_marked_content(&mut self) {
+        self.text.marked_end();
+    }
     fn set_soft_mask(&mut self, _: Option<SoftMask<'a>>) {}
     fn set_blend_mode(&mut self, _: BlendMode) {}
     fn draw_path(&mut self, _: &kurbo::BezPath, _: Affine, _: &Paint<'a>, _: &PathDrawMode) {}
@@ -5409,24 +5607,16 @@ pub(crate) fn glyph_snapshot<'a>(
 ) -> Result<(f64, f64, Vec<GlyphSnapshotRow>, usize, usize), TextPageLimit> {
     let mut context = extraction_context(pdf, page, cache, settings);
     let mut collector = GlyphSnapshotCollector {
-        text: TextCollector {
-            glyphs: Vec::new(),
-            rules: Vec::new(),
-            collect_rules: false,
-            font_infos: HashMap::new(),
-            last_font: None,
-            text_size: 0,
-            max_text_size: Some(max_text_size),
-            max_glyph_count: Some(max_glyph_count),
-            limit_error: None,
-            skipped_no_unicode: 0,
-        },
+        text: TextCollector::new(page, false, Some(max_text_size), Some(max_glyph_count)),
         modes: Vec::new(),
     };
     interpret_page(page, &mut context, &mut collector);
     if let Some(error) = collector.text.limit_error {
         return Err(error);
     }
+    collector
+        .text
+        .apply_actual_text(Some(&mut collector.modes))?;
     let mut rows = Vec::new();
     // Font names are metadata, independent of the Unicode mapping budget.
     // Repeated long names must not amplify a bounded snapshot without limit.

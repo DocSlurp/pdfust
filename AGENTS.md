@@ -191,7 +191,22 @@ overview.
   each fresh page interpretation with such glyphs surfaces one deduplicated
   static `PylopdfWarning` through the pending-warnings sink, and
   `pdfium-type3.pdf` pins the extraction gap as an upstream-linked expected
-  failure. Hayro normalizes glyph space to 1000 upem, so font size is the transform
+  failure. A U+0000 ToUnicode mapping is treated as unmapped. Type 3 glyphs
+  expose no advance in hayro 0.7, so they advance one em when their text is a
+  single full-width CJK, kana, Hangul or full-width-form character
+  (`rust/src/cjk_radicals.rs`) and half an em otherwise. Single-character
+  mappings to Kangxi Radicals or CJK Radicals Supplement code points are
+  normalized to their equivalent unified ideographs, because Skia-built
+  ToUnicode maps choose the lowest code point sharing a glyph. hayro's Device
+  receives only marked-content tags, so `rust/src/actual_text.rs` pre-scans the
+  page content with hayro's own parser for inline `/ActualText` BDC
+  properties, capped at 65,536 events and 1 MiB of decoded text. The collector
+  tags glyphs with their outermost ActualText span and, after interpretation,
+  replaces each span's glyphs with one glyph carrying the span text only when
+  the interpreter's begin events matched the scan exactly; otherwise (for
+  example marked content inside Form XObjects) unmapped placeholders are
+  dropped and glyph Unicode is kept. Named `/Properties` spans count as events
+  without text. Hayro normalizes glyph space to 1000 upem, so font size is the transform
   factor × 1000. Vertical bboxes approximate baseline ± a size ratio.
   Overlapping paint runs on one baseline are split into source-order logical
   layers before inline geometry sorting; preserve distinct overprints rather
