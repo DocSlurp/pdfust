@@ -132,3 +132,33 @@ markers under the ignored `bench/results/pdf-master-artifacts/langfuse-backfill/
 Uploaded text is truncated and scrubbed of credential-like strings. Image
 pages (OmniDocBench, wild-v1 assets) are referenced by path and SHA-256 rather
 than uploaded.
+
+## Experiment adapters
+
+`bench/langfuse_adapters/` turns each experiment's retained per-item results
+into datasets (`exp/<artifact>/...`), with one dataset run per model,
+configuration, or treatment. Each run holds one scored trace per item. Every
+module that defines `NAME` and `collect(artifacts)` is discovered
+automatically; `base.py` defines the shape and the rules. Adapters report
+only the experiment's own metrics, keep failed and abstained rows so
+denominators match, and keep provider-reported charges separate from
+catalog estimates and reservations. They refuse held-out paths. The table
+lists each adapter group, its scope, and how its aggregates were checked.
+
+| Adapters | Scope | Aggregate cross-check |
+|---|---|---|
+| `decisions*` | D/M/L/A/T series, waves, OmniDoc presence | 979 runs equal retained evaluations |
+| `image_gates` | context30 image axes, OCR1200 admission, source-table gates | 312 image runs equal `image_axes_report` |
+| `pipeline_p001`, `pipeline_p002` | complete-pipeline and generalization pages | all 56 + 47 primary runs equal reports |
+| `pipeline-p003*` | P003 queues, synthetic, extension, micro, continuation | 634 runs re-sum to retained aggregates |
+| `local_*` | encodings, semantic, color, geometry, headers, GPU, specialist | reports match except one retained timing |
+| `corpus-*` | borderless, silver tables, realism, OmniDoc, OCR rolling, wild OCR | all checkable runs match |
+
+Run `uv run python -m bench.langfuse_backfill adapters --dry-run [--only NAME]`
+to validate offline, then run without `--dry-run` to sync. The writer
+exports `LANGFUSE_RUN_WORKERS` (default 4) runs at once with
+`LANGFUSE_WORKERS` (default 8) concurrent requests each. Scores go through
+batched ingestion in groups of 250, and transient failures are retried with
+backoff. Because Langfuse shares this host, running more than about four sync
+processes lowered throughput. Runs are content-addressed, so an interrupted
+or repeated sync re-sends only unfinished or changed runs.

@@ -38,11 +38,18 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 from bench import decision_langfuse as transport
+from bench.langfuse_adapters import discover
+from bench.langfuse_adapters.base import collect_all, export, validate
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "bench" / "results" / "pdf-master-artifacts"
@@ -61,6 +68,8 @@ _INLINE_PDF = 512 * 1024
 _MAX_TEXT = 256_000
 _MAX_REPORT_FILES = 12
 _REPORT_BATCH = 10
+_RETRIES = 5
+_SCORE_BATCH = 250
 _SECRET = re.compile(
     r"(sk-[A-Za-z0-9_-]{16,}|pk-lf-[A-Za-z0-9-]+|sk-lf-[A-Za-z0-9-]+|hf_[A-Za-z0-9]{20,}|"
     r"(?i:bearer)\s+[A-Za-z0-9._-]{16,}|(?i:api[_-]?key|secret|token|password)[\"']?\s*[:=]\s*[\"']?[^\s\"',}]{8,})"
@@ -107,14 +116,27 @@ class Client:
         self.calls = 0
 
     def post(self, path: str, body: object) -> dict[str, Any]:
-        """Send one JSON POST."""
-        self.calls += 1
-        return transport._http(self.config["LANGFUSE_BASE_URL"] + path, "POST", body, self.config)  # noqa: SLF001
+        """Send one JSON POST, retrying transient failures (all writes are idempotent upserts)."""
+        return self._retry(lambda: transport._http(self.config["LANGFUSE_BASE_URL"] + path, "POST", body, self.config))  # noqa: SLF001
+
+    def _retry(self, call: Callable[[], dict[str, Any]]) -> dict[str, Any]:
+        for attempt in range(_RETRIES):
+            self.calls += 1
+            try:
+                return call()
+            except urllib.error.HTTPError as error:
+                if error.code not in {429, 500, 502, 503, 504} or attempt == _RETRIES - 1:
+                    raise
+            except (urllib.error.URLError, TimeoutError, ConnectionError):
+                if attempt == _RETRIES - 1:
+                    raise
+            time.sleep(0.5 * 2**attempt)
+        message = "unreachable"
+        raise AssertionError(message)
 
     def get(self, path: str) -> dict[str, Any]:
-        """Send one GET."""
-        self.calls += 1
-        return transport._http(self.config["LANGFUSE_BASE_URL"] + path, config=self.config)  # noqa: SLF001
+        """Send one GET, retrying transient failures."""
+        return self._retry(lambda: transport._http(self.config["LANGFUSE_BASE_URL"] + path, config=self.config))  # noqa: SLF001
 
     def dataset(self, name: str, description: str, metadata: dict[str, Any]) -> None:
         """Upsert a dataset by name."""
@@ -156,6 +178,27 @@ class Client:
         if int(response.get("partialSuccess", {}).get("rejectedSpans", 0) or 0):
             message = "Langfuse rejected spans"
             raise ValueError(message)
+
+    def scores(self, bodies: list[dict[str, Any]]) -> None:
+        """Upsert many numeric scores through batched ingestion, falling back to single requests."""
+        stamp = datetime.now(UTC).isoformat()
+        for start in range(0, len(bodies), _SCORE_BATCH):
+            chunk = bodies[start : start + _SCORE_BATCH]
+            events = [
+                {"id": _hex(f"event|{body['id']}", 32), "type": "score-create", "timestamp": stamp, "body": body}
+                for body in chunk
+            ]
+            try:
+                result = self.post("/api/public/ingestion", {"batch": events})
+            except urllib.error.HTTPError as error:
+                if error.code not in {404, 405, 410}:
+                    raise
+                for body in chunk:
+                    self.post("/api/public/scores", body)
+                continue
+            if result.get("errors"):
+                message = f"Langfuse rejected {len(result['errors'])} batched scores"
+                raise ValueError(message)
 
     def score(self, score_id: str, target: dict[str, str], name: str, value: float, comment: str = "") -> None:
         """Upsert one numeric score by ID."""
@@ -616,12 +659,19 @@ def sync_reports(client: Client) -> dict[str, int]:
     return {"exported": exported, "replayed": replayed}
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901 - one dispatch per step.
     """Run the requested backfill steps and print a compact status."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("step", choices=["all", "datasets", "runs", "experiments", "reports", "heldout"])
+    parser.add_argument("step", choices=["all", "datasets", "runs", "experiments", "reports", "adapters", "heldout"])
     parser.add_argument("--custodian-release", action="store_true", help="Required for the held-out upload")
+    parser.add_argument("--only", action="append", help="Adapters step: run only these adapter NAMEs")
+    parser.add_argument("--dry-run", action="store_true", help="Adapters step: collect and validate without network")
+    parser.add_argument("--force", action="store_true", help="Adapters step: re-send runs already exported")
     args = parser.parse_args()
+    if args.step == "adapters" and args.dry_run:
+        for name, experiment in collect_all(discover(), set(args.only or []) or None):
+            print(name, json.dumps(validate(experiment), ensure_ascii=False))
+        return
     config = transport._configuration(ROOT)  # noqa: SLF001
     if config is None:
         sys.exit("Langfuse is not configured in .env; nothing was sent.")
@@ -631,12 +681,19 @@ def main() -> None:
             sys.exit("The held-out upload requires --custodian-release (explicit user release).")
         print(json.dumps(sync_heldout(client)))
         return
-    steps = ["datasets", "runs", "experiments", "reports"] if args.step == "all" else [args.step]
+    steps = ["datasets", "runs", "adapters", "experiments", "reports"] if args.step == "all" else [args.step]
     for step in steps:
         if step == "datasets":
             result: Any = sync_dev_datasets(client)
         elif step == "runs":
             result = sync_silver_runs(client) + sync_wild_runs(client)
+        elif step == "adapters":
+            result = []
+            for name, experiment in collect_all(discover(), set(args.only or []) or None):
+                status = export(client, experiment, force=args.force)
+                status.pop("score_names", None)
+                print(name, json.dumps(status, ensure_ascii=False), flush=True)
+                result.append({"adapter": name, "dataset": experiment.dataset, "runs": status["runs"]})
         elif step == "experiments":
             result = sync_experiments(client)
         else:

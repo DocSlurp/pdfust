@@ -46,3 +46,13 @@ must exclude that prefix from dataset sweeps. Langfuse has no per-dataset
 access control inside a project, so this separation is also procedural. The
 release covers storage only. It does not authorize evaluation, and evaluation
 still requires a frozen candidate and an authorized evaluator.
+
+## Custody incidents
+
+- 2026-10-11: during Langfuse adapter development, an agent ran a recursive
+  `grep -r "source-neutralized-dev-v1" bench/results/pdf-master-artifacts
+  --include=*.json` that also traversed the protected prefix. The search
+  matched and printed nothing, so no held-out content was exposed. Adapters
+  read only through `guard()`. Future searches must exclude the prefix in the
+  traversal itself (for example `--exclude-dir=silver-heldout-v1`), not filter
+  its output afterwards.
