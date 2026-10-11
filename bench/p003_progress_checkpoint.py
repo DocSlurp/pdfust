@@ -48,7 +48,16 @@ def money(rows: list[dict[str, Any]]) -> dict[str, Any]:
     reported = sum((v for k, v in amounts.items() if k.startswith("provider-reported")), Decimal(0))
     estimates = amounts.get("catalog estimate", Decimal(0))
     reserved = amounts.get("reserved", Decimal(0))
-    total = sum(amounts.values(), Decimal(0))
+    exposed = sum(amounts.values(), Decimal(0))
+    supported = {
+        "provider-reported USD",
+        "provider-reported BYOK upstream plus gateway USD",
+        "catalog estimate",
+        "reserved",
+    }
+    unknown_basis = sum(r.get("cost_status") not in supported for r in rows)
+    total = sum((v for k, v in amounts.items() if k in supported), Decimal(0))
+    complete = not unknown and not unknown_basis
     return {
         "attempts": len(rows),
         "states": dict(Counter(r.get("concurrent_state", "legacy") for r in rows)),
@@ -57,25 +66,74 @@ def money(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "unresolved_reserved_usd": str(reserved),
         "known_accounted_usd": str(total),
         "unknown_amount_entries": unknown,
+        "unknown_basis_entries": unknown_basis,
+        "accounting_complete": complete,
+        "exposed_ledger_conservative_usd": str(exposed),
+        "effective_reported_plus_estimated_subtotal_usd": str(reported + estimates),
         "cost_status_totals_usd": {k: str(v) for k, v in amounts.items()},
-        "wave_remaining_usd": str(Decimal(50) - total) if not unknown else None,
+        "wave_remaining_usd": str(Decimal(50) - total) if complete else None,
         "prior_conservative_baseline_usd": str(BASELINE),
-        "baseline_plus_wave_conservative_usd": str(BASELINE + total),
-        "cumulative_remaining_usd": str(Decimal(200) - BASELINE - total) if not unknown else None,
+        "prior_baseline_reference": (
+            "Root-authorized prior cumulative conservative snapshot, retained in AGENTS.md P003 authorization; "
+            "not recomputed from a changing ledger"
+        ),
+        "baseline_plus_wave_conservative_usd": str(BASELINE + exposed),
+        "cumulative_remaining_usd": str(Decimal(200) - BASELINE - total) if complete else None,
         "basis": "Ledger accounted_usd grouped by its retained cost_status; reserved exposure is not billed cost",
     }
 
 
-def checkpoint(status: Path, ledger: Path, output: Path, planned: list[str]) -> Path:
-    """Read one snapshot and write immutable JSON/Markdown plus latest local views."""
-    started, cpu = time.monotonic(), time.process_time()
-    queue, queue_receipt = observed(status)
-    book, ledger_receipt = observed(ledger)
-    rows = [r for r in book["requests"] if r.get("tag", "").startswith("P003/")]
+def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
+    """Keep synthetic question counters distinct from PDF page outcomes."""
     states = Counter(a["status"] for a in queue["arms"])
     completed = [a for a in queue["arms"] if a["status"] == "completed"]
-    required = len(queue["frozen_order"])
-    evaluations = sum((status.parent / a["name"] / "evaluation.json").exists() for a in completed)
+    result = {
+        "name": status.parent.name,
+        "required": len(queue["frozen_order"]),
+        "completed_jobs": len(completed),
+        "running_jobs": states["running"],
+        "starting_jobs": states["starting"],
+        "queued_jobs": len(queue["frozen_order"]) - len(queue["arms"]),
+        "failed_jobs": sum(states[k] for k in ("failed", "error", "timeout")),
+        "job_state_counts": dict(states),
+        "completed_with_evaluation_file": sum(
+            (status.parent / a["name"] / "evaluation.json").exists() for a in completed
+        ),
+        "evaluation_scope": "presence only; freshness/quality verification belongs to evaluator",
+        "running": [a["name"] for a in queue["arms"] if a["status"] == "running"],
+        "worker_resources": queue.get("resources"),
+    }
+    pdf = [a for a in completed if a.get("kind") != "synthetic_relations"]
+    synthetic = [a for a in completed if a.get("kind") == "synthetic_relations"]
+    if pdf:
+        result["attempted_pdf_pages"] = sum(a.get("attempted_pages", 0) or 0 for a in pdf)
+        result["operational_pdf_pages"] = sum(a.get("completed_pages", 0) or 0 for a in pdf)
+    if synthetic:
+        result["synthetic_question_counts"] = {
+            key: sum(a.get(key, 0) or 0 for a in synthetic)
+            for key in (
+                "intended_questions",
+                "attempted_questions",
+                "valid_returned_questions",
+                "nonabstaining_questions",
+            )
+        }
+        question_states: Counter[str] = Counter()
+        for arm in synthetic:
+            question_states.update(arm.get("question_status_counts", {}))
+        result["question_status_counts"] = dict(question_states)
+        result["question_correctness_measured"] = False
+    return result
+
+
+def checkpoint(statuses: list[Path], ledger: Path, output: Path, planned: list[str]) -> Path:
+    """Read one snapshot and write immutable JSON/Markdown plus latest local views."""
+    started, cpu = time.monotonic(), time.process_time()
+    pairs = [(status, *observed(status)) for status in statuses]
+    summaries = [queue_summary(queue, status) for status, queue, _ in pairs]
+    sources = [receipt for _, _, receipt in pairs]
+    book, ledger_receipt = observed(ledger)
+    rows = [r for r in book["requests"] if r.get("tag", "").startswith("P003/")]
     costs = money(rows)
     plans = []
     for declaration in planned:
@@ -88,28 +146,17 @@ def checkpoint(status: Path, ledger: Path, output: Path, planned: list[str]) -> 
         "reported_at_utc": now.isoformat(),
         "coordinator_last_published_utc": None,
         "next_coordinator_publication_deadline_utc": (now + timedelta(minutes=5)).isoformat(),
-        "sources": [queue_receipt, ledger_receipt],
+        "sources": [*sources, ledger_receipt],
         "roles": {
             "root": "coordination and new experiments",
             "catalog": "queues and baselines",
             "eval": "independent verification",
             "reporter": "progress and actual-input visuals",
         },
-        "current_queue": {
-            "required": required,
-            "completed_jobs": len(completed),
-            "running_jobs": states["running"],
-            "queued_jobs": required - len(queue["arms"]),
-            "failed_jobs": sum(v for k, v in states.items() if k not in {"completed", "running"}),
-            "completed_with_evaluation_file": evaluations,
-            "evaluation_scope": "presence only; freshness/quality verification belongs to evaluator",
-            "attempted_pages_completed_jobs": sum(a.get("attempted_pages", 0) or 0 for a in completed),
-            "operational_pages_completed_jobs": sum(a.get("completed_pages", 0) or 0 for a in completed),
-            "running": [a["name"] for a in queue["arms"] if a["status"] == "running"],
-        },
+        "queues": summaries,
         "plans": plans,
         "costs": costs,
-        "worker_resources": queue.get("resources"),
+        "worker_resources": [q["worker_resources"] for q in summaries],
         "reporting_model_cost_usd": None,
         "reporting_model_cost_scope": "not exposed in authorized telemetry",
         "new_hosted_calls": 0,
@@ -119,26 +166,38 @@ def checkpoint(status: Path, ledger: Path, output: Path, planned: list[str]) -> 
         "next": "Finish the active queue, independently verify outputs, root admits the next reviewed queue",
         "cadence": "Coordinator publishes within five minutes and on material changes; no autonomous timer",
     }
-    q = snapshot["current_queue"]
-    page_errors = q["attempted_pages_completed_jobs"] - q["operational_pages_completed_jobs"]
     display = {
         key: f"{Decimal(value):.10f}" if isinstance(value, str) and key.endswith("_usd") else value
         for key, value in costs.items()
     }
-    text = f"""P003 checkpoint — {now:%Y-%m-%d %H:%M:%S UTC}
-
-| Queue | Required | Completed jobs | Running | Queued | Job failures |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| {status.parent.name} | {required} | {len(completed)} | {states["running"]} | {q["queued_jobs"]} | {q["failed_jobs"]} |
-"""
+    text = f"P003 checkpoint — {now:%Y-%m-%d %H:%M:%S UTC}\n\n"
+    text += "| Queue | Required | Completed jobs | Running | Starting | Queued | Job failures |\n"
+    text += "| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n"
+    for q in summaries:
+        text += (
+            f"| {q['name']} | {q['required']} | {q['completed_jobs']} | {q['running_jobs']}"
+            f" | {q['starting_jobs']} | {q['queued_jobs']} | {q['failed_jobs']} |\n"
+        )
     for plan in plans:
-        text += f"| {plan['name']} plan | {plan['required']} | Not launched/unknown | Unknown | Plan only | Unknown |\n"
+        text += (
+            f"| {plan['name']} plan | {plan['required']} | Not launched/unknown | "
+            "Unknown | Unknown | Plan only | Unknown |\n"
+        )
+    text += "\n"
+    for q in summaries:
+        text += (
+            f"{q['name']}: evaluation files {q['completed_with_evaluation_file']}/{q['completed_jobs']} "
+            "(presence does not certify freshness).\n"
+        )
+        if "attempted_pdf_pages" in q:
+            text += (
+                f"PDF outcomes: {q['attempted_pdf_pages']} attempted; {q['operational_pdf_pages']} operational; "
+                f"{q['attempted_pdf_pages'] - q['operational_pdf_pages']} non-success.\n"
+            )
+        if "synthetic_question_counts" in q:
+            text += f"Synthetic question outcomes, distinct from PDF pages: {q['synthetic_question_counts']}.\n"
+    text += "Operational/schema-valid results do not certify strict correctness.\n"
     text += f"""
-Completed-job evidence files: {evaluations}/{len(completed)}; presence does not certify freshness.
-Completed jobs attempted {q["attempted_pages_completed_jobs"]} pages and retained
-{q["operational_pages_completed_jobs"]} operational successes, with {page_errors}
-non-success page outcomes. Operational success is separate from strict quality.
-
 | P003 ledger category | USD |
 | --- | ---: |
 | Ledger-classified reported charges | {display["ledger_classified_reported_usd"]} |
@@ -159,10 +218,10 @@ Next: {snapshot["next"]}. ETA: {snapshot["eta"]}.
 Paid admissions stop at 02:12 UTC; reporting/validation ends at 02:27 UTC.
 Coordinator-driven next publication is due within five minutes; no timer is claimed.
 
-Sources observed from file timestamps: queue {queue_receipt["observed_file_mtime_utc"]};
-ledger {ledger_receipt["observed_file_mtime_utc"]}. Worker CPU/RAM measurement is the
+Sources observed from file timestamps: {json.dumps(snapshot["sources"], sort_keys=True)}.
+Worker CPU/RAM measurement is the
 retained psutil 100 ms queue-plus-recursive-descendant sample, not reporter cost:
-{json.dumps(queue.get("resources"), sort_keys=True)}.
+{json.dumps(snapshot["worker_resources"], sort_keys=True)}.
 """
     output = guard_path(output.resolve())
     output.mkdir(parents=True, exist_ok=True)
@@ -188,7 +247,7 @@ retained psutil 100 ms queue-plus-recursive-descendant sample, not reporter cost
 def main() -> None:
     """Run one coordinator-triggered metadata checkpoint."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--status", type=Path, required=True)
+    parser.add_argument("--status", type=Path, required=True, action="append")
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--planned", action="append", default=[])

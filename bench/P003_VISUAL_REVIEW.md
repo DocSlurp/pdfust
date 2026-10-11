@@ -118,9 +118,10 @@ work or change concurrency. One metadata-only checkpoint is produced with:
 ```bash
 /home/dan/code/oss/pylopdf/.venv/bin/python -m bench.p003_progress_checkpoint \
   --status /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/parallel-acquisition-aux32-v1/status.json \
+  --status /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/parallel-synthetic48-v2/status.json \
   --ledger /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/decisions/ledger.json \
   --output /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/progress-reports \
-  --planned synthetic48=48 --planned shared56=56
+  --planned shared56=56
 ```
 
 The reporter retains timestamped JSON/Markdown snapshots and `latest.md/html`.
@@ -140,3 +141,9 @@ measurements. A generated checkpoint is not user publication: coordinator last
 publication remains unknown until confirmed, and the coordinator must publish
 within five minutes or immediately on a material change. No autonomous timer or
 post-session reporting is promised.
+
+Repeated `--status` reads all active/completed queues in one checkpoint. Starting
+jobs remain explicit. Synthetic relation question counters stay separate from PDF
+page outcomes. Unknown cost bases suppress reliable budget remainders; known
+subtotals and exposed conservative ledger placeholders remain separate. The fixed
+prior baseline cites the root-authorized cumulative snapshot preserved in AGENTS.
