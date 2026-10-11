@@ -164,3 +164,50 @@ New immutable batch `18ef578699bf7fb67f49` labels this accepted alternative
 granularity and strict reference disagreement. The readable image is
 `p1bfa52a41a5e15015698/regional-T0.png`; original inputs and older batches remain
 intact. `column-partition-audit.json` records the exact fixed partition and scope.
+
+## Matched official TATR postprocessing
+
+`bench.p003_tatr_visual_review` is a separate offline adapter for the independently
+scored official postprocessor and the retained max-overlap baseline. It verifies
+both report chains, source manifest, geometry report, placement report, selected
+payload hashes and PDFs. Every structural match and strict exact cell count is
+replayed before rendering. Both arms must own the exact same source words.
+
+```bash
+/home/dan/code/oss/pylopdf/.venv/bin/python -m bench.p003_tatr_visual_review \
+  --official /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/official-tatr-postprocess-v1 \
+  --corpus /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p002/screens/natural16 \
+  --output /home/dan/code/oss/pylopdf/bench/results/pdf-master-artifacts/pipeline-p003/visual-review-v1
+```
+
+Immutable batch `498697573be17b8ccc04` retains original full PDFs, both actual
+matrices, paired regional views, exact difference transcripts and retained source
+IDs. Detector inference size is 1280 and object threshold is 0.5 for both arms;
+these are CPU postprocessing comparisons with zero new inference calls. Across
+all 16 DEV pages the independent strict count is 438 baseline versus 569 official.
+This is bounded postprocessing evidence, not a complete-pipeline improvement.
+
+| Displayed page | Baseline strict cells | Official strict cells | Reference cells |
+| --- | ---: | ---: | ---: |
+| Academic `p6ef5d3c5c2edb1c109c4` | 0 | 56 | 66 |
+| Dense newspaper `p98d10ef50dee4b24506a` | 119 | 191 | 936 |
+| Chinese form `pf012d6adb9592dab9a13` | 12 | 3 | 22 |
+
+The academic view visibly restores the variable/description boundary; it still
+omits the final reference row and retains a reference math-markup difference.
+The dense example preserves more date tokens in the intended month column,
+while many literal spacing/text differences and unmatched tables remain. The
+Chinese form changes from seven columns to two and loses strict matches; that
+count alone does not establish that the alternative schema is wrong. Inspect
+the actual values, source and exact differences rather than treating every red
+cell as a semantic error.
+
+`matched-regional-T0.png` is the readable paired comparison for each displayed
+page. `matched-comparison.png` includes the full input and both full output grids.
+Each arm's separate `source-word-projections.png` overlays only the retained
+**approximate uniform-character OCR whitespace projections**, explicitly labelled
+as neither physical cells nor recognized word boxes. Colors follow exact
+cell-owned source IDs; conflicting ownership and unassigned words remain amber.
+No physical cell boxes are inferred. This three-page refresh measured 19.69s wall,
+19.42s CPU and 613,646,336 bytes process-lifetime peak RSS, single renderer,
+concurrency one; sampled utilization is unmeasured.
