@@ -1,6 +1,6 @@
 # Synthetic native relationship decisions: original protocol and exact-alias replay
 
-Checkpoint: 35/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
+Checkpoint: 39/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
 
 Primary original outcomes remain unchanged. The separately labeled secondary replay accepts only exact requested-ID → canonical-slug mappings from the approved catalog attestation; it first authenticates archived runtime/source bytes, literal native request and transmitted bytes, fresh ledger tag/requested model/request hash, all responses and accounting. Only a copied returned `model` field changes. Raw choices, probabilities, confidence, usage, originals and charges remain unchanged. Invalid probability mass, wrong request identity and unrecognized aliases still fail.
 
@@ -30,8 +30,8 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | cloudflare/clef-omni | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/page/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
-| cloudflare/clef-omni | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| cloudflare/clef-omni | text_geometry/page/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/crop/512 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef-omni | text_geometry/page/512 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | inception/mercury-decide | rows_rules/page/0 | 0 | 24 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | inception/mercury-decide | text_geometry/page/0 | 0 | 24 | 2 | 1 | 0/0/2 | 4 | 4 | 20 | 0 | 0 | 0 |
 | liquid/d1 | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
@@ -42,12 +42,12 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | rows_rules/page/0 | 0 | 24 | 2 | 2 | 1/1/0 | 6 | 6 | 18 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
-| openai/gpt-6-luna-decisions | text_geometry/crop/128 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | text_geometry/crop/128 | 0 | 24 | 7 | 6 | 1/4/2 | 4 | 16 | 8 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 0 | 24 | 1 | 1 | 0/1/0 | 6 | 2 | 22 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/512 | 0 | 24 | 6 | 6 | 1/3/2 | 6 | 13 | 11 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/page/512 | 0 | 24 | 8 | 7 | 2/3/3 | 4 | 14 | 10 | 0 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| perplexity/pplx-decider-v1.1-27b | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | perplexity/pplx-decider-v1.1-27b | text_geometry/crop/128 | 0 | 24 | 15 | 12 | 5/6/4 | 0 | 23 | 1 | 0 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | text_geometry/page/128 | 0 | 24 | 15 | 12 | 5/5/5 | 0 | 23 | 1 | 0 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | text_geometry/crop/512 | 0 | 24 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0 | 0 | 0 |
@@ -55,11 +55,11 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | respan/span-01 | rows_rules/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
 | respan/span-01 | text_geometry/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
 | togethercomputer/tev1-4b-experimental | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| togethercomputer/tev1-4b-experimental | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| togethercomputer/tev1-4b-experimental | text_geometry/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | typesafe/jev-1.13 | rows_rules/page/0 | 0 | 24 | 8 | 5 | 3/4/1 | 0 | 19 | 5 | 0 | 0 | 0 |
-| typesafe/jev-1.13 | text_geometry/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| typesafe/jev-1.13 | text_geometry/page/0 | 0 | 24 | 13 | 9 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | upstage/solar-decide | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| upstage/solar-decide | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| upstage/solar-decide | text_geometry/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | upstage/solar-decide-flash | rows_rules/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 | upstage/solar-decide-flash | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 
@@ -83,6 +83,8 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | cloudflare/clef-omni | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/128 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-omni | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-omni | text_geometry/crop/512 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-omni | text_geometry/page/512 | 3 | 12 | 12 | 3 | 0 |
 | inception/mercury-decide | rows_rules/page/0 | 3 | 12 | 11 | 3 | 0 |
 | inception/mercury-decide | text_geometry/page/0 | 12 | 12 | 12 | 11 | 10 |
 | liquid/d1 | text_geometry/page/0 | 12 | 12 | 12 | 5 | 0 |
@@ -92,6 +94,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 12 | 12 | 12 | 12 | 12 |
 | openai/gpt-6-luna-decisions | rows_rules/page/0 | 3 | 12 | 10 | 3 | 8 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 12 | 12 | 12 | 12 | 12 |
+| openai/gpt-6-luna-decisions | text_geometry/crop/128 | 3 | 12 | 11 | 3 | 4 |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 3 | 12 | 12 | 3 | 11 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 5 |
 | openai/gpt-6-luna-decisions | text_geometry/page/512 | 3 | 12 | 10 | 3 | 4 |
@@ -102,6 +105,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | respan/span-01 | rows_rules/page/0 | 3 | 0 | 0 | 0 | 0 |
 | respan/span-01 | text_geometry/page/0 | 12 | 0 | 0 | 0 | 0 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 3 | 12 | 10 | 0 | 2 |
+| typesafe/jev-1.13 | text_geometry/page/0 | 12 | 12 | 11 | 0 | 0 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 3 | 12 | 12 | 3 | 12 |
 | upstage/solar-decide-flash | text_geometry/page/0 | 12 | 12 | 12 | 1 | 12 |
 
@@ -125,6 +129,8 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | cloudflare/clef-omni | text_geometry/page/0 | 24 | 0.0024798 | 0.0024798 | provider-reported USD:24 | 17.164 | 9678.200 | 16532 (24/24) | 0 (24/24) | 83.898 | 31.358 | 198.254 |
 | cloudflare/clef-omni | text_geometry/crop/128 | 24 | 0.0032919 | 0.0032919 | provider-reported USD:24 | 15.176 | 7290.622 | 21946 (24/24) | 0 (24/24) | 94.888 | 34.876 | 203.207 |
 | cloudflare/clef-omni | text_geometry/page/128 | 24 | 0.0032646 | 0.0032646 | provider-reported USD:24 | 16.210 | 7351.590 | 21764 (24/24) | 0 (24/24) | 88.836 | 31.341 | 198.914 |
+| cloudflare/clef-omni | text_geometry/crop/512 | 24 | 0.0037959 | 0.0037959 | provider-reported USD:24 | 17.562 | 6322.611 | 25306 (24/24) | 0 (24/24) | 81.993 | 34.649 | 203.852 |
+| cloudflare/clef-omni | text_geometry/page/512 | 24 | 0.0036714 | 0.0036714 | provider-reported USD:24 | 13.784 | 6537.016 | 24476 (24/24) | 0 (24/24) | 104.470 | 36.219 | 199.023 |
 | inception/mercury-decide | rows_rules/page/0 | 24 | 0.0014280 | 0.0014280 | provider-reported USD:24 | 14.669 | 16806.487 | 71401 (24/24) | 24 (24/24) | 98.163 | 35.155 | 198.852 |
 | inception/mercury-decide | text_geometry/page/0 | 24 | 0.0003118 | 0.0003118 | provider-reported USD:24 | 15.870 | 12830.382 | 15588 (24/24) | 24 (24/24) | 90.737 | 31.888 | 197.684 |
 | liquid/d1 | text_geometry/page/0 | 24 | 0.0004431 | 0.0004431 | provider-reported USD:24 | 15.797 | 54161.401 | 11078 (24/24) | 0 (24/24) | 91.156 | 30.715 | 198.832 |
@@ -134,6 +140,7 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 24 | 0.0005502 | 0.0005502 | provider-reported USD:24 | 15.563 | 0.000 | 13756 (24/24) | 1596 (24/24) | 92.527 | 30.850 | 199.625 |
 | openai/gpt-6-luna-decisions | rows_rules/page/0 | 24 | 0.0054208 | 0.0000000 | catalog estimate:24 | 16.660 | 1106.848 | 54208 (24/24) | 0 (24/24) | 86.434 | 31.360 | 200.379 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 24 | 0.0012854 | 0.0000000 | catalog estimate:24 | 17.050 | 0.000 | 12854 (24/24) | 0 (24/24) | 84.457 | 30.885 | 198.922 |
+| openai/gpt-6-luna-decisions | text_geometry/crop/128 | 24 | 0.0015398 | 0.0000000 | catalog estimate:24 | 15.298 | 10390.960 | 15398 (24/24) | 0 (24/24) | 94.127 | 33.657 | 188.598 |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 24 | 0.0015302 | 0.0000000 | catalog estimate:24 | 16.460 | 1307.019 | 15302 (24/24) | 0 (24/24) | 87.482 | 31.495 | 198.031 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/512 | 24 | 0.0020390 | 0.0000000 | catalog estimate:24 | 15.992 | 6375.674 | 20390 (24/24) | 0 (24/24) | 90.043 | 31.274 | 200.191 |
 | openai/gpt-6-luna-decisions | text_geometry/page/512 | 24 | 0.0019910 | 0.0000000 | catalog estimate:24 | 17.317 | 7031.642 | 19910 (24/24) | 0 (24/24) | 83.153 | 31.595 | 197.477 |
@@ -144,6 +151,7 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | respan/span-01 | rows_rules/page/0 | 1 | unknown | unknown | reserved:1 | 18.898 | unknown | unknown (0/0) | unknown (0/0) | 3.175 | 1.329 | 199.242 |
 | respan/span-01 | text_geometry/page/0 | 1 | unknown | unknown | reserved:1 | 17.931 | unknown | unknown (0/0) | unknown (0/0) | 3.346 | 1.372 | 199.316 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 24 | 0.0031459 | 0.0031459 | provider-reported USD:24 | 16.790 | 6039.638 | 74902 (24/24) | 1095 (24/24) | 85.764 | 33.420 | 198.539 |
+| typesafe/jev-1.13 | text_geometry/page/0 | 24 | 0.0008823 | 0.0008823 | provider-reported USD:24 | 14.029 | 27200.522 | 21008 (24/24) | 1102 (24/24) | 102.645 | 35.370 | 203.754 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 24 | 0.0040117 | 0.0040117 | provider-reported USD:24 | 12.957 | 0.000 | 80234 (24/24) | 24 (24/24) | 111.139 | 32.303 | 198.434 |
 | upstage/solar-decide-flash | text_geometry/page/0 | 24 | 0.0011165 | 0.0011165 | provider-reported USD:24 | 11.813 | 0.000 | 22330 (24/24) | 24 (24/24) | 121.898 | 34.967 | 199.773 |
 
@@ -171,6 +179,8 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-clefomni-text-geometry-text-r0-c3 | `fea74f881a0cb3773ea11e066f9121cf47d9b1a38bbc62ad4eb01385ffb3e457` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-clefomni-geometry-crop128-r0-c3 | `8031c1ae13d93a0778f1f18df3c3a19e9d35f9889ee4ae764b475c960d972adf` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-clefomni-geometry-page128-r0-c3 | `d9c1449a177c341eecd9fc68ab9d7dd60e8808a75f5a0b8d0c5d9ffce2d42cf6` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
+| synth-clefomni-geometry-crop512-r0-c3 | `c497e6e3dc2e878e88107eb6faf694b134ebc13efae7badae836f0600b201363` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
+| synth-clefomni-geometry-page512-r0-c3 | `9d3da8c3c78c3fe705437ea5b657a5361401d9e247603a66ca43ac1f12fc4675` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-mercury-rows-rules-text-r0-c3 | `fc18aa17a2a76b99048745beb5c5ac1c8e245b74040aa2d0c8152ed381e4c00c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-mercury-text-geometry-text-r0-c3 | `666b9665c398808b5221f94d9d02a9a86011f0c5d74fccab85687057cde8447a` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-d1-text-geometry-text-r0-c3 | `0909b1e973f957f18f97d1edaf8980048eec327ba6981823d2f917b2de6d1ff4` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
@@ -180,6 +190,7 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-drex-text-geometry-text-r0-c3 | `8b8a4b6f422912efc02306852a26860d46632585f3135677267724fe89106065` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
 | synth-lunadec-rows-rules-text-r0-c3 | `970a2a58de1b9084267918c25a4f4dff367636dc457302bd3fdc0b88b643a340` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-lunadec-text-geometry-text-r0-c3 | `6c80a7f07623e11c40de82b1219fee050c411d36abc3031696498ccefd1552a8` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-lunadec-geometry-crop128-r0-c3 | `becb165d8eb0408b882dd610b680d8c8b539ff4ff2132fa39c38657b672b8cbb` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-lunadec-geometry-page128-r0-c3 | `07fae35534463a32f7a8dfcf395e08d25349146eb0d4a4535bcf4881b354bf5b` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-lunadec-geometry-crop512-r0-c3 | `19c2550e5ae3701ef8609c27e6bfbd6cc8eb75c58d100c50c4739b2b3f251905` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-lunadec-geometry-page512-r0-c3 | `d4fc1f3c8129102619fba33fb8c5f257b0313cbd2b9365a913964878f7604560` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
@@ -190,5 +201,6 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-span-rows-rules-text-r0-c3 | `80a91ba310587f8094146183e00f38db30563d4d3cb55964d7f876d075505eec` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-span-text-geometry-text-r0-c3 | `ca9fb3756a0cddddff1ed5fa075a482062f3d3fd8f4995a0fd9fc6c969cdc3c5` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-jev-rows-rules-text-r0-c3 | `47c305c3f3e8e786b37387a85673db254b83de48ee98c5abd4f30501a1ca3a3c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
+| synth-jev-text-geometry-text-r0-c3 | `c9edbc24610c880fd45f2dc69ba042ab488442c9fe3a6d021ecec8dd8c67c38c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-solarflash-rows-rules-text-r0-c3 | `4f40b59727a0dbe7e02022e520f8c0927d8f95bfa8a09a07067dd2c0a9bb8268` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-solarflash-text-geometry-text-r0-c3 | `f488d5cf8d405ba79aadd919d0121e4847cc43e9e1a1f15e009bc0c83bdec329` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
