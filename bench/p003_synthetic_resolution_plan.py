@@ -1,4 +1,4 @@
-"""Freeze25 source-only resolution arms and optionally prepare all600 native requests."""
+"""Freeze 25 source-only resolution arms and optionally prepare all 600 native requests."""
 
 from __future__ import annotations
 

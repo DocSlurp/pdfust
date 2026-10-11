@@ -57,7 +57,7 @@ def adapter(source: Path, source_map: Path, images: Path, image_map: Path) -> It
             or viewport != "crop"
             or transport_concurrency != 3
         ):
-            raise ValueError("Five explicit image models/new crop edges/text geometry/transport3 only")
+            raise ValueError("Five explicit image models/new crop edges/text geometry/transport concurrency 3 only")
         result = original["configuration"](
             model, mode=mode, image_edge=image_edge, viewport=viewport, transport_concurrency=transport_concurrency
         )
@@ -82,7 +82,7 @@ def adapter(source: Path, source_map: Path, images: Path, image_map: Path) -> It
         return body, item
 
     def prepare(pool: Path, trusted_code: Path, output: Path, config: dict[str, Any]) -> dict[str, Any]:
-        """Freeze original all24 source/request serialization plus explicit derived pixel provenance."""
+        """Freeze original all 24 source/request serialization plus explicit derived pixel provenance."""
         result = original["prepare"](pool, trusted_code, output, config)
         copied = output / "resolution-source"
         copied.mkdir()
@@ -141,7 +141,7 @@ def execute(
     client_factory: Any = legacy.client_for,
     entries_reader: Any = legacy.read_entries,
 ) -> dict[str, Any]:
-    """Freeze all24 requests/images before any client; reuse strict parser and actual accounting."""
+    """Freeze all 24 requests/images before any client; reuse strict parser and actual accounting."""
     with adapter(source, source_map, images, image_map):
         if run_hosted:
             return legacy.run(
