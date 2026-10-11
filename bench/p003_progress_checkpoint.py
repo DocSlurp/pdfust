@@ -45,7 +45,14 @@ def money(rows: list[dict[str, Any]]) -> dict[str, Any]:
             continue
         category = row.get("cost_status", "unknown basis")
         amounts[category] = amounts.get(category, Decimal(0)) + Decimal(str(amount))
-    reported = sum((v for k, v in amounts.items() if k.startswith("provider-reported")), Decimal(0))
+    reported = sum(
+        (
+            v
+            for k, v in amounts.items()
+            if k in {"provider-reported USD", "provider-reported BYOK upstream plus gateway USD"}
+        ),
+        Decimal(0),
+    )
     estimates = amounts.get("catalog estimate", Decimal(0))
     reserved = amounts.get("reserved", Decimal(0))
     exposed = sum(amounts.values(), Decimal(0))
@@ -103,8 +110,9 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
         "running": [a["name"] for a in queue["arms"] if a["status"] == "running"],
         "worker_resources": queue.get("resources"),
     }
-    pdf = [a for a in completed if a.get("kind") != "synthetic_relations"]
-    synthetic = [a for a in completed if a.get("kind") == "synthetic_relations"]
+    question_kinds = {"micro", "synthetic_relations", "synthetic_shared_context"}
+    pdf = [a for a in completed if a.get("kind") not in question_kinds]
+    synthetic = [a for a in completed if a.get("kind") in question_kinds]
     if pdf:
         result["attempted_pdf_pages"] = sum(a.get("attempted_pages", 0) or 0 for a in pdf)
         result["operational_pdf_pages"] = sum(a.get("completed_pages", 0) or 0 for a in pdf)
