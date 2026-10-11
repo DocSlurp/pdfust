@@ -6,4 +6,6 @@ The preparer authenticates the original source, independently verifies all direc
 
 The 25 actual retained model charges belong to those original calls and must be counted once, regardless of the three offline policies. A vector-first policy can report a hypothetical suppressed request count; any dollar saving and fresh throughput remain unknown. These are offline counterfactuals, with no new API requests and no complete extraction claim.
 
-Five tests cover all 75 declarations, fixed disagreement behavior, duplicate identity refusal, immutable component receipts, and rejection of the old 128 and 512 controls from this derivative. Source and output pools remain unchanged. Independent scoring must follow a separately approved code and source freeze.
+Six tests cover all 75 declarations, fixed disagreement behavior, duplicate identity refusal, immutable component receipts, and rejection of the old 128 and 512 controls from this derivative. Source and output pools remain unchanged. Independent scoring must follow a separately approved code and source freeze.
+
+Each planned menu records the exact future original run directory and independently supplied runtime-map path. `materialize_arm` requires an independently approved preparation SHA, refuses an absent final original report, and verifies one original arm before producing its three policy outputs. It supports incremental completion without reading other arms or changing the original results. Actual original charges are archived once in its receipt, with 72 derived case outcomes kept separate.

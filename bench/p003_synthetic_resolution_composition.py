@@ -84,8 +84,13 @@ def prepare(
     vector_map: Path,
     vector_frozen_sha256: str,
     output: Path,
+    *,
+    hosted_queue: Path,
+    aliases: Path,
+    alias_sha256: str,
 ) -> dict[str, Any]:
     """Authenticate source/vector receipts, then freeze 75 policies before new model outputs or gold."""
+    from bench import p003_synthetic_alias_replay as alias_replay
     from bench import p003_synthetic_geometry_eval as geometry_eval
     from bench import p003_synthetic_relations_eval as evaluator
     from bench import p003_synthetic_resolution_queue as queue
@@ -97,6 +102,7 @@ def prepare(
     if sha(prepared_file.read_bytes()) != approved_queue_sha256:
         raise ValueError("Queue preparation differs from independently approved SHA")
     prepared = evaluator.load(prepared_file)
+    alias_replay.authority(aliases, alias_sha256)
     context = evaluator.source_context(source, source_map)
     verified_vector = geometry_eval.verify(vector, vector_map, vector_frozen_sha256, context)
     vectors = [r for r in verified_vector["rows"] if r["treatment"] == "direct_vector"]
@@ -109,6 +115,11 @@ def prepare(
     if rows != prepared["plan"]:
         raise ValueError("Resolution plan differs from authenticated prepared bodies")
     all_arms = arm_plan(rows)
+    hosted_queue = guard_path(hosted_queue)
+    options = dict(zip(rows[0]["arguments"][::2], rows[0]["arguments"][1::2], strict=True))
+    for arm in all_arms:
+        arm["original_run_directory"] = str(hosted_queue / arm["input_arm"])
+        arm["runtime_map"] = str(hosted_queue / "trusted-code" / (arm["input_arm"] + ".json"))
     output.mkdir(parents=True)
     write_json(output / "plan.json", all_arms)
     write_json(output / "vector-components.json", vectors)
@@ -118,6 +129,13 @@ def prepare(
         "vector_components_sha256": sha((output / "vector-components.json").read_bytes()),
         "queue_prepared_sha256": approved_queue_sha256,
         "queue_prepared": str(guard_path(queue_prepared)),
+        "source": str(guard_path(source)),
+        "source_map": str(guard_path(source_map)),
+        "images": options["--images"],
+        "image_map": options["--image-map"],
+        "hosted_queue": str(hosted_queue),
+        "aliases": str(guard_path(aliases)),
+        "alias_sha256": alias_sha256,
         "source_frozen_sha256": context["frozen_sha256"],
         "source_map_sha256": context["map_sha256"],
         "vector_receipt": {
@@ -142,3 +160,75 @@ def prepare(
     }
     write_json(output / "frozen.json", result)
     return result
+
+
+def materialize_arm(
+    prepared: Path,
+    approved_prepared_sha256: str,
+    input_arm: str,
+    output: Path,
+) -> dict[str, Any]:
+    """Verify one immutable completed original arm, then materialize its three policies without labels."""
+    from bench import p003_synthetic_relations_eval as evaluator
+    from bench import p003_synthetic_resolution_eval as resolution_eval
+
+    prepared, output = guard_path(prepared), guard_path(output)
+    if output.exists():
+        raise FileExistsError("New immutable per-arm composition output required")
+    frozen_path = prepared / "frozen.json"
+    if sha(frozen_path.read_bytes()) != approved_prepared_sha256:
+        raise ValueError("Composition preparation differs from independently supplied authority")
+    frozen = evaluator.load(frozen_path)
+    if (
+        frozen["helper_sha256"] != sha(Path(__file__).read_bytes())
+        or frozen["composition_protocol_sha256"] != sha(Path(composition.__file__).read_bytes())
+        or sha((prepared / "plan.json").read_bytes()) != frozen["plan_sha256"]
+        or sha((prepared / "vector-components.json").read_bytes()) != frozen["vector_components_sha256"]
+    ):
+        raise ValueError("Approved pure composition code or frozen inputs changed")
+    all_arms = evaluator.load(prepared / "plan.json")
+    arms = [a for a in all_arms if a["input_arm"] == input_arm]
+    if len(arms) != 3 or {a["policy"] for a in arms} != set(POLICIES):
+        raise ValueError("Exactly three frozen policies for a declared model/edge required")
+    arm = arms[0]
+    directory, runtime_map = Path(arm["original_run_directory"]), Path(arm["runtime_map"])
+    if not (directory / "report.json").is_file():
+        raise ValueError("Original arm has no immutable final report yet; no partial composition")
+    replay = resolution_eval.verify_run(
+        directory,
+        runtime_map,
+        Path(frozen["source"]),
+        Path(frozen["source_map"]),
+        Path(frozen["images"]),
+        Path(frozen["image_map"]),
+        Path(frozen["aliases"]),
+        frozen["alias_sha256"],
+    )
+    verified = deepcopy(replay["secondary_verified"])
+    original = {r["id"]: r for r in replay["original_verified"]["rows"]}
+    for row in verified["rows"]:
+        row["original_status"] = original[row["id"]]["status"]
+    if verified["config"]["model"] != arm["model"] or verified["config"]["image_edge"] != arm["image_edge"]:
+        raise ValueError("Verified original model/edge differs from frozen composition plan")
+    vectors = evaluator.load(prepared / "vector-components.json")
+    results = [{"name": a["name"], **combine(vectors, verified, a["policy"])} for a in arms]
+    output.mkdir(parents=True)
+    write_json(output / "original-verification.json", replay)
+    write_json(output / "results.json", results)
+    receipt = {
+        "version": VERSION,
+        "input_arm": input_arm,
+        "policy_count": 3,
+        "case_receipts": 72,
+        "prepared_sha256": approved_prepared_sha256,
+        "results_sha256": sha((output / "results.json").read_bytes()),
+        "verification_sha256": sha((output / "original-verification.json").read_bytes()),
+        "original_model_charge_count": 1,
+        "actual_retained_model_charges": verified["charges"],
+        "gold_read": False,
+        "new_api_calls": 0,
+        "fresh_throughput": None,
+        "full_pipeline_rate": None,
+    }
+    write_json(output / "frozen.json", receipt)
+    return receipt
