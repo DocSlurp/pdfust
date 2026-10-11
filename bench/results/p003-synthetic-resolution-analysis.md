@@ -2,7 +2,7 @@
 
 All 25 predeclared arms independently verified. Each arm uses the same frozen 24 cases; these repeated cases are not independent quality samples. No additional API calls occurred during verification.
 
-PPLX has 17/18 visibly cued matches at 500, 768 and 1024, versus 16/18 at 400 and 13/18 at 256. The retained original512 control also has17/18. This observed plateau does not establish a causal resolution effect or repeat stability. Clef has11–13/18, Flash9–11/18, Omni9/18 at everynewedge, and Luna6–8/18; Luna abstains on allsix indeterminate cases at everyedge. Other models answer those hidden-label cases, so their all24 agreement includes information not recoverable from the evidence.
+PPLX has 17/18 visibly cued matches at 500, 768 and 1024, versus 16/18 at 400 and 13/18 at 256. The retained original 512 control also has 17/18. This observed plateau does not establish a causal resolution effect or repeat stability. Clef has 11–13/18, Flash 9–11/18, Omni 9/18 at every new edge, and Luna 6–8/18; Luna abstains on all six indeterminate cases at every edge. Other models answer those hidden-label cases, so their all-24 agreement includes information not recoverable from the evidence.
 
 
 All 600 intended questions have retained attempts: original protocol 240 decisive/360 identifier-malformed; exact-alias secondary 550 decisive/50 abstained, zero remaining malformed/transport/unattempted. Actual total effective cost across 25 original arms is USD 0.075823784; 480 attempts use positive provider-reported charges and120 Luna attempts use labeled catalog estimates with raw reported zero preserved. Policies never multiply these charges.
