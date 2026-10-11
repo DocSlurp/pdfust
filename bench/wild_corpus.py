@@ -467,6 +467,58 @@ def adaptive_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict
     return report
 
 
+FILL_OCR_LEVELS = ADAPTIVE_OCR_LEVELS
+FILL_MIN_CONFIDENCE = 0.7
+
+
+def _center_inside(native: tuple[float, float, float, float], box: Any, slack: float = 2.0) -> bool:  # noqa: ANN401
+    """Whether a native word's centre lies inside an OCR box widened by `slack` points."""
+    x0, y0, x1, y1 = box
+    cx, cy = (native[0] + native[2]) / 2, (native[1] + native[3]) / 2
+    return x0 - slack <= cx <= x1 + slack and y0 - slack <= cy <= y1 + slack
+
+
+def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str, Any]:
+    """Write `{level}+ocr-fill.pdf`: add OCR words only where no native word exists.
+
+    Each page is recognized without modification; OCR boxes containing the
+    centre of any native word are dropped, and the rest are inserted as an
+    invisible layer, so native text is not duplicated.
+    """
+    directory = guard_path(directory)
+    start = _measure()
+    engine = jev_pdf.OcrEngine(threads=threads)
+    report: dict[str, Any] = {"dpi": dpi, "threads": threads, "min_confidence": FILL_MIN_CONFIDENCE,
+                              "documents": {}}
+    for variant_dir in sorted((directory / "variants").iterdir()):
+        for level in FILL_OCR_LEVELS:
+            source = variant_dir / f"{level}.pdf"
+            target = variant_dir / f"{level}+ocr-fill.pdf"
+            if not source.exists() or target.exists():
+                continue
+            item_start = _measure()
+            counts = {"recognized": 0, "inserted": 0}
+            with jev_pdf.open(str(source)) as doc:
+                for page in doc:
+                    native = [tuple(w[:4]) for w in page.get_text("words")]
+                    words = engine.recognize(page, dpi=dpi, min_confidence=FILL_MIN_CONFIDENCE)
+                    counts["recognized"] += len(words)
+                    # OCR boxes are usually whole lines and native boxes approximate the
+                    # glyph body, so test whether any native word centre falls inside.
+                    fresh = [
+                        (*word["bbox"], word["text"]) for word in words
+                        if not any(_center_inside(box, word["bbox"]) for box in native)
+                    ]
+                    if fresh:
+                        page.insert_ocr_text_layer(fresh)
+                        counts["inserted"] += len(fresh)
+                doc.save(str(target))
+            report["documents"][f"{variant_dir.name}/{level}"] = {**counts, "resources": _delta(item_start)}
+    report["resources"] = _delta(start)
+    write_json(directory / "ocr-fill-report.json", report)
+    return report
+
+
 def build(directory: Path, *, steps: list[str], workers: int) -> None:
     """Run the requested pipeline steps as fresh subprocesses, then audit."""
     directory = guard_path(directory)
@@ -488,6 +540,8 @@ def build(directory: Path, *, steps: list[str], workers: int) -> None:
             ocr_fallback(directory)
         elif step == "ocr-adaptive":
             adaptive_ocr(directory)
+        elif step == "ocr-fill":
+            fill_ocr(directory)
     if "audit" in steps:
         audit(directory)
 
@@ -524,7 +578,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, default=DEFAULT_DIRECTORY)
     parser.add_argument("--steps", nargs="+", default=["photos", "documents", "flatten", "audit"],
-                        choices=["photos", "documents", "flatten", "ocr", "ocr-adaptive", "audit"])
+                        choices=["photos", "documents", "flatten", "ocr", "ocr-adaptive", "ocr-fill", "audit"])
     parser.add_argument("--workers", type=int, default=2)
     args = parser.parse_args()
     build(args.directory, steps=args.steps, workers=args.workers)
