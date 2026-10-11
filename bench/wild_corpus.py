@@ -381,6 +381,37 @@ def gallery(directory: Path, docs: list[str], levels: list[str]) -> None:
     (thumbs / "index.html").write_text(page, encoding="utf-8")
 
 
+OCR_LEVELS = ("L3_outlined", "L4_raster", "L6_phone_scan", "L7_photocopy", "L8_mixed", "L9_broken_tounicode")
+
+
+def ocr_fallback(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str, Any]:
+    """Write `{level}+ocr.pdf` variants with pylopdf's native OCR on textless pages.
+
+    Pages that already have extractable text are skipped by `apply_ocr`'s
+    default, so mixed documents keep their native layer. CPU only.
+    """
+    directory = guard_path(directory)
+    start = _measure()
+    engine = jev_pdf.OcrEngine(threads=threads)
+    report: dict[str, Any] = {"dpi": dpi, "threads": threads, "documents": {}}
+    for variant_dir in sorted((directory / "variants").iterdir()):
+        for level in OCR_LEVELS:
+            source = variant_dir / f"{level}.pdf"
+            target = variant_dir / f"{level}+ocr.pdf"
+            if not source.exists() or target.exists():
+                continue
+            page_start = _measure()
+            words = 0
+            with jev_pdf.open(str(source)) as doc:
+                for page in doc:
+                    words += len(page.apply_ocr(dpi=dpi, engine=engine))
+                doc.save(str(target))
+            report["documents"][f"{variant_dir.name}/{level}"] = {"words": words, "resources": _delta(page_start)}
+    report["resources"] = _delta(start)
+    write_json(directory / "ocr-report.json", report)
+    return report
+
+
 def build(directory: Path, *, steps: list[str], workers: int) -> None:
     """Run the requested pipeline steps as fresh subprocesses, then audit."""
     directory = guard_path(directory)
@@ -398,6 +429,8 @@ def build(directory: Path, *, steps: list[str], workers: int) -> None:
     for step in steps:
         if step in commands:
             subprocess.run(commands[step], check=True, cwd=ROOT, env=env)
+        elif step == "ocr":
+            ocr_fallback(directory)
     if "audit" in steps:
         audit(directory)
 
@@ -434,7 +467,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, default=DEFAULT_DIRECTORY)
     parser.add_argument("--steps", nargs="+", default=["photos", "documents", "flatten", "audit"],
-                        choices=["photos", "documents", "flatten", "audit"])
+                        choices=["photos", "documents", "flatten", "ocr", "audit"])
     parser.add_argument("--workers", type=int, default=2)
     args = parser.parse_args()
     build(args.directory, steps=args.steps, workers=args.workers)
