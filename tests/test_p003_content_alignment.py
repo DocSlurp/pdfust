@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import random
+
 import pytest
 from bench.p003_content_alignment import LIMITS, compare_content
 
@@ -124,3 +126,88 @@ def test_duplicates_do_not_earn_free_reuse_and_edit_budget_refuses_whole_metric(
     assert not refused["supported"]
     assert refused["counts"] is refused["precision"] is refused["recall"] is None
     assert "edit-work" in refused["unsupported_reason"]
+
+
+def _assert_swap(reference: list, prediction: list) -> None:
+    forward = compare_content(reference, prediction)
+    reverse = compare_content(prediction, reference)
+    assert forward["version"] == reverse["version"] == "p003-content-alignment-v2"
+    assert forward["supported"] == reverse["supported"]
+    assert forward["edit_work"] == reverse["edit_work"]
+    assert forward["counts"]["matched"] == reverse["counts"]["matched"]
+    assert forward["counts"]["substituted"] == reverse["counts"]["substituted"]
+    for a, b in (
+        ("missing", "extra"),
+        ("extra", "missing"),
+        ("reference_units", "prediction_units"),
+        ("prediction_units", "reference_units"),
+    ):
+        assert forward["counts"][a] == reverse["counts"][b]
+    assert forward["precision"] == reverse["recall"]
+    assert forward["recall"] == reverse["precision"]
+    assert forward["content_recovered_with_row_order"] == reverse["content_recovered_with_row_order"]
+    assert forward["blank_cell_gap_count"] == reverse["blank_cell_gap_count"]
+    for suffix in ("rows", "cells", "literal_characters", "join_separator_units"):
+        assert forward["coverage"]["reference_" + suffix] == reverse["coverage"]["prediction_" + suffix]
+        assert forward["coverage"]["prediction_" + suffix] == reverse["coverage"]["reference_" + suffix]
+    assert forward["input_coverage"]["reference"] == reverse["input_coverage"]["prediction"]
+    assert forward["input_coverage"]["prediction"] == reverse["input_coverage"]["reference"]
+    assert len(forward["shared_column_path"]) == len(reverse["shared_column_path"])
+    for a, b in zip(forward["shared_column_path"], reverse["shared_column_path"], strict=True):
+        assert a["reference_columns"] == b["prediction_columns"]
+        assert a["prediction_columns"] == b["reference_columns"]
+    for a, b in zip(forward["row_alignment"], reverse["row_alignment"], strict=True):
+        assert a["reference_row"] == b["prediction_row"]
+        assert a["prediction_row"] == b["reference_row"]
+        for ca, cb in zip(a["cells"], b["cells"], strict=True):
+            for suffix in ("columns", "text", "units"):
+                assert ca["reference_" + suffix] == cb["prediction_" + suffix]
+                assert ca["prediction_" + suffix] == cb["reference_" + suffix]
+            assert ca["join_provenance"]["reference_cells"] == cb["join_provenance"]["prediction_cells"]
+            for wa, wb in zip(ca["character_witness"], cb["character_witness"], strict=True):
+                assert wa["reference_index"] == wb["prediction_index"]
+                assert wa["prediction_index"] == wb["reference_index"]
+                if wa["operation"] in ("missing", "extra"):
+                    assert wb["operation"] == ("extra" if wa["operation"] == "missing" else "missing")
+                else:
+                    assert wa["operation"] == wb["operation"]
+
+
+def test_exact_review_fixture_canonical_orientation() -> None:
+    a = [["BETA", "Alpha Beta"], ["20", "Alpha 20"]]
+    b = [["1", "BETA"], ["ALPHA", ""], ["Alpha 20", "20 Alpha"]]
+    _assert_swap(a, b)
+    result = compare_content(a, b)
+    assert result["counts"] == {
+        "matched": 10,
+        "substituted": 4,
+        "missing": 10,
+        "extra": 14,
+        "reference_units": 24,
+        "prediction_units": 28,
+    }
+    assert result["caller_reference_was_internal_first"] is False
+
+
+def test_seeded_bounded_swap_invariance_empty_headers_gaps_unicode() -> None:
+    stream = random.Random(20261011)  # noqa: S311 - reproducible bounded test fixtures
+    literals = ["", "No.", "Alpha", "Beta", "1 23", "12 3", "Café", "Cafe\u0301\nNorth", "N/A", "$1.00"]
+    for _ in range(80):
+        columns_a, columns_b = stream.randint(1, 4), stream.randint(1, 4)
+        a = [[stream.choice(literals) for _ in range(columns_a)] for _ in range(stream.randint(1, 5))]
+        b = [[stream.choice(literals) for _ in range(columns_b)] for _ in range(stream.randint(1, 5))]
+        _assert_swap(a, b)
+
+
+def test_canonical_orientation_does_not_hide_original_merged_span() -> None:
+    merged = {
+        "row_count": 1,
+        "col_count": 2,
+        "values": [["Z", None]],
+        "spans": [{"row": 0, "column": 0, "row_span": 1, "column_span": 2}],
+    }
+    for a, b in ((merged, [["A"]]), ([["A"]], merged)):
+        result = compare_content(a, b)
+        assert not result["supported"]
+        assert result["precision"] is result["recall"] is None
+        assert "Merged" in result["unsupported_reason"]

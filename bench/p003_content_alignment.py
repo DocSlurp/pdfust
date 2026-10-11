@@ -7,7 +7,7 @@ import unicodedata
 from typing import Any
 
 # ruff: noqa: EM101, TRY003, C901, PLR0912, PLR2004, ANN401, N818
-VERSION = "p003-content-alignment-v1"
+VERSION = "p003-content-alignment-v2"
 LIMITS = {
     "rows": 128,
     "columns": 24,
@@ -244,7 +244,7 @@ def _columns(
     return states[n, m][1]
 
 
-def compare_content(reference: Any, prediction: Any) -> dict[str, Any]:
+def _compare_oriented(reference: Any, prediction: Any) -> dict[str, Any]:
     """Return separately versioned content precision/recall and auditable monotone witnesses."""
     base: dict[str, Any] = {
         "version": VERSION,
@@ -349,3 +349,74 @@ def compare_content(reference: Any, prediction: Any) -> dict[str, Any]:
             "content_recovered_with_row_order": None,
             "edit_work": edits.work,
         }
+
+
+def _transpose_counts(counts: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **counts,
+        "missing": counts["extra"],
+        "extra": counts["missing"],
+        "reference_units": counts["prediction_units"],
+        "prediction_units": counts["reference_units"],
+    }
+
+
+def _transpose(result: dict[str, Any]) -> dict[str, Any]:
+    """Map all directional content evidence back to caller roles."""
+    if not result["supported"]:
+        return result
+    result["counts"] = _transpose_counts(result["counts"])
+    result["precision"], result["recall"] = result["recall"], result["precision"]
+    coverage = result["coverage"]
+    result["coverage"] = {
+        (
+            "prediction_" + key.removeprefix("reference_")
+            if key.startswith("reference_")
+            else "reference_" + key.removeprefix("prediction_")
+        ): value
+        for key, value in coverage.items()
+    }
+    for step in result["shared_column_path"]:
+        step["reference_columns"], step["prediction_columns"] = step["prediction_columns"], step["reference_columns"]
+    for row in result["row_alignment"]:
+        row["reference_row"], row["prediction_row"] = row["prediction_row"], row["reference_row"]
+        for cell in row["cells"]:
+            for suffix in ("columns", "text"):
+                a, b = "reference_" + suffix, "prediction_" + suffix
+                cell[a], cell[b] = cell[b], cell[a]
+            counts = _transpose_counts(cell)
+            for key in ("missing", "extra", "reference_units", "prediction_units"):
+                cell[key] = counts[key]
+            provenance = cell["join_provenance"]
+            provenance["reference_cells"], provenance["prediction_cells"] = (
+                provenance["prediction_cells"],
+                provenance["reference_cells"],
+            )
+            for operation in cell["character_witness"]:
+                operation["reference_index"], operation["prediction_index"] = (
+                    operation["prediction_index"],
+                    operation["reference_index"],
+                )
+                if operation["operation"] in ("missing", "extra"):
+                    operation["operation"] = "extra" if operation["operation"] == "missing" else "missing"
+    return result
+
+
+def compare_content(reference: Any, prediction: Any) -> dict[str, Any]:
+    """Align in a preselected canonical orientation, then restore caller reference/prediction roles."""
+    try:
+        # Validate the original span/value contracts before discarding structural
+        # wrappers. A genuine merge must never become an unmerged matrix silently.
+        ref, pred = _table(reference), _table(prediction)
+    except Unsupported:
+        return _compare_oriented(reference, prediction)
+    reverse = tuple(map(tuple, pred)) < tuple(map(tuple, ref))
+    result = _compare_oriented(pred, ref) if reverse else _compare_oriented(ref, pred)
+    if reverse:
+        result = _transpose(result)
+    result["input_coverage"] = {"reference": _coverage(reference), "prediction": _coverage(prediction)}
+    result["orientation_policy"] = (
+        "Lexicographically ordered tuples of NFC/whitespace-normalized literal rows; selected before alignment"
+    )
+    result["caller_reference_was_internal_first"] = not reverse
+    return result
