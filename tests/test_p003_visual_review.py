@@ -1,7 +1,7 @@
 """Pin strict diagnostic verdicts without granting credit for semantic similarity."""
 
 from bench.generalization_scoring import score_page
-from bench.p003_visual_review import differences, verdicts
+from bench.p003_visual_review import column_partition_audit, differences, lexical_tokens, verdicts
 
 
 def test_diagnostic_marks_preserve_span_and_exact_text_requirements() -> None:
@@ -53,3 +53,16 @@ def test_extra_prediction_diagnostics_use_only_retained_geometry() -> None:
     marks = verdicts(target, [prediction], score)
     assert marks["extra_prediction_boxes"] == {0: [1, 2, 3, 4]}
     assert differences(target, [prediction], score)[0]["reason"] == "extra unmatched predicted table"
+
+
+def test_fixed_partition_preserves_headers_and_digit_boundaries() -> None:
+    """Alternative granularity needs a single partition and cannot concatenate digits."""
+    assert lexical_tokens("1 23") != lexical_tokens("12 3")
+    gold = {"col_count": 3, "row_count": 2, "values": [["Rank Team", "Record", "Previous"], ["1.Hingham", "12-3", "2"]]}
+    actual = {"col_count": 4, "row_count": 2,
+              "values": [["Rank", "Team", "Record", "Previous"], ["1.", "Hingham", "12-3", "2"]]}
+    audit = column_partition_audit(gold, actual)
+    assert audit["verified"]
+    assert audit["prediction_column_groups"] == [[0, 1], [2], [3]]
+    actual["values"][0][1] = "Wrong header"
+    assert not column_partition_audit(gold, actual)["verified"]

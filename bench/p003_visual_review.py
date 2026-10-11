@@ -6,8 +6,10 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import itertools
 import json
 import os
+import re
 import resource
 import textwrap
 import time
@@ -169,6 +171,34 @@ def output_grid(
     return image
 
 
+def lexical_tokens(value: str) -> list[str]:
+    """Retain ordered letter runs, digit runs and punctuation without joining digits."""
+    return re.findall(r"[^\W\d_]+|\d+|[^\w\s]|_", unicodedata.normalize("NFC", value))
+
+
+def column_partition_audit(reference: dict[str, Any], actual: dict[str, Any]) -> dict[str, Any]:
+    """Describe one fixed contiguous column partition preserving every row and header."""
+    result: dict[str, Any] = {"verified": False, "scope": "descriptive lexical audit; primary strict scores unchanged"}
+    n, m = reference["col_count"], actual["col_count"]
+    if n >= m or m > 12 or reference["row_count"] != actual["row_count"]:
+        return result
+    # Merged cells require a separate equivalence treatment, not matrix flattening.
+    if any(cell is None for row in reference["values"] + actual["values"] for cell in row):
+        return result
+    for cuts in itertools.combinations(range(1, m), n - 1):
+        bounds = (0, *cuts, m)
+        groups = [list(range(bounds[i], bounds[i + 1])) for i in range(n)]
+        if all(
+            lexical_tokens(expected[c]) == lexical_tokens(" ".join(observed[j] for j in group))
+            for expected, observed in zip(reference["values"], actual["values"], strict=True)
+            for c, group in enumerate(groups)
+        ):
+            return {**result, "verified": True, "prediction_column_groups": groups,
+                    "verified_rows_including_header": reference["row_count"],
+                    "reference_columns": n, "prediction_columns": m}
+    return result
+
+
 def differences(target: dict[str, Any], tables: list[dict[str, Any]], score: dict[str, Any]) -> list[dict[str, Any]]:
     """Describe strict mismatches without declaring their semantic importance."""
     result = []
@@ -182,7 +212,7 @@ def differences(target: dict[str, Any], tables: list[dict[str, Any]], score: dic
                 continue
             if a is None or b is None:
                 reason = "missing table/cell or different span topology"
-            elif "".join(a.split()) == "".join(b.split()):
+            elif lexical_tokens(a) == lexical_tokens(b):
                 reason = "whitespace-only strict mismatch"
             elif ("$" in a or "\\text" in a) and not ("$" in b or "\\text" in b):
                 reason = "reference math markup versus literal output"
@@ -229,7 +259,8 @@ def difference_image(rows: list[dict[str, Any]]) -> Image.Image:
     image = Image.new("RGB", (1500, 130 + min(len(rows), 12) * 140), "white")
     draw = ImageDraw.Draw(image)
     lines(draw, (20, 12), f"Strict mismatch details: {len(rows)} total; first {min(len(rows), 12)} shown", 1460, 24)
-    lines(draw, (20, 54), "Red means exact reference mismatch. These reasons do not measure semantic severity.", 1460)
+    lines(draw, (20, 54),
+          "Red means strict reference disagreement. These reasons do not measure semantic severity.", 1460)
     for i, row in enumerate(rows[:12]):
         y = 130 + i * 140
         lines(draw, (20, y), f"Gold T{row['target_table']} anchor {row['anchor']} | {row['reason']}", 1460)
@@ -272,8 +303,9 @@ def render_page(record: dict[str, Any], target: dict[str, Any], marks: dict[str,
         return marked
 
 
-def regional_views(
-    directory: Path, tables: list[dict[str, Any]], score: dict[str, Any], marks: dict[str, Any], label: str
+def regional_views(  # noqa: PLR0913, PLR0917
+    directory: Path, tables: list[dict[str, Any]], score: dict[str, Any], marks: dict[str, Any], label: str,
+    audits: dict[int, dict[str, Any]] | None = None
 ) -> None:
     """Keep dense table source and extracted matrix text readable in separate panels."""
     pairs = {pair["target"]: pair["prediction"] for pair in score.get("matches", [])}
@@ -289,7 +321,9 @@ def regional_views(
         selected = [tables[prediction_index]] if prediction_index is not None else []
         subset = {"output_cells": {0: marks["output_cells"][prediction_index]}} if selected else {"output_cells": {}}
         grid = output_grid(selected, subset, table_indexes=[prediction_index] if prediction_index is not None else [])
-        panel = Image.new("RGB", (1800, max(source.height, grid.height) + 145), "#f5f7fa")
+        audit = (audits or {}).get(target_index, {})
+        top = 205 if audit.get("verified") else 160
+        panel = Image.new("RGB", (1800, max(source.height, grid.height) + top + 15), "#f5f7fa")
         draw = ImageDraw.Draw(panel)
         lines(
             draw, (20, 10), f"Gold table T{target_index} source zoom | matched prediction {prediction_index}", 1760, 24
@@ -297,14 +331,19 @@ def regional_views(
         lines(
             draw,
             (20, 48),
-            "Actual source pixels; table-level verdict on input. Output cells use exact scorer identities.",
+            "Actual source pixels | Green: exact reference match; red: strict reference disagreement; amber: unscored.",
             1760,
         )
         lines(draw, (20, 82), label, 1760, 16)
-        panel.paste(source, (20, 130))
+        if audit.get("verified"):
+            lines(draw, (20, 114),
+                  f"Accepted alternative column granularity: {audit['reference_columns']} versus "
+                  f"{audit['prediction_columns']} columns. All {audit['verified_rows_including_header']} rows "
+                  "including header preserve ordered lexical tokens under one fixed column partition.", 1760, 20)
+        panel.paste(source, (20, top))
         color = COLORS[marks["input_tables"][target_index]]
-        draw.rectangle((20, 130, 20 + source.width, 130 + source.height), outline=color, width=4)
-        panel.paste(grid, (810, 130))
+        draw.rectangle((20, top, 20 + source.width, top + source.height), outline=color, width=4)
+        panel.paste(grid, (810, top))
         panel.save(directory / f"regional-T{target_index}.png")
 
 
@@ -374,7 +413,10 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             f"detector inference {frozen['config'].get('detector_inference_size', 'unrecorded')} | "
             f"raster edge {frozen['config'].get('detector_edge')} | crop {frozen['config'].get('image_edge')}"
         )
-        regional_views(directory, tables, score, marks, label)
+        audits = {pair["target"]: column_partition_audit(target["tables"][pair["target"]], tables[pair["prediction"]])
+                  for pair in score.get("matches", [])}
+        (directory / "column-partition-audit.json").write_text(json.dumps(audits, indent=2) + "\n")
+        regional_views(directory, tables, score, marks, label, audits)
         panel_width = 1800
         source.thumbnail((780, 1450))
         grid.thumbnail((970, 1450))
@@ -401,7 +443,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             draw,
             (20, 50),
             "INPUT: table-level gold masks | OUTPUT: exact topology + NFC text cell verdicts | "
-            "Green success; red miss/error; amber unscored",
+            "Green: exact reference match; red: strict reference disagreement; amber: unscored",
             panel_width - 40,
             18,
         )
@@ -413,6 +455,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             {
                 "id": identifier,
                 "score": score,
+                "column_partition_audit": audits,
                 "masks": marks["input_tables"],
                 "source_ids": [cell.get("source_ids", []) for table in tables for cell in table.get("cells", [])],
             }

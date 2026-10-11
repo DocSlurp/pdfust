@@ -9,7 +9,9 @@ page whose score differs from replay. It does not authenticate a new run: the
 independent evaluator must first produce `evaluation.json`.
 
 Input masks are **table-level**: green requires the complete matched normalized
-anchor map to equal the reference; red indicates an incomplete or missing table.
+anchor map to equal the reference; red indicates strict reference disagreement.
+This can reflect missing output, literal differences, merged spans or an accepted
+alternative column schema; red alone does not establish extraction failure.
 Output colors are **schematic cell-level**, keyed by row, column, row span and
 column span with NFC/whitespace normalization from the existing scorer. They are
 not invented physical cell coordinates. A negative page has no spatial success
@@ -147,3 +149,18 @@ jobs remain explicit. Synthetic relation question counters stay separate from PD
 page outcomes. Unknown cost bases suppress reliable budget remainders; known
 subtotals and exposed conservative ledger placeholders remain separate. The fixed
 prior baseline cites the root-authorized cumulative snapshot preserved in AGENTS.
+
+## Accepted alternative newspaper column granularity
+
+The user accepts either three columns (rank and team together) or four columns
+(rank and team separately) for newspaper table T0. Sonnet detector1024 prediction
+T1 preserves every ordered lexical token in all 21 rows, including the header,
+under the single fixed prediction-column partition `[[0, 1], [2], [3]]`.
+Letter runs, digit runs and punctuation are retained separately: `1 23` cannot
+match `12 3`. This descriptive audit does not change the original strict score
+and is separate from the root-owned versioned business-schema metric.
+
+New immutable batch `18ef578699bf7fb67f49` labels this accepted alternative
+granularity and strict reference disagreement. The readable image is
+`p1bfa52a41a5e15015698/regional-T0.png`; original inputs and older batches remain
+intact. `column-partition-audit.json` records the exact fixed partition and scope.
