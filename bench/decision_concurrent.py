@@ -125,7 +125,8 @@ class ConcurrentDecisionClient:
                 if matched_policy and entry.get("tag") == tag:
                     raise RuntimeError("Identical matched replicate tag already retained; no automatic retry")
                 if (
-                    matched_policy and entry.get("concurrent_state") == "in_flight" and not entry.get("error")
+                    matched_policy and entry.get("concurrent_state") in {"in_flight", "interrupted"}
+                    and not entry.get("error")
                     and entry.get("tag", "").split("/", 1)[0] == "P003" and wave == "P003"
                 ):
                     continue  # Same input, independently named arm; all reservations still count.
@@ -178,6 +179,31 @@ class ConcurrentDecisionClient:
             (self.directory / f"request-{index:03d}.json").write_bytes(encoded)
             ledger["concurrent_policy"] = deepcopy(self.policy)
             entries.append(entry)
+            hosted.checkpoint(self.ledger, ledger)
+            return deepcopy(entry)
+
+    def reconcile_interrupted(self, index: int, reason: str) -> dict[str, Any]:
+        """Offline-reconcile one reservation whose transmitting process died.
+
+        The entry must still be in flight with no retained response. It stops
+        occupying a transport slot, but its reservation stays counted as an
+        unresolved charge because transmission and billing are unknown.
+        """
+        if not reason.strip():
+            raise ValueError("Interruption reconciliation requires an investigated reason")
+        with hosted.exclusive_lock(self.directory / "ledger.lock"):
+            ledger = self._load()
+            entries = ledger["requests"]
+            if type(index) is not int or not 0 <= index < len(entries):
+                raise ValueError("Unknown ledger index")
+            entry = entries[index]
+            if entry.get("concurrent_state") != "in_flight" or entry.get("cost_status") != "reserved":
+                raise RuntimeError("Only an unsettled in-flight reservation can be marked interrupted")
+            for suffix in ("json", "oversized-prefix.bin"):
+                if (self.directory / f"response-{index:03d}.{suffix}").exists():
+                    raise RuntimeError("Retained response awaits settlement; interruption refused")
+            entry["concurrent_state"] = "interrupted"
+            entry["interruption"] = {"reason": reason, "reconciled_at": time.time()}
             hosted.checkpoint(self.ledger, ledger)
             return deepcopy(entry)
 

@@ -472,3 +472,36 @@ def test_matched_policy_cannot_admit_other_waves(base: hosted.DecisionClient) ->
         ConcurrentDecisionClient(base, allow_matched_replicates=True)
     with pytest.raises(ValueError, match="P003-only"):
         ConcurrentDecisionClient(base, wave_limits={"P002": 50}, allow_matched_replicates=True)
+
+
+def test_interrupted_reservation_frees_slot_keeps_charge_and_allows_named_rerun(
+    base: hosted.DecisionClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from bench import research_policy  # noqa: PLC0415
+
+    monkeypatch.setattr(research_policy.time, "time", lambda: research_policy.P003_EXTENSION_CUTOFF - 60)
+    client = ConcurrentDecisionClient(
+        base, max_inflight=1, opener=lambda request, *, timeout: response(payload()),  # noqa: ARG005
+        wave_limits={"P003": 50.0}, allow_matched_replicates=True,
+    )
+    # Simulate a process killed between reservation and settlement.
+    encoded = json.dumps(body(), separators=(",", ":")).encode()
+    reservation = client._reserve(body(), encoded, "P003/extension-v1-a/q", 0.3)  # noqa: SLF001
+    with pytest.raises(RuntimeError, match="in-flight limit"):
+        client.request(body("other"), tag="P003/extension-v1-b/q")
+    with pytest.raises(ValueError, match="investigated reason"):
+        client.reconcile_interrupted(reservation["index"], " ")
+    marked = client.reconcile_interrupted(reservation["index"], "host reboot")
+    assert marked["concurrent_state"] == "interrupted"
+    assert marked["cost_status"] == "reserved"
+    assert marked["accounted_usd"] == 0.3
+    with pytest.raises(RuntimeError, match="unsettled in-flight"):
+        client.reconcile_interrupted(reservation["index"], "again")
+    ok = ConcurrentDecisionClient(
+        base, max_inflight=1, opener=lambda request, *, timeout: response(payload()),  # noqa: ARG005
+        wave_limits={"P003": 50.0}, allow_matched_replicates=True,
+    )
+    ok.request(body(), tag="P003/extension-v1-a-r2/q")
+    rows = ledger(base)["requests"]
+    assert rows[0]["accounted_usd"] == 0.3
+    assert rows[1]["concurrent_state"] == "completed"
