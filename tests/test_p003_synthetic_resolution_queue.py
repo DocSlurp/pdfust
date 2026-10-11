@@ -65,7 +65,7 @@ def mock_core(tmp_path: Path) -> SimpleNamespace:
 
     def validate(rows: list, seed: int) -> list:
         result = list(rows)
-        random.Random(seed).shuffle(result)
+        random.Random(seed).shuffle(result)  # noqa: S311 - deterministic experiment ordering, no security use.
         return result
 
     def next_index(rows: list, active: list, limit: int) -> int | None:
