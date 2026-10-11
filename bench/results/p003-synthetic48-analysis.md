@@ -1,6 +1,6 @@
 # Synthetic native relationship decisions: original protocol and exact-alias replay
 
-Checkpoint: 32/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
+Checkpoint: 35/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
 
 Primary original outcomes remain unchanged. The separately labeled secondary replay accepts only exact requested-ID → canonical-slug mappings from the approved catalog attestation; it first authenticates archived runtime/source bytes, literal native request and transmitted bytes, fresh ledger tag/requested model/request hash, all responses and accounting. Only a copied returned `model` field changes. Raw choices, probabilities, confidence, usage, originals and charges remain unchanged. Invalid probability mass, wrong request identity and unrecognized aliases still fail.
 
@@ -28,11 +28,11 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | cloudflare/clef-flash | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | cloudflare/clef-omni | rows_rules/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
-| cloudflare/clef-omni | text_geometry/crop/128 | — | — | unscored (completed) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/crop/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/page/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | cloudflare/clef-omni | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| cloudflare/clef-omni | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
-| inception/mercury-decide | rows_rules/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/page/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| inception/mercury-decide | rows_rules/page/0 | 0 | 24 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
 | inception/mercury-decide | text_geometry/page/0 | 0 | 24 | 2 | 1 | 0/0/2 | 4 | 4 | 20 | 0 | 0 | 0 |
 | liquid/d1 | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | liquid/d1 | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
@@ -42,7 +42,7 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | nace-ai/drex-v1.5 | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | rows_rules/page/0 | 0 | 24 | 2 | 2 | 1/1/0 | 6 | 6 | 18 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
-| openai/gpt-6-luna-decisions | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | text_geometry/crop/128 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | openai/gpt-6-luna-decisions | text_geometry/page/128 | 0 | 24 | 1 | 1 | 0/1/0 | 6 | 2 | 22 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/crop/512 | 0 | 24 | 6 | 6 | 1/3/2 | 6 | 13 | 11 | 0 | 0 | 0 |
 | openai/gpt-6-luna-decisions | text_geometry/page/512 | 0 | 24 | 8 | 7 | 2/3/3 | 4 | 14 | 10 | 0 | 0 | 0 |
@@ -57,11 +57,11 @@ Original agreement and malformed counts preserve the strict archived protocol. A
 | togethercomputer/tev1-4b-experimental | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | togethercomputer/tev1-4b-experimental | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | typesafe/jev-1.13 | rows_rules/page/0 | 0 | 24 | 8 | 5 | 3/4/1 | 0 | 19 | 5 | 0 | 0 | 0 |
-| typesafe/jev-1.13 | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| typesafe/jev-1.13 | text_geometry/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
 | upstage/solar-decide | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | upstage/solar-decide | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
 | upstage/solar-decide-flash | rows_rules/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
-| upstage/solar-decide-flash | text_geometry/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| upstage/solar-decide-flash | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
 
 ## Counterfactual behavior
 
@@ -81,7 +81,9 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | cloudflare/clef-flash | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 0 |
 | cloudflare/clef-omni | rows_rules/page/0 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-omni | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
+| cloudflare/clef-omni | text_geometry/crop/128 | 3 | 12 | 12 | 3 | 0 |
 | cloudflare/clef-omni | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
+| inception/mercury-decide | rows_rules/page/0 | 3 | 12 | 11 | 3 | 0 |
 | inception/mercury-decide | text_geometry/page/0 | 12 | 12 | 12 | 11 | 10 |
 | liquid/d1 | text_geometry/page/0 | 12 | 12 | 12 | 5 | 0 |
 | microsoft/microsoft-decision-1 | rows_rules/page/0 | 3 | 12 | 11 | 0 | 0 |
@@ -101,6 +103,7 @@ Consistency is an observed response property, not evidence of correctness. Ident
 | respan/span-01 | text_geometry/page/0 | 12 | 0 | 0 | 0 | 0 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 3 | 12 | 10 | 0 | 2 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 3 | 12 | 12 | 3 | 12 |
+| upstage/solar-decide-flash | text_geometry/page/0 | 12 | 12 | 12 | 1 | 12 |
 
 ## Operational cost, tokens and resources
 
@@ -120,7 +123,9 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | cloudflare/clef-flash | text_geometry/crop/512 | 24 | 0.0009638 | 0.0009638 | provider-reported USD:24 | 15.933 | 24902.569 | 25362 (24/24) | 0 (24/24) | 90.376 | 32.428 | 200.133 |
 | cloudflare/clef-omni | rows_rules/page/0 | 24 | 0.0104181 | 0.0104181 | provider-reported USD:24 | 17.296 | 2303.683 | 69454 (24/24) | 0 (24/24) | 83.256 | 34.360 | 202.602 |
 | cloudflare/clef-omni | text_geometry/page/0 | 24 | 0.0024798 | 0.0024798 | provider-reported USD:24 | 17.164 | 9678.200 | 16532 (24/24) | 0 (24/24) | 83.898 | 31.358 | 198.254 |
+| cloudflare/clef-omni | text_geometry/crop/128 | 24 | 0.0032919 | 0.0032919 | provider-reported USD:24 | 15.176 | 7290.622 | 21946 (24/24) | 0 (24/24) | 94.888 | 34.876 | 203.207 |
 | cloudflare/clef-omni | text_geometry/page/128 | 24 | 0.0032646 | 0.0032646 | provider-reported USD:24 | 16.210 | 7351.590 | 21764 (24/24) | 0 (24/24) | 88.836 | 31.341 | 198.914 |
+| inception/mercury-decide | rows_rules/page/0 | 24 | 0.0014280 | 0.0014280 | provider-reported USD:24 | 14.669 | 16806.487 | 71401 (24/24) | 24 (24/24) | 98.163 | 35.155 | 198.852 |
 | inception/mercury-decide | text_geometry/page/0 | 24 | 0.0003118 | 0.0003118 | provider-reported USD:24 | 15.870 | 12830.382 | 15588 (24/24) | 24 (24/24) | 90.737 | 31.888 | 197.684 |
 | liquid/d1 | text_geometry/page/0 | 24 | 0.0004431 | 0.0004431 | provider-reported USD:24 | 15.797 | 54161.401 | 11078 (24/24) | 0 (24/24) | 91.156 | 30.715 | 198.832 |
 | microsoft/microsoft-decision-1 | rows_rules/page/0 | 24 | 0.0030426 | 0.0030426 | provider-reported USD:24 | 15.860 | 7887.866 | 72444 (24/24) | 24 (24/24) | 90.796 | 32.350 | 199.438 |
@@ -140,6 +145,7 @@ Question rates use the original hosted duration and charges. Secondary decisive 
 | respan/span-01 | text_geometry/page/0 | 1 | unknown | unknown | reserved:1 | 17.931 | unknown | unknown (0/0) | unknown (0/0) | 3.346 | 1.372 | 199.316 |
 | typesafe/jev-1.13 | rows_rules/page/0 | 24 | 0.0031459 | 0.0031459 | provider-reported USD:24 | 16.790 | 6039.638 | 74902 (24/24) | 1095 (24/24) | 85.764 | 33.420 | 198.539 |
 | upstage/solar-decide-flash | rows_rules/page/0 | 24 | 0.0040117 | 0.0040117 | provider-reported USD:24 | 12.957 | 0.000 | 80234 (24/24) | 24 (24/24) | 111.139 | 32.303 | 198.434 |
+| upstage/solar-decide-flash | text_geometry/page/0 | 24 | 0.0011165 | 0.0011165 | provider-reported USD:24 | 11.813 | 0.000 | 22330 (24/24) | 24 (24/24) | 121.898 | 34.967 | 199.773 |
 
 ## Provenance and limitations
 
@@ -163,7 +169,9 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-clefflash-geometry-crop512-r0-c3 | `f9f6c4e4886d7fb8144bd6e57d10d4d0ed4066b3951117d00db11a1a681ed20e` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
 | synth-clefomni-rows-rules-text-r0-c3 | `48b0c29cd670ad44cb57f34e509b82214ceec4a320b2c5aa864f79ccdafb1dec` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-clefomni-text-geometry-text-r0-c3 | `fea74f881a0cb3773ea11e066f9121cf47d9b1a38bbc62ad4eb01385ffb3e457` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-clefomni-geometry-crop128-r0-c3 | `8031c1ae13d93a0778f1f18df3c3a19e9d35f9889ee4ae764b475c960d972adf` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-clefomni-geometry-page128-r0-c3 | `d9c1449a177c341eecd9fc68ab9d7dd60e8808a75f5a0b8d0c5d9ffce2d42cf6` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
+| synth-mercury-rows-rules-text-r0-c3 | `fc18aa17a2a76b99048745beb5c5ac1c8e245b74040aa2d0c8152ed381e4c00c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-mercury-text-geometry-text-r0-c3 | `666b9665c398808b5221f94d9d02a9a86011f0c5d74fccab85687057cde8447a` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-d1-text-geometry-text-r0-c3 | `0909b1e973f957f18f97d1edaf8980048eec327ba6981823d2f917b2de6d1ff4` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
 | synth-msdecision-rows-rules-text-r0-c3 | `701f85fee13730b022e421660b7845fbcaa316eb5c011bacc0eae811c1d4f070` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
@@ -183,3 +191,4 @@ Each arm retains the original `report.json` plus separate `synthetic-alias-evalu
 | synth-span-text-geometry-text-r0-c3 | `ca9fb3756a0cddddff1ed5fa075a482062f3d3fd8f4995a0fd9fc6c969cdc3c5` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
 | synth-jev-rows-rules-text-r0-c3 | `47c305c3f3e8e786b37387a85673db254b83de48ee98c5abd4f30501a1ca3a3c` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
 | synth-solarflash-rows-rules-text-r0-c3 | `4f40b59727a0dbe7e02022e520f8c0927d8f95bfa8a09a07067dd2c0a9bb8268` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-solarflash-text-geometry-text-r0-c3 | `f488d5cf8d405ba79aadd919d0121e4847cc43e9e1a1f15e009bc0c83bdec329` | `ae4f41d291e1924660d04f67c2ee0ea84fffb87249e47ea4b86bfeeb7d6e0a12` |
