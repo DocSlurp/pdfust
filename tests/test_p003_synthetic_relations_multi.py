@@ -41,7 +41,7 @@ class Client:
             "request_sha256": sha(json.dumps(body, separators=(",", ":"), allow_nan=False).encode()),
             "accounted_usd": 0.01,
             "provider_reported_usd": 0.01,
-            "cost_status": "reported",
+            "cost_status": "provider-reported USD",
         }
         if self.failures and index == 2:
             entry.update(accounted_usd=0.3, cost_status="reserved")
