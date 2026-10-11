@@ -14,6 +14,7 @@ uv sync --group bench-rich
 uv run python -m bench.features
 uv venv --python 3.12 /tmp/pylopdf-model-bench
 uv pip install --python /tmp/pylopdf-model-bench/bin/python \
+  --index-strategy unsafe-best-match \
   --extra-index-url https://download.pytorch.org/whl/cpu \
   -r bench/models-requirements.txt
 PYTHONPATH=src:. /tmp/pylopdf-model-bench/bin/python -m bench.model_features \

@@ -139,8 +139,12 @@ overview.
   escaping, tables, math, images, links) against exact ground truth in
   `bench/markdown_score_cases.py`. Isolated converters (MarkItDown, Docling,
   Marker) run through `bench/markdown_score_run.py TOOL INPUTS OUTPUTS` in their
-  own environments before `--score`. Only `bench/results/markdown-scores.md` is
-  committed; inputs, outputs, and JSON stay in ignored artifacts.
+  own environments before `--score`. `--score` also syncs dataset
+  `pdf-markdown-elements-v1` and one scored run per converter to the local
+  Langfuse configured in `.env` (see `bench/LANGFUSE.md`). Store every new
+  experiment and dataset in Langfuse the same way. Only
+  `bench/results/markdown-scores.md` is committed; inputs, outputs, and JSON
+  stay in ignored artifacts.
 - `bench/MODEL_BENCHMARKS.md` — isolated CPU Docling/Marker setup and rich-content
   measurements. Retain original lightweight timings and model run provenance
   separately in `bench/results/features-models.{md,json}`; publish model settings,

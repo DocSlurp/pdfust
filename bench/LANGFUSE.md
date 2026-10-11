@@ -85,3 +85,22 @@ embedding dimensions, deterministic IDs, local replay, sanitized errors,
 configuration precedence, exact pricing registration, preservation/conflicts,
 and verification. Live registration and readback are performed by the root
 runner, not by this credential-free implementation worktree.
+
+## Markdown element-score dataset and runs
+
+`bench.markdown_score_langfuse` reuses this module's configuration and
+transport. `uv run python -m bench.markdown_scores --score` syncs after writing
+the summary whenever `.env` configures Langfuse (`--no-langfuse` skips it,
+`--langfuse-force` re-sends synced runs). It upserts dataset
+`pdf-markdown-elements-v1`. Each item is one synthetic fixture: its input holds
+the PDF SHA-256, source and notes, and its expected output is the exact ground
+truth. Item IDs hash the PDF and truth, so a changed fixture creates a new item
+and stale items are archived. Each converter becomes one dataset run named
+`<tool> @ <producing commit>[-dirty] out:<output hash>`. The commit comes from
+the checkout recorded when the outputs were produced. Each case trace stores
+the complete Markdown with inline base64 replaced by its SHA-256, plus timing
+metadata. Traces carry per-category `md.*` scores and `md.case_mean`. Runs
+carry the report's check-weighted `md.*` category scores and `md.overall`.
+Deterministic IDs and local markers under the ignored
+`bench/results/pdf-master-artifacts/markdown-scores/langfuse/` make re-syncing
+idempotent. Errors are sanitized and never fail scoring.
