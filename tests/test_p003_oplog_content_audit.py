@@ -7,6 +7,7 @@ from dataclasses import replace
 import pytest
 from bench.decision_oplog import Atom, State, apply, make_cell, operation
 from bench.p003_oplog_content_audit import body_table, parse_choice
+from bench.p003_oplog_content_eval import target_body
 
 
 def initial() -> State:
@@ -71,3 +72,47 @@ def test_probability_contract_and_abstention() -> None:
     raw["answers"]["q0"]["probabilities"]["op1"] = True
     with pytest.raises(ValueError, match="Finite probability"):
         parse_choice(raw, {"op1", "abstain"})
+
+
+def target_case() -> dict:
+    """Build independent authored slots for projection policy checks."""
+    start = initial()
+    return {
+        "gold": {"choice": "A"},
+        "evidence": {
+            "words": [{"id": i, "text": a.text, "bbox": list(a.bbox)} for i, a in enumerate(start.atoms)],
+            "assemblies": {
+                "A": {
+                    "cells": [
+                        {"id": "description_header", "source_ids": [0]},
+                        {"id": "value_header", "source_ids": [1]},
+                        {"id": "r0c0", "source_ids": [2, 3]},
+                        {"id": "r0c1", "source_ids": [4]},
+                        {"id": "r1c0", "source_ids": []},
+                        {"id": "r1c1", "source_ids": []},
+                    ]
+                }
+            },
+        },
+    }
+
+
+def test_reference_projects_explicit_empty_slots() -> None:
+    body, exclusion = target_body(target_case(), initial())
+    assert exclusion is None
+    assert body["values"] == [["Alpha Beta", "120"], ["", ""]]
+
+
+def test_missing_slot_and_unresolved_never_fill_from_prediction() -> None:
+    case = target_case()
+    case["evidence"]["assemblies"]["A"]["cells"][2]["id"] = "unknown"
+    assert target_body(case, initial()) == (None, "missing-slot-annotation")
+    case["gold"]["choice"] = "unresolved"
+    assert target_body(case, initial()) == (None, "author-unresolved")
+
+
+def test_reference_invented_or_duplicated_source_rejected() -> None:
+    case = target_case()
+    case["evidence"]["assemblies"]["A"]["cells"][2]["source_ids"].append(2)
+    with pytest.raises(ValueError, match="conservation"):
+        target_body(case, initial())
