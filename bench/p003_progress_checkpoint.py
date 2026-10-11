@@ -115,11 +115,10 @@ def queue_summary(queue: dict[str, Any], status: Path) -> dict[str, Any]:
     for arm in completed:
         if arm.get("kind") not in question_kinds:
             continue
-        filename = (
-            "synthetic-shared-alias-evaluation.json"
-            if arm.get("kind") == "synthetic_shared_context"
-            else "synthetic-alias-evaluation.json"
-        )
+        filename = {
+            "synthetic_shared_context": "synthetic-shared-alias-evaluation.json",
+            "synthetic_resolution": "synthetic-resolution-evaluation.json",
+        }.get(arm.get("kind"), "synthetic-alias-evaluation.json")
         path = status.parent / arm["name"] / filename
         if not path.exists():
             continue

@@ -410,3 +410,9 @@ all extraction on those pages. The original strict views remain red where
 reference text differs; separate accepted-schema green views label the exact
 secondary scope. Physical source cell boxes are never invented. Each case
 retains full actual source, source zoom, actual matrix and quoted witnesses.
+
+Resolution25 arms use `synthetic_resolution` question units and retain their
+separate `synthetic-resolution-evaluation.json` receipts. The reporter counts
+recorded original/secondary verification independently and exposes each receipt's
+scope, hashes and timestamp. Pixel/source replay belongs to the evaluator;
+resolution relationship results never become PDF-page or table-quality rates.

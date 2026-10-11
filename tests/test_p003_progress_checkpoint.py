@@ -108,11 +108,18 @@ def test_synthetic_alias_audit_counts_preserve_original_scope(tmp_path: Path) ->
     assert result["synthetic_independent_alias_audits"][0]["secondary_scope"] == "Secondary alias replay"
 
 
-def test_shared_context_audit_uses_its_own_receipt_filename(tmp_path: Path) -> None:
-    """Shared question verification must not be counted as PDF table quality."""
+@pytest.mark.parametrize(
+    ("kind", "filename"),
+    [
+        ("synthetic_shared_context", "synthetic-shared-alias-evaluation.json"),
+        ("synthetic_resolution", "synthetic-resolution-evaluation.json"),
+    ],
+)
+def test_question_audit_uses_its_own_receipt_filename(tmp_path: Path, kind: str, filename: str) -> None:
+    """Question verification must not be counted as PDF table quality."""
     arm = tmp_path / "shared" / "a"
     arm.mkdir(parents=True)
-    (arm / "synthetic-shared-alias-evaluation.json").write_text(
+    (arm / filename).write_text(
         json.dumps(
             {
                 "original_verified": {"report_sha256": "a" * 64},
@@ -120,8 +127,8 @@ def test_shared_context_audit_uses_its_own_receipt_filename(tmp_path: Path) -> N
             }
         )
     )
-    queue = {"frozen_order": [1], "arms": [{"name": "a", "kind": "synthetic_shared_context", "status": "completed"}]}
+    queue = {"frozen_order": [1], "arms": [{"name": "a", "kind": kind, "status": "completed"}]}
     result = queue_summary(queue, arm.parent / "status.json")
     assert result["synthetic_recorded_original_verified_jobs"] == 1
     assert "attempted_pdf_pages" not in result
-    assert result["synthetic_independent_alias_audits"][0]["path"].endswith("synthetic-shared-alias-evaluation.json")
+    assert result["synthetic_independent_alias_audits"][0]["path"].endswith(filename)
