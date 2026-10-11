@@ -8,6 +8,7 @@ import json
 import resource
 import time
 from pathlib import Path
+from typing import Any
 
 from PIL import Image, ImageDraw
 
@@ -65,7 +66,7 @@ def run(corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: C9
         with Image.open(image_path) as original:
             rgba = original.convert("RGBA")
             alpha = rgba.getchannel("A")
-            stats = {
+            stats: dict[str, Any] = {
                 "mode": original.mode,
                 "size": list(original.size),
                 "channel_extrema": rgba.getextrema(),
@@ -114,8 +115,8 @@ def run(corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: C9
             contact.paste(panel, (column * 1800, y))
         y += max(p.height for p in group)
     contact.save(batch / "source-contact-sheet.png")
-    for path, expected in receipts.items():
-        if digest(Path(path).read_bytes()) != expected:
+    for receipt_path, expected in receipts.items():
+        if digest(Path(receipt_path).read_bytes()) != expected:
             raise ValueError("A source or rendering dependency changed during inspection")
     provenance = {
         "batch_sha256": identity,

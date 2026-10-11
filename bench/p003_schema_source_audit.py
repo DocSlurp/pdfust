@@ -236,8 +236,8 @@ def build(root: Path, output: Path) -> Path:
                 "source_review_status": "Image review pending; no semantic acceptance inferred from tokens alone",
             }
         )
-    for path, expected_hash in receipts.items():
-        if digest(Path(path).read_bytes()) != expected_hash:
+    for receipt_path, expected_hash in receipts.items():
+        if digest(Path(receipt_path).read_bytes()) != expected_hash:
             raise ValueError("Dependency changed during rendering")
     contact = Image.new("RGB", (1800, sum(p.height for p in contact_panels) + 100), "white")
     lines(

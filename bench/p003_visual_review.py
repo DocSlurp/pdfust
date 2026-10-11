@@ -14,7 +14,7 @@ import resource
 import time
 import unicodedata
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from PIL import Image, ImageDraw, ImageFont
 from PIL import __version__ as pillow_version
@@ -32,7 +32,26 @@ DEFAULT_IDS = (
 )
 FONT = Path("/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc")
 LATIN_FONT = Path("/usr/share/fonts/noto/NotoSans-Regular.ttf")
-RENDER_SETTINGS = {
+class RenderSettings(TypedDict):
+    """Typed frozen diagnostic renderer settings; values retain their original JSON form."""
+
+    raster_width: int
+    panel_width: int
+    grid_width: int
+    maximum_grid_height: int
+    source_preview_box: list[int]
+    grid_preview_box: list[int]
+    source_table_zoom_box: list[int]
+    source_mask_alpha: int
+    cell_font_size: int
+    resampling: str
+    format: str
+    pdf_background_rgb: list[int]
+    pillow_version: str
+    colors: dict[str, tuple[int, int, int]]
+
+
+RENDER_SETTINGS: RenderSettings = {
     "raster_width": 1600,
     "panel_width": 1800,
     "grid_width": 940,

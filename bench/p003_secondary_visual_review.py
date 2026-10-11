@@ -244,8 +244,8 @@ def build(audit_path: Path, output: Path) -> Path:
         for row in rows:
             y = lines(draw, (20, y), row, 1760, 18) + 16
         canvas.crop((0, 0, 1800, y + 20)).save(batch / f"character-evidence-T{target_index}.png")
-    for path, expected in receipts.items():
-        if digest(Path(path).read_bytes()) != expected:
+    for receipt_path, expected in receipts.items():
+        if digest(Path(receipt_path).read_bytes()) != expected:
             raise ValueError("Dependency changed during rendering")
     (batch / "evidence.json").write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n")
     (batch / "provenance.json").write_text(

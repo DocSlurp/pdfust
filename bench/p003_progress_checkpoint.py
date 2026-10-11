@@ -182,7 +182,7 @@ def checkpoint(  # noqa: C901, PLR0912
         plans.append(
             {"name": name, "required": int(count), "scope": "coordinator-declared plan; launch telemetry unavailable"}
         )
-    coordinator = {}
+    coordinator: dict[str, Any] = {}
     if metadata is not None:
         coordinator, receipt = observed(metadata)
         sources.append(receipt)

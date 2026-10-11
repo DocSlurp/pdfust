@@ -109,8 +109,8 @@ def build(root: Path, base: Path, output: Path) -> Path:
         evidence.append({"id": identifier, "observation": observation, "gold": reference,
                          "actual": actual, "secondary_pair": pair,
                          "scope": "Qualitative source audit, not automatic schema acceptance"})
-    for path, expected in receipts.items():
-        if digest(Path(path).read_bytes()) != expected:
+    for receipt_path, expected in receipts.items():
+        if digest(Path(receipt_path).read_bytes()) != expected:
             raise ValueError("Dependency changed during rendering")
     (destination / "evidence.json").write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n")
     (destination / "provenance.json").write_text(json.dumps({"receipts": receipts, "base": provenance,
