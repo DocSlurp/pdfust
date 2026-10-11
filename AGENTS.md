@@ -36,7 +36,9 @@ overview.
 - Do not place experiments unrelated to PDF processing in this repository.
 - Silver optimization is DEV-only. Do not read, enumerate, search, regenerate,
   or score `bench/heldout-silver/` or
-  `bench/results/pdf-master-artifacts/silver-heldout-v1/` during tuning.
+  `bench/results/pdf-master-artifacts/silver-heldout-v1/` during tuning. The
+  same applies to the `HELD-OUT-NOT-FOR-TRAINING/` Langfuse datasets, which the
+  user released for storage only on 2026-10-11.
   Custodian-only confirmation requires a frozen DEV-selected configuration;
   this protection is procedural, not an OS access boundary.
 - Prefer positive provider-reported charges. For zero or missing charges, use
@@ -145,6 +147,14 @@ overview.
   experiment and dataset in Langfuse the same way. Only
   `bench/results/markdown-scores.md` is committed; inputs, outputs, and JSON
   stay in ignored artifacts.
+- `uv run python -m bench.langfuse_backfill all` — sync experiments and data
+  sets to the local Langfuse. It stores DEV corpora as `dev/...` datasets,
+  silver-v1 and wild-v1 per-document results as scored runs, one registry trace
+  per artifact directory, and every committed `bench/results/*.md` report plus
+  `EXPERIMENTS_LOG.md`. Re-running is idempotent. Store every new experiment and
+  dataset in Langfuse. The held-out silver set is uploaded only with
+  `heldout --custodian-release` as `HELD-OUT-NOT-FOR-TRAINING/...`. Agents must
+  never query that prefix (see `bench/heldout-silver/AGENTS.md`).
 - `bench/MODEL_BENCHMARKS.md` — isolated CPU Docling/Marker setup and rich-content
   measurements. Retain original lightweight timings and model run provenance
   separately in `bench/results/features-models.{md,json}`; publish model settings,

@@ -104,3 +104,31 @@ carry the report's check-weighted `md.*` category scores and `md.overall`.
 Deterministic IDs and local markers under the ignored
 `bench/results/pdf-master-artifacts/markdown-scores/langfuse/` make re-syncing
 idempotent. Errors are sanitized and never fail scoring.
+
+## Experiment and dataset backfill
+
+`bench.langfuse_backfill` stores the rest of the research record through the
+same transport. Each step is idempotent through deterministic IDs and local
+markers under the ignored `bench/results/pdf-master-artifacts/langfuse-backfill/`.
+
+- `datasets`: `dev/silver-v1/<version>`, `dev/borderless-dev-v1/<version>`,
+  `dev/silver-realism-v2/<version>`, `dev/wild-v1`, and `dev/omnidoc-dev`.
+  Item inputs hold the case record and PDF identity, with the PDF as base64
+  when it is at most 512 KiB. Expected outputs hold the authored targets. Item
+  IDs hash the PDF bytes, and stale items are archived.
+- `runs`: each retained silver-v1 benchmark becomes a run scored by
+  `silver.anchor_recall` and `silver.completed`. Each wild-v1 audit level
+  becomes a run scored by `wild.markdown_{f1,precision,recall}`.
+- `experiments`: one `experiment/<directory>` trace per artifact directory. It
+  holds a path/size/mtime digest, file and byte counts, the top-level file
+  list, and up to 256 KB of top-level reports. A trace is re-sent only when the
+  digest changes. Raw request/response files remain on disk; paid requests
+  already export individually through `emit_request`.
+- `reports`: one `report/<path>` trace per committed result summary and
+  `EXPERIMENTS_LOG.md` content version.
+- `heldout --custodian-release`: the protected held-out upload described in
+  `bench/heldout-silver/AGENTS.md`. Other steps refuse protected paths.
+
+Uploaded text is truncated and scrubbed of credential-like strings. Image
+pages (OmniDocBench, wild-v1 assets) are referenced by path and SHA-256 rather
+than uploaded.
