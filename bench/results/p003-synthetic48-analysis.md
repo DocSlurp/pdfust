@@ -1,0 +1,158 @@
+# Synthetic native relationship decisions: original protocol and exact-alias replay
+
+Checkpoint: 23/48 declared arms independently verified. Pending or active arms remain unscored; these are single runs of a frozen 24-case source corpus. No new API calls occurred during this audit.
+
+Primary original outcomes remain unchanged. The separately labeled secondary replay accepts only exact requested-ID → canonical-slug mappings from the approved catalog attestation; it first authenticates archived runtime/source bytes, literal native request and transmitted bytes, fresh ledger tag/requested model/request hash, all responses and accounting. Only a copied returned `model` field changes. Raw choices, probabilities, confidence, usage, originals and charges remain unchanged. Invalid probability mass, wrong request identity and unrecognized aliases still fail.
+
+All-case agreement uses all 24 intended cases, including abstentions, malformed/transport failures and unattempted cases. Each kind has eight cases. Eighteen cases have visually cued construction labels; the remaining six belong to three opposing-label twins with identical source PDFs, vectors and pixels, so abstention is the appropriate evidential diagnostic there. Author-label agreement is not a claim those six hidden labels are recoverable. Text geometry also omits rule distinctions and gives identical complete requests to all 12 opposing-label twins: deterministic identical answers match at most 12/24, while stochastic sampled outcomes can fluctuate above that count.
+
+No table/source assignment or full-page throughput is claimed. Models are separate; no fallback or retry supplies another model’s answer.
+
+## Quality over complete denominators
+
+Original agreement and malformed counts preserve the strict archived protocol. All remaining columns describe secondary exact-alias replay. `C/R/W` are cell/row/wrap author-label matches out of eight each; decisive and abstained sum only valid native outcomes.
+
+| Model | Treatment evidence/viewport/edge | Original agreement /24 | Original malformed | Secondary agreement /24 | Cued /18 | C/R/W /8 | Indeterminate abstained /6 | Decisive | Abstained | Malformed | Transport | Unattempted |
+|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|
+| cloudflare/clef | rows_rules/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef | text_geometry/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef | text_geometry/crop/128 | 13 | 0 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef | text_geometry/page/128 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-flash | rows_rules/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef-flash | text_geometry/page/0 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef-flash | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-flash | text_geometry/page/128 | 12 | 0 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef-flash | text_geometry/crop/512 | 13 | 0 | 13 | 10 | 4/5/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef-flash | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/page/0 | — | — | unscored (completed) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/page/128 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| cloudflare/clef-omni | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | text_geometry/page/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| inception/mercury-decide | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| inception/mercury-decide | text_geometry/page/0 | 0 | 24 | 2 | 1 | 0/0/2 | 4 | 4 | 20 | 0 | 0 | 0 |
+| liquid/d1 | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| liquid/d1 | text_geometry/page/0 | 0 | 24 | 12 | 9 | 4/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| microsoft/microsoft-decision-1 | rows_rules/page/0 | 0 | 24 | 13 | 10 | 5/4/4 | 0 | 24 | 0 | 0 | 0 | 0 |
+| microsoft/microsoft-decision-1 | text_geometry/page/0 | 0 | 24 | 3 | 2 | 1/0/2 | 4 | 6 | 18 | 0 | 0 | 0 |
+| nace-ai/drex-v1.5 | rows_rules/page/0 | 0 | 24 | 11 | 8 | 4/4/3 | 0 | 21 | 3 | 0 | 0 | 0 |
+| nace-ai/drex-v1.5 | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
+| openai/gpt-6-luna-decisions | rows_rules/page/0 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | text_geometry/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
+| openai/gpt-6-luna-decisions | text_geometry/crop/128 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | text_geometry/page/128 | 0 | 24 | 1 | 1 | 0/1/0 | 6 | 2 | 22 | 0 | 0 | 0 |
+| openai/gpt-6-luna-decisions | text_geometry/crop/512 | 0 | 24 | 6 | 6 | 1/3/2 | 6 | 13 | 11 | 0 | 0 | 0 |
+| openai/gpt-6-luna-decisions | text_geometry/page/512 | 0 | 24 | 8 | 7 | 2/3/3 | 4 | 14 | 10 | 0 | 0 | 0 |
+| perplexity/pplx-decider-v1.1-27b | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/crop/128 | 0 | 24 | 15 | 12 | 5/6/4 | 0 | 23 | 1 | 0 | 0 | 0 |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/page/128 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/crop/512 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/page/512 | — | — | unscored (running) | — | — | — | — | — | — | — | — |
+| respan/span-01 | rows_rules/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
+| respan/span-01 | text_geometry/page/0 | 0 | 0 | 0 | 0 | 0/0/0 | 0 | 0 | 0 | 0 | 1 | 23 |
+| togethercomputer/tev1-4b-experimental | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| togethercomputer/tev1-4b-experimental | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| typesafe/jev-1.13 | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| typesafe/jev-1.13 | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| upstage/solar-decide | rows_rules/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| upstage/solar-decide | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+| upstage/solar-decide-flash | rows_rules/page/0 | 0 | 24 | 0 | 0 | 0/0/0 | 6 | 0 | 24 | 0 | 0 | 0 |
+| upstage/solar-decide-flash | text_geometry/page/0 | — | — | unscored (not launched) | — | — | — | — | — | — | — | — |
+
+## Counterfactual behavior
+
+Consistency is an observed response property, not evidence of correctness. Identical requests with opposing hidden labels should not be credited as two recoverable decisions. Raw probabilities are reported without renormalization or calibration.
+
+| Model | Treatment | Identical request twins /12 | Both valid /12 | Same choice /12 | Exact same raw probabilities /12 | Both abstained /12 |
+|---|---|---:|---:|---:|---:|---:|
+| cloudflare/clef | rows_rules/page/0 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
+| cloudflare/clef | text_geometry/crop/128 | 3 | 12 | 11 | 3 | 0 |
+| cloudflare/clef | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-flash | rows_rules/page/0 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-flash | text_geometry/page/0 | 12 | 12 | 12 | 12 | 0 |
+| cloudflare/clef-flash | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
+| cloudflare/clef-flash | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 0 |
+| cloudflare/clef-omni | text_geometry/page/128 | 3 | 12 | 12 | 3 | 0 |
+| inception/mercury-decide | text_geometry/page/0 | 12 | 12 | 12 | 11 | 10 |
+| liquid/d1 | text_geometry/page/0 | 12 | 12 | 12 | 5 | 0 |
+| microsoft/microsoft-decision-1 | rows_rules/page/0 | 3 | 12 | 11 | 0 | 0 |
+| microsoft/microsoft-decision-1 | text_geometry/page/0 | 12 | 12 | 12 | 2 | 9 |
+| nace-ai/drex-v1.5 | rows_rules/page/0 | 3 | 12 | 11 | 3 | 1 |
+| nace-ai/drex-v1.5 | text_geometry/page/0 | 12 | 12 | 12 | 12 | 12 |
+| openai/gpt-6-luna-decisions | text_geometry/page/0 | 12 | 12 | 12 | 12 | 12 |
+| openai/gpt-6-luna-decisions | text_geometry/page/128 | 3 | 12 | 12 | 3 | 11 |
+| openai/gpt-6-luna-decisions | text_geometry/crop/512 | 3 | 12 | 11 | 3 | 5 |
+| openai/gpt-6-luna-decisions | text_geometry/page/512 | 3 | 12 | 10 | 3 | 4 |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/crop/128 | 3 | 12 | 8 | 3 | 0 |
+| respan/span-01 | rows_rules/page/0 | 3 | 0 | 0 | 0 | 0 |
+| respan/span-01 | text_geometry/page/0 | 12 | 0 | 0 | 0 | 0 |
+| upstage/solar-decide-flash | rows_rules/page/0 | 3 | 12 | 12 | 3 | 12 |
+
+## Operational cost, tokens and resources
+
+Question rates use the original hosted duration and charges. Secondary decisive rates mean the number of archived answers accepted by offline alias replay per original hosted resource; they are not fresh replay throughput. Effective cost is complete only when every retained attempt has a recognized resolved basis; provider zeros remain preserved, catalog estimates labeled, reservations/unknown costs remain incomplete. Tokens below are observed provider response usage, with explicit returned-response coverage; absent counters remain unknown. CPU/RSS cover the original single process including preprocessing (100 ms RSS samples); hosted GPU is unmeasured and local GPU unused.
+
+| Model | Treatment | Attempts | Effective USD | Reported USD | Cost basis | Attempt q/min | Secondary decisive/APIUSD | Input tokens (coverage) | Output tokens (coverage) | Wall s | CPU s | Peak RSS MiB |
+|---|---|---:|---:|---:|---|---:|---:|---|---|---:|---:|---:|
+| cloudflare/clef | rows_rules/page/0 | 24 | 0.0166786 | 0.0166786 | provider-reported USD:24 | 15.360 | 1438.973 | 69494 (24/24) | 0 (24/24) | 93.752 | 30.792 | 171.320 |
+| cloudflare/clef | text_geometry/page/0 | 24 | 0.0039811 | 0.0039811 | provider-reported USD:24 | 15.660 | 6028.454 | 16588 (24/24) | 0 (24/24) | 91.953 | 31.743 | 200.152 |
+| cloudflare/clef | text_geometry/crop/128 | 24 | 0.0052805 | 0.0052805 | provider-reported USD:24 | 15.983 | 4545.041 | 22002 (24/24) | 0 (24/24) | 90.096 | 30.592 | 199.910 |
+| cloudflare/clef | text_geometry/page/128 | 24 | 0.0052368 | 0.0052368 | provider-reported USD:24 | 15.444 | 4582.951 | 21820 (24/24) | 0 (24/24) | 93.243 | 31.767 | 199.801 |
+| cloudflare/clef-flash | rows_rules/page/0 | 24 | 0.0026408 | 0.0026408 | provider-reported USD:24 | 15.505 | 9088.251 | 69494 (24/24) | 0 (24/24) | 92.874 | 31.893 | 198.000 |
+| cloudflare/clef-flash | text_geometry/page/0 | 24 | 0.0006303 | 0.0006303 | provider-reported USD:24 | 16.544 | 38074.448 | 16588 (24/24) | 0 (24/24) | 87.040 | 32.102 | 200.043 |
+| cloudflare/clef-flash | text_geometry/page/128 | 24 | 0.0008292 | 0.0008292 | provider-reported USD:24 | 15.008 | 28944.956 | 21820 (24/24) | 0 (24/24) | 95.949 | 31.499 | 199.797 |
+| cloudflare/clef-flash | text_geometry/crop/512 | 24 | 0.0009638 | 0.0009638 | provider-reported USD:24 | 15.933 | 24902.569 | 25362 (24/24) | 0 (24/24) | 90.376 | 32.428 | 200.133 |
+| cloudflare/clef-omni | text_geometry/page/128 | 24 | 0.0032646 | 0.0032646 | provider-reported USD:24 | 16.210 | 7351.590 | 21764 (24/24) | 0 (24/24) | 88.836 | 31.341 | 198.914 |
+| inception/mercury-decide | text_geometry/page/0 | 24 | 0.0003118 | 0.0003118 | provider-reported USD:24 | 15.870 | 12830.382 | 15588 (24/24) | 24 (24/24) | 90.737 | 31.888 | 197.684 |
+| liquid/d1 | text_geometry/page/0 | 24 | 0.0004431 | 0.0004431 | provider-reported USD:24 | 15.797 | 54161.401 | 11078 (24/24) | 0 (24/24) | 91.156 | 30.715 | 198.832 |
+| microsoft/microsoft-decision-1 | rows_rules/page/0 | 24 | 0.0030426 | 0.0030426 | provider-reported USD:24 | 15.860 | 7887.866 | 72444 (24/24) | 24 (24/24) | 90.796 | 32.350 | 199.438 |
+| microsoft/microsoft-decision-1 | text_geometry/page/0 | 24 | 0.0006292 | 0.0006292 | provider-reported USD:24 | 15.940 | 9536.525 | 14980 (24/24) | 24 (24/24) | 90.340 | 31.658 | 199.648 |
+| nace-ai/drex-v1.5 | rows_rules/page/0 | 24 | 0.0026665 | 0.0026665 | provider-reported USD:24 | 15.873 | 7875.551 | 66662 (24/24) | 1592 (24/24) | 90.721 | 31.991 | 199.922 |
+| nace-ai/drex-v1.5 | text_geometry/page/0 | 24 | 0.0005502 | 0.0005502 | provider-reported USD:24 | 15.563 | 0.000 | 13756 (24/24) | 1596 (24/24) | 92.527 | 30.850 | 199.625 |
+| openai/gpt-6-luna-decisions | text_geometry/page/0 | 24 | 0.0012854 | 0.0000000 | catalog estimate:24 | 17.050 | 0.000 | 12854 (24/24) | 0 (24/24) | 84.457 | 30.885 | 198.922 |
+| openai/gpt-6-luna-decisions | text_geometry/page/128 | 24 | 0.0015302 | 0.0000000 | catalog estimate:24 | 16.460 | 1307.019 | 15302 (24/24) | 0 (24/24) | 87.482 | 31.495 | 198.031 |
+| openai/gpt-6-luna-decisions | text_geometry/crop/512 | 24 | 0.0020390 | 0.0000000 | catalog estimate:24 | 15.992 | 6375.674 | 20390 (24/24) | 0 (24/24) | 90.043 | 31.274 | 200.191 |
+| openai/gpt-6-luna-decisions | text_geometry/page/512 | 24 | 0.0019910 | 0.0000000 | catalog estimate:24 | 17.317 | 7031.642 | 19910 (24/24) | 0 (24/24) | 83.153 | 31.595 | 197.477 |
+| perplexity/pplx-decider-v1.1-27b | text_geometry/crop/128 | 24 | 0.0004151 | 0.0004151 | provider-reported USD:24 | 13.167 | 55411.005 | 20754 (24/24) | 24 (24/24) | 109.366 | 32.335 | 199.547 |
+| respan/span-01 | rows_rules/page/0 | 1 | unknown | unknown | reserved:1 | 18.898 | unknown | unknown (0/0) | unknown (0/0) | 3.175 | 1.329 | 199.242 |
+| respan/span-01 | text_geometry/page/0 | 1 | unknown | unknown | reserved:1 | 17.931 | unknown | unknown (0/0) | unknown (0/0) | 3.346 | 1.372 | 199.316 |
+| upstage/solar-decide-flash | rows_rules/page/0 | 24 | 0.0040117 | 0.0040117 | provider-reported USD:24 | 12.957 | 0.000 | 80234 (24/24) | 24 (24/24) | 111.139 | 32.303 | 198.434 |
+
+## Provenance and limitations
+
+Frozen plan SHA: `79d165e01c20459fdc597ef62d5728f2cfa1ff5b9ed1089ebb812041e6d9549c`. Source freeze SHA: `fe51369b77b2f6d45c80713c9ebc8cb71b79659b37db6ae5e94c2e5418cba84e`. Evaluation-only generator gold SHA: `db0f5953579379fbf74ffba9faebf8c6acad1e622b70c4fae389d137d357e2ca`; gold was opened after the requested runs verified.
+
+Exact alias authority SHA: `2611b9db728544889bbcce3779d74452c0fe6e46f1a5c66aa3b3487ed827e068`, from the official filtered catalog snapshot `b07bd50be8933b083a6f2c9da1bf59624c6c59f4134dc0b595b51a278a82dca5`, fetched 2026-10-10 18:28:05 UTC and explicitly reviewed by the operator. No prefix/date guessing or numeric repair is permitted.
+
+Each arm retains the original `report.json` plus separate `synthetic-alias-evaluation.json`. The secondary protocol result does not retroactively change the original malformed/failure record. A single treatment run cannot establish repeat variation, stable model ranking, calibrated probability quality, or performance on unseen natural tables. The six indeterminate cases require abstention interpretation rather than hidden-label accuracy alone.
+
+| Run | Original report SHA | Runtime authority SHA |
+|---|---|---|
+| synth-clef-rows-rules-text-r0-c3 | `85ca8ceb74819c5bf3f9206327ecc99bd5fc7c5184b43c5678a1d4e8f20cb58f` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
+| synth-clef-text-geometry-text-r0-c3 | `838bc96bceddbe26965899a04c8db6d50ea016ccb86d27e8ef3256e7b0cc2ff8` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-clef-geometry-crop128-r0-c3 | `78749dff5b265474b05d5600d71dc26e2801423b0f4af4bcd6673a8a2c9b3458` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-clef-geometry-page128-r0-c3 | `56b32aa9cc5f4670918f39176fa678a99cb35beeae0cb41c8085adb70600bc59` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-clefflash-rows-rules-text-r0-c3 | `0935fff59bed9350272988aa479dec68ded5cef904e68c786e8748f5ba3ba34f` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-clefflash-text-geometry-text-r0-c3 | `2c6bb44d44f0dc5b5b61e4eb15a208111e41b2782d60f8d697704ed9eb58d3ba` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
+| synth-clefflash-geometry-page128-r0-c3 | `ef925b39bede7803f8e9d546e4b56f4fdaf3398243c6b5d806e4d3c05cc0f302` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-clefflash-geometry-crop512-r0-c3 | `f9f6c4e4886d7fb8144bd6e57d10d4d0ed4066b3951117d00db11a1a681ed20e` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
+| synth-clefomni-geometry-page128-r0-c3 | `d9c1449a177c341eecd9fc68ab9d7dd60e8808a75f5a0b8d0c5d9ffce2d42cf6` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
+| synth-mercury-text-geometry-text-r0-c3 | `666b9665c398808b5221f94d9d02a9a86011f0c5d74fccab85687057cde8447a` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-d1-text-geometry-text-r0-c3 | `0909b1e973f957f18f97d1edaf8980048eec327ba6981823d2f917b2de6d1ff4` | `44dbbe024b3a1580971c67526ee56631b7f01a007f21e139ca2eb412fac03b2c` |
+| synth-msdecision-rows-rules-text-r0-c3 | `701f85fee13730b022e421660b7845fbcaa316eb5c011bacc0eae811c1d4f070` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-msdecision-text-geometry-text-r0-c3 | `e85a680462c7cbda962a1024b87ae66a258f886fe2de85912844718ac24f84df` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-drex-rows-rules-text-r0-c3 | `9d816ca920bfe367c18212f7bd3fea6b6675bebdb40f1119b2a816bdd157a010` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-drex-text-geometry-text-r0-c3 | `8b8a4b6f422912efc02306852a26860d46632585f3135677267724fe89106065` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-lunadec-text-geometry-text-r0-c3 | `6c80a7f07623e11c40de82b1219fee050c411d36abc3031696498ccefd1552a8` | `565f11c1e6a2c7b915c2bc758757ceef37e301a21b616b859618e536b84bc904` |
+| synth-lunadec-geometry-page128-r0-c3 | `07fae35534463a32f7a8dfcf395e08d25349146eb0d4a4535bcf4881b354bf5b` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-lunadec-geometry-crop512-r0-c3 | `19c2550e5ae3701ef8609c27e6bfbd6cc8eb75c58d100c50c4739b2b3f251905` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-lunadec-geometry-page512-r0-c3 | `d4fc1f3c8129102619fba33fb8c5f257b0313cbd2b9365a913964878f7604560` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-pplx-geometry-crop128-r0-c3 | `a17007fbfed5096e7d743caaa5162297ee980872fed6efdd437afb8a6c09fd72` | `33e23957d20f5ea67e78acd56033f58f86a628ee669ef79f4e04f369cb2f2ebd` |
+| synth-span-rows-rules-text-r0-c3 | `80a91ba310587f8094146183e00f38db30563d4d3cb55964d7f876d075505eec` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-span-text-geometry-text-r0-c3 | `ca9fb3756a0cddddff1ed5fa075a482062f3d3fd8f4995a0fd9fc6c969cdc3c5` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
+| synth-solarflash-rows-rules-text-r0-c3 | `4f40b59727a0dbe7e02022e520f8c0927d8f95bfa8a09a07067dd2c0a9bb8268` | `2dd21a34ff4b941828e9b619066241c11210ad0c0bb6e1eb6a5a0dc345057ae4` |
