@@ -59,14 +59,15 @@ def test_error_page_keeps_all_reference_loss_and_gives_no_partial_output_credit(
     assert result["full_content_recall"] == 0
 
 
-def test_unsupported_merge_still_keeps_strict_acceptance_and_unknown_content_scope() -> None:
+def test_validated_merge_keeps_strict_acceptance_and_anchor_content_scope() -> None:
     merged = table([["Group", None]])
     merged["spans"] = [{"row": 0, "column": 0, "row_span": 1, "column_span": 2}]
     result = measure([merged], [merged])
     assert result["counts"]["strict_complete_tables"] == 1
     assert result["counts"]["strict_or_equivalent_tables"] == 1
-    assert result["counts"]["content_unsupported_pairs"] == 1
-    assert result["full_content_precision"] is result["full_content_recall"] is None
+    assert result["counts"]["content_supported_pairs"] == 1
+    assert result["full_content_precision"] == result["full_content_recall"] == 1
+    assert result["pages"][0]["pairs"][0]["content"]["span_topology_equal"]
 
 
 def test_changed_report_refused_before_any_evaluation_or_reference_read(tmp_path: Path) -> None:

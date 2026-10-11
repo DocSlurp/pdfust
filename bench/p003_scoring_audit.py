@@ -11,13 +11,13 @@ from pathlib import Path
 from typing import Any
 
 from bench.generalization_scoring import _cells
-from bench.p003_content_alignment import compare_content
 from bench.p003_report import strict_scores
 from bench.p003_schema_sensitivity import compare
+from bench.p003_span_content import compare_table_content
 from bench.pipeline_run import Resources
 from bench.silver import guard_path, sha, write_json
 
-VERSION = "p003-dual-score-audit-v1"
+VERSION = "p003-dual-score-audit-v2"
 
 
 def pinned(path: str, expected: str) -> dict[str, Any]:
@@ -91,7 +91,7 @@ def dual_scores(
             used_reference.add(a)
             used_prediction.add(b)
             schema = compare(target[a], predicted[b])
-            content = compare_content(target[a], predicted[b])
+            content = compare_table_content(target[a], predicted[b])
             exact = _cells(target[a]) == _cells(predicted[b])
             counts["strict_complete_tables"] += exact
             counts["strict_or_equivalent_tables"] += exact or schema["schema_equivalent"]
@@ -227,6 +227,7 @@ def audit(plan: Path, output: Path) -> dict[str, Any]:
             "p003_scoring_audit.py",
             "p003_schema_sensitivity.py",
             "p003_content_alignment.py",
+            "p003_span_content.py",
             "p003_report.py",
             "generalization_scoring.py",
         )
