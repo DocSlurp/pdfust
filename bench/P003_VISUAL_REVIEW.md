@@ -379,3 +379,34 @@ output with page-atomic zero, preserving the full reference denominator. Error
 captions show the retained reason; no invalid intermediate generation receives
 partial credit. This observed comparison is distinct from detector-only quality
 and does not establish a general causal conclusion about resolution.
+
+## Remaining four frozen schema source cases
+
+`bench.p003_schema_source_audit` admits only the two named entries and three
+source pages declared in the pinned 26-run plan. It checks the exact declaration
+and trusted v2 runtime hashes, original report/evaluation/frozen/reference/PDF
+hashes, and original strict score replay. Natural64 remains DEV; confirmation48
+is explicitly labelled frozen confirmation audit with no tuning. No other
+corpus or source path is searched.
+
+Actual full-page and regional image review found:
+
+- Uncertainty table `p3f48fe087a3e6a59b8e5` T0: three rows/three columns preserve
+  pigment headings, surface-area units, 65.18±0.25 and 56.97±0.15, and both
+  correlation coefficients. Four added character witnesses are spaces.
+- CJK market table `pfac04ae9e9cf9e0808a7` T0: all six rows/six columns preserve
+  identifiers, labels and market values. Five added witnesses are spaces in
+  headings and the index label containing 300.
+- Frozen confirmation `p0667c835fff3253fac3a` T0: eleven rows/six columns preserve
+  financial labels, units, years and values. Four missing witnesses are spaces
+  in the two plus/slash/minus percentage labels.
+- The same source T1: six key-value rows preserve values/currency units, including
+  the blank reasonable-estimate value. Seven added witnesses are spaces around
+  digits, currency units and CJK labels.
+
+Every changed witness in these selected tables is a literal space. Source review
+found no numeric or table-body token loss in these cases; this does not certify
+all extraction on those pages. The original strict views remain red where
+reference text differs; separate accepted-schema green views label the exact
+secondary scope. Physical source cell boxes are never invented. Each case
+retains full actual source, source zoom, actual matrix and quoted witnesses.
