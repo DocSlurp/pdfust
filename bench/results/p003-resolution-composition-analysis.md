@@ -1,6 +1,6 @@
 # Fixed vector and resolution-decision compositions
 
-45/75 frozen policy treatments independently replayed at this checkpoint. All 25 model/edge arms × three policies were fixed before model outcomes or labels; pending treatments remain visible. Every treatment uses the complete same 24 cases. No edge or policy is selected for execution by these scores.
+54/75 frozen policy treatments independently replayed at this checkpoint. All 25 model/edge arms × three policies were fixed before model outcomes or labels; pending treatments remain visible. Every treatment uses the complete same 24 cases. No edge or policy is selected for execution by these scores.
 
 The direct-vector baseline has 14/24 author-label matches, all 14 within the 18 visibly cued cases, 15 classified cases and nine abstentions; it abstains on all six indeterminate cases. It is a distinct deterministic control. Each composition combines that vector evidence with one configured model only, not another model’s fallback. Model-only agreement appears separately below.
 
@@ -19,9 +19,9 @@ Vector-first uses a decisive vector result, otherwise the model; agreement-only 
 | cloudflare/clef | 500 | agreement_only | 15 | 10 | 10 | 4/3/3 | 6 | 10 | 14 | 5 | 0 |
 | cloudflare/clef | 500 | either_evidence_conflicts_abstain | 15 | 14 | 11 | 5/4/5 | 0 | 19 | 5 | 5 | 0 |
 | cloudflare/clef | 500 | vector_first | 15 | 18 | 15 | 7/6/5 | 0 | 24 | 0 | 5 | 0 |
-| cloudflare/clef | 768 | agreement_only | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef | 768 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef | 768 | vector_first | — | unscored | — | — | — | — | — | — | — |
+| cloudflare/clef | 768 | agreement_only | 14 | 10 | 10 | 4/3/3 | 6 | 10 | 14 | 5 | 0 |
+| cloudflare/clef | 768 | either_evidence_conflicts_abstain | 14 | 13 | 10 | 5/4/4 | 0 | 19 | 5 | 5 | 0 |
+| cloudflare/clef | 768 | vector_first | 14 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 5 | 0 |
 | cloudflare/clef | 1024 | agreement_only | — | unscored | — | — | — | — | — | — | — |
 | cloudflare/clef | 1024 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
 | cloudflare/clef | 1024 | vector_first | — | unscored | — | — | — | — | — | — | — |
@@ -64,9 +64,9 @@ Vector-first uses a decisive vector result, otherwise the model; agreement-only 
 | openai/gpt-6-luna-decisions | 500 | agreement_only | 7 | 4 | 4 | 2/2/0 | 6 | 5 | 19 | 4 | 0 |
 | openai/gpt-6-luna-decisions | 500 | either_evidence_conflicts_abstain | 7 | 13 | 13 | 4/4/5 | 6 | 14 | 10 | 4 | 0 |
 | openai/gpt-6-luna-decisions | 500 | vector_first | 7 | 17 | 17 | 6/5/6 | 6 | 18 | 6 | 4 | 0 |
-| openai/gpt-6-luna-decisions | 768 | agreement_only | — | unscored | — | — | — | — | — | — | — |
-| openai/gpt-6-luna-decisions | 768 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
-| openai/gpt-6-luna-decisions | 768 | vector_first | — | unscored | — | — | — | — | — | — | — |
+| openai/gpt-6-luna-decisions | 768 | agreement_only | 6 | 4 | 4 | 1/3/0 | 6 | 5 | 19 | 7 | 0 |
+| openai/gpt-6-luna-decisions | 768 | either_evidence_conflicts_abstain | 6 | 9 | 9 | 2/5/2 | 6 | 10 | 14 | 7 | 0 |
+| openai/gpt-6-luna-decisions | 768 | vector_first | 6 | 16 | 16 | 6/5/5 | 6 | 17 | 7 | 7 | 0 |
 | openai/gpt-6-luna-decisions | 1024 | agreement_only | — | unscored | — | — | — | — | — | — | — |
 | openai/gpt-6-luna-decisions | 1024 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
 | openai/gpt-6-luna-decisions | 1024 | vector_first | — | unscored | — | — | — | — | — | — | — |
@@ -79,9 +79,9 @@ Vector-first uses a decisive vector result, otherwise the model; agreement-only 
 | perplexity/pplx-decider-v1.1-27b | 500 | agreement_only | 20 | 14 | 14 | 6/5/3 | 6 | 15 | 9 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | 500 | either_evidence_conflicts_abstain | 20 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | 500 | vector_first | 20 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0 | 0 |
-| perplexity/pplx-decider-v1.1-27b | 768 | agreement_only | — | unscored | — | — | — | — | — | — | — |
-| perplexity/pplx-decider-v1.1-27b | 768 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
-| perplexity/pplx-decider-v1.1-27b | 768 | vector_first | — | unscored | — | — | — | — | — | — | — |
+| perplexity/pplx-decider-v1.1-27b | 768 | agreement_only | 20 | 14 | 14 | 6/5/3 | 6 | 15 | 9 | 0 | 0 |
+| perplexity/pplx-decider-v1.1-27b | 768 | either_evidence_conflicts_abstain | 20 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0 | 0 |
+| perplexity/pplx-decider-v1.1-27b | 768 | vector_first | 20 | 20 | 17 | 7/6/7 | 0 | 24 | 0 | 0 | 0 |
 | perplexity/pplx-decider-v1.1-27b | 1024 | agreement_only | — | unscored | — | — | — | — | — | — | — |
 | perplexity/pplx-decider-v1.1-27b | 1024 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
 | perplexity/pplx-decider-v1.1-27b | 1024 | vector_first | — | unscored | — | — | — | — | — | — | — |
@@ -95,6 +95,7 @@ There are 25 original model arms, not 75 paid arms. Charges below are retained o
 | synth-clef-resolution-crop256-r0-c3 | 24 | 0.0052805 | `fbac706045de7ae0b4f9b6941e0733fd2932d545dd3964dfac6b5b6c231180c5` | `8525763dc1eaf500c16c49337e59721b593f0d53d17663110691002e824b0661` |
 | synth-clef-resolution-crop400-r0-c3 | 24 | 0.0055742 | `459e7d534e4ef352972c878ccc55fcbba0b82001c2d9339704a5632803b4ef0e` | `f96da6611cfeb15ac9fb66096fdb556f82f1b49c47801aa5490cb01846dd8a72` |
 | synth-clef-resolution-crop500-r0-c3 | 24 | 0.0060638 | `384d9c5759f3ba76d392e409bb1c5ae2ac542ab4dc16d13bd48a7c6449dc1248` | `c62e7cefde7311245e62137e53f32b31de74b8ea5979059ee7388fb4a1125959` |
+| synth-clef-resolution-crop768-r0-c3 | 24 | 0.0076306 | `abe270ad81baf4a781c2d31420ab0d719e4b3be5a646b10d05b30b569df3dd7e` | `52ef219d778ae0a097decde19939a40807f52aa93a851f8774cce7da9866e78c` |
 | synth-clefflash-resolution-crop256-r0-c3 | 24 | 0.0008361 | `3a5e511585838be816bfd5f3f50617cbbed9b52e5eabb11eeab6e9299a7dbc53` | `1c99233e4dba517a4ad4de8d84f18529cea7d99b6d9bf57952163397d63ae391` |
 | synth-clefflash-resolution-crop400-r0-c3 | 24 | 0.0008826 | `d9beccb65a9d2a2d3068a1ac544040c760972429e49e555629783d42d67bee7f` | `921709a34a0fb3c55daec336c0fa48de3e6d3bf6789728a88a936c00225fb988` |
 | synth-clefflash-resolution-crop500-r0-c3 | 24 | 0.0009601 | `2bc710b77b8ddd840453183ed7751f4006890e039bb4d56121f2a9f342051e57` | `beb29ce1e60d2e654d24c21d5c98f606f5243cc1184c2e9b7d6d907ebce086b2` |
@@ -104,9 +105,11 @@ There are 25 original model arms, not 75 paid arms. Charges below are retained o
 | synth-lunadec-resolution-crop256-r0-c3 | 24 | 0.0016358 | `b199d593f0240f878420f08b4495653b22a381338e203517094561774521a90b` | `a7414a6698badfbaad1a24e2560ee9dd32f7623bbb07dfdbd48c3d16f9f325cd` |
 | synth-lunadec-resolution-crop400-r0-c3 | 24 | 0.0018446 | `0b1228dc9b772e6fc6cb0315ff83de1cadebcc467e75ea3664c59412af66297a` | `e9c84058d097f9d4dcb91d41b599045edd504b6e70f001b3c5713474244f0e01` |
 | synth-lunadec-resolution-crop500-r0-c3 | 24 | 0.0020326 | `818805094ef4076fe448bbd12a39c7d4f046b27d437085d7ff08954aacc373a1` | `19043e610e54cad54ce2e83f1c83ae652730a5f4c6745b8b86bc99e8d51d7315` |
+| synth-lunadec-resolution-crop768-r0-c3 | 24 | 0.0027014 | `3bc7c5fb0f7335ec63f3cd6a21fbc5b8134482cee6b7e38270638dfad58fc2bc` | `3b7f216f776d3469d8bc4463c043e55a12d57d8c6f8a449a932eadcf27ce8c47` |
 | synth-pplx-resolution-crop256-r0-c3 | 24 | 0.0004151 | `d8ab61cf8d51a6b5aeddcd3f8f5ed730c87d740ec910761137031b6dc3a962c2` | `ced23435266c4345a52601166e5a38ef5d3f580310b0b18799de0d2c3fb42471` |
 | synth-pplx-resolution-crop400-r0-c3 | 24 | 0.0004396 | `f8d7071b721a093cd8350dfe274475b3f0b29d38af4cbc014fefc87c740c57ed` | `ed57f3e16b95783c7309b5761e134ac3d1cd0962f78092a34884ff817014dded` |
 | synth-pplx-resolution-crop500-r0-c3 | 24 | 0.0004804 | `df30336df4da62cd9d442a6069d0d6144963d7fa602d7849321178a7c9c96adf` | `a046356c4896c83a3da73d61d34e5cdc72c955191304f1c68117f1a4bbaa42a7` |
+| synth-pplx-resolution-crop768-r0-c3 | 24 | 0.0006109 | `85d3f4cbae42b20ea60e2cfd88d79d9c6c481b708c7e8c0af916c95d83fc0a19` | `229f0fa181f2b89d6ec0fa0b4b31e25d9020b140a0c05ef60fae8c5a17416bd2` |
 
 ## Verification and interpretation
 
