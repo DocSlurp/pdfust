@@ -13,7 +13,7 @@ Plan SHA256: `501386a3636fbc37fafc9dbc6db9762c4cbf36c93900fceaecafe128b5e9420e`.
 | random40-sonnet-yolo640-crop1024-r0-c3 | 2769/2769/2769 | 2785 | 36 | 0/1 | 1 | 0 | 39 |
 | random40-sonnet-yolo1280-crop1024-r0-c3 | running | — | — | — | — | — | — |
 
-| Run | Effective/reported APIUSD | Cost basis | Attempts | Pages/min | Pages/APIUSD | Wall/CPU s | Parent peak RSS MiB |
+| Run | Effective/reported APIUSD | Cost basis | Attempts | Operational usable pages/min | Operational usable pages/APIUSD | Wall/CPU s | Parent peak RSS MiB |
 |---|---|---|---:|---:|---:|---|---:|
 | random40-luna-yolo640-crop1024-r0-c3 | 0.0227106/0 | provider-reported BYOK upstream plus gateway USD | 41 | 5.52036 | 1761.29 | 434.754/99.1545 | 384.129 |
 | random40-luna-yolo1280-crop1024-r0-c3 | 0.0228247/0 | provider-reported BYOK upstream plus gateway USD | 38 | 5.08901 | 1708.68 | 459.814/91.9851 | 388.84 |
@@ -25,7 +25,7 @@ Plan SHA256: `501386a3636fbc37fafc9dbc6db9762c4cbf36c93900fceaecafe128b5e9420e`.
 | random40-luna-yolo1280-crop1024-r0-c3 | 40 | 22.3383/189.444 | 13.9775/60.0389 | 1308.63 |
 | random40-sonnet-yolo640-crop1024-r0-c3 | 40 | 18.4664/62.6824 | 11.3113/22.7779 | 1098.11 |
 
-Rates describe complete hosted pipeline runs under contention, not serial execution or offline evaluation speed. CPU uses process_time; parent RSS uses psutil sampling every 100 ms. Detector worker uses four CPU threads; its initialization and request CPU/active wall are shown separately. Worker RSS is sampled from its own /proc/self/statm every 100 ms plus endpoints. Worker and parent peaks must not be summed; worker active intervals overlap parent hosted pipeline wall. Costs include all attributed attempts and retain their provider-reported or estimated basis; unknown values are not zero. Do not allocate whole-run cost or wall time to selected pages or claim perfect page quality from complete reference-table counts.
+Rates count operationally usable pages of the full hosted pipeline under contention; they do not count only exact or complete-table pages and do not describe serial execution or offline evaluation speed. CPU uses process_time; parent RSS uses psutil sampling every 100 ms. Detector worker uses four CPU threads; its initialization and request CPU/active wall are shown separately. Worker RSS is sampled from its own /proc/self/statm every 100 ms plus endpoints. Worker and parent peaks must not be summed; worker active intervals overlap parent hosted pipeline wall. Costs include all attributed attempts and retain their provider-reported or estimated basis; unknown values are not zero. Do not allocate whole-run cost or wall time to selected pages or claim perfect page quality from complete reference-table counts.
 
 Single runs at each resolution do not isolate detector causality from stochastic transcription. No setting is selected from these confirmation results.
 
