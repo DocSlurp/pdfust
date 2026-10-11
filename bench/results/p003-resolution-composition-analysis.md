@@ -1,6 +1,6 @@
 # Fixed vector and resolution-decision compositions
 
-54/75 frozen policy treatments independently replayed at this checkpoint. All 25 model/edge arms × three policies were fixed before model outcomes or labels; pending treatments remain visible. Every treatment uses the complete same 24 cases. No edge or policy is selected for execution by these scores.
+63/75 frozen policy treatments independently replayed at this checkpoint. All 25 model/edge arms × three policies were fixed before model outcomes or labels; pending treatments remain visible. Every treatment uses the complete same 24 cases. No edge or policy is selected for execution by these scores.
 
 The direct-vector baseline has 14/24 author-label matches, all 14 within the 18 visibly cued cases, 15 classified cases and nine abstentions; it abstains on all six indeterminate cases. It is a distinct deterministic control. Each composition combines that vector evidence with one configured model only, not another model’s fallback. Model-only agreement appears separately below.
 
@@ -34,12 +34,12 @@ Vector-first uses a decisive vector result, otherwise the model; agreement-only 
 | cloudflare/clef-flash | 500 | agreement_only | 13 | 9 | 9 | 3/3/3 | 6 | 9 | 15 | 6 | 0 |
 | cloudflare/clef-flash | 500 | either_evidence_conflicts_abstain | 13 | 12 | 9 | 4/4/4 | 0 | 18 | 6 | 6 | 0 |
 | cloudflare/clef-flash | 500 | vector_first | 13 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 6 | 0 |
-| cloudflare/clef-flash | 768 | agreement_only | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-flash | 768 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-flash | 768 | vector_first | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-flash | 1024 | agreement_only | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-flash | 1024 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-flash | 1024 | vector_first | — | unscored | — | — | — | — | — | — | — |
+| cloudflare/clef-flash | 768 | agreement_only | 14 | 10 | 10 | 3/4/3 | 6 | 10 | 14 | 5 | 0 |
+| cloudflare/clef-flash | 768 | either_evidence_conflicts_abstain | 14 | 13 | 10 | 4/5/4 | 0 | 19 | 5 | 5 | 0 |
+| cloudflare/clef-flash | 768 | vector_first | 14 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 5 | 0 |
+| cloudflare/clef-flash | 1024 | agreement_only | 12 | 8 | 8 | 3/2/3 | 6 | 8 | 16 | 7 | 0 |
+| cloudflare/clef-flash | 1024 | either_evidence_conflicts_abstain | 12 | 11 | 8 | 4/3/4 | 0 | 17 | 7 | 7 | 0 |
+| cloudflare/clef-flash | 1024 | vector_first | 12 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 7 | 0 |
 | cloudflare/clef-omni | 256 | agreement_only | 12 | 8 | 8 | 3/2/3 | 6 | 8 | 16 | 7 | 0 |
 | cloudflare/clef-omni | 256 | either_evidence_conflicts_abstain | 12 | 11 | 8 | 4/3/4 | 0 | 17 | 7 | 7 | 0 |
 | cloudflare/clef-omni | 256 | vector_first | 12 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 7 | 0 |
@@ -49,9 +49,9 @@ Vector-first uses a decisive vector result, otherwise the model; agreement-only 
 | cloudflare/clef-omni | 500 | agreement_only | 12 | 8 | 8 | 3/2/3 | 6 | 8 | 16 | 7 | 0 |
 | cloudflare/clef-omni | 500 | either_evidence_conflicts_abstain | 12 | 11 | 8 | 4/3/4 | 0 | 17 | 7 | 7 | 0 |
 | cloudflare/clef-omni | 500 | vector_first | 12 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 7 | 0 |
-| cloudflare/clef-omni | 768 | agreement_only | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-omni | 768 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
-| cloudflare/clef-omni | 768 | vector_first | — | unscored | — | — | — | — | — | — | — |
+| cloudflare/clef-omni | 768 | agreement_only | 12 | 8 | 8 | 3/2/3 | 6 | 8 | 16 | 7 | 0 |
+| cloudflare/clef-omni | 768 | either_evidence_conflicts_abstain | 12 | 11 | 8 | 4/3/4 | 0 | 17 | 7 | 7 | 0 |
+| cloudflare/clef-omni | 768 | vector_first | 12 | 17 | 14 | 7/6/4 | 0 | 24 | 0 | 7 | 0 |
 | cloudflare/clef-omni | 1024 | agreement_only | — | unscored | — | — | — | — | — | — | — |
 | cloudflare/clef-omni | 1024 | either_evidence_conflicts_abstain | — | unscored | — | — | — | — | — | — | — |
 | cloudflare/clef-omni | 1024 | vector_first | — | unscored | — | — | — | — | — | — | — |
@@ -96,12 +96,15 @@ There are 25 original model arms, not 75 paid arms. Charges below are retained o
 | synth-clef-resolution-crop400-r0-c3 | 24 | 0.0055742 | `459e7d534e4ef352972c878ccc55fcbba0b82001c2d9339704a5632803b4ef0e` | `f96da6611cfeb15ac9fb66096fdb556f82f1b49c47801aa5490cb01846dd8a72` |
 | synth-clef-resolution-crop500-r0-c3 | 24 | 0.0060638 | `384d9c5759f3ba76d392e409bb1c5ae2ac542ab4dc16d13bd48a7c6449dc1248` | `c62e7cefde7311245e62137e53f32b31de74b8ea5979059ee7388fb4a1125959` |
 | synth-clef-resolution-crop768-r0-c3 | 24 | 0.0076306 | `abe270ad81baf4a781c2d31420ab0d719e4b3be5a646b10d05b30b569df3dd7e` | `52ef219d778ae0a097decde19939a40807f52aa93a851f8774cce7da9866e78c` |
+| synth-clefflash-resolution-crop1024-r0-c3 | 24 | 0.0015569 | `33305472fd23827ec3ddb6eeb91520b3d29f6875453595aa7beac767cd0e0175` | `ef3a7b0c185457f1aeb7c4038ebe70a1853b3b89f31556b815731b0edd94ef84` |
 | synth-clefflash-resolution-crop256-r0-c3 | 24 | 0.0008361 | `3a5e511585838be816bfd5f3f50617cbbed9b52e5eabb11eeab6e9299a7dbc53` | `1c99233e4dba517a4ad4de8d84f18529cea7d99b6d9bf57952163397d63ae391` |
 | synth-clefflash-resolution-crop400-r0-c3 | 24 | 0.0008826 | `d9beccb65a9d2a2d3068a1ac544040c760972429e49e555629783d42d67bee7f` | `921709a34a0fb3c55daec336c0fa48de3e6d3bf6789728a88a936c00225fb988` |
 | synth-clefflash-resolution-crop500-r0-c3 | 24 | 0.0009601 | `2bc710b77b8ddd840453183ed7751f4006890e039bb4d56121f2a9f342051e57` | `beb29ce1e60d2e654d24c21d5c98f606f5243cc1184c2e9b7d6d907ebce086b2` |
+| synth-clefflash-resolution-crop768-r0-c3 | 24 | 0.0012082 | `a89889119ddaa0b6f2e5f79831d98b0f9b7dc9f9029711a8bd07a35930ea79d7` | `e2f4375f3fd70deecddc51794ae7582ce409a2e72b5a9e1296d286344c591ec2` |
 | synth-clefomni-resolution-crop256-r0-c3 | 24 | 0.0032919 | `220892ec6ac37fd9c781438f1219e5ea78e6885a2fba14c4e9f95a7aba51d87d` | `7e4e45a650d001d0108b62935fe4febd18f04a33bd74a4fdfc5c08e51e1d29c7` |
 | synth-clefomni-resolution-crop400-r0-c3 | 24 | 0.0034755 | `ac9b7d7e3788ea009036136a97c034105a6e391e0b80b8a07c6832065e733267` | `d4f94867e7232c4c7556e25ecba3933b09addf60db9231fdddf2a806a0fa9064` |
 | synth-clefomni-resolution-crop500-r0-c3 | 24 | 0.0037815 | `8eac0a88d229b8022bddd400a84e7ad1c1fc0f6612dbefe6fddc4325d42f4c2e` | `ef880edd69e79724af24df1e527b7d6b9972930196e4ad81fe8bed09df334892` |
+| synth-clefomni-resolution-crop768-r0-c3 | 24 | 0.0047607 | `9b2b9943b544ae096e1f9ae0ff8675ab16158a3c501ee58e05455984e0cb1843` | `688574759b775675a47d090d69f30420e2f439454c4d344949fddc11c19021a2` |
 | synth-lunadec-resolution-crop256-r0-c3 | 24 | 0.0016358 | `b199d593f0240f878420f08b4495653b22a381338e203517094561774521a90b` | `a7414a6698badfbaad1a24e2560ee9dd32f7623bbb07dfdbd48c3d16f9f325cd` |
 | synth-lunadec-resolution-crop400-r0-c3 | 24 | 0.0018446 | `0b1228dc9b772e6fc6cb0315ff83de1cadebcc467e75ea3664c59412af66297a` | `e9c84058d097f9d4dcb91d41b599045edd504b6e70f001b3c5713474244f0e01` |
 | synth-lunadec-resolution-crop500-r0-c3 | 24 | 0.0020326 | `818805094ef4076fe448bbd12a39c7d4f046b27d437085d7ff08954aacc373a1` | `19043e610e54cad54ce2e83f1c83ae652730a5f4c6745b8b86bc99e8d51d7315` |
