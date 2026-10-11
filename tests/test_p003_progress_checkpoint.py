@@ -104,3 +104,22 @@ def test_synthetic_alias_audit_counts_preserve_original_scope(tmp_path: Path) ->
     assert result["synthetic_recorded_original_verified_jobs"] == 1
     assert result["synthetic_recorded_secondary_verified_jobs"] == 1
     assert result["synthetic_independent_alias_audits"][0]["secondary_scope"] == "Secondary alias replay"
+
+
+def test_shared_context_audit_uses_its_own_receipt_filename(tmp_path: Path) -> None:
+    """Shared question verification must not be counted as PDF table quality."""
+    arm = tmp_path / "shared" / "a"
+    arm.mkdir(parents=True)
+    (arm / "synthetic-shared-alias-evaluation.json").write_text(
+        json.dumps(
+            {
+                "original_verified": {"report_sha256": "a" * 64},
+                "secondary_verified": {"report_sha256": "b" * 64, "scope": "Shared all24 relation questions"},
+            }
+        )
+    )
+    queue = {"frozen_order": [1], "arms": [{"name": "a", "kind": "synthetic_shared_context", "status": "completed"}]}
+    result = queue_summary(queue, arm.parent / "status.json")
+    assert result["synthetic_recorded_original_verified_jobs"] == 1
+    assert "attempted_pdf_pages" not in result
+    assert result["synthetic_independent_alias_audits"][0]["path"].endswith("synthetic-shared-alias-evaluation.json")

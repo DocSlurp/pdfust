@@ -272,6 +272,13 @@ hash, timestamp and recorded scope. These are evaluator-recorded verification
 counts; the reporter does not rerun scoring or replace original strict outcomes.
 Waiting launch wrappers remain distinct from observed queue jobs.
 
+Shared-context arms use their separate
+`synthetic-shared-alias-evaluation.json` receipts. Their recorded scope covers
+24 relation questions (18 visually cued and six indeterminate) in shared context
+groups of four or eight. These receipts do not certify table or full-page
+extraction quality. The original identifier-failed protocol remains separate
+from secondary replay of an independently attested returned model identifier.
+
 ## Source-only transparency check
 
 `bench.p003_source_visual_check` reads only manifest source paths/families and
