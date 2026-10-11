@@ -211,3 +211,26 @@ cell-owned source IDs; conflicting ownership and unassigned words remain amber.
 No physical cell boxes are inferred. This three-page refresh measured 19.69s wall,
 19.42s CPU and 613,646,336 bytes process-lifetime peak RSS, single renderer,
 concurrency one; sampled utilization is unmeasured.
+
+## Dense Luna resolution comparison and pagination
+
+A further matched refresh keeps the five fixed pages and adds the explicitly
+labelled dense DEV newspaper `p98d10ef50dee4b24506a` for qualitative coverage.
+It is not a new benchmark denominator or configuration selection. Luna640 and
+Luna1280 both return no tables on this page (0/936 strict cells); Luna1024 retains
+19 actual tables and 533/936 strict cells. The independent evaluator identifies
+this page as the principal concentration of Luna1024's all-DEV strict gain.
+
+Current immutable batches are `ef70401cee3c21c4e9b5` (640),
+`93cd4f3a528d657b0c8c` (1024), and `e02b93d7cbcb10b31f4b` (1280). The readable
+Luna1024 example is `p98d10ef50dee4b24506a/regional-T0.png`.
+`original.png` always retains the full actual input, including pages with no output.
+
+Large concatenated output grids are now paginated at whole-table boundaries;
+every matrix keeps its original prediction index and exact verdict map.
+`output-pages.json` records coverage, and `extracted-tables-page-N.png` retains
+every output page. The overview states which page it shows. A single matrix
+exceeding the canvas limit still fails explicitly. The initially incomplete
+Luna1024 batch remains intact. Actual font-width wrapping replaces conservative
+character counts, keeping intact prices such as `540.50` on one line when they
+fit. This changes rendering only, retaining actual strings and primary scores.

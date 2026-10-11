@@ -11,7 +11,6 @@ import json
 import os
 import re
 import resource
-import textwrap
 import time
 import unicodedata
 from pathlib import Path
@@ -111,6 +110,26 @@ def lines(draw: ImageDraw.ImageDraw, xy: tuple[int, int], value: str, width: int
     return y
 
 
+def measured_wrap(value: str, width: float) -> list[str]:
+    """Wrap retained strings by actual font width, keeping short numbers intact."""
+    face = font(18, value)
+    chunks, pending = [], ""
+    for character in value:
+        if character == "\n":
+            chunks.append(pending)
+            pending = ""
+            continue
+        pending += character
+        if face.getlength(pending) <= width or len(pending) == 1:
+            continue
+        boundary = pending[:-1].rfind(" ") + 1
+        boundary = boundary or len(pending) - 1
+        chunks.append(pending[:boundary])
+        pending = pending[boundary:]
+    chunks.append(pending)
+    return chunks
+
+
 def output_grid(
     tables: list[dict[str, Any]],
     marks: dict[str, Any],
@@ -129,8 +148,7 @@ def output_grid(
         for key in cells:
             r, c, rs, cs = key
             value = table["values"][r][c]
-            max_chars = max(1, int((col_width * cs - 14) / 18))
-            chunks = textwrap.wrap(value, width=max_chars, replace_whitespace=False) or [""]
+            chunks = measured_wrap(value, col_width * cs - 14)
             wrapped[key] = chunks
             required_height = len(chunks) * 24 + 12
             available_height = sum(heights[r : r + rs])
@@ -169,6 +187,41 @@ def output_grid(
                 draw.text((box[0] + 5, box[1] + 4 + row_index * 24), chunk, font=font(18, chunk), fill="#15202b")
         y = offsets[-1] + 40
     return image
+
+
+def paginated_output(tables: list[dict[str, Any]], marks: dict[str, Any]) -> tuple[list[Image.Image], list[list[int]]]:
+    """Keep whole actual matrices and original indexes in bounded output pages."""
+    try:
+        return [output_grid(tables, marks)], [list(range(len(tables)))]
+    except ValueError as exc:
+        if str(exc) != "Extracted table grid exceeds bounded diagnostic canvas":
+            raise
+    pages, indexes = [], []
+    pieces: list[Image.Image] = []
+    current: list[int] = []
+    height = 0
+
+    def finish() -> None:
+        page = Image.new("RGB", (940, height), "white")
+        y = 0
+        for piece in pieces:
+            page.paste(piece, (0, y))
+            y += piece.height
+        pages.append(page)
+        indexes.append(list(current))
+
+    for index, table in enumerate(tables):
+        subset = {"output_cells": {0: marks["output_cells"][index]}}
+        piece = output_grid([table], subset, table_indexes=[index])
+        if pieces and height + piece.height > RENDER_SETTINGS["maximum_grid_height"]:
+            finish()
+            pieces, current, height = [], [], 0
+        pieces.append(piece)
+        current.append(index)
+        height += piece.height
+    if pieces:
+        finish()
+    return pages, indexes
 
 
 def lexical_tokens(value: str) -> list[str]:
@@ -403,8 +456,12 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
         directory = batch / identifier
         directory.mkdir()
         source = render_page(record, target, marks, directory)
-        grid = output_grid(tables, marks)
+        grids, page_indexes = paginated_output(tables, marks)
+        grid = grids[0]
         grid.save(directory / "extracted-tables.png")
+        for index, output_page in enumerate(grids):
+            output_page.save(directory / f"extracted-tables-page-{index + 1}.png")
+        (directory / "output-pages.json").write_text(json.dumps(page_indexes, indent=2) + "\n")
         diffs = differences(target, tables, score)
         (directory / "differences.json").write_text(json.dumps(diffs, indent=2) + "\n")
         difference_image(diffs).save(directory / "strict-differences.png")
@@ -427,6 +484,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
             f"DEV {identifier} | exact cells {score['strict_exact_cells']}/{score['expected_cells']}"
             f" | complete tables {score['complete_tables']}/{score['expected_tables']}"
             f" | missed {score['missing_tables']} | extra {score['false_positive_tables']}"
+            f" | output page 1/{len(grids)}"
         )
         lines(draw, (20, 8), caption, panel_width - 40, 22)
         source_ids = [
@@ -456,6 +514,7 @@ def run(run_dir: Path, corpus: Path, output: Path, identifiers: list[str]) -> Pa
                 "id": identifier,
                 "score": score,
                 "column_partition_audit": audits,
+                "output_page_prediction_indexes": page_indexes,
                 "masks": marks["input_tables"],
                 "source_ids": [cell.get("source_ids", []) for table in tables for cell in table.get("cells", [])],
             }

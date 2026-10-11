@@ -1,7 +1,7 @@
 """Pin strict diagnostic verdicts without granting credit for semantic similarity."""
 
 from bench.generalization_scoring import score_page
-from bench.p003_visual_review import column_partition_audit, differences, lexical_tokens, verdicts
+from bench.p003_visual_review import column_partition_audit, differences, lexical_tokens, measured_wrap, verdicts
 
 
 def test_diagnostic_marks_preserve_span_and_exact_text_requirements() -> None:
@@ -66,3 +66,10 @@ def test_fixed_partition_preserves_headers_and_digit_boundaries() -> None:
     assert audit["prediction_column_groups"] == [[0, 1], [2], [3]]
     actual["values"][0][1] = "Wrong header"
     assert not column_partition_audit(gold, actual)["verified"]
+
+
+def test_numeric_output_does_not_gain_visual_digit_breaks() -> None:
+    """Font-measured wrapping keeps a price intact and retains every character."""
+    assert measured_wrap("540.50", 100) == ["540.50"]
+    text = "A long table label with multiple words"
+    assert "".join(measured_wrap(text, 100)) == text
