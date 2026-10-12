@@ -218,12 +218,14 @@ def table_scores(truth: dict[str, Any], tables: list[list[list[str | None]]]) ->
 # ---------------------------------------------------------------- extraction audit
 
 
-def audit_pdf(path: Path, truth: dict[str, Any]) -> dict[str, Any]:
+def audit_pdf(path: Path, truth: dict[str, Any], password: str | None = None) -> dict[str, Any]:
     """Run native extraction once per variant and score it against truth."""
     start = _measure()
     record: dict[str, Any] = {"path": str(path)}
     try:
-        doc = jev_pdf.open(str(guard_path(path)))
+        doc = jev_pdf.open(str(guard_path(path)), password=password) if password else jev_pdf.open(
+            str(guard_path(path))
+        )
     except Exception as error:
         return {**record, "error": f"{type(error).__name__}: {error}", "resources": _delta(start)}
     with doc:
@@ -494,7 +496,8 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str
     report: dict[str, Any] = {"dpi": dpi, "threads": threads, "min_confidence": FILL_MIN_CONFIDENCE,
                               "documents": {}}
     for variant_dir in sorted((directory / "variants").iterdir()):
-        for level in FILL_OCR_LEVELS:
+        raster = sorted(p.stem for p in variant_dir.glob("R[0-9][0-9]_*.pdf") if "+" not in p.stem)
+        for level in (*FILL_OCR_LEVELS, *raster):
             source = variant_dir / f"{level}.pdf"
             target = variant_dir / f"{level}+ocr-fill.pdf"
             if not source.exists() or target.exists():
@@ -561,6 +564,26 @@ def build(directory: Path, *, steps: list[str], workers: int) -> None:
         audit(directory)
 
 
+def audit_quirks(directory: Path) -> list[dict[str, Any]]:
+    """Score quirk cases: document-based ones against their truth, raw ones against expected text."""
+    manifest_path = directory / "quirks" / "manifest.json"
+    if not manifest_path.exists():
+        return []
+    rows = []
+    for case in json.loads(manifest_path.read_text(encoding="utf-8"))["cases"]:
+        doc_id = case.get("doc_id")
+        if doc_id:
+            truth = json.loads((directory / "docs" / doc_id / "truth.json").read_text(encoding="utf-8"))
+        else:
+            truth = {"metadata": {}, "blocks": [{"kind": "paragraph", "text": case.get("expected_text", "")}]}
+        row = audit_pdf(directory / case["path"], truth, password=case.get("password"))
+        row.update(doc_id=doc_id or case.get("source_doc_id"), level=f"Q:{case['quirk_id']}",
+                   quirk_family=case["family"], family=truth.get("family"),
+                   producer=truth.get("producer"), languages=truth.get("languages", []))
+        rows.append(row)
+    return rows
+
+
 def audit(directory: Path) -> dict[str, Any]:
     """Score every variant against its truth and write audit.json, audit.md and the gallery."""
     start = _measure()
@@ -575,6 +598,8 @@ def audit(directory: Path) -> dict[str, Any]:
             row.update(doc_id=doc_id, level=pdf.stem, family=truth.get("family"),
                        producer=truth.get("producer"), languages=truth.get("languages", []))
             audits.append(row)
+    audits.extend(audit_quirks(directory))
+    levels.update(row["level"] for row in audits if row["level"].startswith("Q:"))
     summary = summarize(audits)
     unicode_by_level = {level: summarize_unicode(audits, level) for level in sorted(levels)}
     manifest = {"version": 1, "documents": len(docs), "levels": len(levels), "level_names": sorted(levels),
@@ -584,7 +609,7 @@ def audit(directory: Path) -> dict[str, Any]:
                                           "unicode": unicode_by_level, "audits": audits})
     report = report_markdown(summary, unicode_by_level.get("L0_tagged", {"scripts": {}, "features": {}}), manifest)
     (directory / "audit.md").write_text(report, encoding="utf-8")
-    gallery(directory, docs, sorted(levels))
+    gallery(directory, docs, sorted(level for level in levels if not level.startswith("Q:")))
     return summary
 
 
