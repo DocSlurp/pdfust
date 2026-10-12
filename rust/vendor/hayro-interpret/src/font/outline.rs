@@ -117,6 +117,16 @@ impl OutlineFont {
         }
     }
 
+    /// BaseFont name from the font dictionary with any subset prefix removed.
+    /// Unlike `font_data`, this is available for Type 1 and non-embedded fonts.
+    pub(crate) fn base_font_name(&self) -> Option<&str> {
+        match self {
+            Self::Type1(t) => t.base_font_name(),
+            Self::TrueType(t) => t.base_font_name(),
+            Self::Type0(t) => t.base_font_name(),
+        }
+    }
+
     /// Get raw font bytes and metadata.
     ///
     /// Returns None for Type1 fonts and non-embedded TrueType fonts.

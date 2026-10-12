@@ -44,6 +44,10 @@ pub(crate) struct Type0Font {
 }
 
 impl Type0Font {
+    pub(crate) fn base_font_name(&self) -> Option<&str> {
+        self.postscript_name.as_deref()
+    }
+
     pub(crate) fn new(
         dict: &Dict<'_>,
         font_resolver: &FontResolverFn,

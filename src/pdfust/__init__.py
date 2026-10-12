@@ -16,7 +16,7 @@ import stat
 import threading
 import warnings as _warnings
 from collections import Counter
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, NamedTuple, TypeAlias, TypedDict, cast, overload
@@ -33,7 +33,16 @@ from pdfust._spatial import (
     SpatialWord,
     TableField,
 )
-from pdfust.pdfust_core import LimitError, OcrError, PasswordError, PdfError, Pixmap, _Document, _OcrEngine
+from pdfust.pdfust_core import (
+    LimitError,
+    OcrError,
+    PasswordError,
+    PdfError,
+    Pixmap,
+    UnsupportedEncryptionError,
+    _Document,
+    _OcrEngine,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -84,6 +93,7 @@ __all__ = [
     "PageLabelSpec",
     "PageLayout",
     "PasswordError",
+    "UnsupportedEncryptionError",
     "PdfError",
     "Permissions",
     "PlacementModel",
@@ -1921,21 +1931,29 @@ class Page:
         self._document._doc.set_page_box(self._page_number(), key, x0, y0, x1, y1)
 
     @overload
-    def get_text(self, option: Literal["text"] = "text") -> str: ...
+    def get_text(self, option: Literal["text"] = "text", *, include_invisible: bool | None = None) -> str: ...
     @overload
-    def get_text(self, option: Literal["words"]) -> list[WordEntry]: ...
+    def get_text(self, option: Literal["words"], *, include_invisible: bool | None = None) -> list[WordEntry]: ...
     @overload
-    def get_text(self, option: Literal["blocks"]) -> list[BlockEntry]: ...
+    def get_text(self, option: Literal["blocks"], *, include_invisible: bool | None = None) -> list[BlockEntry]: ...
     @overload
-    def get_text(self, option: Literal["dict"]) -> TextPage: ...
-    def get_text(self, option: str = "text") -> str | list[WordEntry] | list[BlockEntry] | TextPage:
+    def get_text(self, option: Literal["dict"], *, include_invisible: bool | None = None) -> TextPage: ...
+    def get_text(
+        self, option: str = "text", *, include_invisible: bool | None = None
+    ) -> str | list[WordEntry] | list[BlockEntry] | TextPage:
         """Extract page text or positioned layout data.
 
         ``option`` matches :meth:`Document.get_page_text`: ``"text"``,
-        ``"words"``, ``"blocks"``, or ``"dict"``.
+        ``"words"``, ``"blocks"``, or ``"dict"``. Invisible text (render mode 3,
+        such as an OCR layer) is included; ``include_invisible=False`` leaves it
+        out and ``None`` follows :attr:`Document.skip_invisible_text`.
         """
         self._page_number()
-        return self._document.get_page_text(self._pno, option)  # type: ignore[call-overload]
+        document = self._document
+        if include_invisible is not None and include_invisible == document.skip_invisible_text:
+            with document._invisible_text_scope(skip=not include_invisible):
+                return document.get_page_text(self._pno, option)  # type: ignore[call-overload]
+        return document.get_page_text(self._pno, option)  # type: ignore[call-overload]
 
     def get_layout(self, *, table_strategy: Literal["lines", "text"] | None = "lines") -> PageLayout:
         """Capture words and table geometry in one CPU interpretation, without rasterization.
@@ -2168,6 +2186,7 @@ class Page:
         *,
         table_strategy: Literal["lines", "text"] | None = "lines",
         max_size: int | None = _DEFAULT_MAX_MARKDOWN_SIZE,
+        include_invisible: bool | None = None,
     ) -> str:
         """Convert this page to Markdown.
 
@@ -2183,6 +2202,7 @@ class Page:
             pages=[self._pno],
             table_strategy=table_strategy,
             max_size=max_size,
+            include_invisible=include_invisible,
         )
 
     def search_for(
@@ -3394,6 +3414,7 @@ class Document:
         *,
         table_strategy: Literal["lines", "text"] | None = "lines",
         max_size: int | None = _DEFAULT_MAX_MARKDOWN_SIZE,
+        include_invisible: bool | None = None,
     ) -> str:
         """Convert the document to Markdown for RAG or LLM preprocessing.
 
@@ -3411,9 +3432,15 @@ class Document:
         ``pages`` is a sequence of zero-based page numbers emitted in the given
         order; ``None`` means every page. One call accepts at most 4,096 page
         entries. ``max_size`` caps aggregate UTF-8 Markdown output and defaults
-        to 64 MiB; ``None`` explicitly opts out.
+        to 64 MiB; ``None`` explicitly opts out. Invisible text (render mode 3,
+        such as the OCR layer under a scan) is part of the text; pass
+        ``include_invisible=False`` to leave it out (``None`` follows
+        :attr:`skip_invisible_text`).
         """
         self._ensure_open()
+        if include_invisible is not None and include_invisible == self.skip_invisible_text:
+            with self._invisible_text_scope(skip=not include_invisible):
+                return self.to_markdown(pages, table_strategy=table_strategy, max_size=max_size)
         if table_strategy not in ("lines", "text", None):
             msg = f"table_strategy must be 'lines', 'text', or None: {table_strategy!r}"
             raise ValueError(msg)
@@ -3840,7 +3867,32 @@ class Document:
         claim = self._doc.pdfa_claim(max_size)
         return None if claim is None else (int(claim[0]), claim[1])
 
-    def get_text(self, pages: Iterable[int] | None = None) -> str:
+    @property
+    def skip_invisible_text(self) -> bool:
+        """Whether invisible text (render mode 3, e.g. an OCR layer) is left out of extraction.
+
+        ``False`` by default: hidden OCR text is the document's text. Spans from
+        :meth:`Page.get_text_spans` and :meth:`Page.scan` always report it with
+        ``invisible=True``. Changing the value drops cached interpretations.
+        """
+        self._ensure_open()
+        return bool(self._doc.skip_invisible_text())
+
+    @skip_invisible_text.setter
+    def skip_invisible_text(self, value: bool) -> None:
+        self._ensure_open()
+        self._doc.set_skip_invisible_text(bool(value))
+
+    @contextmanager
+    def _invisible_text_scope(self, *, skip: bool) -> Iterator[None]:
+        previous = self.skip_invisible_text
+        self.skip_invisible_text = skip
+        try:
+            yield
+        finally:
+            self.skip_invisible_text = previous
+
+    def get_text(self, pages: Iterable[int] | None = None, *, include_invisible: bool | None = None) -> str:
         """Extract plain text from the given pages in one batched call.
 
         ``pages`` is a sequence of zero-based page numbers extracted in the
@@ -3849,9 +3901,14 @@ class Document:
         entries. The batch shares one interpreter font cache, so a font reused
         across pages is parsed once per call rather than once per page; the
         returned text equals joining single-page :meth:`get_page_text` output
-        in the same order.
+        in the same order. Invisible text (render mode 3, such as an OCR layer)
+        is included; ``include_invisible=False`` leaves it out and ``None``
+        follows :attr:`skip_invisible_text`.
         """
         self._ensure_open()
+        if include_invisible is not None and include_invisible == self.skip_invisible_text:
+            with self._invisible_text_scope(skip=not include_invisible):
+                return self.get_text(pages)
         page_numbers: list[int] = []
         count = self.page_count
         page_iter = range(count) if pages is None else pages

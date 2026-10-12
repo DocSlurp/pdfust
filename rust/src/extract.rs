@@ -35,23 +35,56 @@ struct FontInfo {
 }
 
 /// Derive a font name and flags from OutlineGlyph, once per font.
+///
+/// Embedded fonts report their metadata through `font_data()`. Type 1 and
+/// non-embedded fonts have no font program, so their name comes from the
+/// BaseFont entry and the flags from that name.
 fn font_info_of(glyph: &hayro::hayro_interpret::font::OutlineGlyph) -> FontInfo {
-    let Some(data) = glyph.font_data() else {
-        return FontInfo::default();
+    let data = glyph.font_data();
+    let name: Arc<str> = match data.as_ref().and_then(|d| d.postscript_name.as_deref()) {
+        Some(name) => Arc::from(name),
+        None => Arc::from(glyph.base_font_name().unwrap_or_default()),
     };
-    let name: Arc<str> = Arc::from(data.postscript_name.unwrap_or_default());
     let lower = name.to_ascii_lowercase();
     let mut flags = 0i64;
-    if data.is_italic || lower.contains("italic") || lower.contains("oblique") {
+    let italic = data.as_ref().is_some_and(|d| d.is_italic)
+        || lower.contains("italic")
+        || lower.contains("oblique");
+    if italic {
         flags |= 2;
     }
-    if data.is_serif {
+    let serif = data.as_ref().map_or_else(
+        || {
+            lower.contains("times")
+                || lower.contains("serif") && !lower.contains("sans")
+                || lower.contains("georgia")
+                || lower.contains("garamond")
+                || lower.contains("palatino")
+        },
+        |d| d.is_serif,
+    );
+    if serif {
         flags |= 4;
     }
-    if data.is_monospace {
+    let mono = data.as_ref().map_or_else(
+        || {
+            lower.contains("courier")
+                || lower.contains("mono")
+                || lower.contains("consolas")
+                || lower.contains("typewriter")
+        },
+        |d| d.is_monospace,
+    );
+    if mono {
         flags |= 8;
     }
-    if data.weight.is_some_and(|w| w >= 600) || lower.contains("bold") {
+    if data
+        .as_ref()
+        .is_some_and(|d| d.weight.is_some_and(|w| w >= 600))
+        || lower.contains("bold")
+        || lower.contains("black")
+        || lower.contains("heavy")
+    {
         flags |= 16;
     }
     FontInfo { name, flags }
@@ -249,6 +282,8 @@ struct TextCollector {
     rules: Vec<RuleSegment>,
     /// Skip vector-rule collection for ordinary text extraction.
     collect_rules: bool,
+    /// Drop glyphs painted in text render mode 3 (OCR layers, hidden text).
+    skip_invisible: bool,
     /// font_key → FontInfo cache, resolving font_data only once per font.
     font_infos: HashMap<u128, FontInfo>,
     /// Most recent font lookup; consecutive glyphs usually share one font, so
@@ -281,6 +316,7 @@ impl TextCollector {
     fn new(
         page: &Page<'_>,
         collect_rules: bool,
+        skip_invisible: bool,
         max_text_size: Option<usize>,
         max_glyph_count: Option<usize>,
     ) -> Self {
@@ -288,6 +324,7 @@ impl TextCollector {
             glyphs: Vec::new(),
             rules: Vec::new(),
             collect_rules,
+            skip_invisible,
             font_infos: HashMap::new(),
             last_font: None,
             text_size: 0,
@@ -532,9 +569,12 @@ impl Device<'_> for TextCollector {
         transform: Affine,
         glyph_transform: Affine,
         _: &Paint<'_>,
-        _: &GlyphDrawMode,
+        mode: &GlyphDrawMode,
     ) {
         if self.limit_error.is_some() {
+            return;
+        }
+        if self.skip_invisible && matches!(mode, GlyphDrawMode::Invisible) {
             return;
         }
         let actual_span = self.active_actual_span();
@@ -2590,6 +2630,7 @@ impl TextPage {
         page: &Page<'a>,
         cache: &InterpreterCache<'a>,
         settings: InterpreterSettings,
+        skip_invisible: bool,
         max_text_size: Option<usize>,
         max_glyph_count: Option<usize>,
     ) -> Result<Self, TextPageLimit> {
@@ -2600,6 +2641,7 @@ impl TextPage {
             cache,
             settings,
             false,
+            skip_invisible,
             max_text_size,
             max_glyph_count,
         )?;
@@ -2620,6 +2662,7 @@ impl TextPage {
         page: &Page<'a>,
         cache: &InterpreterCache<'a>,
         settings: InterpreterSettings,
+        skip_invisible: bool,
         max_text_size: Option<usize>,
         max_glyph_count: Option<usize>,
     ) -> Result<(Self, TablePage), TextPageLimit> {
@@ -2630,6 +2673,7 @@ impl TextPage {
             cache,
             settings,
             true,
+            skip_invisible,
             max_text_size,
             max_glyph_count,
         )?;
@@ -2736,6 +2780,7 @@ impl TablePage {
         page: &Page<'a>,
         cache: &InterpreterCache<'a>,
         settings: InterpreterSettings,
+        skip_invisible: bool,
         max_text_size: Option<usize>,
         max_glyph_count: Option<usize>,
     ) -> Result<Self, TextPageLimit> {
@@ -2745,6 +2790,7 @@ impl TablePage {
             cache,
             settings,
             true,
+            skip_invisible,
             max_text_size,
             max_glyph_count,
         )?;
@@ -3293,6 +3339,15 @@ fn split_spans(line: &[GlyphRecord]) -> Result<Vec<SpanTuple>, TextPageLimit> {
                 if !glyph_is_nonspacing_mark(glyph) {
                     previous = Some(glyph);
                 }
+            }
+            // A word gap that falls exactly on a font or size change belongs
+            // to the span it follows; otherwise adjacent one-word spans (OCR
+            // layers vary size per word) would concatenate without a space.
+            if i < line.len()
+                && needs_gap(previous, &line[i])
+                && !text.ends_with(' ')
+            {
+                try_push_str_text(&mut text, " ", "layout span text")?;
             }
             let mut font_name = String::new();
             try_push_str_text(
@@ -5945,11 +6000,18 @@ fn collect_page_marks<'a>(
     cache: &InterpreterCache<'a>,
     settings: InterpreterSettings,
     collect_rules: bool,
+    skip_invisible: bool,
     max_text_size: Option<usize>,
     max_glyph_count: Option<usize>,
 ) -> Result<PageMarks, TextPageLimit> {
     let mut context = extraction_context(pdf, page, cache, settings);
-    let mut collector = TextCollector::new(page, collect_rules, max_text_size, max_glyph_count);
+    let mut collector = TextCollector::new(
+        page,
+        collect_rules,
+        skip_invisible,
+        max_text_size,
+        max_glyph_count,
+    );
     interpret_page(page, &mut context, &mut collector);
     if let Some(error) = collector.limit_error {
         return Err(error);
@@ -6037,7 +6099,13 @@ pub(crate) fn glyph_snapshot<'a>(
 ) -> Result<(f64, f64, Vec<GlyphSnapshotRow>, usize, usize), TextPageLimit> {
     let mut context = extraction_context(pdf, page, cache, settings);
     let mut collector = GlyphSnapshotCollector {
-        text: TextCollector::new(page, false, Some(max_text_size), Some(max_glyph_count)),
+        text: TextCollector::new(
+            page,
+            false,
+            false,
+            Some(max_text_size),
+            Some(max_glyph_count),
+        ),
         modes: Vec::new(),
     };
     interpret_page(page, &mut context, &mut collector);

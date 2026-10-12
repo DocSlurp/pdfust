@@ -15,9 +15,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub(crate) struct Type1Font(u128, Kind, Option<CMap>);
+pub(crate) struct Type1Font(u128, Kind, Option<CMap>, Option<String>);
 
 impl Type1Font {
+    pub(crate) fn base_font_name(&self) -> Option<&str> {
+        self.3.as_deref()
+    }
+
     pub(crate) fn new(
         dict: &Dict<'_>,
         resolver: &FontResolverFn,
@@ -26,6 +30,9 @@ impl Type1Font {
         let cache_key = dict.cache_key();
 
         let to_unicode = read_to_unicode(dict, cmap_resolver);
+        let base_name = dict
+            .get::<hayro_syntax::object::Name<'_>>(hayro_syntax::object::dict::keys::BASE_FONT)
+            .map(|n| super::strip_subset_prefix(n.as_str()).to_string());
 
         let fallback = || {
             // TODO: Actually use fallback fonts
@@ -49,23 +56,24 @@ impl Type1Font {
                     resolver,
                 )?),
                 to_unicode.clone(),
+                base_name.clone(),
             ))
         };
 
         let inner = if is_cff(dict) {
             if let Some(cff) = CffKind::new(dict) {
-                Self(cache_key, Kind::Cff(cff), to_unicode)
+                Self(cache_key, Kind::Cff(cff), to_unicode, base_name)
             } else {
                 return fallback();
             }
         } else if is_type1(dict) {
             if let Some(f) = Type1Kind::new(dict) {
-                Self(cache_key, Kind::Type1(f), to_unicode)
+                Self(cache_key, Kind::Type1(f), to_unicode, base_name)
             } else {
                 return fallback();
             }
         } else if let Some(standard) = StandardKind::new(dict, resolver) {
-            Self(cache_key, Kind::Standard(standard), to_unicode)
+            Self(cache_key, Kind::Standard(standard), to_unicode, base_name)
         } else {
             return fallback();
         };
@@ -77,7 +85,7 @@ impl Type1Font {
         let dict = Dict::default();
         let standard = StandardKind::new_with_standard(&dict, font, true, resolver)?;
 
-        Some(Self(0, Kind::Standard(standard), None))
+        Some(Self(0, Kind::Standard(standard), None, Some(font.postscript_name().to_string())))
     }
 
     pub(crate) fn map_code(&self, code: u8) -> GlyphId {

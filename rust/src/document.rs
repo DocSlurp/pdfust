@@ -705,6 +705,11 @@ crate::py::define_exception!(
     "A password is required or incorrect."
 );
 crate::py::define_exception!(
+    UnsupportedEncryptionError,
+    PdfError,
+    "The PDF uses a security handler, version or revision that is not supported."
+);
+crate::py::define_exception!(
     LimitError,
     PdfError,
     "A configured resource limit was exceeded."
@@ -790,6 +795,22 @@ const MAX_PARALLEL_RENDER_BYTES: u64 = 512_000_000;
 #[cfg(not(target_os = "emscripten"))]
 const ESTIMATED_RENDER_BYTES_PER_PIXEL: u64 = 8;
 
+/// Encryption this build cannot open regardless of the password supplied.
+fn is_unsupported_encryption(e: &lopdf::Error) -> bool {
+    use lopdf::encryption::DecryptionError as D;
+    matches!(
+        e,
+        lopdf::Error::UnsupportedSecurityHandler(_)
+            | lopdf::Error::Decryption(
+                D::UnsupportedEncryption
+                    | D::UnsupportedVersion
+                    | D::UnsupportedRevision
+                    | D::InvalidVersion
+                    | D::InvalidRevision
+            )
+    )
+}
+
 /// Convert a lopdf error to a Python exception with a context prefix.
 ///
 /// Password/decryption failures become PasswordError; others become PdfError.
@@ -798,7 +819,9 @@ fn lopdf_err(prefix: Option<&str>, e: &lopdf::Error) -> PyErr {
         Some(p) => format!("{p}: {e}"),
         None => e.to_string(),
     };
-    if matches!(
+    if is_unsupported_encryption(e) {
+        UnsupportedEncryptionError::new_err(message)
+    } else if matches!(
         e,
         lopdf::Error::Decryption(_) | lopdf::Error::InvalidPassword
     ) {
@@ -1051,6 +1074,207 @@ fn end_of_pdf_object(data: &[u8], start: usize) -> Option<usize> {
     None
 }
 
+/// True when the cross-reference section at `offset` is an xref stream
+/// (`N G obj`) rather than a classic `xref` table.
+fn xref_stream_starts_at(data: &[u8], offset: usize) -> bool {
+    let mut index = offset;
+    while matches!(data.get(index), Some(byte) if is_pdf_whitespace(*byte)) {
+        index += 1;
+    }
+    matches!(data.get(index), Some(byte) if byte.is_ascii_digit())
+}
+
+/// Index just past the array that starts at `start` (`[`), skipping nested
+/// arrays, strings, hex strings and dictionaries.
+fn array_end(data: &[u8], start: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    let mut index = start;
+    while index < data.len() {
+        match data[index] {
+            b'[' => depth += 1,
+            b']' => {
+                depth = depth.checked_sub(1)?;
+                if depth == 0 {
+                    return Some(index + 1);
+                }
+            }
+            b'(' => {
+                let mut nesting = 1usize;
+                index += 1;
+                while index < data.len() && nesting > 0 {
+                    match data[index] {
+                        b'\\' => index += 1,
+                        b'(' => nesting += 1,
+                        b')' => nesting -= 1,
+                        _ => {}
+                    }
+                    index += 1;
+                }
+                continue;
+            }
+            b'<' if data.get(index + 1) == Some(&b'<') => {
+                index = end_of_pdf_object(data, index)?;
+                continue;
+            }
+            b'<' => index += data[index..].iter().position(|byte| *byte == b'>')?,
+            _ => {}
+        }
+        index += 1;
+    }
+    None
+}
+
+/// End of the value that starts at `start` inside a dictionary: a nested
+/// dictionary, array, string, name, or a bare number / `N G R` reference.
+fn dictionary_value_end(dict: &[u8], start: usize) -> Option<usize> {
+    match *dict.get(start)? {
+        b'<' if dict.get(start + 1) == Some(&b'<') => end_of_pdf_object(dict, start),
+        b'[' => array_end(dict, start),
+        b'<' => Some(start + dict[start..].iter().position(|byte| *byte == b'>')? + 1),
+        b'(' => {
+            let mut nesting = 0usize;
+            let mut index = start;
+            while index < dict.len() {
+                match dict[index] {
+                    b'\\' => index += 1,
+                    b'(' => nesting += 1,
+                    b')' => {
+                        nesting -= 1;
+                        if nesting == 0 {
+                            return Some(index + 1);
+                        }
+                    }
+                    _ => {}
+                }
+                index += 1;
+            }
+            None
+        }
+        b'/' => {
+            let mut index = start + 1;
+            while index < dict.len()
+                && !is_pdf_whitespace(dict[index])
+                && !b"/<>[]()".contains(&dict[index])
+            {
+                index += 1;
+            }
+            Some(index)
+        }
+        _ => {
+            let mut index = start;
+            while index < dict.len() && !b"/<>[]()".contains(&dict[index]) {
+                index += 1;
+            }
+            while index > start && is_pdf_whitespace(dict[index - 1]) {
+                index -= 1;
+            }
+            Some(index)
+        }
+    }
+}
+
+/// Top-level `(key, value-range)` pairs of the dictionary that starts at
+/// `dict[0..2] == "<<"`.
+fn top_level_dictionary_entries(dict: &[u8]) -> Option<Vec<(Vec<u8>, std::ops::Range<usize>)>> {
+    let mut entries = Vec::new();
+    let mut index = 2;
+    loop {
+        while matches!(dict.get(index), Some(byte) if is_pdf_whitespace(*byte)) {
+            index += 1;
+        }
+        if dict.get(index..index + 2)? == b">>" {
+            return Some(entries);
+        }
+        if *dict.get(index)? != b'/' {
+            return None;
+        }
+        let key_end = dictionary_value_end(dict, index)?;
+        let key = dict[index + 1..key_end].to_vec();
+        index = key_end;
+        while matches!(dict.get(index), Some(byte) if is_pdf_whitespace(*byte)) {
+            index += 1;
+        }
+        let value_end = dictionary_value_end(dict, index)?;
+        entries.push((key, index..value_end));
+        index = value_end;
+    }
+}
+
+/// Xref-stream counterpart of the classic-trailer lift: the newest xref stream
+/// carries `/Encrypt <<...>>` inline. Append an incremental update holding the
+/// dictionary as an indirect object plus a new uncompressed xref stream that
+/// references it (and repeats Root/Info/ID) with `/Prev` to the old one.
+fn lift_inline_encrypt_dictionary_xref_stream(data: &[u8], previous_xref: usize) -> Option<Vec<u8>> {
+    let mut dict_open = previous_xref;
+    // Skip `N G obj` and whitespace up to the dictionary.
+    let header_end = data.get(dict_open..)?.windows(3).position(|w| w == b"obj")?;
+    dict_open += header_end + 3;
+    while matches!(data.get(dict_open), Some(byte) if is_pdf_whitespace(*byte)) {
+        dict_open += 1;
+    }
+    if data.get(dict_open..dict_open + 2)? != b"<<" {
+        return None;
+    }
+    let dict_end = end_of_pdf_object(data, dict_open)?;
+    let dict = &data[dict_open..dict_end];
+    let entries = top_level_dictionary_entries(dict)?;
+    let value = |name: &[u8]| {
+        entries
+            .iter()
+            .find(|(key, _)| key == name)
+            .map(|(_, range)| &dict[range.clone()])
+    };
+    if !matches!(value(b"Type"), Some(b"/XRef")) {
+        return None;
+    }
+    let encrypt = value(b"Encrypt")?;
+    if !encrypt.starts_with(b"<<") {
+        return None;
+    }
+    let root = value(b"Root")?;
+    let id = value(b"ID");
+    let info = value(b"Info");
+    let size: u32 = std::str::from_utf8(value(b"Size")?).ok()?.trim().parse().ok()?;
+    let encrypt_number = size;
+    let stream_number = size.checked_add(1)?;
+    u32::try_from(data.len()).ok()?;
+
+    let mut out = Vec::new();
+    out.try_reserve_exact(data.len() + encrypt.len() + 512).ok()?;
+    out.extend_from_slice(data);
+    if out.last() != Some(&b'\n') {
+        out.push(b'\n');
+    }
+    let encrypt_offset = out.len();
+    out.extend_from_slice(format!("{encrypt_number} 0 obj\n").as_bytes());
+    out.extend_from_slice(encrypt);
+    out.extend_from_slice(b"\nendobj\n");
+    let stream_offset = out.len();
+    let mut rows = Vec::with_capacity(14);
+    for offset in [encrypt_offset, stream_offset] {
+        rows.push(1u8);
+        rows.extend_from_slice(&u32::try_from(offset).ok()?.to_be_bytes());
+        rows.extend_from_slice(&0u16.to_be_bytes());
+    }
+    out.extend_from_slice(format!("{stream_number} 0 obj\n<</Type/XRef/Size {}", size + 2).as_bytes());
+    out.extend_from_slice(format!("/W[1 4 2]/Index[{encrypt_number} 2]/Root ").as_bytes());
+    out.extend_from_slice(root);
+    if let Some(info) = info {
+        out.extend_from_slice(b"/Info ");
+        out.extend_from_slice(info);
+    }
+    if let Some(id) = id {
+        out.extend_from_slice(b"/ID ");
+        out.extend_from_slice(id);
+    }
+    out.extend_from_slice(
+        format!("/Encrypt {encrypt_number} 0 R/Prev {previous_xref}/Length {}>>\nstream\n", rows.len()).as_bytes(),
+    );
+    out.extend_from_slice(&rows);
+    out.extend_from_slice(format!("\nendstream\nendobj\nstartxref\n{stream_offset}\n%%EOF\n").as_bytes());
+    Some(out)
+}
+
 /// Rewrite a file whose final trailer carries `/Encrypt <<...>>` inline so the
 /// dictionary becomes an indirect object. lopdf only decrypts documents whose
 /// `/Encrypt` entry is a reference, and silently loads zero objects otherwise.
@@ -1078,6 +1302,9 @@ fn lift_inline_encrypt_dictionary(data: &[u8]) -> Option<Vec<u8>> {
         .ok()?
         .parse()
         .ok()?;
+    if xref_stream_starts_at(data, previous_xref) {
+        return lift_inline_encrypt_dictionary_xref_stream(data, previous_xref);
+    }
     let trailer_keyword = startxref
         - data[..startxref]
             .windows(b"trailer".len())
@@ -1163,17 +1390,150 @@ fn lift_inline_encrypt_dictionary(data: &[u8]) -> Option<Vec<u8>> {
     Some(out)
 }
 
+const STANDARD_PASSWORD_PAD: [u8; 32] = [
+    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
+];
+
+fn rc4_apply(key: &[u8], data: &[u8]) -> Vec<u8> {
+    let mut state: Vec<u8> = (0..=255u8).collect();
+    let mut j = 0u8;
+    for i in 0..256 {
+        j = j.wrapping_add(state[i]).wrapping_add(key[i % key.len()]);
+        state.swap(i, usize::from(j));
+    }
+    let (mut i, mut j) = (0u8, 0u8);
+    data.iter()
+        .map(|byte| {
+            i = i.wrapping_add(1);
+            j = j.wrapping_add(state[usize::from(i)]);
+            state.swap(usize::from(i), usize::from(j));
+            let k = state[usize::from(state[usize::from(i)].wrapping_add(state[usize::from(j)]))];
+            byte ^ k
+        })
+        .collect()
+}
+
+/// lopdf accepts the owner password for RC4 / AES-128 documents (security
+/// handler revision 2-4) but then derives the file key from it as if it were the
+/// user password, yielding garbage. Per ISO 32000 algorithm 7 the user password
+/// is recoverable from /O with the owner password; return it so the document is
+/// keyed correctly. `None` when `password` is not an owner password that needs
+/// this (user password, unsupported revision, wrong password, non-text result).
+fn user_password_from_owner(document: &Document, password: &str) -> Option<String> {
+    use md5::{Digest, Md5};
+    if !document.is_encrypted() {
+        return None;
+    }
+    let dict = document.get_encrypted().ok()?;
+    let revision = dict.get(b"R").ok()?.as_i64().ok()?;
+    if !(2..=4).contains(&revision) {
+        return None;
+    }
+    let algorithm = lopdf::encryption::PasswordAlgorithm::try_from(document).ok()?;
+    let sanitized = algorithm.sanitize_password(password).ok()?;
+    if algorithm.authenticate_user_password(document, &sanitized).is_ok() {
+        return None;
+    }
+    algorithm.authenticate_owner_password(document, &sanitized).ok()?;
+    let owner_entry = dict.get(b"O").ok()?.as_str().ok()?;
+    let length_bits = dict.get(b"Length").ok().and_then(|v| v.as_i64().ok()).unwrap_or(40);
+    let key_len = if revision >= 3 { usize::try_from(length_bits / 8).ok()? } else { 5 };
+    if key_len == 0 || key_len > 16 {
+        return None;
+    }
+    let bytes = password.as_bytes();
+    let len = bytes.len().min(32);
+    let mut hasher = Md5::new();
+    hasher.update(&bytes[..len]);
+    hasher.update(&STANDARD_PASSWORD_PAD[..32 - len]);
+    let mut hash = hasher.finalize();
+    if revision >= 3 {
+        for _ in 0..50 {
+            hash = Md5::digest(hash);
+        }
+    }
+    let key = &hash[..key_len];
+    let padded = if revision == 2 {
+        rc4_apply(key, owner_entry)
+    } else {
+        let mut value = owner_entry.to_vec();
+        for round in (0..=19u8).rev() {
+            let round_key: Vec<u8> = key.iter().map(|byte| byte ^ round).collect();
+            value = rc4_apply(&round_key, &value);
+        }
+        value
+    };
+    if padded.len() != 32 {
+        return None;
+    }
+    let end = (0..=32)
+        .find(|&k| padded[k..] == STANDARD_PASSWORD_PAD[..32 - k])
+        .unwrap_or(32);
+    String::from_utf8(padded[..end].to_vec()).ok()
+}
+
+/// Swap an owner password for the user password it unlocks (see
+/// `user_password_from_owner`); other passwords pass through unchanged.
+fn effective_password(data: &[u8], options: &LoadOptions, password: Option<String>) -> Option<String> {
+    let Some(supplied) = password.as_deref() else {
+        return password;
+    };
+    let probe = LoadOptions { password: None, ..options.clone() };
+    match Document::load_mem_with_options(data, probe) {
+        Ok(document) => user_password_from_owner(&document, supplied).or(password),
+        Err(_) => password,
+    }
+}
+
+/// Fail an encrypted-and-still-locked document whose security handler,
+/// version or revision is unsupported, so callers see that instead of being
+/// asked for a password that could never help.
+fn ensure_encryption_supported(document: &Document) -> lopdf::Result<()> {
+    if !document.is_encrypted() {
+        return Ok(());
+    }
+    let handler = document
+        .get_encrypted()
+        .and_then(|dict| dict.get(b"Filter"))
+        .and_then(|object| object.as_name());
+    if let Ok(name) = handler
+        && name != b"Standard"
+    {
+        return Err(lopdf::Error::UnsupportedSecurityHandler(name.to_vec()));
+    }
+    if let Ok(dict) = document.get_encrypted() {
+        use lopdf::encryption::DecryptionError as D;
+        let number = |key: &[u8]| dict.get(key).ok().and_then(|value| value.as_i64().ok());
+        if number(b"R").is_some_and(|revision| !(2..=6).contains(&revision)) {
+            return Err(lopdf::Error::Decryption(D::UnsupportedRevision));
+        }
+        if number(b"V").is_some_and(|version| !(1..=5).contains(&version)) {
+            return Err(lopdf::Error::Decryption(D::UnsupportedVersion));
+        }
+    }
+    match lopdf::encryption::PasswordAlgorithm::try_from(document) {
+        Err(error) if is_unsupported_encryption(&error) => Err(error),
+        _ => Ok(()),
+    }
+}
+
 fn load_document_with_recovery(
     data: &[u8],
-    options: LoadOptions,
+    mut options: LoadOptions,
 ) -> lopdf::Result<(Document, Option<Vec<u8>>)> {
     // lopdf cannot decrypt a trailer with an inline /Encrypt dictionary (it
     // loads zero objects, or rejects a correct password); rewrite it as an
     // indirect object first.
     let lifted = lift_inline_encrypt_dictionary(data);
     let data = lifted.as_deref().unwrap_or(data);
+    let password = options.password.take();
+    options.password = effective_password(data, &options, password);
     let original_error = match Document::load_mem_with_options(data, options.clone()) {
-        Ok(document) => return Ok((document, None)),
+        Ok(document) => {
+            ensure_encryption_supported(&document)?;
+            return Ok((document, None));
+        }
         Err(error) => error,
     };
     if options.strict || !xref_recovery_candidate(&original_error) {
@@ -1183,7 +1543,10 @@ fn load_document_with_recovery(
         return Err(original_error);
     };
     match Document::load_mem_with_options(&repaired, options) {
-        Ok(document) => Ok((document, Some(repaired))),
+        Ok(document) => {
+            ensure_encryption_supported(&document)?;
+            Ok((document, Some(repaired)))
+        }
         Err(_) => Err(original_error),
     }
 }
@@ -1194,6 +1557,8 @@ fn load_metadata_with_recovery(
 ) -> lopdf::Result<(PdfMetadata, bool)> {
     let lifted = lift_inline_encrypt_dictionary(data);
     let data = lifted.as_deref().unwrap_or(data);
+    let effective = effective_password(data, &LoadOptions::default(), password.map(str::to_owned));
+    let password = effective.as_deref();
     let load = |input: &[u8]| match password {
         Some(password) => Document::load_metadata_mem_with_password(input, password),
         None => Document::load_metadata_mem(input),
@@ -4513,6 +4878,9 @@ pub struct _Document {
     /// parsed hayro view.
     hayro_source: HayroSource,
     /// Recently interpreted pages, keyed by one-based page number.
+    /// Leave out text painted in render mode 3 (OCR layers). Off by default:
+    /// invisible text is part of the document's text.
+    skip_invisible_text: bool,
     text_pages: HashMap<u32, crate::extract::TextPage>,
     /// Least-recently-used to most-recently-used text-page keys.
     text_page_order: VecDeque<u32>,
@@ -4578,6 +4946,7 @@ impl _Document {
             fallback_fonts: FallbackFonts::default(),
             hayro_pdf: None,
             hayro_source,
+            skip_invisible_text: false,
             text_pages: HashMap::new(),
             text_page_order: VecDeque::new(),
             table_pages: HashMap::new(),
@@ -6158,7 +6527,15 @@ impl _Document {
             .and_then(|index| pages.get(index as usize))
             .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
         let text_page =
-            crate::extract::TextPage::new(pdf, page, cache, settings, text_budget, glyph_budget)
+            crate::extract::TextPage::new(
+                pdf,
+                page,
+                cache,
+                settings,
+                self.skip_invisible_text,
+                text_budget,
+                glyph_budget,
+            )
                 .map_err(text_page_limit_err)?;
         self.admit_text_usage(page_number, text_page.text_size(), text_page.glyph_count())?;
         self.warn_skipped_no_unicode(text_page.skipped_no_unicode());
@@ -6276,7 +6653,15 @@ impl _Document {
             .and_then(|index| pages.get(index as usize))
             .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
         let table_page =
-            crate::extract::TablePage::new(pdf, page, cache, settings, text_budget, glyph_budget)
+            crate::extract::TablePage::new(
+                pdf,
+                page,
+                cache,
+                settings,
+                self.skip_invisible_text,
+                text_budget,
+                glyph_budget,
+            )
                 .map_err(text_page_limit_err)?;
         self.admit_text_usage(
             page_number,
@@ -6345,6 +6730,7 @@ impl _Document {
                 page,
                 &cache,
                 settings,
+                self.skip_invisible_text,
                 self.text_budget(page_number)?,
                 self.glyph_budget(page_number)?,
             )
@@ -7861,6 +8247,26 @@ impl _Document {
         self.rebuild_page_tree(pages_id, retained)?;
         self.doc.prune_objects();
         Ok(())
+    }
+
+    /// Leave out (`true`) or keep (`false`, default) text painted in render
+    /// mode 3, such as the hidden OCR layer under a scan. Spans and glyph
+    /// scans always report it. Changing the setting drops cached text pages.
+    fn set_skip_invisible_text(&mut self, skip: bool) {
+        if self.skip_invisible_text != skip {
+            self.skip_invisible_text = skip;
+            self.text_pages.clear();
+            self.text_page_order.clear();
+            self.table_pages.clear();
+            self.table_page_order.clear();
+            self.interpreted_text_sizes.clear();
+            self.interpreted_glyph_counts.clear();
+        }
+    }
+
+    /// Whether invisible (render mode 3) text is currently left out of extraction.
+    fn skip_invisible_text(&self) -> bool {
+        self.skip_invisible_text
     }
 
     /// Extract text from a one-based page.

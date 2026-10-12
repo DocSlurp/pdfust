@@ -170,12 +170,12 @@ def test_bullets_and_numbers_normalize() -> None:
 
 def test_dict_spans_have_font_and_flags_keys() -> None:
     # Embedded fonts exercise real bold/italic detection in test_interop.py.
-    # Hayro exposes no metadata for Standard 14 Type1 substitutes, so the
-    # current contract is flags=0 and an empty font name.
+    # Non-embedded Standard 14 fonts have no font program, so the span name
+    # comes from BaseFont and the flags from that name.
     doc = pdfust.open(stream=_layout_pdf([[(12, 720, "Standard font words", "F2")]]))
     span = doc.get_page_text(0, "dict")["blocks"][0]["lines"][0]["spans"][0]
-    assert span["flags"] == 0
-    assert span["font"] == ""
+    assert span["font"] != ""
+    assert isinstance(span["flags"], int)
 
 
 def test_cjk_lines_join_without_space() -> None:

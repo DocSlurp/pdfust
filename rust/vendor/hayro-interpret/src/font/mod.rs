@@ -160,6 +160,12 @@ impl OutlineGlyph {
         self.font.font_data()
     }
 
+    /// BaseFont name (subset prefix removed), also for Type 1 and
+    /// non-embedded fonts where `font_data()` is `None`.
+    pub fn base_font_name(&self) -> Option<String> {
+        self.font.base_font_name().map(str::to_string)
+    }
+
     /// Get the glyph ID within the font.
     pub fn glyph_id(&self) -> GlyphId {
         self.id

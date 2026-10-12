@@ -32,6 +32,7 @@ impl From<PyErr> for NativeError {
     fn from(error: PyErr) -> Self {
         let code = match error.class {
             "PasswordError" => "PDF_LOCKED",
+            "UnsupportedEncryptionError" => "PDF_UNSUPPORTED_ENCRYPTION",
             "LimitError" => "PDF_LIMIT",
             "PyValueError" | "PyTypeError" => "INVALID_ARGUMENT",
             _ => "PDF_ERROR",
@@ -144,6 +145,59 @@ pub struct NativeGlyphStats {
     pub stroke: u32,
     pub unmapped: u32,
     pub fonts: u32,
+}
+
+/// One raw text run from `scan`: a single font/size/render-mode run with glyph evidence.
+#[derive(Debug, Clone)]
+pub struct NativeScanSpan {
+    pub text: String,
+    pub bbox: BBox,
+    pub font: String,
+    pub size: f64,
+    pub flags: i64,
+    pub render_mode: u8,
+    pub invisible: bool,
+    pub unmapped: u32,
+    pub glyphs: u32,
+    pub type3: bool,
+    pub control_chars: u32,
+    pub over_image: u32,
+    pub direction: (f64, f64),
+}
+
+/// One image placement from `scan` (no pixels decoded).
+#[derive(Debug, Clone)]
+pub struct NativeScanImage {
+    pub index: u32,
+    pub bbox: BBox,
+    pub width_px: u32,
+    pub height_px: u32,
+    pub dpi_x: f64,
+    pub dpi_y: f64,
+    pub dpi: f64,
+    pub stencil: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct NativeScanStats {
+    pub glyphs: u32,
+    pub mapped: u32,
+    pub unmapped: u32,
+    pub invisible: u32,
+    pub stroke: u32,
+    pub type3: u32,
+    pub control_chars: u32,
+    pub over_image: u32,
+}
+
+/// Everything the routing probes need from one interpretation pass.
+#[derive(Debug, Clone, Default)]
+pub struct NativeScan {
+    pub width: f64,
+    pub height: f64,
+    pub spans: Vec<NativeScanSpan>,
+    pub images: Vec<NativeScanImage>,
+    pub stats: NativeScanStats,
 }
 
 #[derive(Debug, Clone)]
@@ -516,6 +570,13 @@ impl NativeDoc {
         Ok((f64::from(width), f64::from(height), rotation))
     }
 
+    /// Leave out text painted in render mode 3 (OCR layers) from `text` and
+    /// `markdown`. Default off: invisible text is part of the document's text.
+    /// `spans` and `glyph_stats` always report it.
+    pub fn set_skip_invisible_text(&mut self, skip: bool) {
+        self.doc.set_skip_invisible_text(skip);
+    }
+
     pub fn text(&mut self, index: u32) -> NativeResult<String> {
         let number = self.page_number(index)?;
         Ok(self.doc.extract_text(py(), vec![number])?)
@@ -658,6 +719,78 @@ impl NativeDoc {
             }
         }
         Ok(spans)
+    }
+
+    /// One interpretation pass: raw text runs with render mode, unmapped/Type 3/control
+    /// counts and text-over-image evidence, image placements without decoding pixels,
+    /// and glyph totals. `host_coverage` is the share of the page an image must cover
+    /// to count as a text host.
+    pub fn scan(
+        &mut self,
+        index: u32,
+        spans: bool,
+        images: bool,
+        host_coverage: f64,
+    ) -> NativeResult<NativeScan> {
+        let number = self.page_number(index)?;
+        if !host_coverage.is_finite() || !(0.0..=1.0).contains(&host_coverage) {
+            return Err(NativeError::invalid("hostCoverage must be a number from 0 to 1"));
+        }
+        let (width, height, raw_spans, raw_images, unmapped_total, glyph_total) =
+            self.doc
+                .scan_page(py(), number, spans, images, host_coverage, 65_536, 1_048_576)?;
+        let spans: Vec<NativeScanSpan> = raw_spans
+            .into_iter()
+            .map(
+                |(text, bbox, font, size, flags, mode, unmapped, glyphs, type3, controls, over, direction)| {
+                    NativeScanSpan {
+                        text,
+                        bbox,
+                        font,
+                        size,
+                        flags,
+                        render_mode: mode,
+                        invisible: mode == 3,
+                        unmapped,
+                        glyphs,
+                        type3,
+                        control_chars: controls,
+                        over_image: over,
+                        direction,
+                    }
+                },
+            )
+            .collect();
+        let images = raw_images
+            .into_iter()
+            .enumerate()
+            .map(|(index, (bbox, width_px, height_px, dpi_x, dpi_y, stencil))| NativeScanImage {
+                index: index as u32,
+                bbox,
+                width_px,
+                height_px,
+                dpi_x,
+                dpi_y,
+                dpi: dpi_x.min(dpi_y),
+                stencil,
+            })
+            .collect();
+        let sum = |pick: &dyn Fn(&NativeScanSpan) -> u32| -> u32 {
+            spans.iter().map(pick).fold(0u32, u32::saturating_add)
+        };
+        let glyphs = u32::try_from(glyph_total).unwrap_or(u32::MAX);
+        let unmapped = u32::try_from(unmapped_total).unwrap_or(u32::MAX);
+        let stats = NativeScanStats {
+            glyphs,
+            mapped: glyphs.saturating_sub(unmapped),
+            unmapped,
+            invisible: sum(&|s| if s.invisible { s.glyphs } else { 0 }),
+            stroke: sum(&|s| if matches!(s.render_mode, 1 | 2) { s.glyphs } else { 0 }),
+            type3: sum(&|s| if s.type3 { s.glyphs } else { 0 }),
+            control_chars: sum(&|s| s.control_chars),
+            over_image: sum(&|s| s.over_image),
+        };
+        Ok(NativeScan { width, height, spans, images, stats })
     }
 
     /// Words with boxes, in layout order. Unlike `spans`, a line shared by
@@ -865,15 +998,12 @@ impl NativeDoc {
         let (out_width, out_height, rgba) = match options.clip {
             Some(clip) => cropped_rgba_bytes(pixmap, pixel_width, pixel_height, scale, clip)
                 .map_err(NativeError::invalid)?,
-            None => (
-                pixel_width,
-                pixel_height,
-                rgba_bytes(pixmap).map_err(|message| NativeError {
-                    code: "PDF_ERROR",
-                    limit: None,
-                    message,
-                })?,
-            ),
+            None => {
+                // Convert straight to the encoder's samples: no intermediate RGBA copy,
+                // and the raster is freed before encoding starts.
+                let samples = pixmap_samples(pixmap, options.gray)?;
+                return encode_samples(samples, pixel_width, pixel_height, options);
+            }
         };
         encode(&rgba, out_width, out_height, options)
     }
@@ -1078,21 +1208,37 @@ impl Device<'_> for PlacementCollector {
 
 fn encode(rgba: &[u8], width: u32, height: u32, options: &NativeRender) -> NativeResult<Vec<u8>> {
     let pixels = (width as usize) * (height as usize);
-    let (samples, png_color, jpeg_color, channels) = if options.gray {
+    let samples = if options.gray {
         let mut luma = Vec::with_capacity(pixels);
         for px in rgba.chunks_exact(4) {
-            luma.push(
-                ((299 * u32::from(px[0]) + 587 * u32::from(px[1]) + 114 * u32::from(px[2])) / 1000)
-                    as u8,
-            );
+            luma.push(luma_of(px[0], px[1], px[2]));
         }
-        (luma, png::ColorType::Grayscale, jpeg_encoder::ColorType::Luma, 1u8)
+        luma
     } else {
         let mut rgb = Vec::with_capacity(pixels * 3);
         for px in rgba.chunks_exact(4) {
             rgb.extend_from_slice(&px[..3]);
         }
-        (rgb, png::ColorType::Rgb, jpeg_encoder::ColorType::Rgb, 3u8)
+        rgb
+    };
+    encode_samples(samples, width, height, options)
+}
+
+fn luma_of(r: u8, g: u8, b: u8) -> u8 {
+    ((299 * u32::from(r) + 587 * u32::from(g) + 114 * u32::from(b)) / 1000) as u8
+}
+
+/// Encode 8-bit samples (gray or RGB per `options.gray`).
+fn encode_samples(
+    samples: Vec<u8>,
+    width: u32,
+    height: u32,
+    options: &NativeRender,
+) -> NativeResult<Vec<u8>> {
+    let (png_color, jpeg_color, channels) = if options.gray {
+        (png::ColorType::Grayscale, jpeg_encoder::ColorType::Luma, 1u8)
+    } else {
+        (png::ColorType::Rgb, jpeg_encoder::ColorType::Rgb, 3u8)
     };
     let encoding_error = |message: String| NativeError {
         code: "PDF_ERROR",
@@ -1139,5 +1285,390 @@ fn encode(rgba: &[u8], width: u32, height: u32, options: &NativeRender) -> Nativ
                 .map_err(|error| encoding_error(format!("failed to encode WebP: {error}")))?;
             Ok(out)
         }
+    }
+}
+
+/// Unpremultiply a rendered pixmap into RGB (or gray) samples, consuming the raster.
+fn pixmap_samples(pixmap: hayro::vello_cpu::Pixmap, gray: bool) -> NativeResult<Vec<u8>> {
+    let pixels = pixmap.take_unpremultiplied();
+    let channels = if gray { 1 } else { 3 };
+    let length = pixels.len().checked_mul(channels).ok_or_else(|| NativeError {
+        code: "PDF_ERROR",
+        limit: None,
+        message: "rendered raster size overflowed".to_owned(),
+    })?;
+    let mut out = Vec::new();
+    out.try_reserve_exact(length).map_err(|error| NativeError {
+        code: "PDF_ERROR",
+        limit: None,
+        message: format!("failed to allocate rendered raster: {error}"),
+    })?;
+    if gray {
+        out.extend(pixels.iter().map(|px| luma_of(px.r, px.g, px.b)));
+    } else {
+        for px in &pixels {
+            out.extend_from_slice(&[px.r, px.g, px.b]);
+        }
+    }
+    Ok(out)
+}
+
+// ---------------------------------------------------------------------------
+// OCR fill (PP-OCR through the pure-Rust RTen runtime)
+// ---------------------------------------------------------------------------
+
+const OCR_FILL_MIN_CONFIDENCE: f32 = 0.7;
+const OCR_ADAPTIVE_MIN_CONFIDENCE: f32 = 0.5;
+const OCR_FILL_UNRELIABLE_RATIO: f64 = 0.5;
+const OCR_FILL_SLACK: f64 = 2.0;
+const OCR_ADAPTIVE_MIN_NATIVE_CHARS: usize = 20;
+const OCR_ADAPTIVE_MIN_IMAGE_AREA: f64 = 0.02;
+const OCR_LAYER_CHUNK_WORDS: usize = 4096;
+const OCR_LAYER_CHUNK_BYTES: usize = 1024 * 1024;
+const OCR_MODEL_FILES: [&str; 3] = [
+    "PP-OCRv6_det_small.rten",
+    "PP-OCRv6_rec_small.rten",
+    "ppocrv6_dict.txt",
+];
+
+/// Loaded OCR model set, shared by every document in the process.
+pub struct NativeOcrEngine {
+    engine: crate::ocr_engine::Engine,
+    pub threads: usize,
+}
+
+type OcrEngineCache = std::sync::Mutex<HashMap<(String, usize), std::sync::Arc<NativeOcrEngine>>>;
+
+fn ocr_engines() -> &'static OcrEngineCache {
+    static CACHE: std::sync::OnceLock<OcrEngineCache> = std::sync::OnceLock::new();
+    CACHE.get_or_init(Default::default)
+}
+
+/// Bounded number of concurrent render-and-recognize calls (default 1, like the
+/// Python engine): each holds a page raster plus detector tensors.
+struct OcrSlots {
+    free: std::sync::Mutex<usize>,
+    ready: std::sync::Condvar,
+}
+
+fn ocr_slots() -> &'static OcrSlots {
+    static SLOTS: std::sync::OnceLock<OcrSlots> = std::sync::OnceLock::new();
+    SLOTS.get_or_init(|| {
+        let limit = std::env::var("PDFUST_OCR_MAX_CONCURRENT")
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .map_or(1, |value| value.clamp(1, 16));
+        OcrSlots { free: std::sync::Mutex::new(limit), ready: std::sync::Condvar::new() }
+    })
+}
+
+struct OcrSlot;
+
+impl OcrSlot {
+    fn acquire() -> Self {
+        let slots = ocr_slots();
+        let mut free = slots.free.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        while *free == 0 {
+            free = slots.ready.wait(free).unwrap_or_else(|poisoned| poisoned.into_inner());
+        }
+        *free -= 1;
+        Self
+    }
+}
+
+impl Drop for OcrSlot {
+    fn drop(&mut self) {
+        let slots = ocr_slots();
+        *slots.free.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) += 1;
+        slots.ready.notify_one();
+    }
+}
+
+impl NativeOcrEngine {
+    /// Load (or reuse) the PP-OCR model set. `model_dir` falls back to
+    /// `PDFUST_OCR_MODEL_DIR`; `threads` defaults to min(4, CPUs). Missing models
+    /// are reported as `NATIVE_PDF_UNSUPPORTED` so callers can fall back.
+    pub fn load(
+        model_dir: Option<&str>,
+        threads: Option<usize>,
+    ) -> NativeResult<std::sync::Arc<Self>> {
+        let dir = model_dir
+            .map(str::to_owned)
+            .or_else(|| std::env::var("PDFUST_OCR_MODEL_DIR").ok())
+            .filter(|dir| !dir.is_empty())
+            .ok_or_else(|| NativeError {
+                code: "NATIVE_PDF_UNSUPPORTED",
+                limit: None,
+                message: "OCR models are not configured: pass modelDir or set PDFUST_OCR_MODEL_DIR"
+                    .to_owned(),
+            })?;
+        let threads = threads.unwrap_or_else(|| {
+            std::thread::available_parallelism().map_or(1, usize::from).min(4)
+        });
+        if !(1..=16).contains(&threads) {
+            return Err(NativeError::invalid("ocr threads must be from 1 through 16"));
+        }
+        let key = (dir.clone(), threads);
+        let mut cache = ocr_engines().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if let Some(engine) = cache.get(&key) {
+            return Ok(std::sync::Arc::clone(engine));
+        }
+        let base = std::path::Path::new(&dir);
+        for file in OCR_MODEL_FILES {
+            if !base.join(file).is_file() {
+                return Err(NativeError {
+                    code: "NATIVE_PDF_UNSUPPORTED",
+                    limit: None,
+                    message: format!("OCR model file {file} not found in {dir}"),
+                });
+            }
+        }
+        let engine = crate::ocr_engine::Engine::load(
+            base.join(OCR_MODEL_FILES[0]),
+            base.join(OCR_MODEL_FILES[1]),
+            base.join(OCR_MODEL_FILES[2]),
+            threads,
+            Some(64 * 1024 * 1024),
+        )?;
+        let engine = std::sync::Arc::new(Self { engine, threads });
+        cache.insert(key, std::sync::Arc::clone(&engine));
+        Ok(engine)
+    }
+
+    pub fn name(&self) -> &'static str {
+        "pp-ocrv6-small-rten"
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeOcrOptions {
+    /// `fill` (default) or `adaptive`.
+    pub adaptive: bool,
+    pub dpi: f64,
+    pub min_confidence: Option<f32>,
+    pub tile_size: usize,
+    pub overlap: usize,
+    pub table_strategy: TableStrategy,
+}
+
+impl Default for NativeOcrOptions {
+    fn default() -> Self {
+        Self {
+            adaptive: false,
+            dpi: 200.0,
+            min_confidence: None,
+            tile_size: 1408,
+            overlap: 192,
+            table_strategy: TableStrategy::Lines,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct NativeOcrFill {
+    pub text: String,
+    pub markdown: String,
+    /// OCR words inserted into the page's invisible text layer.
+    pub filled_words: u32,
+    /// Words the recognizer returned above the confidence threshold.
+    pub recognized: u32,
+    /// 1 when the whole native layer was replaced or OCR'd as a full page.
+    pub replaced_pages: u32,
+    /// Raster placements OCR'd by the adaptive policy.
+    pub regions: u32,
+    pub unmapped_native: bool,
+}
+
+type OcrWord = (f64, f64, f64, f64, String);
+
+impl NativeDoc {
+    /// Recognize one page (optionally one clip region) and return words in page points.
+    #[allow(clippy::too_many_arguments)]
+    fn ocr_recognize(
+        &mut self,
+        index: u32,
+        engine: &NativeOcrEngine,
+        options: &NativeOcrOptions,
+        min_confidence: f32,
+        clip: Option<BBox>,
+    ) -> NativeResult<Vec<OcrWord>> {
+        if !options.dpi.is_finite() || !(36.0..=600.0).contains(&options.dpi) {
+            return Err(NativeError::invalid("dpi must be from 36 through 600"));
+        }
+        if !(256..=2048).contains(&options.tile_size) || options.tile_size % 32 != 0 {
+            return Err(NativeError::invalid(
+                "tileSize must be a multiple of 32 from 256 through 2048",
+            ));
+        }
+        if options.overlap < 32 || options.overlap > options.tile_size / 2 {
+            return Err(NativeError::invalid(
+                "overlap must be from 32 through half of tileSize",
+            ));
+        }
+        let number = self.page_number(index)?;
+        let (page_width, page_height, _) = self.size(index)?;
+        let _slot = OcrSlot::acquire();
+        let scale = (options.dpi / 72.0) as f32;
+        let pixmap = self
+            .doc
+            .render_pixmap_impl(py(), number, scale, Some((255, 255, 255, 255)))?;
+        let (pixel_width, pixel_height) = (u32::from(pixmap.width()), u32::from(pixmap.height()));
+        let pixel_to_page = 72.0 / options.dpi;
+        let (width, height, rgba, offset_x, offset_y) = match clip {
+            Some(clip) => {
+                let clip = (
+                    clip.0.max(0.0),
+                    clip.1.max(0.0),
+                    clip.2.min(page_width),
+                    clip.3.min(page_height),
+                );
+                let (w, h, rgba) = cropped_rgba_bytes(pixmap, pixel_width, pixel_height, scale, clip)
+                    .map_err(NativeError::invalid)?;
+                (
+                    w,
+                    h,
+                    rgba,
+                    (clip.0 / pixel_to_page).floor() * pixel_to_page,
+                    (clip.1 / pixel_to_page).floor() * pixel_to_page,
+                )
+            }
+            None => (
+                pixel_width,
+                pixel_height,
+                rgba_bytes(pixmap).map_err(|message| NativeError {
+                    code: "PDF_ERROR",
+                    limit: None,
+                    message,
+                })?,
+                0.0,
+                0.0,
+            ),
+        };
+        let found = engine
+            .engine
+            .recognize(
+                &rgba,
+                width as usize,
+                height as usize,
+                options.tile_size,
+                options.overlap,
+                min_confidence,
+            )
+            .map_err(|message| NativeError { code: "PDF_ERROR", limit: None, message })?;
+        Ok(found
+            .into_iter()
+            .map(|(x0, y0, x1, y1, text, _)| {
+                (
+                    offset_x + f64::from(x0) * pixel_to_page,
+                    offset_y + f64::from(y0) * pixel_to_page,
+                    offset_x + f64::from(x1) * pixel_to_page,
+                    offset_y + f64::from(y1) * pixel_to_page,
+                    text,
+                )
+            })
+            .collect())
+    }
+
+    /// Insert OCR words as an invisible text layer (chunked to the layer limits).
+    fn ocr_insert(&mut self, index: u32, words: &[OcrWord]) -> NativeResult<()> {
+        let number = self.page_number(index)?;
+        let mut chunk: Vec<OcrWord> = Vec::new();
+        let mut bytes = 0usize;
+        for word in words.iter().filter(|word| !word.4.is_empty()) {
+            if chunk.len() == OCR_LAYER_CHUNK_WORDS || bytes + word.4.len() > OCR_LAYER_CHUNK_BYTES {
+                self.doc.insert_ocr_layer(py(), number, std::mem::take(&mut chunk), 0)?;
+                bytes = 0;
+            }
+            bytes += word.4.len();
+            chunk.push(word.clone());
+        }
+        if !chunk.is_empty() {
+            self.doc.insert_ocr_layer(py(), number, chunk, 0)?;
+        }
+        Ok(())
+    }
+
+    /// Add OCR text only where the native text layer is missing or unusable
+    /// (policies `fill` and `adaptive`, identical to Python `Page.ocr_fill`), then
+    /// return the page's text and Markdown including the new invisible layer.
+    pub fn ocr_fill(
+        &mut self,
+        index: u32,
+        engine: &NativeOcrEngine,
+        options: &NativeOcrOptions,
+    ) -> NativeResult<NativeOcrFill> {
+        let fill_confidence = options.min_confidence.unwrap_or(OCR_FILL_MIN_CONFIDENCE);
+        let adaptive_confidence = options.min_confidence.unwrap_or(OCR_ADAPTIVE_MIN_CONFIDENCE);
+        for value in [fill_confidence, adaptive_confidence] {
+            if !value.is_finite() || !(0.0..=1.0).contains(&value) {
+                return Err(NativeError::invalid("minConfidence must be a number from 0 to 1"));
+            }
+        }
+        let native_words = self.words(index)?;
+        let unmapped_native = self.scan(index, false, false, 0.25)?.stats.unmapped > 0;
+        let mut result = NativeOcrFill { unmapped_native, ..Default::default() };
+        if options.adaptive {
+            let native_chars = self.text(index)?.trim().chars().count();
+            if unmapped_native || native_chars < OCR_ADAPTIVE_MIN_NATIVE_CHARS {
+                result.replaced_pages = 1;
+                let found = self.ocr_recognize(index, engine, options, adaptive_confidence, None)?;
+                result.recognized += found.len() as u32;
+                if !found.is_empty() {
+                    self.ocr_insert(index, &found)?;
+                    result.filled_words += found.iter().filter(|w| !w.4.is_empty()).count() as u32;
+                }
+            } else {
+                let (width, height, _) = self.size(index)?;
+                let min_area = OCR_ADAPTIVE_MIN_IMAGE_AREA * width * height;
+                for image in self.images(index)? {
+                    let b = image.bbox;
+                    if (b.2 - b.0) * (b.3 - b.1) < min_area {
+                        continue;
+                    }
+                    result.regions += 1;
+                    // Native text inside the region wins: skip it (Python apply_ocr default).
+                    let covered = self.words(index)?.iter().any(|word| {
+                        !word.text.trim().is_empty()
+                            && word.bbox.0 < b.2
+                            && word.bbox.2 > b.0
+                            && word.bbox.1 < b.3
+                            && word.bbox.3 > b.1
+                    });
+                    if covered {
+                        continue;
+                    }
+                    let found =
+                        self.ocr_recognize(index, engine, options, adaptive_confidence, Some(b))?;
+                    result.recognized += found.len() as u32;
+                    if !found.is_empty() {
+                        self.ocr_insert(index, &found)?;
+                        result.filled_words +=
+                            found.iter().filter(|w| !w.4.is_empty()).count() as u32;
+                    }
+                }
+            }
+        } else {
+            let found = self.ocr_recognize(index, engine, options, fill_confidence, None)?;
+            result.recognized = found.len() as u32;
+            let native_boxes: Vec<BBox> = native_words.iter().map(|word| word.bbox).collect();
+            let native_chars: usize = native_words.iter().map(|word| word.text.chars().count()).sum();
+            let (replace_page, keep) = _Document::select_ocr_fill_words(
+                native_boxes,
+                native_chars,
+                unmapped_native,
+                found.clone(),
+                OCR_FILL_SLACK,
+                OCR_FILL_UNRELIABLE_RATIO,
+            );
+            result.replaced_pages = u32::from(replace_page);
+            let fresh: Vec<OcrWord> = keep.into_iter().filter_map(|i| found.get(i).cloned()).collect();
+            if !fresh.is_empty() {
+                self.ocr_insert(index, &fresh)?;
+                result.filled_words = fresh.iter().filter(|w| !w.4.is_empty()).count() as u32;
+            }
+        }
+        result.text = self.text(index)?;
+        result.markdown = self.markdown(index, options.table_strategy)?;
+        Ok(result)
     }
 }

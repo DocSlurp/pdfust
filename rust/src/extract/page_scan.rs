@@ -323,6 +323,7 @@ pub(crate) fn scan_page<'a>(
         text: TextCollector::new(
             page,
             false,
+            false,
             Some(limits.max_text_size),
             Some(limits.max_glyphs),
         ),
