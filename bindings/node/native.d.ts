@@ -13,9 +13,17 @@ export declare class PdfDoc {
   pageCount(): number
   metadata(): Metadata
   hasJavaScript(): boolean
+  /** Every JavaScript action with scope, page and trigger event. */
+  javaScript(): Array<JavaScriptAction>
   optionalContent(): Array<OptionalContentGroup>
   attachments(): Array<Attachment>
   fonts(page?: number | undefined | null): Array<FontInfo>
+  /**
+   * Leave invisible text (render mode 3, such as an OCR layer) out of `text()`,
+   * `markdown()` and `tables()`. Default `false`: it is included. `spans()`, `scan()`
+   * and `glyphStats()` always report it.
+   */
+  setSkipInvisibleText(skip: boolean): void
   /** Engine warnings (for example a repaired cross-reference table) since the last call. */
   takeWarnings(): Array<string>
   page(i: number): PdfPage
@@ -29,6 +37,12 @@ export declare class PdfPage {
   markdown(options?: MarkdownOptions | undefined | null): string
   markdownAsync(options?: MarkdownOptions | undefined | null): Promise<string>
   spans(): Array<Span>
+  /**
+   * One pass for routing probes: raw text runs (render mode, unmapped/Type 3/control
+   * counts, glyphs over a host image), image placements read without decoding pixels,
+   * and glyph totals. Cheaper than calling `spans()`, `images()` and `glyphStats()`.
+   */
+  scan(options?: ScanOptions | undefined | null): PageScan
   /**
    * Words with boxes. `spans()` merges text that shares a baseline across
    * columns into one entry; words keep their own boxes for column analysis.
@@ -44,7 +58,11 @@ export declare class PdfPage {
   tables(options?: TablesOptions | undefined | null): Array<Table>
   render(options?: RenderOptions | undefined | null): Buffer
   renderAsync(options?: RenderOptions | undefined | null): Promise<Buffer>
-  /** OCR fill is not available in this binding yet; throws `NATIVE_PDF_UNSUPPORTED`. */
+  /**
+   * Add OCR text only where the native text layer is missing or unusable and return the
+   * page text and Markdown including the new invisible layer (the document is modified
+   * in memory). Rejects with `NATIVE_PDF_UNSUPPORTED` when no OCR models are configured.
+   */
   ocrFillAsync(options?: OcrFillOptions | undefined | null): Promise<OcrFillResult>
 }
 
@@ -57,23 +75,53 @@ export interface Annotation {
 
 export interface Attachment {
   name: string
+  /** Stored (decoded) size in bytes. */
   size: number
+  /** Size declared in the file's `/Params`, when present. */
+  declaredSize?: number
+  mime?: string
+  description?: string
+}
+
+export interface DrawingPath {
+  bbox: [number, number, number, number]
+  /** `f` fill, `s` stroke, `fs` both. */
+  paint: string
 }
 
 export interface Drawings {
   lineCount: number
   rectCount: number
+  /** `h_rule_count + v_rule_count`. */
   longRuleCount: number
+  /** Paths at least 20 pt wide and at most 2 pt tall. */
+  hRuleCount: number
+  /** Paths at least 12 pt tall and at most 2 pt wide. */
+  vRuleCount: number
   pathCount: number
+  /** Union area of the path bounding boxes in pt². */
   vectorArea: number
+  /** A drawing safety limit cut collection short; everything else covers the paths seen. */
+  truncated: boolean
+  paths: Array<DrawingPath>
 }
 
 export interface FontInfo {
+  /** Object number; absent for direct font dictionaries. */
+  xref?: number
+  /** BaseFont including the subset tag (`ABCDEF+Name`). */
   name: string
+  /** PDF subtype: Type1, MMType1, TrueType, Type0 or Type3. */
   type: string
+  /** `CIDFontType0` or `CIDFontType2` for Type0 fonts. */
+  descendantType?: string
   embedded: boolean
   hasToUnicode: boolean
   isType3: boolean
+  subset: boolean
+  encoding?: string
+  /** Zero-based pages using the font. */
+  pages: Array<number>
 }
 
 export interface GlyphStats {
@@ -92,12 +140,20 @@ export interface ImageInfo {
   effectiveDpi: number
 }
 
+export interface JavaScriptAction {
+  /** `document`, `page`, `annotation`, `field` ... */
+  scope: string
+  /** Zero-based page for page-scoped actions. */
+  page?: number
+  event?: string
+}
+
 /**
  * Resource limits for opening and interpreting a document. Unset means unbounded
  * (Python parity); `profile: "web"` applies the conservative upload profile first.
  */
 export interface Limits {
-  profile?: 'web'
+  profile?: 'web' | 'worker'
   maxDecompressedSize?: number
   maxPageContentSize?: number
   maxFileSize?: number
@@ -138,16 +194,50 @@ export interface Metadata {
 }
 
 export interface OcrFillOptions {
+  /**
+   * `fill` recognizes the whole page and inserts only words the native layer lacks;
+   * `adaptive` OCRs the whole page only when native text is nearly absent or
+   * unmapped, otherwise only the large raster regions. Default `fill`.
+   */
   policy?: 'fill' | 'adaptive'
+  /** Raster resolution for recognition (default 200; 150-200 is ~2x faster than 300). */
   dpi?: number
+  /** Accepted for interface parity; the bundled PP-OCRv6 model set is multilingual. */
   lang?: string
+  /** Word confidence floor, 0-1 (default 0.7 for fill, 0.5 for adaptive). */
+  minConfidence?: number
+  /**
+   * Directory holding the PP-OCRv6 `.rten` models and dictionary
+   * (default: `PDFUST_OCR_MODEL_DIR`).
+   */
+  modelDir?: string
+  /**
+   * Inference threads, 1-16 (default min(4, CPUs)). Concurrent OCR calls in the
+   * process are bounded by `PDFUST_OCR_MAX_CONCURRENT` (default 1).
+   */
+  threads?: number
+  tileSize?: number
+  overlap?: number
+  tableStrategy?: 'lines' | 'text' | 'none'
 }
 
 export interface OcrFillResult {
+  /** Page text including the new invisible OCR layer. */
   text: string
   markdown: string
+  /** OCR words inserted into the page's invisible text layer. */
   filledRegions: number
+  /** Engine id, e.g. `pp-ocrv6-small-rten`. */
   engine: string
+  policy: string
+  /** Words the recognizer returned above the confidence floor. */
+  recognized: number
+  /** 1 when the page was OCR'd as a whole (fill replaced an unusable layer, or adaptive full-page). */
+  replacedPages: number
+  /** Raster placements OCR'd by the adaptive policy. */
+  regions: number
+  /** The native layer had glyphs without Unicode. */
+  unmappedNative: boolean
 }
 
 export declare function openBuffer(buffer: Buffer, options?: OpenOptions | undefined | null): PdfDoc
@@ -160,8 +250,19 @@ export interface OpenOptions {
 export declare function openPath(path: string, options?: OpenOptions | undefined | null): PdfDoc
 
 export interface OptionalContentGroup {
+  xref: number
   name: string
+  /** Default visibility (`/D` `BaseState`, `/ON`, `/OFF`). */
   visible: boolean
+  intent: Array<string>
+}
+
+export interface PageScan {
+  width: number
+  height: number
+  spans: Array<ScanSpan>
+  images: Array<ScanImage>
+  stats: ScanStats
 }
 
 export interface PageSize {
@@ -180,6 +281,55 @@ export interface RenderOptions {
   quality?: number
 }
 
+export interface ScanImage {
+  index: number
+  bbox: [number, number, number, number]
+  widthPx: number
+  heightPx: number
+  dpiX: number
+  dpiY: number
+  dpi: number
+  stencil: boolean
+}
+
+export interface ScanOptions {
+  /** Collect text runs (default true). */
+  spans?: boolean
+  /** Collect image placements (default true). */
+  images?: boolean
+  /** Page share an image must cover to count as a text host (default 0.25). */
+  hostCoverage?: number
+}
+
+export interface ScanSpan {
+  text: string
+  bbox: [number, number, number, number]
+  font: string
+  size: number
+  flags: number
+  renderMode: number
+  invisible: boolean
+  /** Glyphs in this run without a Unicode mapping. */
+  unmapped: number
+  glyphs: number
+  type3: boolean
+  controlChars: number
+  /** Glyphs drawn over a page-sized image (an OCR text layer or text on a scan). */
+  overImage: number
+  dir: [number, number]
+}
+
+export interface ScanStats {
+  glyphs: number
+  mapped: number
+  unmapped: number
+  invisible: number
+  stroke: number
+  type3: number
+  controlChars: number
+  overImage: number
+}
+
 export interface Span {
   text: string
   bbox: [number, number, number, number]
@@ -188,6 +338,10 @@ export interface Span {
   renderMode: number
   invisible: boolean
   unmapped: number
+  /** Baseline direction of the span's line (unit vector, `[1, 0]` for left-to-right). */
+  dir: [number, number]
+  /** 1 for vertical writing (for example vertical CJK), else 0. */
+  writingMode: number
 }
 
 export interface Table {
@@ -214,6 +368,9 @@ export interface Widget {
   kind: string
   name?: string
   value?: string
+  filled: boolean
+  readOnly: boolean
+  required: boolean
   bbox: [number, number, number, number]
 }
 

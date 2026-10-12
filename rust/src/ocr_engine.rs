@@ -8,20 +8,16 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use pyo3::prelude::*;
+use crate::py::*;
 use rten::{Model, RunOptions, ThreadPool};
 use rten_tensor::NdTensor;
 use rten_tensor::prelude::*;
 
 use crate::document::{LimitError, PdfError, read_file_fallibly};
+#[cfg(feature = "python")]
 use crate::pixmap::Pixmap;
 
-pyo3::create_exception!(
-    pdfust,
-    OcrError,
-    PdfError,
-    "OCR model loading or inference failed."
-);
+crate::py::define_exception!(OcrError, PdfError, "OCR model loading or inference failed.");
 
 const DETECTOR_THRESHOLD: f32 = 0.3;
 const DETECTOR_BOX_THRESHOLD: f32 = 0.5;
@@ -155,7 +151,7 @@ impl Candidate {
     }
 }
 
-struct Engine {
+pub(crate) struct Engine {
     detector: Model,
     recognizer: Model,
     characters: Vec<String>,
@@ -213,7 +209,7 @@ impl Engine {
         Ok(data)
     }
 
-    fn load(
+    pub(crate) fn load(
         detector_path: impl AsRef<Path>,
         recognizer_path: impl AsRef<Path>,
         dictionary_path: impl AsRef<Path>,
@@ -298,7 +294,7 @@ impl Engine {
         RunOptions::default().with_thread_pool(Some(Arc::clone(&self.thread_pool)))
     }
 
-    fn recognize(
+    pub(crate) fn recognize(
         &self,
         pixels: &[u8],
         width: usize,
@@ -1040,11 +1036,13 @@ fn recognition_input(
 }
 
 /// Loaded OCR model set. Python owns rendering and coordinate conversion.
+#[cfg(feature = "python")]
 #[pyclass(frozen, module = "pdfust.pdfust_core")]
 pub struct _OcrEngine {
     engine: Engine,
 }
 
+#[cfg(feature = "python")]
 #[pymethods]
 impl _OcrEngine {
     #[new]

@@ -5122,13 +5122,14 @@ impl _Document {
         let Some(limit) = self.max_text_size else {
             return Ok(None);
         };
-        if let Some(admitted) = self.interpreted_text_sizes.get(&page_number) {
-            return Ok(Some(*admitted));
-        }
+        // A page that was already admitted is not charged again, but a different reader
+        // (text, spans, scan, words) may count its bytes differently, so it gets the
+        // budget the other pages leave rather than exactly what the first reader used.
         let used = self
             .interpreted_text_sizes
-            .values()
-            .try_fold(0usize, |total, value| total.checked_add(*value))
+            .iter()
+            .filter(|(number, _)| **number != page_number)
+            .try_fold(0usize, |total, (_, value)| total.checked_add(*value))
             .ok_or_else(|| {
                 limit_err(
                     "text_size",
@@ -5144,13 +5145,12 @@ impl _Document {
         let Some(limit) = self.max_text_glyphs else {
             return Ok(None);
         };
-        if let Some(admitted) = self.interpreted_glyph_counts.get(&page_number) {
-            return Ok(Some(*admitted));
-        }
+        // See `text_budget`: an admitted page keeps the budget the other pages leave.
         let used = self
             .interpreted_glyph_counts
-            .values()
-            .try_fold(0usize, |total, value| total.checked_add(*value))
+            .iter()
+            .filter(|(number, _)| **number != page_number)
+            .try_fold(0usize, |total, (_, value)| total.checked_add(*value))
             .ok_or_else(|| {
                 limit_err(
                     "text_glyph_count",
@@ -8622,6 +8622,26 @@ impl _Document {
                 .and_then(|index| pages.get(index as usize))
                 .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
             crate::extract::extract_page_drawings(pdf, page, settings).map_err(PdfError::new_err)
+        })
+    }
+
+    /// Vector paint operations for probes: paths gathered before any safety limit
+    /// was hit, and whether the page was truncated by one.
+    fn extract_drawings_partial(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+    ) -> PyResult<(Vec<crate::extract::DrawingTuple>, bool)> {
+        let settings = self.interpreter_settings();
+        let pdf = self.hayro_view()?;
+        py.detach(|| {
+            let pages = pdf.pages();
+            let page = page_number
+                .checked_sub(1)
+                .and_then(|index| pages.get(index as usize))
+                .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
+            crate::extract::extract_page_drawings_partial(pdf, page, settings)
+                .map_err(PdfError::new_err)
         })
     }
 

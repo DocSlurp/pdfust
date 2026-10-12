@@ -5967,6 +5967,38 @@ pub(crate) fn extract_page_drawings(
         drawings: Vec::new(),
         command_count: 0,
         dash_value_count: 0,
+/// Like `extract_page_drawings`, but hitting a path, command or dash-value safety
+/// limit keeps the paths collected so far and reports `truncated` instead of failing.
+pub(crate) fn extract_page_drawings_partial(
+    pdf: &Pdf,
+    page: &Page<'_>,
+    settings: InterpreterSettings,
+) -> Result<(Vec<DrawingTuple>, bool), String> {
+    let cache = InterpreterCache::new();
+    let mut context = extraction_context(pdf, page, &cache, settings);
+    let mut collector = DrawingCollector {
+        drawings: Vec::new(),
+        command_count: 0,
+        dash_value_count: 0,
+        error: None,
+    };
+    interpret_page(page, &mut context, &mut collector);
+    let mut truncated = false;
+    if let Some(error) = collector.error {
+        if error.contains("safety limit") {
+            truncated = true;
+        } else {
+            return Err(error);
+        }
+    }
+    let mut output = Vec::new();
+    for drawing in collector.drawings {
+        let drawing = drawing.into_tuple()?;
+        drawing_push(&mut output, drawing, "returned drawing paths")?;
+    }
+    Ok((output, truncated))
+}
+
         error: None,
     };
     interpret_page(page, &mut context, &mut collector);

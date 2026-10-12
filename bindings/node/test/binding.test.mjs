@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -168,13 +170,155 @@ test('render: png, jpeg, webp, gray, clip, maxEdgePx, dpi', async () => {
   assert.ok(viaAsync.equals(png))
 })
 
-test('ocrFillAsync is unsupported', async () => {
+test('scan returns runs, placements and glyph stats in one pass', () => {
+  const scanned = pdfust.openPath(real('patent-us223898.pdf')).page(0).scan()
+  assert.ok(scanned.stats.invisible > 0 && scanned.stats.overImage > 0, 'OCR layer over a page image')
+  assert.ok(scanned.spans.some((span) => span.invisible && span.renderMode === 3 && span.overImage > 0))
+  assert.equal(scanned.images.length >= 1, true)
+  assert.ok(scanned.images[0].dpi > 50 && scanned.images[0].dpi <= Math.min(scanned.images[0].dpiX, scanned.images[0].dpiY) + 1e-9)
+  const text = pdfust.openPath(real('usrguide.pdf')).page(3)
+  const full = text.scan()
+  assert.equal(full.stats.glyphs, text.glyphStats().glyphs)
+  assert.equal(full.stats.mapped + full.stats.unmapped, full.stats.glyphs)
+  assert.equal(full.spans[0].dir.length, 2)
+  assert.equal(text.scan({ spans: false }).spans.length, 0)
+  assert.equal(text.scan({ images: false }).images.length, 0)
+  assert.throws(() => text.scan({ hostCoverage: 2 }), { code: 'INVALID_ARGUMENT' })
+})
+
+test('fonts carry subset, encoding and pages; javascript lists locations', () => {
+  const doc = pdfust.openPath(real('usrguide.pdf'))
+  const fonts = doc.fonts(3)
+  assert.ok(fonts.length > 0 && fonts.every((font) => font.pages.includes(3)))
+  assert.ok(fonts.some((font) => font.subset && /^[A-Z]{6}\+/.test(font.name)))
+  assert.equal(doc.hasJavaScript(), doc.javaScript().length > 0)
+  const type3 = pdfust.openPath(real('pdfium-type3.pdf')).fonts()
+  assert.ok(type3.some((font) => font.isType3 && font.type === 'Type3'))
+})
+
+const modelDir = process.env.PDFUST_OCR_MODEL_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '../../../models/pdfust-ocr-models/src/pdfust_ocr_models')
+const hasModels = existsSync(join(modelDir, 'PP-OCRv6_det_small.rten'))
+
+test('ocrFillAsync without models is NATIVE_PDF_UNSUPPORTED', async () => {
   const page = pdfust.openPath(real('usrguide.pdf')).page(0)
-  await assert.rejects(page.ocrFillAsync(), (error) => {
+  await assert.rejects(page.ocrFillAsync({ modelDir: '/nonexistent-ocr-models' }), (error) => {
     assert.ok(error instanceof pdfust.NotImplementedError)
     assert.equal(error.code, 'NATIVE_PDF_UNSUPPORTED')
     return true
   })
+  await assert.rejects(page.ocrFillAsync({ policy: 'bogus', modelDir }), { code: 'INVALID_ARGUMENT' })
+})
+
+test('ocrFillAsync fills a page without a text layer and leaves native text alone', { skip: !hasModels && 'no OCR models', timeout: 600_000 }, async () => {
+  const scan = pdfust.openPath(real('bunka-kokugo-series-019-p4.pdf')).page(0)
+  assert.equal(scan.text().trim(), '')
+  const first = await scan.ocrFillAsync({ policy: 'fill', dpi: 150, modelDir, threads: 2 })
+  assert.equal(first.engine, 'pp-ocrv6-small-rten')
+  assert.ok(first.filledRegions > 0 && first.text.trim().length > 0)
+  assert.equal(first.text, scan.text(), 'the layer is part of later extraction')
+  assert.equal(first.markdown, scan.markdown())
+  const again = await scan.ocrFillAsync({ policy: 'fill', dpi: 150, modelDir, threads: 2 })
+  assert.equal(again.filledRegions, 0, 'recognized words are already covered by the inserted layer')
+  const native = pdfust.openPath(real('usrguide.pdf')).page(3)
+  const before = native.text()
+  const adaptive = await native.ocrFillAsync({ policy: 'adaptive', modelDir })
+  assert.equal(adaptive.filledRegions, 0)
+  assert.equal(adaptive.text, before)
+})
+
+test('render does not retain memory: RSS stays bounded across many renders', { skip: typeof global.gc !== 'function' && 'run with --expose-gc' }, async () => {
+  const doc = pdfust.openPath(real('usrguide.pdf'))
+  const rss = () => process.memoryUsage().rss / 1048576
+  for (let i = 0; i < 6; i += 1) await doc.page(i).renderAsync({ dpi: 144, format: 'jpeg' })
+  global.gc()
+  const settled = rss()
+  for (let round = 0; round < 12; round += 1) {
+    await Promise.all(Array.from({ length: 4 }, (_, k) => doc.page((round * 4 + k) % doc.pageCount()).renderAsync({ dpi: 144, format: 'png' })))
+  }
+  global.gc()
+  await new Promise((resolve) => setTimeout(resolve, 200))
+  global.gc()
+  const growth = rss() - settled
+  assert.ok(growth < 120, `RSS grew ${growth.toFixed(0)} MB across 48 renders`)
+})
+
+const here = dirname(fileURLToPath(import.meta.url))
+const python = process.env.PDFUST_PYTHON ?? join(here, '../../../.venv/bin/python')
+const matrix = join(assets, 'encrypted', 'matrix')
+
+test('invisible text is included by default and setSkipInvisibleText leaves it out', { skip: !existsSync(python) && 'no Python' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pdfust-ocr-layer-'))
+  const path = join(dir, 'layer.pdf')
+  execFileSync(python, [join(here, 'make_ocr_layer.py'), path], { env: { ...process.env, PYTHONPATH: join(here, '../../../src') } })
+  const doc = pdfust.openBuffer(readFileSync(path))
+  const page = doc.page(0)
+  assert.match(page.markdown(), /Quarterly report summary/)
+  assert.deepEqual(page.text().split(/\s+/).filter(Boolean), ['Quarterly', 'report', 'summary'])
+  assert.ok(page.spans().every((span) => span.invisible))
+  doc.setSkipInvisibleText(true)
+  assert.equal(page.text(), '')
+  assert.equal(page.markdown(), '')
+  assert.ok(page.spans().length > 0, 'spans still report the layer')
+  doc.setSkipInvisibleText(false)
+  assert.match(page.markdown(), /Quarterly report summary/)
+  rmSync(dir, { recursive: true })
+})
+
+test('encryption matrix: user, empty and owner passwords on every cipher and container', () => {
+  const cases = [
+    ['mu-aes-256-user-xrefstm.pdf', 'userpw'],
+    ['mu-aes-128-user-classic.pdf', 'ownerpw'],
+    ['mu-rc4-128-empty-xrefstm.pdf', undefined],
+    ['q-aes-256-r6-user-enc-objstm.pdf', 'userpw'],
+    ['q-rc4-40-user-enc-classic.pdf', 'ownerpw'],
+  ]
+  for (const [name, password] of cases) {
+    const doc = pdfust.openPath(join(matrix, name), password ? { password } : undefined)
+    assert.equal(doc.pageCount(), 2, name)
+    assert.match(doc.page(0).text(), /page (1|one)/i, name)
+  }
+  assert.throws(() => pdfust.openPath(join(matrix, 'mu-aes-256-user-xrefstm.pdf')), { code: 'PDF_LOCKED' })
+})
+
+test('unsupported security handlers are PDF_UNSUPPORTED_ENCRYPTION, not a password problem', () => {
+  const source = readFileSync(join(matrix, 'mu-aes-256-user-classic.pdf'))
+  const handler = Buffer.from(source.toString('latin1').replace('/Filter/Standard', '/Filter/Standar2'), 'latin1')
+  for (const options of [undefined, { password: 'userpw' }]) {
+    assert.throws(() => pdfust.openBuffer(handler, options), { code: 'PDF_UNSUPPORTED_ENCRYPTION' })
+  }
+  const revision = readFileSync(join(matrix, 'q-aes-128-user-enc-classic.pdf')).toString('latin1').replace('/R 4', '/R 9')
+  assert.throws(() => pdfust.openBuffer(Buffer.from(revision, 'latin1'), { password: 'userpw' }), { code: 'PDF_UNSUPPORTED_ENCRYPTION' })
+})
+
+test('limits: the worker profile opens what web rejects, and re-reads never exhaust a page budget', () => {
+  const path = real('usrguide.pdf')
+  const worker = pdfust.openPath(path, { limits: { profile: 'worker' } })
+  for (let i = 0; i < worker.pageCount(); i += 1) worker.page(i).markdown()
+  // Every reader of an admitted page must keep working under a tight cumulative budget.
+  const glyphs = pdfust.openPath(path).page(3).glyphStats().glyphs
+  const tight = pdfust.openPath(path, { limits: { maxTextGlyphs: glyphs } }).page(3)
+  for (const method of ['text', 'markdown', 'spans', 'glyphStats', 'words', 'scan', 'text', 'markdown']) {
+    assert.doesNotThrow(() => tight[method](), method)
+  }
+  assert.throws(() => pdfust.openPath(path, { limits: { profile: 'nope' } }), { code: 'INVALID_ARGUMENT' })
+})
+
+test('drawings report horizontal and vertical rules, path boxes and truncation', () => {
+  const page = pdfust.openPath(real('f1040.pdf')).page(0)
+  const drawings = page.drawings()
+  assert.equal(drawings.longRuleCount, drawings.hRuleCount + drawings.vRuleCount)
+  assert.equal(drawings.paths.length, drawings.pathCount)
+  assert.equal(drawings.truncated, false)
+  assert.ok(drawings.paths.every((path) => path.bbox.length === 4 && /^(f|s|fs)$/.test(path.paint)))
+  assert.ok(drawings.hRuleCount + drawings.vRuleCount + drawings.rectCount > 0)
+})
+
+test('spans carry line direction and writing mode', () => {
+  const span = pdfust.openPath(real('usrguide.pdf')).page(3).spans()[0]
+  assert.deepEqual(span.dir.map(Math.round), [1, 0])
+  assert.equal(span.writingMode, 0)
+  const vertical = pdfust.openPath(real('bunka-kokugo-series-019-p4.pdf')).page(0).spans()
+  assert.ok(vertical.every((s) => s.dir.length === 2 && (s.writingMode === 0 || s.writingMode === 1)))
 })
 
 test('concurrent async work on different documents', async () => {

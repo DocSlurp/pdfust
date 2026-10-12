@@ -10,10 +10,28 @@ use std::sync::{Arc, Mutex};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use pdfust::document::native::{
-    ImageFormat, NativeDoc, NativeError, NativeLimits, NativeRender, TableStrategy,
+    ImageFormat, NativeDoc, NativeError, NativeLimits, NativeOcrEngine, NativeOcrFill, NativeOcrOptions,
+    NativeRender, TableStrategy,
 };
 
 type Shared = Arc<Mutex<Option<NativeDoc>>>;
+
+/// Return freed heap pages to the OS. Rendering allocates multi-megabyte rasters on
+/// libuv worker threads; glibc keeps them in per-thread arenas, which shows up as
+/// hundreds of MB of RSS that never comes back. Trimming after each large task bounds it.
+#[cfg(all(target_os = "linux", target_env = "gnu"))]
+fn release_heap() {
+    unsafe extern "C" {
+        fn malloc_trim(pad: usize) -> i32;
+    }
+    // SAFETY: malloc_trim is thread-safe and takes no pointers.
+    unsafe {
+        malloc_trim(0);
+    }
+}
+
+#[cfg(not(all(target_os = "linux", target_env = "gnu")))]
+fn release_heap() {}
 
 fn fail(error: NativeError) -> Error {
     let limit = error.limit.map(|limit| format!(":{limit}")).unwrap_or_default();
@@ -27,13 +45,6 @@ fn closed() -> Error {
     Error::new(
         Status::GenericFailure,
         "[PDF_CLOSED] the document has been closed".to_owned(),
-    )
-}
-
-fn unsupported(method: &str) -> Error {
-    Error::new(
-        Status::GenericFailure,
-        format!("[NATIVE_PDF_UNSUPPORTED] {method} is not implemented by this binding"),
     )
 }
 
@@ -67,7 +78,7 @@ pub struct VersionInfo {
 /// (Python parity); `profile: "web"` applies the conservative upload profile first.
 #[napi(object)]
 pub struct Limits {
-    #[napi(ts_type = "'web'")]
+    #[napi(ts_type = "'web' | 'worker'")]
     pub profile: Option<String>,
     pub max_decompressed_size: Option<f64>,
     pub max_page_content_size: Option<f64>,
@@ -94,6 +105,7 @@ fn limits_of(options: &Option<OpenOptions>) -> Result<NativeLimits> {
     let mut resolved = match limits.profile.as_deref() {
         None => NativeLimits::default(),
         Some("web") => NativeLimits::web(),
+        Some("worker") => NativeLimits::worker(),
         Some(other) => {
             return Err(Error::new(
                 Status::InvalidArg,
@@ -143,7 +155,10 @@ pub fn version() -> VersionInfo {
             "render:png",
             "render:jpeg",
             "render:webp",
-            "ocr:unsupported",
+            "scan",
+            "fonts",
+            "inspect",
+            "ocr-fill",
         ]
         .map(str::to_owned)
         .to_vec(),
@@ -182,23 +197,50 @@ pub struct Metadata {
 
 #[napi(object)]
 pub struct OptionalContentGroup {
+    pub xref: u32,
     pub name: String,
+    /// Default visibility (`/D` `BaseState`, `/ON`, `/OFF`).
     pub visible: bool,
+    pub intent: Vec<String>,
 }
 
 #[napi(object)]
 pub struct Attachment {
     pub name: String,
+    /// Stored (decoded) size in bytes.
     pub size: f64,
+    /// Size declared in the file's `/Params`, when present.
+    pub declared_size: Option<f64>,
+    pub mime: Option<String>,
+    pub description: Option<String>,
+}
+
+#[napi(object)]
+pub struct JavaScriptAction {
+    /// `document`, `page`, `annotation`, `field` ...
+    pub scope: String,
+    /// Zero-based page for page-scoped actions.
+    pub page: Option<u32>,
+    pub event: Option<String>,
 }
 
 #[napi(object)]
 pub struct FontInfo {
+    /// Object number; absent for direct font dictionaries.
+    pub xref: Option<u32>,
+    /// BaseFont including the subset tag (`ABCDEF+Name`).
     pub name: String,
+    /// PDF subtype: Type1, MMType1, TrueType, Type0 or Type3.
     pub r#type: String,
+    /// `CIDFontType0` or `CIDFontType2` for Type0 fonts.
+    pub descendant_type: Option<String>,
     pub embedded: bool,
     pub has_to_unicode: bool,
     pub is_type3: bool,
+    pub subset: bool,
+    pub encoding: Option<String>,
+    /// Zero-based pages using the font.
+    pub pages: Vec<u32>,
 }
 
 #[napi]
@@ -244,7 +286,23 @@ impl PdfDoc {
 
     #[napi]
     pub fn has_java_script(&self) -> Result<bool> {
-        with_doc(&self.shared, |doc| Ok(doc.has_java_script()))
+        with_doc(&self.shared, |doc| doc.has_java_script())
+    }
+
+    /// Every JavaScript action with scope, page and trigger event.
+    #[napi]
+    pub fn java_script(&self) -> Result<Vec<JavaScriptAction>> {
+        with_doc(&self.shared, |doc| {
+            Ok(doc
+                .java_script()?
+                .into_iter()
+                .map(|found| JavaScriptAction {
+                    scope: found.scope,
+                    page: found.page,
+                    event: found.event,
+                })
+                .collect())
+        })
     }
 
     #[napi]
@@ -253,7 +311,12 @@ impl PdfDoc {
             Ok(doc
                 .optional_content()
                 .into_iter()
-                .map(|(name, visible)| OptionalContentGroup { name, visible })
+                .map(|group| OptionalContentGroup {
+                    xref: group.xref,
+                    name: group.name,
+                    visible: group.visible,
+                    intent: group.intent,
+                })
                 .collect())
         })
     }
@@ -262,11 +325,14 @@ impl PdfDoc {
     pub fn attachments(&self) -> Result<Vec<Attachment>> {
         with_doc(&self.shared, |doc| {
             Ok(doc
-                .attachments()?
+                .attachments()
                 .into_iter()
-                .map(|(name, size)| Attachment {
-                    name,
-                    size: size as f64,
+                .map(|file| Attachment {
+                    name: file.name,
+                    size: file.size as f64,
+                    declared_size: file.declared_size.map(|size| size as f64),
+                    mime: file.mime,
+                    description: file.description,
                 })
                 .collect())
         })
@@ -279,13 +345,29 @@ impl PdfDoc {
                 .fonts(page)?
                 .into_iter()
                 .map(|font| FontInfo {
+                    xref: font.xref,
                     name: font.name,
                     r#type: font.kind,
+                    descendant_type: font.descendant_type,
                     embedded: font.embedded,
                     has_to_unicode: font.has_to_unicode,
                     is_type3: font.is_type3,
+                    subset: font.subset,
+                    encoding: font.encoding,
+                    pages: font.pages,
                 })
                 .collect())
+        })
+    }
+
+    /// Leave invisible text (render mode 3, such as an OCR layer) out of `text()`,
+    /// `markdown()` and `tables()`. Default `false`: it is included. `spans()`, `scan()`
+    /// and `glyphStats()` always report it.
+    #[napi]
+    pub fn set_skip_invisible_text(&self, skip: bool) -> Result<()> {
+        with_doc(&self.shared, |doc| {
+            doc.set_skip_invisible_text(skip);
+            Ok(())
         })
     }
 
@@ -337,6 +419,11 @@ pub struct Span {
     pub render_mode: u32,
     pub invisible: bool,
     pub unmapped: u32,
+    /// Baseline direction of the span's line (unit vector, `[1, 0]` for left-to-right).
+    #[napi(ts_type = "[number, number]")]
+    pub dir: Vec<f64>,
+    /// 1 for vertical writing (for example vertical CJK), else 0.
+    pub writing_mode: u32,
 }
 
 #[napi(object)]
@@ -366,12 +453,94 @@ pub struct ImageInfo {
 }
 
 #[napi(object)]
+pub struct ScanOptions {
+    /// Collect text runs (default true).
+    pub spans: Option<bool>,
+    /// Collect image placements (default true).
+    pub images: Option<bool>,
+    /// Page share an image must cover to count as a text host (default 0.25).
+    pub host_coverage: Option<f64>,
+}
+
+#[napi(object)]
+pub struct ScanSpan {
+    pub text: String,
+    #[napi(ts_type = "[number, number, number, number]")]
+    pub bbox: Vec<f64>,
+    pub font: String,
+    pub size: f64,
+    pub flags: f64,
+    pub render_mode: u32,
+    pub invisible: bool,
+    /// Glyphs in this run without a Unicode mapping.
+    pub unmapped: u32,
+    pub glyphs: u32,
+    pub type3: bool,
+    pub control_chars: u32,
+    /// Glyphs drawn over a page-sized image (an OCR text layer or text on a scan).
+    pub over_image: u32,
+    #[napi(ts_type = "[number, number]")]
+    pub dir: Vec<f64>,
+}
+
+#[napi(object)]
+pub struct ScanImage {
+    pub index: u32,
+    #[napi(ts_type = "[number, number, number, number]")]
+    pub bbox: Vec<f64>,
+    pub width_px: u32,
+    pub height_px: u32,
+    pub dpi_x: f64,
+    pub dpi_y: f64,
+    pub dpi: f64,
+    pub stencil: bool,
+}
+
+#[napi(object)]
+pub struct ScanStats {
+    pub glyphs: u32,
+    pub mapped: u32,
+    pub unmapped: u32,
+    pub invisible: u32,
+    pub stroke: u32,
+    pub type3: u32,
+    pub control_chars: u32,
+    pub over_image: u32,
+}
+
+#[napi(object)]
+pub struct PageScan {
+    pub width: f64,
+    pub height: f64,
+    pub spans: Vec<ScanSpan>,
+    pub images: Vec<ScanImage>,
+    pub stats: ScanStats,
+}
+
+#[napi(object)]
+pub struct DrawingPath {
+    #[napi(ts_type = "[number, number, number, number]")]
+    pub bbox: Vec<f64>,
+    /// `f` fill, `s` stroke, `fs` both.
+    pub paint: String,
+}
+
+#[napi(object)]
 pub struct Drawings {
     pub line_count: u32,
     pub rect_count: u32,
+    /// `h_rule_count + v_rule_count`.
     pub long_rule_count: u32,
+    /// Paths at least 20 pt wide and at most 2 pt tall.
+    pub h_rule_count: u32,
+    /// Paths at least 12 pt tall and at most 2 pt wide.
+    pub v_rule_count: u32,
     pub path_count: u32,
+    /// Union area of the path bounding boxes in pt².
     pub vector_area: f64,
+    /// A drawing safety limit cut collection short; everything else covers the paths seen.
+    pub truncated: bool,
+    pub paths: Vec<DrawingPath>,
 }
 
 #[napi(object)]
@@ -379,6 +548,9 @@ pub struct Widget {
     pub kind: String,
     pub name: Option<String>,
     pub value: Option<String>,
+    pub filled: bool,
+    pub read_only: bool,
+    pub required: bool,
     #[napi(ts_type = "[number, number, number, number]")]
     pub bbox: Vec<f64>,
 }
@@ -439,18 +611,47 @@ pub struct RenderOptions {
 
 #[napi(object)]
 pub struct OcrFillOptions {
+    /// `fill` recognizes the whole page and inserts only words the native layer lacks;
+    /// `adaptive` OCRs the whole page only when native text is nearly absent or
+    /// unmapped, otherwise only the large raster regions. Default `fill`.
     #[napi(ts_type = "'fill' | 'adaptive'")]
     pub policy: Option<String>,
+    /// Raster resolution for recognition (default 200; 150-200 is ~2x faster than 300).
     pub dpi: Option<f64>,
+    /// Accepted for interface parity; the bundled PP-OCRv6 model set is multilingual.
     pub lang: Option<String>,
+    /// Word confidence floor, 0-1 (default 0.7 for fill, 0.5 for adaptive).
+    pub min_confidence: Option<f64>,
+    /// Directory holding the PP-OCRv6 `.rten` models and dictionary
+    /// (default: `PDFUST_OCR_MODEL_DIR`).
+    pub model_dir: Option<String>,
+    /// Inference threads, 1-16 (default min(4, CPUs)). Concurrent OCR calls in the
+    /// process are bounded by `PDFUST_OCR_MAX_CONCURRENT` (default 1).
+    pub threads: Option<u32>,
+    pub tile_size: Option<u32>,
+    pub overlap: Option<u32>,
+    #[napi(ts_type = "'lines' | 'text' | 'none'")]
+    pub table_strategy: Option<String>,
 }
 
 #[napi(object)]
 pub struct OcrFillResult {
+    /// Page text including the new invisible OCR layer.
     pub text: String,
     pub markdown: String,
+    /// OCR words inserted into the page's invisible text layer.
     pub filled_regions: u32,
+    /// Engine id, e.g. `pp-ocrv6-small-rten`.
     pub engine: String,
+    pub policy: String,
+    /// Words the recognizer returned above the confidence floor.
+    pub recognized: u32,
+    /// 1 when the page was OCR'd as a whole (fill replaced an unusable layer, or adaptive full-page).
+    pub replaced_pages: u32,
+    /// Raster placements OCR'd by the adaptive policy.
+    pub regions: u32,
+    /// The native layer had glyphs without Unicode.
+    pub unmapped_native: bool,
 }
 
 fn strategy_of(value: Option<&str>) -> Result<TableStrategy> {
@@ -546,8 +747,70 @@ impl PdfPage {
                     render_mode: u32::from(span.render_mode),
                     invisible: span.invisible,
                     unmapped: span.unmapped,
+                    dir: vec![span.direction.0, span.direction.1],
+                    writing_mode: u32::from(span.writing_mode),
                 })
                 .collect())
+        })
+    }
+
+    /// One pass for routing probes: raw text runs (render mode, unmapped/Type 3/control
+    /// counts, glyphs over a host image), image placements read without decoding pixels,
+    /// and glyph totals. Cheaper than calling `spans()`, `images()` and `glyphStats()`.
+    #[napi]
+    pub fn scan(&self, options: Option<ScanOptions>) -> Result<PageScan> {
+        let want_spans = options.as_ref().and_then(|o| o.spans).unwrap_or(true);
+        let want_images = options.as_ref().and_then(|o| o.images).unwrap_or(true);
+        let coverage = options.as_ref().and_then(|o| o.host_coverage).unwrap_or(0.25);
+        with_doc(&self.shared, |doc| {
+            let scan = doc.scan(self.index, want_spans, want_images, coverage)?;
+            Ok(PageScan {
+                width: scan.width,
+                height: scan.height,
+                spans: scan
+                    .spans
+                    .into_iter()
+                    .map(|span| ScanSpan {
+                        text: span.text,
+                        bbox: bbox(span.bbox),
+                        font: span.font,
+                        size: span.size,
+                        flags: span.flags as f64,
+                        render_mode: u32::from(span.render_mode),
+                        invisible: span.invisible,
+                        unmapped: span.unmapped,
+                        glyphs: span.glyphs,
+                        type3: span.type3,
+                        control_chars: span.control_chars,
+                        over_image: span.over_image,
+                        dir: vec![span.direction.0, span.direction.1],
+                    })
+                    .collect(),
+                images: scan
+                    .images
+                    .into_iter()
+                    .map(|image| ScanImage {
+                        index: image.index,
+                        bbox: bbox(image.bbox),
+                        width_px: image.width_px,
+                        height_px: image.height_px,
+                        dpi_x: image.dpi_x,
+                        dpi_y: image.dpi_y,
+                        dpi: image.dpi,
+                        stencil: image.stencil,
+                    })
+                    .collect(),
+                stats: ScanStats {
+                    glyphs: scan.stats.glyphs,
+                    mapped: scan.stats.mapped,
+                    unmapped: scan.stats.unmapped,
+                    invisible: scan.stats.invisible,
+                    stroke: scan.stats.stroke,
+                    type3: scan.stats.type3,
+                    control_chars: scan.stats.control_chars,
+                    over_image: scan.stats.over_image,
+                },
+            })
         })
     }
 
@@ -604,8 +867,16 @@ impl PdfPage {
                 line_count: stats.line_count,
                 rect_count: stats.rect_count,
                 long_rule_count: stats.long_rule_count,
+                h_rule_count: stats.h_rule_count,
+                v_rule_count: stats.v_rule_count,
                 path_count: stats.path_count,
                 vector_area: stats.vector_area,
+                truncated: stats.truncated,
+                paths: stats
+                    .paths
+                    .into_iter()
+                    .map(|path| DrawingPath { bbox: bbox(path.bbox), paint: path.paint })
+                    .collect(),
             })
         })
     }
@@ -620,6 +891,9 @@ impl PdfPage {
                     kind: widget.kind,
                     name: widget.name,
                     value: widget.value,
+                    filled: widget.filled,
+                    read_only: widget.read_only,
+                    required: widget.required,
                     bbox: bbox(widget.bbox),
                 })
                 .collect())
@@ -691,13 +965,30 @@ impl PdfPage {
         }))
     }
 
-    /// OCR fill is not available in this binding yet; throws `NATIVE_PDF_UNSUPPORTED`.
+    /// Add OCR text only where the native text layer is missing or unusable and return the
+    /// page text and Markdown including the new invisible layer (the document is modified
+    /// in memory). Rejects with `NATIVE_PDF_UNSUPPORTED` when no OCR models are configured.
     #[napi(ts_return_type = "Promise<OcrFillResult>")]
     pub fn ocr_fill_async(
         &self,
-        _options: Option<OcrFillOptions>,
-    ) -> AsyncTask<UnsupportedTask> {
-        AsyncTask::new(UnsupportedTask)
+        options: Option<OcrFillOptions>,
+    ) -> AsyncTask<OcrFillTask> {
+        let options = options.unwrap_or(OcrFillOptions {
+            policy: None,
+            dpi: None,
+            lang: None,
+            min_confidence: None,
+            model_dir: None,
+            threads: None,
+            tile_size: None,
+            overlap: None,
+            table_strategy: None,
+        });
+        AsyncTask::new(OcrFillTask {
+            shared: Arc::clone(&self.shared),
+            index: self.index,
+            options,
+        })
     }
 }
 
@@ -731,7 +1022,9 @@ impl Task for RenderTask {
     type JsValue = Buffer;
 
     fn compute(&mut self) -> Result<Self::Output> {
-        with_doc(&self.shared, |doc| doc.render(self.index, &self.render))
+        let result = with_doc(&self.shared, |doc| doc.render(self.index, &self.render));
+        release_heap();
+        result
     }
 
     fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
@@ -739,17 +1032,70 @@ impl Task for RenderTask {
     }
 }
 
-pub struct UnsupportedTask;
+pub struct OcrFillTask {
+    shared: Shared,
+    index: u32,
+    options: OcrFillOptions,
+}
 
-impl Task for UnsupportedTask {
-    type Output = ();
+impl OcrFillTask {
+    /// Validate options inside the task so bad input rejects the promise instead of throwing.
+    fn resolve_options(&self) -> Result<(String, NativeOcrOptions)> {
+        let options = &self.options;
+        let policy = options.policy.clone().unwrap_or_else(|| "fill".to_owned());
+        let adaptive = match policy.as_str() {
+            "fill" => false,
+            "adaptive" => true,
+            other => {
+                return Err(Error::new(
+                    Status::InvalidArg,
+                    format!("[INVALID_ARGUMENT] policy must be 'fill' or 'adaptive': {other:?}"),
+                ));
+            }
+        };
+        let defaults = NativeOcrOptions::default();
+        Ok((
+            policy,
+            NativeOcrOptions {
+                adaptive,
+                dpi: options.dpi.unwrap_or(defaults.dpi),
+                min_confidence: options.min_confidence.map(|value| value as f32),
+                tile_size: options.tile_size.map_or(defaults.tile_size, |v| v as usize),
+                overlap: options.overlap.map_or(defaults.overlap, |v| v as usize),
+                table_strategy: strategy_of(options.table_strategy.as_deref())?,
+            },
+        ))
+    }
+}
+
+impl Task for OcrFillTask {
+    type Output = (NativeOcrFill, &'static str, String);
     type JsValue = OcrFillResult;
 
     fn compute(&mut self) -> Result<Self::Output> {
-        Err(unsupported("ocrFillAsync"))
+        let (policy, ocr) = self.resolve_options()?;
+        let engine = NativeOcrEngine::load(
+            self.options.model_dir.as_deref(),
+            self.options.threads.map(|threads| threads as usize),
+        )
+        .map_err(fail)?;
+        let name = engine.name();
+        let filled = with_doc(&self.shared, |doc| doc.ocr_fill(self.index, &engine, &ocr))?;
+        release_heap();
+        Ok((filled, name, policy))
     }
 
-    fn resolve(&mut self, _env: Env, _output: Self::Output) -> Result<Self::JsValue> {
-        Err(unsupported("ocrFillAsync"))
+    fn resolve(&mut self, _env: Env, (filled, engine, policy): Self::Output) -> Result<Self::JsValue> {
+        Ok(OcrFillResult {
+            text: filled.text,
+            markdown: filled.markdown,
+            filled_regions: filled.filled_words,
+            engine: engine.to_owned(),
+            policy,
+            recognized: filled.recognized,
+            replaced_pages: filled.replaced_pages,
+            regions: filled.regions,
+            unmapped_native: filled.unmapped_native,
+        })
     }
 }

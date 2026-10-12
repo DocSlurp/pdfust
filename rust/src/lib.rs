@@ -15,8 +15,8 @@ mod inspect;
 mod layout;
 pub mod markdown;
 mod ocr;
-#[cfg(all(feature = "python", not(target_os = "emscripten")))]
-mod ocr_engine;
+#[cfg(all(any(feature = "python", feature = "native"), not(target_os = "emscripten")))]
+pub(crate) mod ocr_engine;
 #[cfg(all(feature = "python", target_os = "emscripten"))]
 #[path = "ocr_engine_emscripten.rs"]
 mod ocr_engine;

@@ -1048,6 +1048,7 @@ dependencies = [
  "krilla",
  "kurbo",
  "lopdf",
+ "md-5",
  "pdf-base14-metrics",
  "pdfust-shim",
  "png",

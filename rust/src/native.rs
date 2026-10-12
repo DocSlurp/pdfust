@@ -77,6 +77,25 @@ pub struct NativeLimits {
 }
 
 impl NativeLimits {
+    /// Server-side ingestion profile for validated uploads: sized for multi-hundred-page
+    /// scans and text-heavy books (the `web` profile rejects many ordinary files).
+    /// Text and glyph limits are cumulative over the document, so they scale with pages.
+    pub fn worker() -> Self {
+        let mib = 1024 * 1024;
+        Self {
+            max_file_size: Some(512 * mib),
+            max_pages: Some(2_000),
+            max_objects: Some(2_000_000),
+            max_decompressed_size: Some(256 * mib),
+            max_page_content_size: Some(32 * mib),
+            max_total_decompressed_size: Some(2048 * mib),
+            max_object_depth: Some(64),
+            max_text_size: Some(32 * mib),
+            max_interpretation_size: Some(512 * mib),
+            max_text_glyphs: Some(4 * mib),
+        }
+    }
+
     /// Conservative profile for untrusted uploads (mirrors `DocumentLimits.web()`).
     pub fn web() -> Self {
         let mib = 1024 * 1024;
@@ -113,11 +132,49 @@ pub struct NativeMetadata {
 
 #[derive(Debug, Clone)]
 pub struct NativeFont {
+    /// Object number, absent for direct font dictionaries.
+    pub xref: Option<u32>,
+    /// BaseFont, subset tag included (`ABCDEF+Name`).
     pub name: String,
+    /// PDF subtype: Type1, MMType1, TrueType, Type0 or Type3.
     pub kind: String,
+    /// `CIDFontType0`/`CIDFontType2` for Type0 fonts.
+    pub descendant_type: Option<String>,
     pub embedded: bool,
     pub has_to_unicode: bool,
     pub is_type3: bool,
+    /// BaseFont carries a six-letter subset tag.
+    pub subset: bool,
+    pub encoding: Option<String>,
+    /// Zero-based pages that use the font.
+    pub pages: Vec<u32>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeJavaScript {
+    /// `document`, `page`, `annotation`, `field`, ...
+    pub scope: String,
+    /// Zero-based page, when the action is page-scoped.
+    pub page: Option<u32>,
+    pub event: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeLayer {
+    pub xref: u32,
+    pub name: String,
+    pub visible: bool,
+    pub intent: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeAttachment {
+    pub name: String,
+    /// Stored (decoded) size in bytes.
+    pub size: u64,
+    pub declared_size: Option<u64>,
+    pub mime: Option<String>,
+    pub description: Option<String>,
 }
 
 /// One word with its page-space box (points, top-left origin).
@@ -136,6 +193,10 @@ pub struct NativeSpan {
     pub render_mode: u8,
     pub invisible: bool,
     pub unmapped: u32,
+    /// Baseline direction of the line the span belongs to (unit vector).
+    pub direction: (f64, f64),
+    /// 1 for vertical writing (for example vertical CJK), else 0.
+    pub writing_mode: u8,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -213,9 +274,26 @@ pub struct NativeImage {
 pub struct NativeDrawings {
     pub line_count: u32,
     pub rect_count: u32,
+    /// Horizontal plus vertical rules (`h_rule_count + v_rule_count`).
     pub long_rule_count: u32,
+    /// Paths at least 20 pt wide and at most 2 pt tall.
+    pub h_rule_count: u32,
+    /// Paths at least 12 pt tall and at most 2 pt wide.
+    pub v_rule_count: u32,
     pub path_count: u32,
+    /// Union area of all path bounding boxes in pt² (1 pt grid).
     pub vector_area: f64,
+    /// A drawing safety limit (paths, commands, dash values) cut collection short; the
+    /// counts and boxes cover the paths seen before it.
+    pub truncated: bool,
+    /// One entry per path: bounding box and paint (`f`, `s` or `fs`).
+    pub paths: Vec<NativeDrawingPath>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeDrawingPath {
+    pub bbox: BBox,
+    pub paint: String,
 }
 
 #[derive(Debug, Clone)]
@@ -223,6 +301,9 @@ pub struct NativeWidget {
     pub kind: String,
     pub name: Option<String>,
     pub value: Option<String>,
+    pub filled: bool,
+    pub read_only: bool,
+    pub required: bool,
     pub bbox: BBox,
 }
 
@@ -435,124 +516,86 @@ impl NativeDoc {
     }
 
     /// Whether the file carries JavaScript (document actions, name tree, or widgets).
-    pub fn has_java_script(&self) -> bool {
-        let doc = &self.doc.doc;
-        doc.objects.values().any(|object| {
-            let dict = match object {
-                Object::Dictionary(dict) => dict,
-                Object::Stream(stream) => &stream.dict,
-                _ => return false,
-            };
-            dict.has(b"JS")
-                || matches!(dict.get(b"S").and_then(Object::as_name), Ok(b"JavaScript"))
-        })
+    fn ordered_pages(&self) -> NativeResult<Vec<(u32, ObjectId)>> {
+        Ok(self
+            .doc
+            .ordered_page_ids()?
+            .into_iter()
+            .enumerate()
+            .map(|(index, id)| (index as u32 + 1, id))
+            .collect())
+    }
+
+    /// Whether any JavaScript action exists (document, page, annotation or field).
+    pub fn has_java_script(&self) -> NativeResult<bool> {
+        Ok(!self.java_script()?.is_empty())
+    }
+
+    /// Every JavaScript action with its scope, page and trigger event.
+    pub fn java_script(&self) -> NativeResult<Vec<NativeJavaScript>> {
+        let pages = self.ordered_pages()?;
+        Ok(crate::inspect::collect_javascript(&self.doc.doc, &pages)
+            .into_iter()
+            .map(|found| NativeJavaScript {
+                scope: found.scope.to_owned(),
+                page: found.page.map(|page| page.saturating_sub(1)),
+                event: found.event,
+            })
+            .collect())
     }
 
     /// Optional content groups (layers) with their default visibility.
-    pub fn optional_content(&self) -> Vec<(String, bool)> {
-        let doc = &self.doc.doc;
-        let Ok(catalog) = doc.catalog() else {
-            return Vec::new();
-        };
-        let Some(properties) = catalog
-            .get(b"OCProperties")
-            .ok()
-            .map(|object| deref_object(doc, object))
-            .and_then(|object| object.as_dict().ok())
-        else {
-            return Vec::new();
-        };
-        let ids = |key: &[u8]| -> Vec<ObjectId> {
-            properties
-                .get(key)
-                .ok()
-                .map(|object| deref_object(doc, object))
-                .and_then(|object| object.as_array().ok())
-                .map(|items| {
-                    items
-                        .iter()
-                        .filter_map(|item| item.as_reference().ok())
-                        .collect()
-                })
-                .unwrap_or_default()
-        };
-        let default = properties
-            .get(b"D")
-            .ok()
-            .map(|object| deref_object(doc, object))
-            .and_then(|object| object.as_dict().ok());
-        let ids_of = |key: &[u8]| -> Vec<ObjectId> {
-            default
-                .and_then(|default| default.get(key).ok())
-                .map(|object| deref_object(doc, object))
-                .and_then(|object| object.as_array().ok())
-                .map(|items| {
-                    items
-                        .iter()
-                        .filter_map(|item| item.as_reference().ok())
-                        .collect()
-                })
-                .unwrap_or_default()
-        };
-        let base_off = default
-            .and_then(|default| default.get(b"BaseState").ok())
-            .and_then(|object| object.as_name().ok())
-            == Some(b"OFF");
-        let off = ids_of(b"OFF");
-        let on = ids_of(b"ON");
-        ids(b"OCGs")
+    pub fn optional_content(&self) -> Vec<NativeLayer> {
+        crate::inspect::collect_optional_content(&self.doc.doc)
             .into_iter()
-            .map(|id| {
-                let name = doc
-                    .get_object(id)
-                    .and_then(Object::as_dict)
-                    .ok()
-                    .and_then(|dict| dict.get(b"Name").ok())
-                    .map(|object| deref_object(doc, object))
-                    .and_then(|object| decode_text_string(object).ok())
-                    .unwrap_or_default();
-                let visible = if base_off {
-                    on.contains(&id)
-                } else {
-                    !off.contains(&id)
-                };
-                (name, visible)
+            .map(|group| NativeLayer {
+                xref: group.object.0,
+                name: group.name,
+                visible: group.visible,
+                intent: group.intent,
             })
             .collect()
     }
 
-    /// Embedded file attachments as `(name, decoded size)`.
-    pub fn attachments(&self) -> NativeResult<Vec<(String, u64)>> {
-        let names = self.doc.embfile_names(py())?;
-        let mut out = Vec::with_capacity(names.len());
-        for name in names {
-            let size = self
-                .doc
-                .embfile_get(py(), &name, Some(DEFAULT_MAX_EMBEDDED_FILE_SIZE))
-                .map(|bytes| bytes.len() as u64)
-                .unwrap_or(0);
-            out.push((name, size));
-        }
-        Ok(out)
+    /// Embedded file attachments with stored size, declared size and MIME type.
+    pub fn attachments(&self) -> Vec<NativeAttachment> {
+        crate::inspect::collect_attachments(&self.doc.doc)
+            .into_iter()
+            .map(|file| NativeAttachment {
+                name: file.name,
+                size: file.stored_size as u64,
+                declared_size: file.size,
+                mime: file.mime,
+                description: file.description,
+            })
+            .collect()
     }
 
-    /// Fonts referenced by a page's resources (or by every page when `page` is `None`).
+    /// Fonts referenced by one page (through Form XObjects too), or by every page.
     pub fn fonts(&self, page: Option<u32>) -> NativeResult<Vec<NativeFont>> {
-        let doc = &self.doc.doc;
-        let pages: Vec<u32> = match page {
-            Some(index) => vec![self.page_number(index)?],
-            None => (1..=u32::try_from(self.doc.page_count()?).unwrap_or(0)).collect(),
-        };
-        let mut seen = BTreeSet::new();
-        let mut fonts = Vec::new();
-        for number in pages {
-            let page_id = self.doc.page_id(number)?;
-            let resources = self.doc.resolve_page_attr(page_id, b"Resources")?;
-            if let Some(Object::Dictionary(resources)) = resources {
-                collect_fonts(doc, &resources, 0, &mut seen, &mut fonts);
+        let all = self.ordered_pages()?;
+        let pages: Vec<(u32, ObjectId)> = match page {
+            Some(index) => {
+                let number = self.page_number(index)?;
+                all.into_iter().filter(|(n, _)| *n == number).collect()
             }
-        }
-        Ok(fonts)
+            None => all,
+        };
+        Ok(crate::inspect::collect_fonts(&self.doc.doc, &pages)
+            .into_iter()
+            .map(|font| NativeFont {
+                xref: font.object.map(|id| id.0),
+                name: font.name,
+                kind: font.subtype,
+                descendant_type: font.descendant_subtype,
+                embedded: font.embedded,
+                has_to_unicode: font.has_to_unicode,
+                is_type3: font.is_type3,
+                subset: font.subset,
+                encoding: font.encoding,
+                pages: font.pages.into_iter().map(|n| n.saturating_sub(1)).collect(),
+            })
+            .collect())
     }
 
     pub fn size(&mut self, index: u32) -> NativeResult<(f64, f64, u16)> {
@@ -671,7 +714,17 @@ impl NativeDoc {
     /// per span (glyphs without Unicode never reach the text); see `glyph_stats`.
     pub fn spans(&mut self, index: u32) -> NativeResult<Vec<NativeSpan>> {
         let number = self.page_number(index)?;
-        let (_, _, blocks) = self.doc.extract_layout(py(), number, true, false)?;
+        // Spans always include invisible text (that is how callers see OCR layers), even
+        // when text()/markdown() skip it. Flipping the flag drops the cached text pages.
+        let skipping = self.doc.skip_invisible_text();
+        if skipping {
+            self.doc.set_skip_invisible_text(false);
+        }
+        let layout = self.doc.extract_layout(py(), number, true, false);
+        if skipping {
+            self.doc.set_skip_invisible_text(true);
+        }
+        let (_, _, blocks) = layout?;
         let (rows, _) = self.glyph_rows(index)?;
         // Bucket glyph origins by whole-point y so each span only scans nearby glyphs.
         let mut buckets: HashMap<i64, Vec<(f64, f64, &'static str)>> = HashMap::new();
@@ -714,6 +767,8 @@ impl NativeDoc {
                         render_mode,
                         invisible: hidden,
                         unmapped: 0,
+                        direction: line.3,
+                        writing_mode: line.4,
                     });
                 }
             }
@@ -865,20 +920,22 @@ impl NativeDoc {
     pub fn drawings(&mut self, index: u32) -> NativeResult<NativeDrawings> {
         let number = self.page_number(index)?;
         let (width, height, _) = self.size(index)?;
-        let paths = self.doc.extract_drawings(py(), number)?;
-        let mut stats = NativeDrawings::default();
+        let (paths, truncated) = self.doc.extract_drawings_partial(py(), number)?;
+        let mut stats = NativeDrawings { truncated, ..Default::default() };
         // Union area on a 1 pt grid so overlapping fills are not double counted.
         let columns = (width.ceil() as usize).clamp(1, 4096);
         let rows = (height.ceil() as usize).clamp(1, 4096);
         let mut grid = vec![false; columns * rows];
-        for (bbox, _, items, _, _, _) in &paths {
+        for (bbox, paint, items, _, _, _) in paths {
             stats.path_count += 1;
             let (path_width, path_height) = (bbox.2 - bbox.0, bbox.3 - bbox.1);
             stats.line_count += items.iter().filter(|item| item.0 == "l").count() as u32;
-            if path_width >= 20.0 && path_height <= 2.0 || path_height >= 12.0 && path_width <= 2.0 {
-                stats.long_rule_count += 1;
+            if path_width >= 20.0 && path_height <= 2.0 {
+                stats.h_rule_count += 1;
+            } else if path_height >= 12.0 && path_width <= 2.0 {
+                stats.v_rule_count += 1;
             }
-            if is_rect_path(items) {
+            if is_rect_path(&items) {
                 stats.rect_count += 1;
             }
             let x0 = (bbox.0.floor().max(0.0) as usize).min(columns);
@@ -888,7 +945,9 @@ impl NativeDoc {
             for y in y0..y1 {
                 grid[y * columns + x0..y * columns + x1].fill(true);
             }
+            stats.paths.push(NativeDrawingPath { bbox, paint });
         }
+        stats.long_rule_count = stats.h_rule_count + stats.v_rule_count;
         stats.vector_area = grid.iter().filter(|cell| **cell).count() as f64;
         Ok(stats)
     }
@@ -897,49 +956,19 @@ impl NativeDoc {
         let number = self.page_number(index)?;
         let (crop, rotation) = self.doc.page_display_geometry(number)?;
         let page_id = self.doc.page_id(number)?;
-        let fields = self.doc.collect_form_fields()?;
-        let doc = &self.doc.doc;
-        let Some(annots) = self.doc.page_annotation_items(page_id)? else {
-            return Ok(Vec::new());
-        };
-        let mut out = Vec::new();
-        for item in annots {
-            let (id, dict) = match item {
-                Object::Reference(id) => match doc.get_object(*id).and_then(Object::as_dict) {
-                    Ok(dict) => (Some(*id), dict),
-                    Err(_) => continue,
-                },
-                Object::Dictionary(dict) => (None, dict),
-                _ => continue,
-            };
-            if !matches!(dict.get(b"Subtype").and_then(Object::as_name), Ok(b"Widget")) {
-                continue;
-            }
-            let Some(rect) = resolve_box(doc, dict, b"Rect") else {
-                continue;
-            };
-            let display = draw::pdf_rect_to_display(crop, rotation, rect);
-            let parent = dict.get(b"Parent").and_then(Object::as_reference).ok();
-            let field = fields
-                .iter()
-                .find(|field| Some(field.1) == id)
-                .or_else(|| fields.iter().find(|field| Some(field.1) == parent));
-            let (kind, name, value) = match field {
-                Some((name, _, ft, flags, value)) => (
-                    widget_kind(ft, *flags).to_owned(),
-                    Some(name.clone()),
-                    value.as_ref().map(|value| value.to_string()),
-                ),
-                None => ("unknown".to_owned(), None, None),
-            };
-            out.push(NativeWidget {
-                kind,
-                name,
-                value,
-                bbox: (display[0], display[1], display[2], display[3]),
-            });
-        }
-        Ok(out)
+        let to_display = |rect: [f64; 4]| draw::pdf_rect_to_display(crop, rotation, rect);
+        Ok(crate::inspect::collect_widgets(&self.doc.doc, page_id, &to_display)
+            .into_iter()
+            .map(|w| NativeWidget {
+                kind: w.kind.to_owned(),
+                name: (!w.name.is_empty()).then_some(w.name),
+                value: w.value,
+                filled: w.filled,
+                read_only: w.read_only,
+                required: w.required,
+                bbox: (w.bbox[0], w.bbox[1], w.bbox[2], w.bbox[3]),
+            })
+            .collect())
     }
 
     pub fn annotations(&self, index: u32) -> NativeResult<Vec<NativeAnnotation>> {
@@ -1009,19 +1038,6 @@ impl NativeDoc {
     }
 }
 
-fn widget_kind(ft: &str, flags: i64) -> &'static str {
-    match ft {
-        "Tx" => "text",
-        "Sig" => "signature",
-        "Ch" if flags & (1 << 17) != 0 => "combobox",
-        "Ch" => "listbox",
-        "Btn" if flags & (1 << 16) != 0 => "button",
-        "Btn" if flags & (1 << 15) != 0 => "radio",
-        "Btn" => "checkbox",
-        _ => "unknown",
-    }
-}
-
 fn render_mode_of(mode: &str) -> u8 {
     match mode {
         "stroke" => 1,
@@ -1057,108 +1073,6 @@ fn is_rect_path(items: &[crate::extract::DrawingItemTuple]) -> bool {
         item.1.len() == 2
             && ((item.1[0].0 - item.1[1].0).abs() < 1e-3 || (item.1[0].1 - item.1[1].1).abs() < 1e-3)
     })
-}
-
-fn collect_fonts(
-    doc: &Document,
-    resources: &Dictionary,
-    depth: usize,
-    seen: &mut BTreeSet<(u32, u16)>,
-    fonts: &mut Vec<NativeFont>,
-) {
-    if depth > 4 {
-        return;
-    }
-    if let Some(font_dict) = resources
-        .get(b"Font")
-        .ok()
-        .map(|object| deref_object(doc, object))
-        .and_then(|object| object.as_dict().ok())
-    {
-        for (_, entry) in font_dict.iter() {
-            if let Object::Reference(id) = entry
-                && !seen.insert(*id)
-            {
-                continue;
-            }
-            let Ok(dict) = deref_object(doc, entry).as_dict() else {
-                continue;
-            };
-            fonts.push(describe_font(doc, dict));
-        }
-    }
-    // Form XObjects carry their own resources.
-    if let Some(xobjects) = resources
-        .get(b"XObject")
-        .ok()
-        .map(|object| deref_object(doc, object))
-        .and_then(|object| object.as_dict().ok())
-    {
-        for (_, entry) in xobjects.iter() {
-            if let Object::Reference(id) = entry
-                && !seen.insert(*id)
-            {
-                continue;
-            }
-            let Ok(stream) = deref_object(doc, entry).as_stream() else {
-                continue;
-            };
-            if !matches!(stream.dict.get(b"Subtype").and_then(Object::as_name), Ok(b"Form")) {
-                continue;
-            }
-            if let Some(inner) = stream
-                .dict
-                .get(b"Resources")
-                .ok()
-                .map(|object| deref_object(doc, object))
-                .and_then(|object| object.as_dict().ok())
-            {
-                collect_fonts(doc, inner, depth + 1, seen, fonts);
-            }
-        }
-    }
-}
-
-fn describe_font(doc: &Document, dict: &Dictionary) -> NativeFont {
-    let name_of = |dict: &Dictionary, key: &[u8]| {
-        dict.get(key)
-            .ok()
-            .map(|object| deref_object(doc, object))
-            .and_then(|object| object.as_name().ok())
-            .map(|bytes| String::from_utf8_lossy(bytes).into_owned())
-    };
-    let kind = name_of(dict, b"Subtype").unwrap_or_default();
-    let name = name_of(dict, b"BaseFont")
-        .or_else(|| name_of(dict, b"Name"))
-        .unwrap_or_default();
-    let is_type3 = kind == "Type3";
-    let descriptor_owner = if kind == "Type0" {
-        dict.get(b"DescendantFonts")
-            .ok()
-            .map(|object| deref_object(doc, object))
-            .and_then(|object| object.as_array().ok())
-            .and_then(|items| items.first())
-            .and_then(|item| deref_object(doc, item).as_dict().ok())
-    } else {
-        Some(dict)
-    };
-    let embedded = is_type3
-        || descriptor_owner
-            .and_then(|owner| owner.get(b"FontDescriptor").ok())
-            .map(|object| deref_object(doc, object))
-            .and_then(|object| object.as_dict().ok())
-            .is_some_and(|descriptor| {
-                descriptor.has(b"FontFile")
-                    || descriptor.has(b"FontFile2")
-                    || descriptor.has(b"FontFile3")
-            });
-    NativeFont {
-        name,
-        kind,
-        embedded,
-        has_to_unicode: dict.has(b"ToUnicode"),
-        is_type3,
-    }
 }
 
 /// Collects raster placements without decoding pixels.
