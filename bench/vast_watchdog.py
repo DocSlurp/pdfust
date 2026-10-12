@@ -112,8 +112,10 @@ def tick(path: Path, *, fetch: Fetch | None = None, now: float | None = None) ->
         if reason is None:
             status, body = fetch("GET", f"/v0/instances/{instance}/")
             info = body.get("instances", body) if isinstance(body, dict) else {}
-            if status == 404 or (isinstance(info, dict) and info.get("actual_status") in {"exited", "offline"}
-                                 and now - record["since"] > state["grace_minutes"] * 60):
+            if status == 404 or info is None or (
+                isinstance(info, dict) and info.get("actual_status") in {"exited", "offline"}
+                and now - record["since"] > state["grace_minutes"] * 60
+            ):
                 reason = "not_running"
             elif isinstance(info, dict) and now - record["since"] > state["grace_minutes"] * 60:
                 utilization = info.get("gpu_util")

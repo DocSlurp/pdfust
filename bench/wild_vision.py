@@ -82,9 +82,9 @@ def page_image(pdf: Path, index: int) -> tuple[str, dict[str, Any]]:
     )
 
 
-def body(model: str, url: str, page: int, pages: int) -> dict[str, Any]:
-    """One strict-schema chat request for one page image."""
-    return {
+def body(model: str, url: str, page: int, pages: int, effort: str | None = None) -> dict[str, Any]:
+    """One strict-schema chat request for one page image, optionally at a fixed reasoning effort."""
+    request = {
         "model": model,
         "max_tokens": MAX_TOKENS,
         "provider": {"require_parameters": True, "allow_fallbacks": False},
@@ -101,6 +101,9 @@ def body(model: str, url: str, page: int, pages: int) -> dict[str, Any]:
         "response_format": {"type": "json_schema", "json_schema": {"name": "page_markdown", "strict": True,
                                                                    "schema": SCHEMA}},
     }
+    if effort is not None:
+        request["reasoning"] = {"effort": effort}
+    return request
 
 
 def parse_markdown(result: dict[str, Any]) -> str:
@@ -177,8 +180,10 @@ def html_tables(text: str) -> list[list[list[str]]]:
 
 
 def strip_front_matter(text: str) -> str:
-    """Drop a leading YAML front-matter block (olmOCR emits one)."""
-    return re.sub(r"\A---\n.*?\n---\n", "", text, count=1, flags=re.DOTALL)
+    """Drop model wrappers: a leading YAML front-matter block (olmOCR) and grounding tags (DeepSeek-OCR)."""
+    text = re.sub(r"\A---\n.*?\n---\n", "", text, count=1, flags=re.DOTALL)
+    text = re.sub(r"<\|ref\|>.*?<\|/ref\|><\|det\|>.*?<\|/det\|>\n?", "", text)
+    return re.sub(r"^[a-z_]+\[\[[\d,\s]+\]\]\s*$\n?", "", text, flags=re.MULTILINE)
 
 
 def plain_text(markdown: str) -> str:
@@ -205,14 +210,15 @@ def score(truth: dict[str, Any], markdown: str) -> dict[str, Any]:
 
 
 def run_arm(  # noqa: PLR0913 - one named arm and its inputs.
-    model: str, levels: list[str], docs: list[str], output: Path, *, workers: int = 8, suffix: str = ""
+    model: str, levels: list[str], docs: list[str], output: Path, *, workers: int = 8, suffix: str = "",
+    effort: str | None = None,
 ) -> dict[str, Any]:
-    """Transcribe every page of the selected variants with one model."""
+    """Transcribe every page of the selected variants with one model (effort names the arm)."""
     from bench.p003_client import P003ConcurrentClient  # noqa: PLC0415 - paid transport only when running.
 
     os.environ.setdefault("JEV_P003_TRANSPORT_SLOTS", "8")
     client = P003ConcurrentClient(ROOT)
-    arm = model.replace("/", "-") + (f"-{suffix}" if suffix else "")
+    arm = model.replace("/", "-") + (f"-effort-{effort}" if effort else "") + (f"-{suffix}" if suffix else "")
     arm_dir = guard_path(output / arm)
     arm_dir.mkdir(parents=True, exist_ok=True)
     jobs = []
@@ -247,7 +253,7 @@ def run_arm(  # noqa: PLR0913 - one named arm and its inputs.
         began = time.time()
         try:
             response = client.request(
-                body(model, url, index, pages),
+                body(model, url, index, pages, effort),
                 tag=f"{TAG_PREFIX}{arm}/{doc_id}/{level}/p{index}",
                 max_body_bytes=750_000,
                 reservation_usd=RESERVATION,
@@ -324,12 +330,14 @@ def main() -> None:
     parser.add_argument("--run-hosted", action="store_true")
     parser.add_argument("--score", action="store_true")
     parser.add_argument("--arm-suffix", default="", help="Separately named rerun of an arm, e.g. r1")
+    parser.add_argument("--reasoning-effort", help="OpenRouter reasoning effort, e.g. none; names a separate arm")
     args = parser.parse_args()
     docs = args.docs or sorted(p.parent.name for p in (WILD / "docs").glob("*/truth.json"))
     if args.models and not args.run_hosted:
         parser.error("hosted transcription requires --run-hosted")
     for model in args.models:
-        print(json.dumps(run_arm(model, args.levels, docs, args.output, suffix=args.arm_suffix)), flush=True)
+        print(json.dumps(run_arm(model, args.levels, docs, args.output, suffix=args.arm_suffix,
+                                    effort=args.reasoning_effort)), flush=True)
     if args.score:
         for arm, result in evaluate(args.output).items():
             print(arm, json.dumps(result["levels"]))

@@ -56,6 +56,8 @@ WORKERS = 3
 DEV = {"split": "DEV", "heldout": False}
 _TRACE_BATCH = 25
 STEPS = ("quirks", "raster", "real-world-v2", "wild-v2", "audit-runs", "vision")
+# Hosted (base and hard-raster) and open GPU model transcription experiments.
+VISION_DIRECTORIES = ("vision-v1", "vision-raster-v1", "vision-open-v1")
 
 
 def _hex(value: str, length: int = 32) -> str:
@@ -598,7 +600,8 @@ def sync_vision_runs(client: backfill.Client, vision: Path) -> list[dict[str, An
         {"arm": arm, "status": "skipped: in progress (no summary.json)"} for arm in skipped
     ]
     for arm, plan in plans.items():
-        run = f"wild-v1 vision {arm}"
+        # vision-v1 keeps its original run names so earlier syncs stay idempotent.
+        run = f"wild-v1 vision {arm}" if vision.name == "vision-v1" else f"wild-v1 {vision.name} {arm}"
         pages, keys, summary = plan["pages"], plan["keys"], plan["summary"]
         by_doc: dict[str, list[tuple[str, str, int]]] = {}
         for key in keys:
@@ -624,7 +627,10 @@ def sync_vision_runs(client: backfill.Client, vision: Path) -> list[dict[str, An
                 client.traces(spans, "bench.langfuse_wild_extras.vision")
             body = {
                 "runName": run,
-                "runDescription": f"Hosted vision page transcription, arm {arm}; failed and unattempted pages retained",
+                "runDescription": (
+                    f"Vision page transcription ({vision.name}), arm {arm}; "
+                    "failed and unattempted pages retained"
+                ),
                 "metadata": {
                     "arm": arm,
                     "model": summary.get("model"),
@@ -714,7 +720,11 @@ def _step(client: backfill.Client, step: str, artifacts: Path) -> Any:  # noqa: 
         return _sync_dataset(client, "dev/wild-v2", "wild-v2 multi-page DEV documents with authored truth.", built_v2)
     if step == "audit-runs":
         return sync_audit_runs(client, wild)
-    return sync_vision_runs(client, wild / "vision-v1")
+    results = []
+    for name in VISION_DIRECTORIES:
+        if (wild / name).is_dir():
+            results.extend(sync_vision_runs(client, wild / name))
+    return results
 
 
 def sync_all(client: backfill.Client, artifacts: Path | None = None, steps: Iterable[str] = STEPS) -> dict[str, Any]:

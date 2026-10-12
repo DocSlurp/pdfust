@@ -81,3 +81,17 @@ def test_disarmed_state_never_destroys(tmp_path: Path) -> None:
     api = FakeApi()
     assert wd.tick(state, fetch=api, now=1e12)["action"] == "waiting"
     assert api.calls == []
+
+
+def test_missing_instance_record_is_cleared(tmp_path: Path) -> None:
+    state = _armed(tmp_path)
+    wd.own(state, 9)
+    calls: list[tuple[str, str]] = []
+
+    def gone(method: str, path: str) -> tuple[int, Any]:
+        calls.append((method, path))
+        return 200, {"instances": None}
+
+    result = wd.tick(state, fetch=gone)
+    assert result["actions"] == [{"instance": "9", "reason": "not_running", "status": 200}]
+    assert wd.load(state)["owned"] == {}

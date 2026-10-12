@@ -76,8 +76,18 @@ P003_CHAT_MODELS = (
     "mistralai/ministral-14b-2512",
     "google/gemini-3.5-flash-lite",
 )
+# Page-transcription arms only (bench.wild_vision); not part of the decision-model frontier.
+VISION_CHAT_MODELS = (
+    "z-ai/glm-5.3-flash",
+    "deepseek/deepseek-v4.1-flash",
+)
 MODELS = tuple(
-    dict.fromkeys((*DEFAULT_MODELS, *REQUESTED_DECISION_MODELS, *ANTHROPIC_BASELINE_MODELS, *P003_CHAT_MODELS))
+    dict.fromkeys(
+        (
+            *DEFAULT_MODELS, *REQUESTED_DECISION_MODELS, *ANTHROPIC_BASELINE_MODELS, *P003_CHAT_MODELS,
+            *VISION_CHAT_MODELS,
+        )
+    )
 )
 HOSTED_MODELS = (*MODELS, *EMBEDDING_MODELS)
 

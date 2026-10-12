@@ -14,6 +14,7 @@ import argparse
 import json
 import threading
 import time
+import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -25,7 +26,7 @@ from bench.silver import guard_path, write_json
 
 # Published prompts and preferred long edges. Each model is a separately named arm.
 MODELS: dict[str, dict[str, Any]] = {
-    "allenai/olmOCR-2-7B-1025-FP8": {
+    "allenai/olmOCR-2-7B-1025": {
         "long_edge": 1288,
         "prompt": (
             "Attached is one page of a document that you must process. Just return the plain text "
@@ -49,13 +50,20 @@ MODELS: dict[str, dict[str, Any]] = {
         ),
     },
     "dots-studio/dots.ocr": {"long_edge": 1568, "prompt": "Extract the text content from this image."},
-    "deepseek-ai/DeepSeek-OCR-2": {"long_edge": 1024, "prompt": "<|grounding|>Convert the document to markdown."},
+    # DeepSeek-OCR-2 has an 8,192-token context; vLLM rejects prompt + max_tokens above it with HTTP 400.
+    # Its tokenizer registers <tr>/<td> as special tokens, so vLLM must keep them to preserve tables.
+    "deepseek-ai/DeepSeek-OCR-2": {
+        "long_edge": 1024, "prompt": "<|grounding|>Convert the document to markdown.", "max_tokens": 6144,
+        "extra": {"skip_special_tokens": False},
+    },
 }
 
 
-def chat(port: int, model: str, url: str, prompt: str, max_tokens: int = 8192) -> dict[str, Any]:
+def chat(  # noqa: PLR0913 - one request and its serving options.
+    port: int, model: str, url: str, prompt: str, *, max_tokens: int = 8192, extra: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """One OpenAI-compatible chat completion against the tunnelled vLLM server."""
-    payload = {
+    payload: dict[str, Any] = {
         "model": model,
         "temperature": 0,
         "max_tokens": max_tokens,
@@ -63,13 +71,19 @@ def chat(port: int, model: str, url: str, prompt: str, max_tokens: int = 8192) -
             {"type": "image_url", "image_url": {"url": url}},
             {"type": "text", "text": prompt},
         ]}],
+        **(extra or {}),
     }
     request = urllib.request.Request(
         f"http://127.0.0.1:{port}/v1/chat/completions", data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json"}, method="POST",
     )
-    with urllib.request.urlopen(request, timeout=600) as response:  # noqa: S310
-        return json.loads(response.read())
+    try:
+        with urllib.request.urlopen(request, timeout=600) as response:  # noqa: S310
+            return json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode(errors="replace")[:500]
+        message = f"HTTP {error.code}: {detail}"
+        raise RuntimeError(message) from error
 
 
 def run_arm(  # noqa: PLR0913 - one served arm and its inputs.
@@ -107,7 +121,8 @@ def run_arm(  # noqa: PLR0913 - one served arm and its inputs.
         record["image"] = image
         began = time.time()
         try:
-            result = chat(port, model, url, spec["prompt"])
+            result = chat(port, model, url, spec["prompt"], max_tokens=spec.get("max_tokens", 8192),
+                          extra=spec.get("extra"))
             record.update(status="ok", markdown=result["choices"][0]["message"]["content"] or "",
                           usage=result.get("usage", {}), finish_reason=result["choices"][0].get("finish_reason"))
         except Exception as error:  # every failure is a retained outcome
