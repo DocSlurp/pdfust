@@ -21,6 +21,17 @@ NOTO_SANS_JP = FONT_ROOT / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp" / "Noto
 NOTO_SANS_KO = FONT_ROOT / "pdfust-fonts-ko" / "src" / "pdfust_fonts_ko" / "NotoSansKR-Regular.otf"
 NOTO_SANS_ZH_CN = FONT_ROOT / "pdfust-fonts-zh-cn" / "src" / "pdfust_fonts_zh_cn" / "NotoSansSC-Regular.otf"
 NOTO_SANS_ZH_TW = FONT_ROOT / "pdfust-fonts-zh-tw" / "src" / "pdfust_fonts_zh_tw" / "NotoSansTC-Regular.otf"
+# Optional font extra (import name) that provides each generated font family.
+FONT_PACKAGES = {
+    "NotoSansArabic": "pdfust_fonts_ar",
+    "NotoSansHebrew": "pdfust_fonts_he",
+    "NotoSansDevanagari": "pdfust_fonts_hi",
+    "NotoSansJP": "pdfust_fonts_jp",
+    "NotoSansKR": "pdfust_fonts_ko",
+    "NotoSansThai": "pdfust_fonts_th",
+    "NotoSansSC": "pdfust_fonts_zh_cn",
+    "NotoSansTC": "pdfust_fonts_zh_tw",
+}
 
 RED = (255, 0, 0)
 GREEN = (0, 128, 0)
@@ -966,6 +977,7 @@ def test_insert_text_optional_font_conformance(
     font_prefix: str,
 ) -> None:
     """Generate, subset, save, reopen, extract, and search each bundled script."""
+    pytest.importorskip(FONT_PACKAGES[font_prefix])
     doc = _new_page_doc(300, 150)
     doc[0].insert_text((20, 60), text, fontsize=24, font_language=font_language)
 
@@ -990,6 +1002,7 @@ def test_insert_text_optional_font_conformance(
     ],
 )
 def test_insert_text_detects_unambiguous_script_provider(text: str, font_prefix: str) -> None:
+    pytest.importorskip(FONT_PACKAGES[font_prefix])
     doc = _new_page_doc(300, 150)
     doc[0].insert_text((20, 60), text, fontsize=24)
 
