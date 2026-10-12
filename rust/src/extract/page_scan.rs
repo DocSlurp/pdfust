@@ -353,9 +353,7 @@ pub(crate) fn scan_page<'a>(
     let hosts: Vec<BBox> = device
         .images
         .iter()
-        .filter(|image| {
-            (image.bbox.2 - image.bbox.0) * (image.bbox.3 - image.bbox.1) >= host_area
-        })
+        .filter(|image| (image.bbox.2 - image.bbox.0) * (image.bbox.3 - image.bbox.1) >= host_area)
         .map(|image| image.bbox)
         .collect();
 

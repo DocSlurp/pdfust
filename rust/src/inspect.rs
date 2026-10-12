@@ -44,10 +44,9 @@ fn get<'a>(doc: &'a Document, dict: &'a Dictionary, key: &[u8]) -> Option<&'a Ob
 }
 
 fn name_of(object: &Object) -> Option<String> {
-    object
-        .as_name()
-        .ok()
-        .map(|bytes| String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_NAME_BYTES)]).into_owned())
+    object.as_name().ok().map(|bytes| {
+        String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_NAME_BYTES)]).into_owned()
+    })
 }
 
 /// Decode a PDF text string: UTF-16BE/LE with BOM, UTF-8 with BOM, else Latin-1.
@@ -227,7 +226,14 @@ impl<'a> FontWalk<'a> {
             let Some(Object::Stream(stream)) = resolve(self.doc, value) else {
                 continue;
             };
-            if stream.dict.get(b"Subtype").ok().and_then(name_of).as_deref() != Some("Form") {
+            if stream
+                .dict
+                .get(b"Subtype")
+                .ok()
+                .and_then(name_of)
+                .as_deref()
+                != Some("Form")
+            {
                 continue;
             }
             if let Some(id) = id
@@ -239,8 +245,8 @@ impl<'a> FontWalk<'a> {
             if self.forms_total > MAX_FORMS {
                 return;
             }
-            if let Some(nested) = get(self.doc, &stream.dict, b"Resources")
-                .and_then(|o| o.as_dict().ok())
+            if let Some(nested) =
+                get(self.doc, &stream.dict, b"Resources").and_then(|o| o.as_dict().ok())
             {
                 self.walk_resources(page, nested, depth + 1);
             }
@@ -308,7 +314,9 @@ fn action_is_javascript(doc: &Document, action: &Object, depth: usize) -> bool {
         && let Some(next) = get(doc, dict, b"Next")
     {
         return match next {
-            Object::Array(items) => items.iter().any(|a| action_is_javascript(doc, a, depth + 1)),
+            Object::Array(items) => items
+                .iter()
+                .any(|a| action_is_javascript(doc, a, depth + 1)),
             other => action_is_javascript(doc, other, depth + 1),
         };
     }
@@ -571,7 +579,12 @@ fn attachment_from_filespec(doc: &Document, name: String, spec: &Object) -> Atta
     });
     if let Some(Object::Stream(stream)) = stream {
         info.stored_size = stream.content.len();
-        info.mime = stream.dict.get(b"Subtype").ok().and_then(name_of).map(|raw| raw.replace("#2F", "/"));
+        info.mime = stream
+            .dict
+            .get(b"Subtype")
+            .ok()
+            .and_then(name_of)
+            .map(|raw| raw.replace("#2F", "/"));
         info.size = get(doc, &stream.dict, b"Params")
             .and_then(|o| o.as_dict().ok())
             .and_then(|params| params.get(b"Size").ok())
@@ -683,7 +696,9 @@ fn value_text(doc: &Document, value: &Object) -> Option<String> {
             Some(parts.join(", "))
         }
         Object::Stream(stream) => {
-            let bytes = stream.decompressed_content().unwrap_or_else(|_| stream.content.clone());
+            let bytes = stream
+                .decompressed_content()
+                .unwrap_or_else(|_| stream.content.clone());
             Some(pdf_text(&bytes[..bytes.len().min(MAX_NAME_BYTES)]))
         }
         _ => None,
@@ -717,7 +732,12 @@ pub(crate) fn collect_widgets(
                 items
                     .iter()
                     .filter_map(|o| resolve(doc, o))
-                    .filter_map(|o| o.as_float().map(f64::from).ok().or_else(|| o.as_i64().ok().map(|n| n as f64)))
+                    .filter_map(|o| {
+                        o.as_float()
+                            .map(f64::from)
+                            .ok()
+                            .or_else(|| o.as_i64().ok().map(|n| n as f64))
+                    })
                     .collect::<Vec<f64>>()
             })
             .filter(|values| values.len() == 4);

@@ -67,5 +67,5 @@ def test_running_header_and_centered_footer_do_not_break_columns(columns: int) -
     text = _columns_page(columns, header=True, footer=True)[0].to_markdown()
     assert _first_word_order(text) == [(c, b) for c in range(columns) for b in range(3)]
     assert text.index("RUNNINGHEAD") < text.index("c0b0w1")
-    if columns == 2:  # noqa: PLR2004 - a centred footer crosses only the two-column gutter
+    if columns == 2:
         assert text.index("Page 1") > text.index("c1b2w1")
