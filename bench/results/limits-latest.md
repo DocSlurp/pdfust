@@ -1,7 +1,7 @@
 # pdfust untrusted-input limit baseline
 
 - Run at: 2026-07-25 21:51 UTC
-- CI run: [GitHub Actions 30176435435](https://github.com/yhay81/pylopdf/actions/runs/30176435435)
+- CI run: [GitHub Actions 30176435435](https://github.com/justsml/pdfust/actions/runs/30176435435)
 - Source commit: `bbd3d79a675e7d35f133041b4fb23fd70756fabb`
 - Native environment: GitHub-hosted Ubuntu / CPython 3.10.20
 - Wasm environment: GitHub-hosted Ubuntu / Pyodide 0.28.3 / CPython 3.13.2

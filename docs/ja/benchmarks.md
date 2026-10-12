@@ -127,12 +127,12 @@ python3.14t bench/free_threaded.py
 ```
 
 生成元レポートは
-[`bench/results/latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/latest.md)
+[`bench/results/latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/latest.md)
 へコミットされています。free-threaded専用の生成レポートは
-[`bench/results/free-threaded-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/free-threaded-latest.md)
+[`bench/results/free-threaded-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/free-threaded-latest.md)
 へ分離され、`bench/run.py`を再実行してもCPython 3.14tの証跡を上書きしません。
 native／Pyodideのresource-policy基準値は
-[`bench/results/limits-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/limits-latest.md)
+[`bench/results/limits-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/limits-latest.md)
 へ分けてコミットされています。2番目のcommandは上限付きopen／extractと制御された拒否を
 測定します。CIは同じcaseをPyodide内でも実行し、Wasm linear memoryの増加を
 記録します。この時間とmemory値は傾向であり、native／Wasmの性能比較ではありません。

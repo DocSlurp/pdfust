@@ -7,7 +7,7 @@ description: Typst, pyHanko, veraPDF 및 OCR 엔진을 pdfust와 연결하는 �
 
 pdfust는 조판, PDF/A 생성, 디지털 서명을 의도적으로 다시 구현하지 않습니다.
 각 기능은 검증된 라이브러리와 조합해 해결하며, 아래의 모든 사용법은
-[`tests/test_interop.py`](https://github.com/yhay81/pylopdf/blob/main/tests/test_interop.py)의
+[`tests/test_interop.py`](https://github.com/justsml/pdfust/blob/main/tests/test_interop.py)의
 통합 테스트로 보호됩니다.
 
 ## 조판과 새 문서 — typst { #typesetting }

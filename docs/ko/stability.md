@@ -88,7 +88,7 @@ Pyodide 호환성은 runtime 업그레이드 전반에 걸쳐 가정하지 않�
 
 ## 호환성 검토 { #compatibility-review }
 
-[`api/public-api.json`](https://github.com/yhay81/pylopdf/blob/main/api/public-api.json)
+[`api/public-api.json`](https://github.com/justsml/pdfust/blob/main/api/public-api.json)
 은 검토한 0.11 후보 surface를 기록합니다. 모든 native Python lane에서 export, signature,
 mapping key, type alias, enum/상수 값, public member와 예외 상속의 변화를 검사합니다.
 

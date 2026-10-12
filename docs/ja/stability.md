@@ -88,7 +88,7 @@ runtime matrixで定義します。upstreamのEOL後、または対応継続がs
 
 ## 互換性レビュー { #compatibility-review }
 
-[`api/public-api.json`](https://github.com/yhay81/pylopdf/blob/main/api/public-api.json)
+[`api/public-api.json`](https://github.com/justsml/pdfust/blob/main/api/public-api.json)
 は0.11のレビュー済み候補surfaceを記録します。全native Python laneで、export、
 signature、mapping key、type alias、enum/定数値、public member、例外継承の変化を
 testします。

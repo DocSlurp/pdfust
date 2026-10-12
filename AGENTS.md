@@ -15,7 +15,7 @@ overview.
 
 - This workspace is private `pdfust` development (formerly `pdf-master`, then `jev-pdf`,
   derived from upstream `pylopdf`). Remotes `origin` and `private` target
-  `justsml/pdfust`, verified private; it was `justsml/jev-pdf` until the 2026-10-12 rename.
+  `justsml/pdfust`, verified private; it was `justsml/pdfust` until the 2026-10-12 rename.
   Public upstream/fork remotes remain disconnected.
 - The user explicitly authorized pushing the completed work to private
   `origin/main` on 2026-10-08. Keep future pushes within the user's requested

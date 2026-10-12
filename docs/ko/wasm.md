@@ -37,11 +37,11 @@ release SBOM에 포함됩니다.
 ## Cloudflare Worker
 
 repository에는
-[검증된 extraction Worker](https://github.com/yhay81/pylopdf/tree/main/examples/cloudflare-worker)가
+[검증된 extraction Worker](https://github.com/justsml/pdfust/tree/main/examples/cloudflare-worker)가
 있습니다. 제한을 둔 PDF body를 받아 page 수와 첫 page text를 반환합니다.
 
 ```bash
-git clone https://github.com/yhay81/pylopdf.git
+git clone https://github.com/justsml/pdfust.git
 cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
@@ -172,7 +172,7 @@ Node/Pyodide harness에서 Form 1040 첫 open/extraction은 117.634 ms, 5회 반
 28.506 ms였습니다. Wasm linear memory는 설치 후 39.688 MiB, 전체 호환성 및 resource
 suite 후 70.000 MiB에 도달했습니다. 이는 재현 가능한 CI trend이며 Cloudflare request
 latency나 isolate resident-memory 측정은 아닙니다.
-[전체 size 및 startup report](https://github.com/yhay81/pylopdf/blob/main/bench/results/wasm-latest.md)를
+[전체 size 및 startup report](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md)를
 참조하십시오.
 
 ## Runtime 제한
@@ -210,5 +210,5 @@ runtime 업데이트는 호환성을 가정하지 않고 새로운 검증 matrix
 해당 pdfust minor release에서 지원하며 새로운 Pyodide, PyEmscripten, Emscripten,
 `workers-py`, Wrangler는 전체 gate를 통과한 후에만 지원 범위에 포함됩니다. 측정값과
 regression은
-[`bench/results/wasm-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/wasm-latest.md)에
+[`bench/results/wasm-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md)에
 함께 게시합니다.

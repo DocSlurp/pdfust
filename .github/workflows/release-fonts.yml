@@ -3,7 +3,7 @@
 # Tags are fonts-{locale}-v{version}. Supported locale/script codes are
 # ar, he, hi, jp, ko, th, zh-cn, and zh-tw.
 # Each PyPI project needs the same Trusted Publisher configuration:
-#   owner: yhay81 / repository: pdfust / workflow: release-fonts.yml / environment: pypi
+#   owner: justsml / repository: pdfust / workflow: release-fonts.yml / environment: pypi
 name: Release locale fonts
 
 on:

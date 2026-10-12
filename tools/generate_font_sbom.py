@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 _CHUNK_SIZE = 1024 * 1024
 _SOURCE_COMMIT = re.compile(r"[0-9a-f]{40}")
 _LICENSE_EXPRESSION = "OFL-1.1"
-_REPOSITORY = "https://github.com/yhay81/pylopdf"
+_REPOSITORY = "https://github.com/justsml/pdfust"
 
 
 @dataclass(frozen=True, slots=True)

@@ -609,7 +609,7 @@ known-limit behavior are polished together.
       install-smoke all five `abi3-py310` and all five CPython 3.14t wheels;
       Linux aarch64 and macOS x86_64 are no longer unexecuted cross-builds.
       Manual release run
-      [30199414878](https://github.com/yhay81/pylopdf/actions/runs/30199414878)
+      [30199414878](https://github.com/justsml/pdfust/actions/runs/30199414878)
       passed all ten wheel jobs, the sdist, and PyEmscripten while correctly
       skipping tag-only publication.
 - Review every documented limitation. Improve high-value limits before release;

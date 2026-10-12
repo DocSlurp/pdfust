@@ -9,7 +9,7 @@ description: pdfust支持版本、私密漏洞报告方式，以及处理不受�
 
 ## 报告漏洞 { #report-a-vulnerability }
 
-请通过[GitHub Security Advisories](https://github.com/yhay81/pylopdf/security/advisories/new)
+请通过[GitHub Security Advisories](https://github.com/justsml/pdfust/security/advisories/new)
 私密报告漏洞，不要创建公开Issue。我们会争取在一周内首次响应。
 
 ## 处理不受信任的PDF { #untrusted-pdfs }
@@ -251,4 +251,4 @@ CI会在每次pull request时运行`cargo audit`，使用RustSec漏洞数据库�
 普通build提供Python coverage feedback，不包含Rust branch instrumentation。
 
 本政策在仓库中的正本为
-[`SECURITY.md`](https://github.com/yhay81/pylopdf/blob/main/SECURITY.md)。
+[`SECURITY.md`](https://github.com/justsml/pdfust/blob/main/SECURITY.md)。

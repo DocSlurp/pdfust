@@ -8,7 +8,7 @@ Only the latest release on PyPI receives security fixes.
 
 Please report vulnerabilities privately via GitHub Security Advisories
 ("Report a vulnerability" on the repository's Security tab):
-<https://github.com/yhay81/pylopdf/security/advisories/new>
+<https://github.com/justsml/pdfust/security/advisories/new>
 
 Please do not open public issues for security reports. You should receive an
 initial response within a week.

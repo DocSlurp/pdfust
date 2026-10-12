@@ -1,7 +1,7 @@
 # pdfust-fonts-th
 
 Optional Thai generation fonts for
-[pdfust](https://github.com/yhay81/pylopdf):
+[pdfust](https://github.com/justsml/pdfust):
 Noto Sans Thai and Noto Serif Thai variable fonts.
 
 ```bash

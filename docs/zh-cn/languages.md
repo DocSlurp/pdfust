@@ -25,4 +25,4 @@ description: pdfust文档的重要语言、翻译优先级与维护规则。
 - 新内容先修改英文正本，再更新P1语言。
 
 完整的选择依据、晋级条件与资料来源见仓库中的
-[`LANGUAGES.md`](https://github.com/yhay81/pylopdf/blob/main/LANGUAGES.md)。
+[`LANGUAGES.md`](https://github.com/justsml/pdfust/blob/main/LANGUAGES.md)。

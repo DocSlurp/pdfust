@@ -16,7 +16,7 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/yhay81/pylopdf"
+Repository = "https://github.com/justsml/pdfust"
 Font-Source = "https://github.com/google/fonts"
 
 [build-system]

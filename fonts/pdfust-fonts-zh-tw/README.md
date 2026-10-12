@@ -1,7 +1,7 @@
 # pdfust-fonts-zh-tw
 
 A data-only package containing Traditional Chinese fallback and generation
-fonts for [pdfust](https://github.com/yhay81/pylopdf). It renders
+fonts for [pdfust](https://github.com/justsml/pdfust). It renders
 non-embedded Adobe-CNS1 fonts and provides Taiwan Traditional Chinese glyph
 forms for generated Han and Bopomofo text.
 

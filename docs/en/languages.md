@@ -36,4 +36,4 @@ strict link checks.
 
 Spanish, Brazilian Portuguese, French and Traditional Chinese are tracked as
 candidates. The full decision record and promotion criteria live in
-[`LANGUAGES.md`](https://github.com/yhay81/pylopdf/blob/main/LANGUAGES.md).
+[`LANGUAGES.md`](https://github.com/justsml/pdfust/blob/main/LANGUAGES.md).

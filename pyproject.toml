@@ -26,11 +26,11 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/justsml/jev-pdf"
-Documentation = "https://github.com/justsml/jev-pdf#readme"
-Changelog = "https://github.com/justsml/jev-pdf/blob/main/CHANGELOG.md"
-Issues = "https://github.com/justsml/jev-pdf/issues"
-Source = "https://github.com/justsml/jev-pdf"
+Homepage = "https://github.com/justsml/pdfust"
+Documentation = "https://github.com/justsml/pdfust#readme"
+Changelog = "https://github.com/justsml/pdfust/blob/main/CHANGELOG.md"
+Issues = "https://github.com/justsml/pdfust/issues"
+Source = "https://github.com/justsml/pdfust"
 
 [project.optional-dependencies]
 # Script and locale-specific fonts for automatic generation.

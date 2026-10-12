@@ -2,7 +2,7 @@
 
 A data-only package containing the PP-OCRv6 small detector, recognizer, and
 multilingual character dictionary used by
-[pdfust](https://github.com/yhay81/pylopdf). The models run locally through
+[pdfust](https://github.com/justsml/pdfust). The models run locally through
 pdfust's pure-Rust RTen backend; OCR does not require a system executable,
 ONNX Runtime, an ONNX parser at runtime, or network access.
 

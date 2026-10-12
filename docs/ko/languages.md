@@ -25,4 +25,4 @@ description: pdfust 문서의 중요 언어, 번역 우선순위, 유지보수 �
 - 새 콘텐츠는 영어 원본을 먼저 수정한 뒤 P1 언어를 갱신합니다.
 
 전체 선정 근거, 승격 조건, 출처는 저장소의
-[`LANGUAGES.md`](https://github.com/yhay81/pylopdf/blob/main/LANGUAGES.md)를 참고하세요.
+[`LANGUAGES.md`](https://github.com/justsml/pdfust/blob/main/LANGUAGES.md)를 참고하세요.

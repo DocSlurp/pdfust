@@ -2,7 +2,7 @@
 #
 # Publishing requires a Trusted Publisher configured on PyPI:
 #   PyPI → project pdfust → Publishing → GitHub
-#   owner: yhay81 / repository: pdfust / workflow: release.yml / environment: pypi
+#   owner: justsml / repository: pdfust / workflow: release.yml / environment: pypi
 name: Release
 
 on:

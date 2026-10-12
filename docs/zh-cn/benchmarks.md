@@ -124,12 +124,12 @@ python3.14t bench/free_threaded.py
 ```
 
 生成的原始报告提交在
-[`bench/results/latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/latest.md)。
+[`bench/results/latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/latest.md)。
 单独生成的free-threaded报告提交在
-[`bench/results/free-threaded-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/free-threaded-latest.md)；
+[`bench/results/free-threaded-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/free-threaded-latest.md)；
 重新运行`bench/run.py`不会覆盖CPython 3.14t证据。
 native／Pyodide资源策略基准另行提交在
-[`bench/results/limits-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/limits-latest.md)。
+[`bench/results/limits-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/limits-latest.md)。
 第二条command测量有界open/extract和受控拒绝。CI还会在Pyodide中运行相同case并
 记录Wasm linear memory增长；这些时间和memory值只表示趋势，不是native/Wasm
 性能结论。

@@ -1,6 +1,6 @@
 # pdfust
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/justsml/jev-pdf/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/justsml/pdfust/blob/main/LICENSE)
 
 **PDF editing, rendering, extraction, and generation for Python — a
 pymupdf-style API on a pure-Rust core, MIT licensed, with no mandatory Python
@@ -48,18 +48,18 @@ Wheel sizes are the ranges of published files for pdfust 0.10.0, pymupdf
 ## Install
 
 ```bash
-pip install "pdfust @ git+https://github.com/justsml/jev-pdf.git"
+pip install "pdfust @ git+https://github.com/justsml/pdfust.git"
 ```
 
 Optional extras:
 
 ```bash
-pip install "pdfust[jp] @ git+https://github.com/justsml/jev-pdf.git"    # Japanese rendering fallback and text generation
-pip install "pdfust[ko] @ git+https://github.com/justsml/jev-pdf.git"    # Korean
-pip install "pdfust[zh-cn] @ git+https://github.com/justsml/jev-pdf.git" # Simplified Chinese
-pip install "pdfust[zh-tw] @ git+https://github.com/justsml/jev-pdf.git" # Traditional Chinese
-pip install "pdfust[ar] @ git+https://github.com/justsml/jev-pdf.git"    # Arabic generation (also: he, hi, th)
-pip install "pdfust[ocr] @ git+https://github.com/justsml/jev-pdf.git"   # offline PP-OCRv6 recognition, pure Rust,
+pip install "pdfust[jp] @ git+https://github.com/justsml/pdfust.git"    # Japanese rendering fallback and text generation
+pip install "pdfust[ko] @ git+https://github.com/justsml/pdfust.git"    # Korean
+pip install "pdfust[zh-cn] @ git+https://github.com/justsml/pdfust.git" # Simplified Chinese
+pip install "pdfust[zh-tw] @ git+https://github.com/justsml/pdfust.git" # Traditional Chinese
+pip install "pdfust[ar] @ git+https://github.com/justsml/pdfust.git"    # Arabic generation (also: he, hi, th)
+pip install "pdfust[ocr] @ git+https://github.com/justsml/pdfust.git"   # offline PP-OCRv6 recognition, pure Rust,
                              # no system executables or network at runtime
 ```
 
@@ -130,7 +130,7 @@ for i, p in enumerate(doc):
 doc.set_form_field("customer", "Taro Yamada")
 doc.set_form_field("agree", True)
 
-# OCR: add a searchable text layer offline (pip install "pdfust[ocr] @ git+https://github.com/justsml/jev-pdf.git")
+# OCR: add a searchable text layer offline (pip install "pdfust[ocr] @ git+https://github.com/justsml/pdfust.git")
 engine = pdfust.OcrEngine(threads=4)
 page.apply_ocr(engine=engine)                # skips pages with existing text
 
@@ -236,9 +236,9 @@ Validating existing PDFs against PDF/A remains
 
 A reproducible benchmark suite ships with the repository — same corpus, same
 tasks, medians, and wins and losses published as-is:
-[latest results](https://github.com/justsml/jev-pdf/blob/main/bench/results/latest.md),
-[free-threaded extraction](https://github.com/justsml/jev-pdf/blob/main/bench/results/free-threaded-latest.md),
-and the [native OCR report](https://github.com/justsml/jev-pdf/blob/main/bench/results/ocr-latest.md)
+[latest results](https://github.com/justsml/pdfust/blob/main/bench/results/latest.md),
+[free-threaded extraction](https://github.com/justsml/pdfust/blob/main/bench/results/free-threaded-latest.md),
+and the [native OCR report](https://github.com/justsml/pdfust/blob/main/bench/results/ocr-latest.md)
 with strict and NFKC character error rates on licensed Japanese fixtures.
 
 ```bash
@@ -1180,7 +1180,7 @@ with build provenance.
 ## Contributing
 
 Bug reports and focused contributions are welcome. See
-[CONTRIBUTING.md](https://github.com/justsml/jev-pdf/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/justsml/pdfust/blob/main/CONTRIBUTING.md)
 for development commands, test expectations, and the rules for sharing PDF
 regression files:
 
@@ -1192,14 +1192,14 @@ uv run mypy src tests      # type check
 ```
 
 Report security vulnerabilities privately through
-[GitHub Security Advisories](https://github.com/justsml/jev-pdf/security/advisories/new).
+[GitHub Security Advisories](https://github.com/justsml/pdfust/security/advisories/new).
 
 ## License
 
-[MIT](https://github.com/justsml/jev-pdf/blob/main/LICENSE). Bundled Rust
+[MIT](https://github.com/justsml/pdfust/blob/main/LICENSE). Bundled Rust
 dependencies keep their own permissive licenses (lopdf and HarfRust are MIT;
 hayro and krilla are MIT/Apache-2.0) — see
-[NOTICE.md](https://github.com/justsml/jev-pdf/blob/main/NOTICE.md).
+[NOTICE.md](https://github.com/justsml/pdfust/blob/main/NOTICE.md).
 
 This private continuation derives from [pylopdf](https://github.com/yhay81/pylopdf) by Yusuke Hayashi. Original
 author attribution, MIT license and bundled dependency notices are preserved.

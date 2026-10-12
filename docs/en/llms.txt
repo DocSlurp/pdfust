@@ -6,7 +6,7 @@ Canonical documentation: https://pylopdf.haya.works/
 Japanese documentation: https://pylopdf.haya.works/ja/
 Simplified Chinese documentation: https://pylopdf.haya.works/zh-cn/
 Korean documentation: https://pylopdf.haya.works/ko/
-Source: https://github.com/yhay81/pylopdf
+Source: https://github.com/justsml/pdfust
 PyPI: https://pypi.org/project/pylopdf/
 
 Core pages:

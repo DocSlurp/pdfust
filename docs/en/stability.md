@@ -100,7 +100,7 @@ assumed across runtime upgrades.
 
 ## Compatibility review { #compatibility-review }
 
-[`api/public-api.json`](https://github.com/yhay81/pylopdf/blob/main/api/public-api.json)
+[`api/public-api.json`](https://github.com/justsml/pdfust/blob/main/api/public-api.json)
 records the reviewed 0.13 candidate surface. Tests compare it on every native
 Python lane and detect changes to exports, signatures, mapping keys, type
 aliases, enum and constant values, public members, and exception inheritance.

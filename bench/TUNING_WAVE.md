@@ -136,7 +136,7 @@ frozen-config robustness check, not an automatic production default.
 ## Package identity
 
 The user renamed the project to **pdfust**. GitHub is now private
-`justsml/jev-pdf`; both remotes and the private-main pre-push guard target that
+`justsml/pdfust`; both remotes and the private-main pre-push guard target that
 name. GitHub Actions remain disabled. Distribution `pdfust` adds the public
 `pdfust` import while keeping `pdfust` as the compatible implementation/API.
 Original license notices and data-package names are retained. Existing artifact

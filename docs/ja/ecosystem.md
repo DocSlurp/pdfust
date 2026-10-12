@@ -7,7 +7,7 @@ description: pdfustをTypst、pyHanko、veraPDF、OCRエンジンとつなぐ統
 
 pdfust は組版・PDF/A 生成・電子署名を**あえて再実装しません**。それぞれ実績ある
 ライブラリとの連携で解決し、以下のレシピはすべて
-[`tests/test_interop.py`](https://github.com/yhay81/pylopdf/blob/main/tests/test_interop.py)
+[`tests/test_interop.py`](https://github.com/justsml/pdfust/blob/main/tests/test_interop.py)
 の統合テストで保証しています。
 
 ## 組版・新規文書の生成 = typst { #typesetting }

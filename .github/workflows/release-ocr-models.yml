@@ -2,7 +2,7 @@
 #
 # Publishing requires a Trusted Publisher configured on PyPI:
 #   PyPI → project pdfust-ocr-models → Publishing → GitHub
-#   owner: yhay81 / repository: pdfust / workflow: release-ocr-models.yml / environment: pypi
+#   owner: justsml / repository: pdfust / workflow: release-ocr-models.yml / environment: pypi
 name: Release OCR models
 
 on:
