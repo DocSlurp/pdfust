@@ -1,5 +1,6 @@
 use crate::font::UNITS_PER_EM;
 use crate::font::outline::OutlinePath;
+use crate::font::unicode_fallback::{add_cmap_reverse, glyph_name_to_text};
 use kurbo::BezPath;
 use skrifa::instance::{LocationRef, Size};
 use skrifa::metrics::GlyphMetrics;
@@ -13,7 +14,7 @@ use skrifa::raw::{FontData as ReadFontData, FontRead};
 use skrifa::{FontRef, GlyphId, MetadataProvider, OutlineGlyphCollection};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use yoke::{Yoke, Yokeable};
 
 type FontData = Arc<dyn AsRef<[u8]> + Send + Sync>;
@@ -50,7 +51,7 @@ impl Type1FontBlob {
 
 /// A font blob for CFF-based fonts.
 #[derive(Clone)]
-pub(crate) struct CffFontBlob(Arc<CffFontYoke>);
+pub(crate) struct CffFontBlob(Arc<CffFontYoke>, Arc<OnceLock<HashMap<GlyphId, String>>>);
 
 impl Debug for CffFontBlob {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -84,7 +85,7 @@ impl CffFontBlob {
         });
 
         let _ = (cff, charset, subfonts);
-        Some(Self(Arc::new(yoke)))
+        Some(Self(Arc::new(yoke), Arc::new(OnceLock::new())))
     }
 
     pub(crate) fn font_data(&self) -> FontData {
@@ -133,6 +134,22 @@ impl CffFontBlob {
             .collect()
     }
 
+    /// Text implied by the glyph's charset name; `None` for CID-keyed or unnamed glyphs.
+    pub(crate) fn gid_to_text(&self, gid: GlyphId) -> Option<String> {
+        if gid == GlyphId::NOTDEF || self.is_cid() {
+            return None;
+        }
+        self.1
+            .get_or_init(|| {
+                self.glyph_names()
+                    .into_iter()
+                    .filter_map(|(gid, name)| Some((gid, glyph_name_to_text(&name)?)))
+                    .collect()
+            })
+            .get(&gid)
+            .cloned()
+    }
+
     pub(crate) fn glyph_index_by_name(&self, name: &str) -> Option<GlyphId> {
         // TODO: This is probably slow to do repeatedly?
         self.charset()?.iter().find_map(|(gid, sid)| {
@@ -165,6 +182,8 @@ impl CffFontBlob {
 pub(crate) struct OpenTypeFontBlob {
     yoke: Arc<OpenTypeFontYoke>,
     cff_blob: Option<CffFontBlob>,
+    /// Glyph to text recovered from glyph names and the font `cmap` (built on first use).
+    gid_text: Arc<OnceLock<HashMap<GlyphId, String>>>,
 }
 
 impl Debug for OpenTypeFontBlob {
@@ -230,7 +249,35 @@ impl OpenTypeFontBlob {
         Some(Self {
             yoke: Arc::new(font_ref_yoke),
             cff_blob,
+            gid_text: Arc::new(OnceLock::new()),
         })
+    }
+
+    /// Text the font itself associates with `gid`: glyph name first, then reverse `cmap`.
+    pub(crate) fn gid_to_text(&self, gid: GlyphId) -> Option<String> {
+        if gid == GlyphId::NOTDEF {
+            return None;
+        }
+        self.gid_text
+            .get_or_init(|| {
+                let mut map: HashMap<GlyphId, String> = HashMap::new();
+                for (name, gid) in self.glyph_names() {
+                    if let Some(text) = glyph_name_to_text(&name) {
+                        map.entry(gid).or_insert(text);
+                    }
+                }
+                if let Some(cff) = &self.cff_blob {
+                    for (gid, name) in cff.glyph_names() {
+                        if let Some(text) = glyph_name_to_text(&name) {
+                            map.entry(gid).or_insert(text);
+                        }
+                    }
+                }
+                add_cmap_reverse(self.font_ref(), &mut map);
+                map
+            })
+            .get(&gid)
+            .cloned()
     }
 
     pub(crate) fn font_data(&self) -> FontData {

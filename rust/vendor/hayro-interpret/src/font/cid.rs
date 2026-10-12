@@ -5,7 +5,7 @@ use crate::font::{
     FallbackFontQuery, FontFlags, FontQuery, read_to_unicode, stretch_glyph, strip_subset_prefix,
 };
 use crate::{CMapResolverFn, CacheKey, FontResolverFn};
-use hayro_cmap::{BfString, CMap, CharacterCollection, CidFamily, WritingMode};
+use hayro_cmap::{BfString, CMap, CMapName, CharacterCollection, CidFamily, WritingMode};
 use hayro_syntax::object;
 use hayro_syntax::object::Dict;
 use hayro_syntax::object::Name;
@@ -41,6 +41,36 @@ pub(crate) struct Type0Font {
     /// Whether the `to_unicode` map is a UCS2 `CMap` (CID-indexed) rather than
     /// a `ToUnicode` `CMap` (code-indexed).
     to_unicode_is_cid_indexed: bool,
+    /// Predefined `Adobe-*-UCS2` map (CID to Unicode) for the character collection, parsed on
+    /// first use. Consulted when `ToUnicode` is absent, incomplete or maps a code to U+0000.
+    ucs2_fallback: LazyUcs2,
+}
+
+/// Lazily parsed CID to Unicode map of a predefined Adobe character collection.
+struct LazyUcs2 {
+    name: Option<CMapName<'static>>,
+    resolver: CMapResolverFn,
+    cell: std::cell::OnceCell<Option<CMap>>,
+}
+
+impl std::fmt::Debug for LazyUcs2 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LazyUcs2({:?})", self.name)
+    }
+}
+
+impl LazyUcs2 {
+    fn lookup(&self, cid: u32) -> Option<BfString> {
+        let name = self.name?;
+        self.cell
+            .get_or_init(|| {
+                let data = (self.resolver)(name)?;
+                let resolver = self.resolver.clone();
+                CMap::parse(data, move |n| (resolver)(n))
+            })
+            .as_ref()?
+            .lookup_bf_string(cid)
+    }
 }
 
 impl Type0Font {
@@ -133,6 +163,18 @@ impl Type0Font {
             }
         }
 
+        let ucs2_fallback = LazyUcs2 {
+            name: if to_unicode_is_cid_indexed {
+                None
+            } else {
+                character_collection
+                    .as_ref()
+                    .and_then(|cc| cc.family.ucs2_cmap())
+            },
+            resolver: cmap_resolver.clone(),
+            cell: std::cell::OnceCell::new(),
+        };
+
         let postscript_name = dict
             .get::<Name<'_>>(BASE_FONT)
             .map(|n| strip_subset_prefix(n.as_str()).to_string());
@@ -157,6 +199,7 @@ impl Type0Font {
             font_flags,
             fallback,
             to_unicode_is_cid_indexed,
+            ucs2_fallback,
         })
     }
 
@@ -395,17 +438,47 @@ impl Type0Font {
         }
     }
 
-    pub(crate) fn char_code_to_unicode(&self, code: u32) -> Option<BfString> {
+    pub(crate) fn char_code_to_unicode(&self, code: u32, recover: bool) -> Option<BfString> {
         if let Some(to_unicode) = &self.to_unicode {
             let key = if self.to_unicode_is_cid_indexed {
                 self.code_to_cid(code).unwrap_or(0)
             } else {
                 code
             };
-            return to_unicode.lookup_bf_string(key);
+            // A U+0000 entry is a producer's "no mapping"; keep looking.
+            match to_unicode.lookup_bf_string(key) {
+                Some(BfString::Char('\0')) | None => {}
+                Some(found) => return Some(found),
+            }
         }
 
-        None
+        if recover {
+            self.recover_unicode(code)
+        } else {
+            None
+        }
+    }
+
+    /// Recover Unicode when the PDF gave none: the Adobe collection's CID to Unicode map,
+    /// then names and `cmap` of the embedded font program (never for substituted fonts).
+    fn recover_unicode(&self, code: u32) -> Option<BfString> {
+        if let Some(cid) = self.code_to_cid(code)
+            && let Some(found) = self.ucs2_fallback.lookup(cid)
+            && found != BfString::Char('\0')
+        {
+            return Some(found);
+        }
+
+        if self.fallback {
+            return None;
+        }
+        let gid = self.map_code(code);
+        let text = match &self.font_type {
+            FontType::OpenType(t) => t.gid_to_text(gid),
+            FontType::Cff(c) => c.gid_to_text(gid),
+            FontType::Type1(_) => None,
+        }?;
+        Some(crate::font::unicode_fallback::to_bf_string(text))
     }
 }
 
@@ -575,10 +648,10 @@ fn read_encoding(object: &Object<'_>, cmap_resolver: &CMapResolverFn) -> Option<
     // TODO: Support fetching CMaps referenced via `usecmap` in the PDF.
     match object {
         Object::Name(n) => {
-            let cmap_type = hayro_cmap::CMapName::from_bytes(n.deref());
+            let cmap_type = CMapName::from_bytes(n.deref());
             match cmap_type {
-                hayro_cmap::CMapName::IdentityH => Some(CMap::identity_h()),
-                hayro_cmap::CMapName::IdentityV => Some(CMap::identity_v()),
+                CMapName::IdentityH => Some(CMap::identity_h()),
+                CMapName::IdentityV => Some(CMap::identity_v()),
                 _ => {
                     let data = (cmap_resolver)(cmap_type)?;
                     let resolver = cmap_resolver.clone();

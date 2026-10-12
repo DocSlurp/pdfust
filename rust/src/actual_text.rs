@@ -12,6 +12,7 @@
 
 use hayro::hayro_syntax::content::ops::TypedInstruction;
 use hayro::hayro_syntax::object::String as PdfString;
+use hayro::hayro_syntax::object::{Dict, Name, Stream};
 use hayro::hayro_syntax::page::Page;
 
 /// Begin events retained per page before the scan gives up.
@@ -123,4 +124,70 @@ fn push_utf16(text: &mut String, units: impl Iterator<Item = u16>, byte_len: usi
         text.push(decoded.unwrap_or(char::REPLACEMENT_CHARACTER));
     }
     Some(())
+}
+
+/// Form XObjects visited per page by [`forms_mention_actual_text`].
+const MAX_FORMS: usize = 64;
+/// Decoded form bytes inspected per page.
+const MAX_FORM_BYTES: usize = 8 * 1024 * 1024;
+/// Form nesting followed from the page resources.
+const MAX_FORM_DEPTH: usize = 4;
+
+/// Whether any Form XObject reachable from the page resources mentions `/ActualText`.
+///
+/// The collector only matches page-level marked content ([`scan`]); ActualText inside a
+/// form is invisible to it. Glyph-level Unicode recovery from the font program would then
+/// add text for glyphs the producer deliberately left unmapped, so callers disable that
+/// recovery on such pages. Bounded; reports `true` (the conservative answer) when a bound is hit.
+pub(crate) fn forms_mention_actual_text(page: &Page<'_>) -> bool {
+    let mut visited: Vec<u128> = Vec::new();
+    let mut bytes = 0usize;
+    walk_forms(&page.resources().x_objects, 0, &mut visited, &mut bytes)
+}
+
+fn walk_forms(
+    x_objects: &Dict<'_>,
+    depth: usize,
+    visited: &mut Vec<u128>,
+    bytes: &mut usize,
+) -> bool {
+    for (name, _) in x_objects.entries() {
+        let Some(form) = x_objects.get::<Stream<'_>>(name.as_ref()) else {
+            continue;
+        };
+        if form
+            .dict()
+            .get::<Name<'_>>(b"Subtype")
+            .is_none_or(|s| s.as_ref() != &b"Form"[..])
+        {
+            continue;
+        }
+        let id = form.obj_id();
+        let key = u128::from(id.obj_number as u64) << 32 | u128::from(id.gen_number as u64);
+        if visited.contains(&key) {
+            continue;
+        }
+        if visited.len() >= MAX_FORMS || depth >= MAX_FORM_DEPTH {
+            return true;
+        }
+        visited.push(key);
+        let Ok(data) = form.decoded() else {
+            continue;
+        };
+        *bytes = bytes.saturating_add(data.len());
+        if *bytes > MAX_FORM_BYTES
+            || data
+                .windows(ACTUAL_TEXT_KEY.len())
+                .any(|w| w == ACTUAL_TEXT_KEY)
+        {
+            return true;
+        }
+        if let Some(resources) = form.dict().get::<Dict<'_>>(b"Resources")
+            && let Some(nested) = resources.get::<Dict<'_>>(b"XObject")
+            && walk_forms(&nested, depth + 1, visited, bytes)
+        {
+            return true;
+        }
+    }
+    false
 }

@@ -193,9 +193,10 @@ impl TrueTypeFont {
         }
     }
 
-    pub(crate) fn char_code_to_unicode(&self, code: u32) -> Option<BfString> {
+    pub(crate) fn char_code_to_unicode(&self, code: u32, recover: bool) -> Option<BfString> {
         if let Some(to_unicode) = &self.to_unicode
             && let Some(c) = to_unicode.lookup_bf_string(code)
+            && c != BfString::Char('\0')
         {
             return Some(c);
         }
@@ -204,7 +205,17 @@ impl TrueTypeFont {
             Kind::Embedded(e) => e
                 .code_to_name(code as u8)
                 .and_then(glyph_name_to_unicode)
-                .map(BfString::Char),
+                .map(BfString::Char)
+                // No usable encoding name: ask the font program what the glyph is.
+                .or_else(|| {
+                    if !recover {
+                        return None;
+                    }
+                    let gid = e.map_code(code as u8);
+                    e.base_font
+                        .gid_to_text(gid)
+                        .map(crate::font::unicode_fallback::to_bf_string)
+                }),
             Kind::Standard(s) => s.char_code_to_unicode(code as u8).map(BfString::Char),
         }
 

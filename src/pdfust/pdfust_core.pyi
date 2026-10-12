@@ -260,6 +260,38 @@ class _Document:
         int,
         int,
     ]: ...
+    def scan_page_ext(
+        self,
+        page_number: int,
+        *,
+        spans: bool = True,
+        images: bool = True,
+        host_coverage: float = 0.25,
+        max_glyphs: int = 65536,
+        max_text_bytes: int = 1048576,
+    ) -> tuple[
+        float,
+        float,
+        list[
+            tuple[
+                str,
+                tuple[float, float, float, float],
+                str,
+                float,
+                int,
+                int,
+                int,
+                int,
+                bool,
+                int,
+                int,
+                tuple[float, float, int],
+            ]
+        ],
+        list[tuple[tuple[float, float, float, float], int, int, float, float, bool]],
+        int,
+        int,
+    ]: ...
     @staticmethod
     def select_ocr_fill_words(
         native_boxes: list[tuple[float, float, float, float]],

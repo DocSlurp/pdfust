@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/PACKAGE_NAME.md`.
 
 ### Fixed
+- Glyphs whose PDF has no (or incomplete) `ToUnicode` map are recovered from the font
+  itself: the Adobe collection's CID-to-Unicode map for CJK Type 0 fonts, then glyph
+  names and the Unicode `cmap` of the embedded font. On the DEV wild corpora the
+  unmapped-glyph rate of untagged/stripped variants fell from 2.47% to 1.11% and
+  text F1 against authored truth rose from 0.885 to 0.908; glyphs the font cannot
+  identify (anonymous or private-use names) stay unmapped. A `ToUnicode` entry that
+  maps to U+0000 no longer hides the font's own answer, except inside ActualText.
+- `get_fonts()` reports `/ToUnicode null`, dangling references and non-CMap values as
+  `has_tounicode=False`.
 - Reading order on multi-column and sidebar pages: a gutter of exactly two ems no
   longer fails a floating-point tie, the segmentation gap uses the smaller of the
   two adjacent font sizes (a larger heading beside body text no longer merges two
@@ -26,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without a password; previously they failed with `object ID 1 0 not found`.
 
 ### Added
+- `Page.scan()` spans include `wmode` (vertical writing mode of the font).
+- `PDFUST_FONTS_DIR` lets native consumers without Python extras supply the CJK
+  fallback fonts used for non-embedded CJK fonts at render time.
 - Public inspection APIs for routing probes and integrations:
   `Page.scan()` / `get_text_spans()` return positioned text runs with PDF render
   mode (`invisible` for mode 3), per-run counts of glyphs without Unicode,

@@ -100,12 +100,19 @@ impl OutlineFont {
         }
     }
 
-    pub(crate) fn char_code_to_unicode(&self, char_code: u32) -> Option<BfString> {
+    /// `recover` enables font-program recovery (glyph names, `cmap`, Adobe UCS2 maps) for
+    /// glyphs the PDF itself leaves unmapped; without it only declared mappings are used.
+    pub(crate) fn char_code_to_unicode(&self, char_code: u32, recover: bool) -> Option<BfString> {
         match self {
             Self::Type1(t) => t.char_code_to_unicode(char_code),
-            Self::TrueType(t) => t.char_code_to_unicode(char_code),
-            Self::Type0(t) => t.char_code_to_unicode(char_code),
+            Self::TrueType(t) => t.char_code_to_unicode(char_code, recover),
+            Self::Type0(t) => t.char_code_to_unicode(char_code, recover),
         }
+    }
+
+    /// Whether the font declares vertical writing mode (only Type 0 fonts can).
+    pub(crate) fn is_vertical(&self) -> bool {
+        matches!(self, Self::Type0(t) if !t.is_horizontal())
     }
 
     /// Get the advance width for a glyph by character code.

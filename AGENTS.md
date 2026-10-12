@@ -409,7 +409,7 @@ overview.
   direction, so 90/180/270-degree lines and sustained columns preserve reading
   order. Explicitly rotated glyph bboxes follow the baseline and cross-axis;
   inferred mode-1 CJK keeps its conservative upright-glyph approximation.
-  Because hayro does not expose font WMode, mode-1 CJK lines are inferred only
+  Line assembly cannot see font WMode, so mode-1 CJK lines are inferred only
   from conservative single-glyph vertical chains: top-to-bottom within a line,
   right-to-left across columns, with horizontal headings and footers preserved.
   Candidate collection stops at 4,097 before disabling inference, and its
@@ -417,6 +417,28 @@ overview.
   collectors grow fallibly. Allocation refusal fails the interpretation
   without caching a partial page. Ruby, warichu, and mixed-orientation
   typography are not interpreted.
+- Glyph Unicode recovery (vendored `rust/vendor/hayro-interpret/src/font/unicode_fallback.rs`,
+  `cid.rs`, `true_type.rs`): after `ToUnicode` (a U+0000 entry counts as absent) a glyph
+  falls back to the character collection's `Adobe-*-UCS2` CID-to-Unicode map (Type 0
+  fonts with Japan1/GB1/CNS1/Korea1 CIDSystemInfo), then to what the embedded font
+  program says: PostScript glyph names (`post`, CFF charset; AGL rules incl. `uniXXXX`,
+  `uXXXX`, `name.suffix`, `a_b` ligatures) and its Unicode `cmap`. Private-use
+  results, `.notdef` and anonymous names (`glyph00012`, `uniF001`, `g31`) are never
+  accepted, so unrecoverable glyphs stay unmapped instead of being guessed. Recovery
+  is off for glyphs inside a matched ActualText span and for every glyph on a page
+  whose Form XObjects mention ActualText (`actual_text::forms_mention_actual_text`),
+  because the collector cannot match form-level spans and the producer meant the
+  span text to win (krilla's Arabic output relies on this).
+  `OutlineGlyph::as_unicode_declared` is the declared-only variant. Measured by
+  `bench/glyph_parity.py` against authored wild-v1/v2 truth.
+- Non-embedded CJK fonts render from `set_fallback_font` or the installed
+  `pdfust-fonts-{jp,ko,zh-cn,zh-tw}` packages (Python). Native consumers (Node) have no
+  Python extras: set `PDFUST_FONTS_DIR` to a directory holding the Noto files, flat or
+  as `pdfust_fonts_*/` sub-directories. Fonts load lazily on the first non-embedded CJK
+  font and are shared per process; `set_fallback_font(None)` still disables discovery.
+  `Page.scan()` spans carry `wmode` (1 for fonts whose CMap declares `WMode 1`);
+  `_Document.scan_page_ext` widens the direction tuple to `(dx, dy, wmode)` because PyO3
+  converts tuples of at most 12 fields, while `scan_page` keeps its 12-field shape.
 - `Page.get_drawings` uses a separate hayro Device and releases the GIL. It
   returns interpreted fill/stroke paint operations as pymupdf-style
   `DrawingInfo` mappings in rotation-resolved display coordinates. Commands are

@@ -3435,7 +3435,8 @@
         "size": "float",
         "text": "str",
         "type3": "bool",
-        "unmapped": "int"
+        "unmapped": "int",
+        "wmode": "int"
       },
       "kind": "typed-dict",
       "optional_keys": [],
@@ -3452,7 +3453,8 @@
         "size",
         "text",
         "type3",
-        "unmapped"
+        "unmapped",
+        "wmode"
       ]
     },
     "SpatialCell": {

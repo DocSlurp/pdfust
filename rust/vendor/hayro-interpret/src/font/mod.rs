@@ -36,6 +36,7 @@ pub(crate) mod outline;
 mod standard_font;
 mod true_type;
 mod type1;
+pub(crate) mod unicode_fallback;
 pub(crate) mod type3;
 
 pub(crate) const UNITS_PER_EM: f32 = 1000.0;
@@ -90,7 +91,11 @@ impl Glyph<'_> {
     ///
     /// **For CID Fonts (Type0):**
     /// 1. `ToUnicode` cmap
+    /// 2. The character collection's `Adobe-*-UCS2` map (CID to Unicode)
+    /// 3. Glyph names, then the `cmap`, of the embedded font program
     ///
+    /// Outline fonts with an embedded TrueType/OpenType program also try step 3 last.
+    /// (Steps beyond `ToUnicode` are a local pdfust patch.)
     ///
     /// **For Type3 Fonts:**
     /// 1. `ToUnicode` cmap
@@ -102,6 +107,14 @@ impl Glyph<'_> {
     pub fn as_unicode(&self) -> Option<BfString> {
         match self {
             Glyph::Outline(g) => g.as_unicode(),
+            Glyph::Type3(g) => g.as_unicode(),
+        }
+    }
+
+    /// Declared Unicode only; see [`OutlineGlyph::as_unicode_declared`].
+    pub fn as_unicode_declared(&self) -> Option<BfString> {
+        match self {
+            Glyph::Outline(g) => g.as_unicode_declared(),
             Glyph::Type3(g) => g.as_unicode(),
         }
     }
@@ -150,7 +163,14 @@ impl OutlineGlyph {
     ///
     /// See [`Glyph::as_unicode`] for details on the fallback chain used.
     pub fn as_unicode(&self) -> Option<BfString> {
-        self.font.char_code_to_unicode(self.char_code)
+        self.font.char_code_to_unicode(self.char_code, true)
+    }
+
+    /// Like [`Self::as_unicode`] but without recovery from the font program: only
+    /// mappings the PDF declares (`ToUnicode`, encodings). Use where another source
+    /// such as `/ActualText` supplies the text. (Local pdfust patch.)
+    pub fn as_unicode_declared(&self) -> Option<BfString> {
+        self.font.char_code_to_unicode(self.char_code, false)
     }
 
     /// Get raw font bytes and metadata for downstream use.
@@ -164,6 +184,12 @@ impl OutlineGlyph {
     /// non-embedded fonts where `font_data()` is `None`.
     pub fn base_font_name(&self) -> Option<String> {
         self.font.base_font_name().map(str::to_string)
+    }
+
+    /// Whether the font is set in vertical writing mode (a Type 0 font whose
+    /// encoding CMap declares `WMode 1`). (Local pdfust patch.)
+    pub fn is_vertical(&self) -> bool {
+        self.font.is_vertical()
     }
 
     /// Get the glyph ID within the font.

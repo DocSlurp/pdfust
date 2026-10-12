@@ -43,6 +43,9 @@ pub(crate) struct SpanRecord {
     /// Mapped glyphs whose centre lies inside a host image.
     pub(crate) over_image: u32,
     pub(crate) direction: (f64, f64),
+    /// PDF writing mode: 1 when the font is vertical (CMap `WMode 1`) or the line
+    /// assembly detected vertical CJK layout, otherwise 0.
+    pub(crate) writing_mode: u8,
 }
 
 /// One raster or stencil placement; pixel size comes from the image
@@ -402,6 +405,7 @@ pub(crate) fn scan_page<'a>(
                 control_chars: 0,
                 over_image: 0,
                 direction: glyph.direction,
+                writing_mode: u8::from(glyph.font.vertical || glyph.writing_mode == 1),
             });
         }
         let span = spans.last_mut().expect("span exists");

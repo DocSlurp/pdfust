@@ -32,6 +32,8 @@ struct FontInfo {
     name: Arc<str>,
     /// pymupdf-compatible flags: italic=2, serif=4, monospace=8, bold=16.
     flags: i64,
+    /// The font's own writing mode is vertical (`WMode 1` CMap, e.g. `Identity-V`, `UniJIS-UCS2-V`).
+    vertical: bool,
 }
 
 /// Derive a font name and flags from OutlineGlyph, once per font.
@@ -87,7 +89,11 @@ fn font_info_of(glyph: &hayro::hayro_interpret::font::OutlineGlyph) -> FontInfo 
     {
         flags |= 16;
     }
-    FontInfo { name, flags }
+    FontInfo {
+        name,
+        flags,
+        vertical: glyph.is_vertical(),
+    }
 }
 
 /// Unicode text of one glyph, mirroring hayro's `BfString` shape.
@@ -309,6 +315,9 @@ struct TextCollector {
     /// Set when interpreter events diverge from the scan (for example inside
     /// a Form XObject); ActualText is then ignored for the whole page.
     marked_mismatch: bool,
+    /// A Form XObject reachable from the page mentions ActualText, which the
+    /// collector cannot match to glyphs; font-program Unicode recovery stays off.
+    forms_have_actual_text: bool,
 }
 
 impl TextCollector {
@@ -336,6 +345,7 @@ impl TextCollector {
             marked_seen: 0,
             marked_stack: Vec::new(),
             marked_mismatch: false,
+            forms_have_actual_text: crate::actual_text::forms_mention_actual_text(page),
         }
     }
 
@@ -580,9 +590,17 @@ impl Device<'_> for TextCollector {
         let actual_span = self.active_actual_span();
         // A U+0000 mapping is a producer's "no text" marker (Chromium uses it
         // for contextual forms whose text lives in ActualText).
-        let unicode = glyph
-            .as_unicode()
-            .filter(|unicode| !matches!(unicode, BfString::Char('\0')));
+        // Inside an ActualText span the span text is authoritative, so only declared
+        // mappings count; font-program recovery would invent text for decorative glyphs
+        // (for example the dots of a contextual Arabic form).
+        let recover =
+            actual_span.is_none() && !self.forms_have_actual_text && !self.marked_mismatch;
+        let unicode = if recover {
+            glyph.as_unicode()
+        } else {
+            glyph.as_unicode_declared()
+        }
+        .filter(|unicode| !matches!(unicode, BfString::Char('\0')));
         let Some(unicode) =
             unicode.or_else(|| actual_span.map(|_| BfString::String(std::string::String::new())))
         else {

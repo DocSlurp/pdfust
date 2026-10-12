@@ -155,7 +155,11 @@ fn describe_font(doc: &Document, id: Option<ObjectId>, font: &Dictionary) -> Fon
         subtype,
         descendant_subtype,
         embedded,
-        has_to_unicode: font.get(b"ToUnicode").is_ok(),
+        // `/ToUnicode null`, a dangling reference or a non-CMap object is not a usable map.
+        has_to_unicode: matches!(
+            get(doc, font, b"ToUnicode"),
+            Some(Object::Stream(_) | Object::Name(_))
+        ),
         is_type3,
         encoding,
         pages: BTreeSet::new(),

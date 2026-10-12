@@ -557,6 +557,8 @@ class SpanInfo(TypedDict):
     #: Mapped glyphs whose centre lies inside a large host image.
     over_image: int
     dir: tuple[float, float]
+    #: PDF writing mode: 1 for vertical fonts (``WMode 1`` CMaps such as ``UniJIS-UCS2-V``), else 0.
+    wmode: int
 
 
 class ImagePlacementInfo(TypedDict):
@@ -2339,7 +2341,7 @@ class Page:
         if isinstance(host_coverage, bool) or not isinstance(host_coverage, (int, float)):
             msg = f"host_coverage must be a number: {host_coverage!r}"
             raise TypeError(msg)
-        width, height, raw_spans, raw_images, unmapped_total, glyph_total = self._document._doc.scan_page(
+        width, height, raw_spans, raw_images, unmapped_total, glyph_total = self._document._doc.scan_page_ext(
             self._page_number(), spans=spans, images=images, host_coverage=float(host_coverage)
         )
         self._document._emit_warnings()
@@ -2357,9 +2359,23 @@ class Page:
                 "type3": type3,
                 "control_chars": controls,
                 "over_image": over,
-                "dir": direction,
+                "dir": (direction[0], direction[1]),
+                "wmode": direction[2],
             }
-            for text, bbox, font, size, flags, mode, unmapped, glyphs, type3, controls, over, direction in raw_spans
+            for (
+                text,
+                bbox,
+                font,
+                size,
+                flags,
+                mode,
+                unmapped,
+                glyphs,
+                type3,
+                controls,
+                over,
+                direction,
+            ) in raw_spans
         ]
         image_list: list[ImagePlacementInfo] = [
             {

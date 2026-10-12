@@ -1654,6 +1654,23 @@ type ScanSpanTuple = (
     (f64, f64),
 );
 
+/// `scan_page_ext` span row: as [`ScanSpanTuple`] with the direction widened to
+/// `(dx, dy, writing_mode)`.
+type ScanSpanExtTuple = (
+    String,
+    (f64, f64, f64, f64),
+    String,
+    f64,
+    i64,
+    u8,
+    u32,
+    u32,
+    bool,
+    u32,
+    u32,
+    (f64, f64, u8),
+);
+
 /// `scan_page` image row: bbox, pixel width, pixel height, dpi along each
 /// image axis, stencil flag.
 type ScanImageTuple = ((f64, f64, f64, f64), u32, u32, f64, f64, bool);
@@ -4554,12 +4571,10 @@ fn hinted_cjk_language(name: &str) -> Option<CjkFontLanguage> {
     }
 }
 
-/// Return a configured fallback when a non-embedded font request is CJK.
-///
-/// Detect CJK through CIDSystemInfo (Adobe-Japan1/GB1/CNS1/Korea1) or BaseFont.
-/// Adobe-Identity lacks CID-to-Unicode clues in its CMap, so use the name;
-/// hayro resolves an embedded ToUnicode map when present.
-fn pick_cjk_fallback(fonts: &FallbackFonts, query: &FallbackFontQuery) -> Option<(FontData, u32)> {
+/// Locale of a non-embedded CJK font request, from CIDSystemInfo (Adobe-Japan1/GB1/CNS1/Korea1)
+/// or BaseFont hints. Adobe-Identity lacks CID-to-Unicode clues in its CMap, so it uses the
+/// name; hayro resolves an embedded ToUnicode map when present.
+fn cjk_request(query: &FallbackFontQuery) -> Option<(CjkFontLanguage, bool)> {
     let name = query
         .post_script_name
         .as_deref()
@@ -4573,7 +4588,86 @@ fn pick_cjk_fallback(fonts: &FallbackFonts, query: &FallbackFontQuery) -> Option
         _ => hinted_cjk_language(&name),
     }?;
     let prefers_serif = SERIF_NAME_HINTS.iter().any(|hint| name.contains(hint));
+    Some((language, prefers_serif))
+}
+
+/// Return a configured fallback when a non-embedded font request is CJK.
+fn pick_cjk_fallback(fonts: &FallbackFonts, query: &FallbackFontQuery) -> Option<(FontData, u32)> {
+    let (language, prefers_serif) = cjk_request(query)?;
     let slot = fonts.pair(language).pick(prefers_serif);
+    slot.map(|(data, index)| (Arc::clone(data) as FontData, *index))
+}
+
+/// Environment variable naming a directory that holds the locale font packages.
+///
+/// Native consumers (the Node binding) have no Python extras to discover. Point this at a
+/// directory that contains the `pdfust-fonts-*` data files, either flat or in the
+/// `pdfust_fonts_{jp,ko,zh_cn,zh_tw}/` sub-directories of a Python `site-packages`.
+/// Fonts load on first use by a non-embedded CJK font and are shared process-wide.
+pub(crate) const FONTS_DIR_ENV: &str = "PDFUST_FONTS_DIR";
+
+/// Package directory and Noto file names of each CJK locale, sans then serif.
+const LOCALE_FONT_FILES: [(&str, &str, &str); 4] = [
+    (
+        "pdfust_fonts_jp",
+        "NotoSansJP-Regular.otf",
+        "NotoSerifJP-Regular.otf",
+    ),
+    (
+        "pdfust_fonts_ko",
+        "NotoSansKR-Regular.otf",
+        "NotoSerifKR-Regular.otf",
+    ),
+    (
+        "pdfust_fonts_zh_cn",
+        "NotoSansSC-Regular.otf",
+        "NotoSerifSC-Regular.otf",
+    ),
+    (
+        "pdfust_fonts_zh_tw",
+        "NotoSansTC-Regular.otf",
+        "NotoSerifTC-Regular.otf",
+    ),
+];
+
+fn load_locale_font(
+    root: &std::path::Path,
+    package: &str,
+    file: &str,
+) -> Option<(Arc<Vec<u8>>, u32)> {
+    [root.join(package).join(file), root.join(file)]
+        .into_iter()
+        .find(|path| path.is_file())
+        .and_then(|path| path.to_str().map(str::to_owned))
+        .and_then(|path| {
+            crate::font_cache::read_shared_font(&path, Some(DEFAULT_MAX_FONT_INPUT_SIZE)).ok()
+        })
+        .map(|data| (data, 0))
+}
+
+/// Locale pair found through [`FONTS_DIR_ENV`], loaded once per process and language.
+fn discovered_fallback_pair(language: CjkFontLanguage) -> &'static FallbackFontPair {
+    static PAIRS: [std::sync::OnceLock<FallbackFontPair>; 4] = [
+        std::sync::OnceLock::new(),
+        std::sync::OnceLock::new(),
+        std::sync::OnceLock::new(),
+        std::sync::OnceLock::new(),
+    ];
+    PAIRS[language.index()].get_or_init(|| {
+        let Some(root) = std::env::var_os(FONTS_DIR_ENV).map(std::path::PathBuf::from) else {
+            return FallbackFontPair::default();
+        };
+        let (package, sans, serif) = LOCALE_FONT_FILES[language.index()];
+        FallbackFontPair {
+            sans: load_locale_font(&root, package, sans),
+            serif: load_locale_font(&root, package, serif),
+        }
+    })
+}
+
+fn pick_discovered_fallback(query: &FallbackFontQuery) -> Option<(FontData, u32)> {
+    let (language, prefers_serif) = cjk_request(query)?;
+    let slot = discovered_fallback_pair(language).pick(prefers_serif);
     slot.map(|(data, index)| (Arc::clone(data) as FontData, *index))
 }
 
@@ -4869,6 +4963,9 @@ pub struct _Document {
     page_index: Mutex<Option<Vec<ObjectId>>>,
     /// CJK fallback configuration for rendering.
     fallback_fonts: FallbackFonts,
+    /// Whether fonts found through `PDFUST_FONTS_DIR` may stand in for non-embedded
+    /// CJK fonts when nothing is configured; cleared by `clear_fallback_fonts`.
+    fallback_auto: bool,
     /// Parsed hayro snapshot of current edit state, rebuilt after invalidation.
     hayro_pdf: Option<Pdf>,
     /// Original unencrypted input, consumed by the first hayro parse.
@@ -4944,6 +5041,7 @@ impl _Document {
             doc,
             page_index: Mutex::new(None),
             fallback_fonts: FallbackFonts::default(),
+            fallback_auto: true,
             hayro_pdf: None,
             hayro_source,
             skip_invisible_text: false,
@@ -6796,14 +6894,26 @@ impl _Document {
     /// Build InterpreterSettings with fallbacks and the warning sink.
     fn interpreter_settings(&self) -> InterpreterSettings {
         let mut settings = InterpreterSettings::default();
-        if self.fallback_fonts.is_configured() {
-            let fonts = self.fallback_fonts.clone();
+        let configured = self
+            .fallback_fonts
+            .is_configured()
+            .then(|| self.fallback_fonts.clone());
+        let discover = self.fallback_auto;
+        if configured.is_some() || discover {
             let default_resolver = settings.font_resolver.clone();
             settings.font_resolver = Arc::new(move |query| {
-                if let FontQuery::Fallback(fallback) = query
-                    && let Some(picked) = pick_cjk_fallback(&fonts, fallback)
-                {
-                    return Some(picked);
+                if let FontQuery::Fallback(fallback) = query {
+                    let picked = configured
+                        .as_ref()
+                        .and_then(|fonts| pick_cjk_fallback(fonts, fallback))
+                        .or_else(|| {
+                            discover
+                                .then(|| pick_discovered_fallback(fallback))
+                                .flatten()
+                        });
+                    if let Some(picked) = picked {
+                        return Some(picked);
+                    }
                 }
                 default_resolver(query)
             });
@@ -8053,6 +8163,7 @@ impl _Document {
     /// Clear all CJK fallback-font configuration.
     fn clear_fallback_fonts(&mut self) {
         self.fallback_fonts = FallbackFonts::default();
+        self.fallback_auto = false;
         self.invalidate_interpreted_pages();
     }
 
@@ -8397,102 +8508,77 @@ impl _Document {
         usize,
         usize,
     )> {
-        if !(1..=65_536).contains(&max_glyphs) || !(1..=1_048_576).contains(&max_text_bytes) {
-            return Err(PyValueError::new_err(
-                "max_glyphs must be 1..65536 and max_text_bytes must be 1..1048576",
-            ));
-        }
-        if !host_coverage.is_finite() || !(0.0..=1.0).contains(&host_coverage) {
-            return Err(PyValueError::new_err(
-                "host_coverage must be a finite number from 0 to 1",
-            ));
-        }
-        let settings = self.interpreter_settings();
-        py.detach(|| {
-            self.hayro_view()?;
-            let pdf = self
-                .hayro_pdf
-                .take()
-                .expect("hayro view was built immediately before");
-            let result = (|| {
-                let page = page_number
-                    .checked_sub(1)
-                    .and_then(|index| pdf.pages().get(index as usize))
-                    .ok_or_else(|| {
-                        PdfError::new_err(format!("page {page_number} does not exist"))
-                    })?;
-                let text_budget = self
-                    .text_budget(page_number)?
-                    .unwrap_or(max_text_bytes)
-                    .min(max_text_bytes);
-                let glyph_budget = self
-                    .glyph_budget(page_number)?
-                    .unwrap_or(max_glyphs)
-                    .min(max_glyphs);
-                let cache = InterpreterCache::new();
-                let scan = crate::extract::scan_page(
-                    &pdf,
-                    page,
-                    &cache,
-                    settings,
-                    crate::extract::ScanLimits {
-                        max_text_size: text_budget,
-                        max_glyphs: glyph_budget,
-                        max_images: 8_192,
-                        spans,
-                        images,
-                        host_coverage,
-                    },
+        let (width, height, rows, images, unmapped, glyphs) = self.scan_page_core(
+            py,
+            page_number,
+            spans,
+            images,
+            host_coverage,
+            max_glyphs,
+            max_text_bytes,
+        )?;
+        let rows = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.0, row.1, row.2, row.3, row.4, row.5, row.6, row.7, row.8, row.9, row.10,
+                    row.11,
                 )
-                .map_err(text_page_limit_err)?;
-                self.admit_text_usage(page_number, scan.text_size, scan.glyph_count)?;
-                self.warn_skipped_no_unicode(scan.unmapped_glyphs);
-                let span_rows = scan
-                    .spans
-                    .into_iter()
-                    .map(|span| {
-                        (
-                            span.text,
-                            span.bbox,
-                            span.font,
-                            span.size,
-                            span.flags,
-                            span.render_mode,
-                            span.unmapped,
-                            span.glyphs,
-                            span.type3,
-                            span.control_chars,
-                            span.over_image,
-                            span.direction,
-                        )
-                    })
-                    .collect();
-                let image_rows = scan
-                    .images
-                    .into_iter()
-                    .map(|image| {
-                        (
-                            image.bbox,
-                            image.width_px,
-                            image.height_px,
-                            image.dpi_x,
-                            image.dpi_y,
-                            image.stencil,
-                        )
-                    })
-                    .collect();
-                Ok((
-                    scan.width,
-                    scan.height,
-                    span_rows,
-                    image_rows,
-                    scan.unmapped_glyphs,
-                    scan.glyph_count,
-                ))
-            })();
-            self.hayro_pdf = Some(pdf);
-            result
-        })
+            })
+            .collect();
+        Ok((width, height, rows, images, unmapped, glyphs))
+    }
+
+    /// `scan_page` with the writing mode appended to each span's direction:
+    /// the twelfth span field is `(dx, dy, writing_mode)`.
+    #[allow(clippy::type_complexity)]
+    #[pyo3(signature = (page_number, *, spans=true, images=true, host_coverage=0.25, max_glyphs=65_536, max_text_bytes=1_048_576))]
+    fn scan_page_ext(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+        spans: bool,
+        images: bool,
+        host_coverage: f64,
+        max_glyphs: usize,
+        max_text_bytes: usize,
+    ) -> PyResult<(
+        f64,
+        f64,
+        Vec<ScanSpanExtTuple>,
+        Vec<ScanImageTuple>,
+        usize,
+        usize,
+    )> {
+        let (width, height, rows, images, unmapped, glyphs) = self.scan_page_core(
+            py,
+            page_number,
+            spans,
+            images,
+            host_coverage,
+            max_glyphs,
+            max_text_bytes,
+        )?;
+        let rows = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.0,
+                    row.1,
+                    row.2,
+                    row.3,
+                    row.4,
+                    row.5,
+                    row.6,
+                    row.7,
+                    row.8,
+                    row.9,
+                    row.10,
+                    (row.11.0, row.11.1, row.12),
+                )
+            })
+            .collect();
+        Ok((width, height, rows, images, unmapped, glyphs))
     }
 
     /// Return layout for a one-based page.
@@ -11398,5 +11484,145 @@ impl _Document {
             self.invalidate_hayro_pdf();
         }
         Ok(replacement_count)
+    }
+}
+
+/// Wide span row used internally by [`_Document::scan_page_core`]; the Python-facing
+/// tuples are trimmed from it because PyO3 converts tuples of at most 12 elements.
+type ScanSpanFull = (
+    String,
+    (f64, f64, f64, f64),
+    String,
+    f64,
+    i64,
+    u8,
+    u32,
+    u32,
+    bool,
+    u32,
+    u32,
+    (f64, f64),
+    u8,
+);
+
+type ScanCore = (
+    f64,
+    f64,
+    Vec<ScanSpanFull>,
+    Vec<ScanImageTuple>,
+    usize,
+    usize,
+);
+
+impl _Document {
+    /// Shared body of `scan_page` and `scan_page_ext`.
+    #[allow(clippy::too_many_arguments)]
+    fn scan_page_core(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+        spans: bool,
+        images: bool,
+        host_coverage: f64,
+        max_glyphs: usize,
+        max_text_bytes: usize,
+    ) -> PyResult<ScanCore> {
+        if !(1..=65_536).contains(&max_glyphs) || !(1..=1_048_576).contains(&max_text_bytes) {
+            return Err(PyValueError::new_err(
+                "max_glyphs must be 1..65536 and max_text_bytes must be 1..1048576",
+            ));
+        }
+        if !host_coverage.is_finite() || !(0.0..=1.0).contains(&host_coverage) {
+            return Err(PyValueError::new_err(
+                "host_coverage must be a finite number from 0 to 1",
+            ));
+        }
+        let settings = self.interpreter_settings();
+        py.detach(|| {
+            self.hayro_view()?;
+            let pdf = self
+                .hayro_pdf
+                .take()
+                .expect("hayro view was built immediately before");
+            let result = (|| {
+                let page = page_number
+                    .checked_sub(1)
+                    .and_then(|index| pdf.pages().get(index as usize))
+                    .ok_or_else(|| {
+                        PdfError::new_err(format!("page {page_number} does not exist"))
+                    })?;
+                let text_budget = self
+                    .text_budget(page_number)?
+                    .unwrap_or(max_text_bytes)
+                    .min(max_text_bytes);
+                let glyph_budget = self
+                    .glyph_budget(page_number)?
+                    .unwrap_or(max_glyphs)
+                    .min(max_glyphs);
+                let cache = InterpreterCache::new();
+                let scan = crate::extract::scan_page(
+                    &pdf,
+                    page,
+                    &cache,
+                    settings,
+                    crate::extract::ScanLimits {
+                        max_text_size: text_budget,
+                        max_glyphs: glyph_budget,
+                        max_images: 8_192,
+                        spans,
+                        images,
+                        host_coverage,
+                    },
+                )
+                .map_err(text_page_limit_err)?;
+                self.admit_text_usage(page_number, scan.text_size, scan.glyph_count)?;
+                self.warn_skipped_no_unicode(scan.unmapped_glyphs);
+                let span_rows = scan
+                    .spans
+                    .into_iter()
+                    .map(|span| {
+                        (
+                            span.text,
+                            span.bbox,
+                            span.font,
+                            span.size,
+                            span.flags,
+                            span.render_mode,
+                            span.unmapped,
+                            span.glyphs,
+                            span.type3,
+                            span.control_chars,
+                            span.over_image,
+                            span.direction,
+                            span.writing_mode,
+                        )
+                    })
+                    .collect();
+                let image_rows = scan
+                    .images
+                    .into_iter()
+                    .map(|image| {
+                        (
+                            image.bbox,
+                            image.width_px,
+                            image.height_px,
+                            image.dpi_x,
+                            image.dpi_y,
+                            image.stencil,
+                        )
+                    })
+                    .collect();
+                Ok((
+                    scan.width,
+                    scan.height,
+                    span_rows,
+                    image_rows,
+                    scan.unmapped_glyphs,
+                    scan.glyph_count,
+                ))
+            })();
+            self.hayro_pdf = Some(pdf);
+            result
+        })
     }
 }
