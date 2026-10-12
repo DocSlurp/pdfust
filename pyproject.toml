@@ -74,6 +74,7 @@ bench = [
     "pymupdf>=1.26",
     "pypdf>=5",
     "pdfplumber>=0.11",
+    "reportlab>=4.2",
 ]
 # Rich conversion studies keep model-backed layout and Markdown parsing optional.
 bench-rich = [
