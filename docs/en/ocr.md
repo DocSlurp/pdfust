@@ -51,6 +51,40 @@ display-coordinate `clip=(x0, y0, x1, y1)` around the scanned region; only
 existing text intersecting that region triggers the skip. Use
 `skip_existing=False` deliberately to append despite intersecting text.
 
+## Fill only what is missing { #fill-only-what-is-missing }
+
+`apply_ocr()` skips any page that has extractable text, so a mixed page
+(native text plus scanned regions) or a page whose text layer cannot be decoded
+stays incomplete. `Page.ocr_fill()` keeps good native text and adds OCR text
+only where it is missing:
+
+```python
+engine = pdfust.OcrEngine(threads=4)
+with pdfust.open("mixed.pdf") as doc:
+    for page in doc:
+        result = page.ocr_fill(engine=engine, dpi=200)
+        print(result["filled"], "words added;", result["markdown"][:80])
+    doc.save("filled.pdf")
+```
+
+- `policy="fill"` (default) recognizes the page, drops OCR words whose box
+  contains the centre of any native word (2 pt slack), and inserts the rest as
+  an invisible layer. When glyphs lack Unicode (for example a broken ToUnicode
+  map) and native characters are under half of the OCR characters, the native
+  layer is treated as unusable and every OCR word is inserted.
+- `policy="adaptive"` runs full-page OCR when native text is nearly absent or has
+  unmapped glyphs, and otherwise OCRs only raster placements covering at least
+  2% of the page, keeping native text inside them.
+- The layer is added in memory: the returned `text` and `markdown` already include
+  it. Save the document to keep it.
+- Concurrency is bounded by the shared engine (`max_concurrent=1` by default).
+  A second concurrent recognition measured only 8% faster and used more memory.
+  `dpi=150-200` was 2-2.3x faster than 300 with similar character error rates.
+
+On the wild-v1 DEV corpus (synthetic, 24 documents), see
+`bench/results/ocr-fill-latest.md` for the measured text F1 against the native
+and plain-OCR baselines.
+
 ## Correct rotated input
 
 Pass `rotation=90`, `180`, or `270` to turn the rendered OCR input clockwise

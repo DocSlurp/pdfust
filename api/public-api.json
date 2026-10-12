@@ -2,6 +2,7 @@
   "api_line": "0.13",
   "exports": [
     "AnnotationInfo",
+    "AttachmentInfo",
     "BlockEntry",
     "CjkFontLanguage",
     "Document",
@@ -15,11 +16,14 @@
     "FieldCandidate",
     "FieldResult",
     "FieldSpec",
+    "FontInfo",
     "FontLanguage",
     "FormFieldInfo",
     "FormFieldType",
     "ImageCompressionResult",
     "ImageInfo",
+    "ImagePlacementInfo",
+    "JavaScriptLocation",
     "LINK_GOTO",
     "LINK_GOTOR",
     "LINK_LAUNCH",
@@ -32,12 +36,15 @@
     "MetadataUpdate",
     "OcrEngine",
     "OcrError",
+    "OcrFillResult",
     "OcrRotation",
     "OcrWord",
+    "OptionalContentInfo",
     "Page",
     "PageLabelInfo",
     "PageLabelSpec",
     "PageLayout",
+    "PageScanInfo",
     "PasswordError",
     "PdfError",
     "PdfustWarning",
@@ -46,6 +53,8 @@
     "PlacementModel",
     "Point",
     "Rect",
+    "ScanStats",
+    "SpanInfo",
     "SpatialCell",
     "SpatialTable",
     "SpatialWord",
@@ -62,6 +71,7 @@
     "TextLine",
     "TextPage",
     "TextSpan",
+    "WidgetInfo",
     "WordEntry",
     "open",
     "peek_metadata"
@@ -82,6 +92,24 @@
         "rect",
         "type",
         "uri"
+      ]
+    },
+    "AttachmentInfo": {
+      "fields": {
+        "description": "str | None",
+        "mime": "str | None",
+        "name": "str",
+        "size": "int | None",
+        "stored_size": "int"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "description",
+        "mime",
+        "name",
+        "size",
+        "stored_size"
       ]
     },
     "BlockEntry": {
@@ -369,6 +397,18 @@
             "returns": "bytes"
           }
         },
+        "embfile_info": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[AttachmentInfo]"
+          }
+        },
         "embfile_names": {
           "kind": "method",
           "signature": {
@@ -381,6 +421,18 @@
             "returns": "list[str]"
           }
         },
+        "get_fonts": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[FontInfo]"
+          }
+        },
         "get_form_fields": {
           "kind": "method",
           "signature": {
@@ -391,6 +443,30 @@
               }
             ],
             "returns": "list[FormFieldInfo]"
+          }
+        },
+        "get_javascript": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[JavaScriptLocation]"
+          }
+        },
+        "get_ocgs": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[OptionalContentInfo]"
           }
         },
         "get_page_labels": {
@@ -474,6 +550,18 @@
               }
             ],
             "returns": "list[list[int | str]]"
+          }
+        },
+        "has_javascript": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "bool"
           }
         },
         "insert_pdf": {
@@ -1444,6 +1532,34 @@
         "returns": "None"
       }
     },
+    "FontInfo": {
+      "fields": {
+        "descendant_type": "str | None",
+        "embedded": "bool",
+        "encoding": "str | None",
+        "has_tounicode": "bool",
+        "is_type3": "bool",
+        "name": "str",
+        "pages": "list[int]",
+        "subset": "bool",
+        "type": "str",
+        "xref": "int | None"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "descendant_type",
+        "embedded",
+        "encoding",
+        "has_tounicode",
+        "is_type3",
+        "name",
+        "pages",
+        "subset",
+        "type",
+        "xref"
+      ]
+    },
     "FontLanguage": {
       "kind": "type-alias",
       "target": "Literal['ar', 'he', 'hi', 'ja', 'ko', 'th', 'zh-CN', 'zh-TW']"
@@ -1502,6 +1618,44 @@
         "height",
         "image",
         "width"
+      ]
+    },
+    "ImagePlacementInfo": {
+      "fields": {
+        "bbox": "Rect",
+        "dpi": "float",
+        "height": "int",
+        "index": "int",
+        "stencil": "bool",
+        "width": "int",
+        "xdpi": "float",
+        "ydpi": "float"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "bbox",
+        "dpi",
+        "height",
+        "index",
+        "stencil",
+        "width",
+        "xdpi",
+        "ydpi"
+      ]
+    },
+    "JavaScriptLocation": {
+      "fields": {
+        "event": "str | None",
+        "page": "int | None",
+        "scope": "str"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "event",
+        "page",
+        "scope"
       ]
     },
     "LINK_GOTO": {
@@ -1729,6 +1883,32 @@
       "kind": "exception",
       "members": {}
     },
+    "OcrFillResult": {
+      "fields": {
+        "filled": "int",
+        "markdown": "str",
+        "policy": "str",
+        "recognized": "int",
+        "regions": "int",
+        "replaced_pages": "int",
+        "text": "str",
+        "unmapped_native": "bool",
+        "words": "list[OcrWord]"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "filled",
+        "markdown",
+        "policy",
+        "recognized",
+        "regions",
+        "replaced_pages",
+        "text",
+        "unmapped_native",
+        "words"
+      ]
+    },
     "OcrRotation": {
       "kind": "type-alias",
       "target": "Literal[0, 90, 180, 270]"
@@ -1745,6 +1925,22 @@
         "bbox",
         "confidence",
         "text"
+      ]
+    },
+    "OptionalContentInfo": {
+      "fields": {
+        "intent": "list[str]",
+        "name": "str",
+        "visible": "bool",
+        "xref": "int"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "intent",
+        "name",
+        "visible",
+        "xref"
       ]
     },
     "Page": {
@@ -1923,6 +2119,30 @@
             "returns": "list[DrawingInfo]"
           }
         },
+        "get_fonts": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[FontInfo]"
+          }
+        },
+        "get_image_info": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[ImagePlacementInfo]"
+          }
+        },
         "get_images": {
           "kind": "method",
           "signature": {
@@ -2083,6 +2303,18 @@
               }
             ],
             "returns": "list[OcrWord]"
+          }
+        },
+        "get_text_spans": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[SpanInfo]"
           }
         },
         "insert_image": {
@@ -2371,6 +2603,60 @@
           "kind": "property",
           "returns": "int"
         },
+        "ocr_fill": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "Literal['fill', 'adaptive']",
+                "default": "fill",
+                "kind": "keyword_only",
+                "name": "policy"
+              },
+              {
+                "annotation": "float",
+                "default": 200,
+                "kind": "keyword_only",
+                "name": "dpi"
+              },
+              {
+                "annotation": "OcrEngine | None",
+                "default": null,
+                "kind": "keyword_only",
+                "name": "engine"
+              },
+              {
+                "annotation": "float | None",
+                "default": null,
+                "kind": "keyword_only",
+                "name": "min_confidence"
+              },
+              {
+                "annotation": "int",
+                "default": 1408,
+                "kind": "keyword_only",
+                "name": "tile_size"
+              },
+              {
+                "annotation": "int",
+                "default": 192,
+                "kind": "keyword_only",
+                "name": "overlap"
+              },
+              {
+                "annotation": "Literal['lines', 'text'] | None",
+                "default": "lines",
+                "kind": "keyword_only",
+                "name": "table_strategy"
+              }
+            ],
+            "returns": "OcrFillResult"
+          }
+        },
         "parent": {
           "kind": "property",
           "returns": "Document"
@@ -2470,6 +2756,36 @@
         "rotation": {
           "kind": "property",
           "returns": "int"
+        },
+        "scan": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              },
+              {
+                "annotation": "bool",
+                "default": true,
+                "kind": "keyword_only",
+                "name": "spans"
+              },
+              {
+                "annotation": "bool",
+                "default": true,
+                "kind": "keyword_only",
+                "name": "images"
+              },
+              {
+                "annotation": "float",
+                "default": 0.25,
+                "kind": "keyword_only",
+                "name": "host_coverage"
+              }
+            ],
+            "returns": "PageScanInfo"
+          }
         },
         "search_for": {
           "kind": "method",
@@ -2607,6 +2923,18 @@
               }
             ],
             "returns": "str"
+          }
+        },
+        "widgets": {
+          "kind": "method",
+          "signature": {
+            "parameters": [
+              {
+                "kind": "positional_or_keyword",
+                "name": "self"
+              }
+            ],
+            "returns": "list[WidgetInfo]"
           }
         }
       },
@@ -2769,6 +3097,24 @@
         ],
         "returns": "None"
       }
+    },
+    "PageScanInfo": {
+      "fields": {
+        "height": "float",
+        "images": "list[ImagePlacementInfo]",
+        "spans": "list[SpanInfo]",
+        "stats": "ScanStats",
+        "width": "float"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "height",
+        "images",
+        "spans",
+        "stats",
+        "width"
+      ]
     },
     "PasswordError": {
       "bases": [
@@ -3021,6 +3367,64 @@
           }
         ]
       }
+    },
+    "ScanStats": {
+      "fields": {
+        "control_chars": "int",
+        "glyphs": "int",
+        "invisible": "int",
+        "mapped": "int",
+        "over_image": "int",
+        "stroke": "int",
+        "type3": "int",
+        "unmapped": "int"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "control_chars",
+        "glyphs",
+        "invisible",
+        "mapped",
+        "over_image",
+        "stroke",
+        "type3",
+        "unmapped"
+      ]
+    },
+    "SpanInfo": {
+      "fields": {
+        "bbox": "Rect",
+        "control_chars": "int",
+        "dir": "tuple[float, float]",
+        "flags": "int",
+        "font": "str",
+        "glyphs": "int",
+        "invisible": "bool",
+        "over_image": "int",
+        "render_mode": "int",
+        "size": "float",
+        "text": "str",
+        "type3": "bool",
+        "unmapped": "int"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "bbox",
+        "control_chars",
+        "dir",
+        "flags",
+        "font",
+        "glyphs",
+        "invisible",
+        "over_image",
+        "render_mode",
+        "size",
+        "text",
+        "type3",
+        "unmapped"
+      ]
     },
     "SpatialCell": {
       "annotations": {
@@ -3616,6 +4020,28 @@
         "origin",
         "size",
         "text"
+      ]
+    },
+    "WidgetInfo": {
+      "fields": {
+        "filled": "bool",
+        "kind": "str",
+        "name": "str",
+        "read_only": "bool",
+        "rect": "Rect",
+        "required": "bool",
+        "value": "str | None"
+      },
+      "kind": "typed-dict",
+      "optional_keys": [],
+      "required_keys": [
+        "filled",
+        "kind",
+        "name",
+        "read_only",
+        "rect",
+        "required",
+        "value"
       ]
     },
     "WordEntry": {

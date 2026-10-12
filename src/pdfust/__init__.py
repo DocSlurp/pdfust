@@ -106,7 +106,30 @@ __all__ = [
     "peek_metadata",
 ]
 __all__ += ["PdfustWarning", "Pixmap"]
+__all__ += ["OcrFillResult"]
+__all__ += [
+    "AttachmentInfo",
+    "FontInfo",
+    "ImagePlacementInfo",
+    "JavaScriptLocation",
+    "OptionalContentInfo",
+    "PageScanInfo",
+    "ScanStats",
+    "SpanInfo",
+    "WidgetInfo",
+]
 
+_RENDER_MODE_INVISIBLE = 3
+#: OCR-fill: minimum confidence for an OCR word to be inserted.
+_OCR_FILL_MIN_CONFIDENCE = 0.7
+#: OCR-fill: native text under this share of OCR text, with unmapped glyphs, means an unusable layer.
+_OCR_FILL_UNRELIABLE_RATIO = 0.5
+#: OCR-fill: a native word centre this close (points) outside an OCR box still counts as inside it.
+_OCR_FILL_SLACK = 2.0
+#: OCR-adaptive: fewer native characters than this means the page has no usable layer.
+_OCR_ADAPTIVE_MIN_NATIVE_CHARS = 20
+#: OCR-adaptive: raster placements covering at least this page share are OCR candidates.
+_OCR_ADAPTIVE_MIN_IMAGE_AREA = 0.02
 _DEFAULT_MAX_EMBEDDED_FILE_SIZE = 64 * 1024 * 1024
 _DEFAULT_MAX_XMP_METADATA_SIZE = 1024 * 1024
 _DEFAULT_MAX_RENDER_PAGE_SIZE = 64 * 1024 * 1024
@@ -499,6 +522,142 @@ class ImageCompressionResult(TypedDict):
     bytes_saved: int
 
 
+class SpanInfo(TypedDict):
+    """One positioned text run returned by :meth:`Page.get_text_spans`.
+
+    Runs follow the raw glyph paint order (same font, size, render mode and
+    baseline, contiguous advance); they are not the line-assembled spans of
+    ``get_text("dict")``.
+    """
+
+    text: str
+    bbox: Rect
+    font: str
+    size: float
+    flags: int
+    #: PDF text rendering mode: 0 fill, 1 stroke, 2 fill and stroke, 3 invisible.
+    render_mode: int
+    invisible: bool
+    #: Glyphs in the run without any Unicode mapping (absent from ``text``).
+    unmapped: int
+    glyphs: int
+    type3: bool
+    #: Glyphs whose text is a control character other than TAB, LF or CR.
+    control_chars: int
+    #: Mapped glyphs whose centre lies inside a large host image.
+    over_image: int
+    dir: tuple[float, float]
+
+
+class ImagePlacementInfo(TypedDict):
+    """One image placement returned by :meth:`Page.get_image_info` (no pixels)."""
+
+    index: int
+    bbox: Rect
+    width: int
+    height: int
+    #: Pixels per inch along the image's width and height axes.
+    xdpi: float
+    ydpi: float
+    #: The lower of ``xdpi`` and ``ydpi``.
+    dpi: float
+    stencil: bool
+
+
+class ScanStats(TypedDict):
+    """Glyph totals over one page scan."""
+
+    glyphs: int
+    mapped: int
+    unmapped: int
+    invisible: int
+    stroke: int
+    type3: int
+    control_chars: int
+    over_image: int
+
+
+class PageScanInfo(TypedDict):
+    """Result of :meth:`Page.scan`: spans, image placements and glyph totals."""
+
+    width: float
+    height: float
+    spans: list[SpanInfo]
+    images: list[ImagePlacementInfo]
+    stats: ScanStats
+
+
+class FontInfo(TypedDict):
+    """One font returned by :meth:`Page.get_fonts` or :meth:`Document.get_fonts`."""
+
+    #: Indirect object number, or ``None`` for a direct font dictionary.
+    xref: int | None
+    name: str
+    #: PDF subtype: ``Type1``, ``MMType1``, ``TrueType``, ``Type0`` or ``Type3``.
+    type: str
+    #: ``CIDFontType0``/``CIDFontType2`` for ``Type0`` fonts.
+    descendant_type: str | None
+    #: Font program embedded (always true for Type 3, whose glyphs are streams).
+    embedded: bool
+    has_tounicode: bool
+    is_type3: bool
+    #: ``BaseFont`` carries a six-letter subset tag.
+    subset: bool
+    #: Encoding name, ``custom`` for ``Differences``, ``cmap`` for an embedded CMap.
+    encoding: str | None
+    #: One-based pages referencing this font (the requested page for page calls).
+    pages: list[int]
+
+
+class JavaScriptLocation(TypedDict):
+    """Where :meth:`Document.get_javascript` found a JavaScript action."""
+
+    #: ``names``, ``open-action``, ``catalog-actions``, ``page-actions``,
+    #: ``annotation`` or ``form-field``.
+    scope: str
+    page: int | None
+    #: Trigger key such as ``A``, ``E``, ``Fo`` or ``K``, when known.
+    event: str | None
+
+
+class OptionalContentInfo(TypedDict):
+    """One optional content group (layer) returned by :meth:`Document.get_ocgs`."""
+
+    xref: int
+    name: str
+    #: Default visibility from ``BaseState``, ``ON`` and ``OFF``.
+    visible: bool
+    intent: list[str]
+
+
+class AttachmentInfo(TypedDict):
+    """One embedded file returned by :meth:`Document.embfile_info`."""
+
+    name: str
+    #: Stored (possibly compressed) byte length.
+    stored_size: int
+    #: Declared uncompressed length from ``Params/Size``, when present.
+    size: int | None
+    mime: str | None
+    description: str | None
+
+
+class WidgetInfo(TypedDict):
+    """One form widget returned by :meth:`Page.widgets`."""
+
+    #: ``text``, ``checkbox``, ``radio``, ``button``, ``combobox``, ``listbox``,
+    #: ``signature`` or ``unknown``.
+    kind: str
+    #: Fully qualified field name.
+    name: str
+    value: str | None
+    #: The field has a value (checkboxes and radios: not ``Off``).
+    filled: bool
+    read_only: bool
+    required: bool
+    rect: Rect
+
+
 class DrawingInfo(TypedDict):
     """One vector paint operation returned by :meth:`Page.get_drawings`.
 
@@ -643,6 +802,29 @@ class OcrWord(TypedDict):
     bbox: Rect
     text: str
     confidence: float
+
+
+class OcrFillResult(TypedDict):
+    """Outcome of :meth:`Page.ocr_fill`."""
+
+    #: Policy that ran: ``fill`` or ``adaptive``.
+    policy: str
+    #: Text of the page after the OCR layer was added.
+    text: str
+    #: Markdown of the page after the OCR layer was added.
+    markdown: str
+    #: OCR words inserted into the page (the fill count).
+    filled: int
+    #: OCR words recognized before native-text gating.
+    recognized: int
+    #: Full-page OCR regions (``adaptive``) or whole-layer replacements (``fill``).
+    replaced_pages: int
+    #: Clipped image regions recognized (``adaptive`` only).
+    regions: int
+    #: Page had glyphs without any Unicode mapping.
+    unmapped_native: bool
+    #: The words that were inserted.
+    words: list[OcrWord]
 
 
 def _validate_ocr_dpi(dpi: float) -> float:
@@ -1866,6 +2048,121 @@ class Page:
             )
         return words
 
+    def ocr_fill(  # noqa: PLR0913 - OCR resource controls are keyword-only.
+        self,
+        *,
+        policy: Literal["fill", "adaptive"] = "fill",
+        dpi: float = 200,
+        engine: OcrEngine | None = None,
+        min_confidence: float | None = None,
+        tile_size: int = 1408,
+        overlap: int = 192,
+        table_strategy: Literal["lines", "text"] | None = "lines",
+    ) -> OcrFillResult:
+        """Add OCR text only where the native text layer is missing or unusable.
+
+        Native text that is present and decodable always wins; nothing is
+        duplicated. The recognized words are inserted as an invisible layer, so
+        the returned ``text`` and ``markdown`` (and later extraction) include
+        them. Save the document to keep the layer.
+
+        ``policy="fill"`` recognizes the whole page, drops every OCR word whose
+        box contains the centre of a native word (``2`` pt slack), and inserts
+        the rest. When the page has glyphs without Unicode and native
+        characters are under half of the OCR characters, the native layer is
+        treated as unusable and every OCR word is inserted. This fixes mixed
+        pages (native text plus scanned regions) and broken ToUnicode maps.
+
+        ``policy="adaptive"`` runs full-page OCR when native text is nearly
+        absent (under 20 characters) or has unmapped glyphs, and otherwise OCR
+        only the raster placements covering at least 2% of the page, keeping
+        native text inside them.
+
+        ``min_confidence`` filters OCR words (default 0.7 for ``fill``, 0.5 for
+        ``adaptive``, the values the policies were validated with). ``dpi`` of 150-200
+        is about twice as fast as 300 with similar accuracy on typical scans.
+        Concurrency is bounded by the engine's ``max_concurrent`` (default 1)
+        and its ``threads``; share one :class:`OcrEngine` across pages.
+        """
+        if policy not in ("fill", "adaptive"):
+            msg = f"policy must be 'fill' or 'adaptive': {policy!r}"
+            raise ValueError(msg)
+        resolved_engine = _default_ocr_engine() if engine is None else engine
+        if not isinstance(resolved_engine, OcrEngine):
+            msg = f"engine must be an OcrEngine or None: {engine!r}"
+            raise TypeError(msg)
+        fill_confidence = _validate_ocr_confidence(
+            _OCR_FILL_MIN_CONFIDENCE if min_confidence is None else min_confidence
+        )
+        adaptive_confidence = _validate_ocr_confidence(0.5 if min_confidence is None else min_confidence)
+        native_words = self.get_text("words")
+        unmapped_native = self.scan(images=False)["stats"]["unmapped"] > 0
+        inserted: list[OcrWord] = []
+        recognized = replaced = regions = 0
+        if policy == "adaptive":
+            native_chars = len(self.get_text().strip())
+            if unmapped_native or native_chars < _OCR_ADAPTIVE_MIN_NATIVE_CHARS:
+                replaced = 1
+                found = resolved_engine.recognize(
+                    self, dpi=dpi, tile_size=tile_size, overlap=overlap, min_confidence=adaptive_confidence
+                )
+                recognized += len(found)
+                if found:
+                    self.insert_ocr_text_layer([(*word["bbox"], word["text"]) for word in found])
+                    inserted.extend(found)
+            else:
+                rect = self.rect
+                min_area = _OCR_ADAPTIVE_MIN_IMAGE_AREA * rect.width * rect.height
+                for image in self.get_image_info():
+                    box = image["bbox"]
+                    if (box.x1 - box.x0) * (box.y1 - box.y0) < min_area:
+                        continue
+                    regions += 1
+                    clip = (box.x0, box.y0, box.x1, box.y1)
+                    found = self.apply_ocr(
+                        dpi=dpi,
+                        engine=resolved_engine,
+                        tile_size=tile_size,
+                        overlap=overlap,
+                        min_confidence=adaptive_confidence,
+                        clip=clip,
+                    )
+                    recognized += len(found)
+                    inserted.extend(found)
+        else:
+            found = resolved_engine.recognize(
+                self,
+                dpi=dpi,
+                tile_size=tile_size,
+                overlap=overlap,
+                min_confidence=fill_confidence,
+            )
+            recognized = len(found)
+            replace_page, keep = _Document.select_ocr_fill_words(
+                [(word[0], word[1], word[2], word[3]) for word in native_words],
+                sum(len(word[4]) for word in native_words),
+                unmapped_native,
+                [(*word["bbox"], word["text"]) for word in found],
+                _OCR_FILL_SLACK,
+                _OCR_FILL_UNRELIABLE_RATIO,
+            )
+            replaced = int(replace_page)
+            fresh = [found[index] for index in keep]
+            if fresh:
+                self.insert_ocr_text_layer([(*word["bbox"], word["text"]) for word in fresh])
+                inserted.extend(fresh)
+        return {
+            "policy": policy,
+            "text": self.get_text(),
+            "markdown": self.to_markdown(table_strategy=table_strategy),
+            "filled": len(inserted),
+            "recognized": recognized,
+            "replaced_pages": replaced,
+            "regions": regions,
+            "unmapped_native": unmapped_native,
+            "words": inserted,
+        }
+
     def to_markdown(
         self,
         *,
@@ -1996,6 +2293,113 @@ class Page:
                 "image": data,
             }
             for width, height, bbox, ext, data in raw
+        ]
+
+    def scan(
+        self,
+        *,
+        spans: bool = True,
+        images: bool = True,
+        host_coverage: float = 0.25,
+    ) -> PageScanInfo:
+        """Scan the page once for routing probes.
+
+        One interpretation pass returns positioned text runs with render mode
+        and per-run counts of glyphs lacking Unicode, image placements read
+        from image dictionaries without decoding pixels, and glyph totals.
+        Coordinates are top-left-origin points. ``host_coverage`` is the share
+        of the page an image must cover to count as a text host for
+        ``over_image`` counts. Pass ``spans=False`` or ``images=False`` to skip
+        a product. Glyphs without a Unicode mapping also trigger the usual
+        ``PdfustWarning``; their count is in ``stats["unmapped"]``.
+        """
+        if not isinstance(spans, bool) or not isinstance(images, bool):
+            msg = "spans and images must be bool"
+            raise TypeError(msg)
+        if isinstance(host_coverage, bool) or not isinstance(host_coverage, (int, float)):
+            msg = f"host_coverage must be a number: {host_coverage!r}"
+            raise TypeError(msg)
+        width, height, raw_spans, raw_images, unmapped_total, glyph_total = self._document._doc.scan_page(
+            self._page_number(), spans=spans, images=images, host_coverage=float(host_coverage)
+        )
+        self._document._emit_warnings()
+        span_list: list[SpanInfo] = [
+            {
+                "text": text,
+                "bbox": Rect(*bbox),
+                "font": font,
+                "size": size,
+                "flags": flags,
+                "render_mode": mode,
+                "invisible": mode == _RENDER_MODE_INVISIBLE,
+                "unmapped": unmapped,
+                "glyphs": glyphs,
+                "type3": type3,
+                "control_chars": controls,
+                "over_image": over,
+                "dir": direction,
+            }
+            for text, bbox, font, size, flags, mode, unmapped, glyphs, type3, controls, over, direction in raw_spans
+        ]
+        image_list: list[ImagePlacementInfo] = [
+            {
+                "index": index,
+                "bbox": Rect(*bbox),
+                "width": width_px,
+                "height": height_px,
+                "xdpi": xdpi,
+                "ydpi": ydpi,
+                "dpi": min(xdpi, ydpi),
+                "stencil": stencil,
+            }
+            for index, (bbox, width_px, height_px, xdpi, ydpi, stencil) in enumerate(raw_images)
+        ]
+        stats: ScanStats = {
+            "glyphs": glyph_total,
+            "mapped": glyph_total - unmapped_total,
+            "unmapped": unmapped_total,
+            "invisible": sum(item["glyphs"] for item in span_list if item["invisible"]),
+            "stroke": sum(item["glyphs"] for item in span_list if item["render_mode"] in (1, 2)),
+            "type3": sum(item["glyphs"] for item in span_list if item["type3"]),
+            "control_chars": sum(item["control_chars"] for item in span_list),
+            "over_image": sum(item["over_image"] for item in span_list),
+        }
+        return {"width": width, "height": height, "spans": span_list, "images": image_list, "stats": stats}
+
+    def get_text_spans(self) -> list[SpanInfo]:
+        """Return positioned text runs with render mode and unmapped-glyph counts.
+
+        See :class:`SpanInfo`. Invisible text (render mode 3, e.g. an OCR
+        layer) is included and flagged. Equivalent to ``scan(images=False)``.
+        """
+        return self.scan(images=False)["spans"]
+
+    def get_image_info(self) -> list[ImagePlacementInfo]:
+        """Return image placements (bbox, pixel size, effective DPI) without decoding.
+
+        Unlike :meth:`get_images`, no pixel data is decoded or re-encoded, so
+        this is cheap on scans. Equivalent to ``scan(spans=False)``.
+        """
+        return self.scan(spans=False)["images"]
+
+    def get_fonts(self) -> list[FontInfo]:
+        """Return the fonts this page references, including through Form XObjects."""
+        return self._document._fonts(self._page_number())
+
+    def widgets(self) -> list[WidgetInfo]:
+        """Return form widgets placed on this page with field kind, value and rectangle."""
+        raw = self._document._doc.read_widgets(self._page_number())
+        return [
+            {
+                "kind": kind,
+                "name": name,
+                "value": value,
+                "filled": filled,
+                "read_only": read_only,
+                "required": required,
+                "rect": Rect(*rect),
+            }
+            for kind, name, value, filled, read_only, required, rect in raw
         ]
 
     def get_drawings(self) -> list[DrawingInfo]:
@@ -3310,6 +3714,64 @@ class Document:
             msg = f"attachment input is {len(data)} bytes, exceeding the {max_size}-byte limit"
             raise LimitError(limit_code, msg)
         self._doc.embfile_add(name, bytes(data), filename, desc, max_size)
+
+    def _fonts(self, page_number: int | None) -> list[FontInfo]:
+        self._ensure_open()
+        return [
+            {
+                "xref": row[0],
+                "name": row[2],
+                "type": row[3],
+                "descendant_type": row[4],
+                "embedded": row[5],
+                "has_tounicode": row[6],
+                "is_type3": row[7],
+                "subset": row[8],
+                "encoding": row[9],
+                "pages": row[10],
+            }
+            for row in self._doc.inspect_fonts(page_number)
+        ]
+
+    def get_fonts(self) -> list[FontInfo]:
+        """Return the distinct fonts of every page.
+
+        Each entry reports the name, PDF subtype (including ``Type3``), whether
+        the font program is embedded, and whether a ``ToUnicode`` map exists;
+        ``pages`` lists the one-based pages that reference it. Fonts reached
+        through Form XObjects are included.
+        """
+        return self._fonts(None)
+
+    def get_javascript(self) -> list[JavaScriptLocation]:
+        """Return where the document carries JavaScript (at most 64 locations).
+
+        Covers the document name tree, ``OpenAction``, catalog, page and
+        annotation actions, and form-field actions. Scripts are never run, and
+        their source is not returned.
+        """
+        self._ensure_open()
+        return [{"scope": scope, "page": page, "event": event} for scope, page, event in self._doc.inspect_javascript()]
+
+    def has_javascript(self) -> bool:
+        """Whether :meth:`get_javascript` finds any JavaScript."""
+        return bool(self.get_javascript())
+
+    def get_ocgs(self) -> list[OptionalContentInfo]:
+        """Return optional content groups (layers) with default visibility."""
+        self._ensure_open()
+        return [
+            {"xref": xref, "name": name, "visible": visible, "intent": intent}
+            for xref, name, visible, intent in self._doc.inspect_optional_content()
+        ]
+
+    def embfile_info(self) -> list[AttachmentInfo]:
+        """Return embedded files with stored size, declared size and MIME type, sorted by name."""
+        self._ensure_open()
+        return [
+            {"name": name, "stored_size": stored, "size": size, "mime": mime, "description": description}
+            for name, stored, size, mime, description in self._doc.inspect_attachments()
+        ]
 
     def embfile_names(self) -> list[str]:
         """Return sorted attachment names."""

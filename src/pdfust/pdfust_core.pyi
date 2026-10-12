@@ -225,6 +225,56 @@ class _Document:
         list[tuple[int, str, tuple[float, float], float, float, tuple[float, float], str, str, int, str]],
         int,
     ]: ...
+    def scan_page(
+        self,
+        page_number: int,
+        *,
+        spans: bool = True,
+        images: bool = True,
+        host_coverage: float = 0.25,
+        max_glyphs: int = 65536,
+        max_text_bytes: int = 1048576,
+    ) -> tuple[
+        float,
+        float,
+        list[
+            tuple[
+                str,
+                tuple[float, float, float, float],
+                str,
+                float,
+                int,
+                int,
+                int,
+                int,
+                bool,
+                int,
+                int,
+                tuple[float, float],
+            ]
+        ],
+        list[tuple[tuple[float, float, float, float], int, int, float, float, bool]],
+        int,
+        int,
+    ]: ...
+    @staticmethod
+    def select_ocr_fill_words(
+        native_boxes: list[tuple[float, float, float, float]],
+        native_chars: int,
+        unmapped_native: bool,
+        ocr_words: list[tuple[float, float, float, float, str]],
+        slack: float,
+        unreliable_ratio: float,
+    ) -> tuple[bool, list[int]]: ...
+    def inspect_fonts(
+        self, page_number: int | None = None
+    ) -> list[tuple[int | None, int | None, str, str, str | None, bool, bool, bool, bool, str | None, list[int]]]: ...
+    def inspect_javascript(self) -> list[tuple[str, int | None, str | None]]: ...
+    def inspect_optional_content(self) -> list[tuple[int, str, bool, list[str]]]: ...
+    def inspect_attachments(self) -> list[tuple[str, int, int | None, str | None, str | None]]: ...
+    def read_widgets(
+        self, page_number: int
+    ) -> list[tuple[str, str, str | None, bool, bool, bool, tuple[float, float, float, float]]]: ...
     def extract_layout(
         self, page_number: int, *, include_spans: bool = True, include_words: bool = True
     ) -> tuple[

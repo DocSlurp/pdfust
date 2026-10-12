@@ -1090,6 +1090,43 @@ fn pdf_text_string_len(value: &str) -> Option<usize> {
 }
 
 /// Map one text collector refusal to its stable public resource code.
+/// `inspect_fonts` row: object number, generation, name, subtype, descendant
+/// subtype, embedded, has ToUnicode, Type 3, subset-tagged, encoding, pages.
+type FontRow = (
+    Option<u32>,
+    Option<u16>,
+    String,
+    String,
+    Option<String>,
+    bool,
+    bool,
+    bool,
+    bool,
+    Option<String>,
+    Vec<u32>,
+);
+
+/// `scan_page` span row: text, bbox, font, size, flags, render mode, unmapped,
+/// glyphs, Type 3, control chars, glyphs over a host image, direction.
+type ScanSpanTuple = (
+    String,
+    (f64, f64, f64, f64),
+    String,
+    f64,
+    i64,
+    u8,
+    u32,
+    u32,
+    bool,
+    u32,
+    u32,
+    (f64, f64),
+);
+
+/// `scan_page` image row: bbox, pixel width, pixel height, dpi along each
+/// image axis, stencil flag.
+type ScanImageTuple = ((f64, f64, f64, f64), u32, u32, f64, f64, bool);
+
 fn text_page_limit_err(error: crate::extract::TextPageLimit) -> PyErr {
     match error {
         crate::extract::TextPageLimit::TextSize(limit) => limit_err(
@@ -7764,6 +7801,128 @@ impl _Document {
         })
     }
 
+    /// Scan one page once for routing probes: positioned spans with render
+    /// mode and unmapped-glyph counts, and image placements read without
+    /// decoding pixels. Fresh interpretation; text/table caches are untouched.
+    ///
+    /// Return `(width, height, spans, images, unmapped_glyphs, glyphs)`.
+    #[allow(clippy::type_complexity)]
+    #[pyo3(signature = (page_number, *, spans=true, images=true, host_coverage=0.25, max_glyphs=65_536, max_text_bytes=1_048_576))]
+    fn scan_page(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+        spans: bool,
+        images: bool,
+        host_coverage: f64,
+        max_glyphs: usize,
+        max_text_bytes: usize,
+    ) -> PyResult<(
+        f64,
+        f64,
+        Vec<ScanSpanTuple>,
+        Vec<ScanImageTuple>,
+        usize,
+        usize,
+    )> {
+        if !(1..=65_536).contains(&max_glyphs) || !(1..=1_048_576).contains(&max_text_bytes) {
+            return Err(PyValueError::new_err(
+                "max_glyphs must be 1..65536 and max_text_bytes must be 1..1048576",
+            ));
+        }
+        if !host_coverage.is_finite() || !(0.0..=1.0).contains(&host_coverage) {
+            return Err(PyValueError::new_err(
+                "host_coverage must be a finite number from 0 to 1",
+            ));
+        }
+        let settings = self.interpreter_settings();
+        py.detach(|| {
+            self.hayro_view()?;
+            let pdf = self
+                .hayro_pdf
+                .take()
+                .expect("hayro view was built immediately before");
+            let result = (|| {
+                let page = page_number
+                    .checked_sub(1)
+                    .and_then(|index| pdf.pages().get(index as usize))
+                    .ok_or_else(|| {
+                        PdfError::new_err(format!("page {page_number} does not exist"))
+                    })?;
+                let text_budget = self
+                    .text_budget(page_number)?
+                    .unwrap_or(max_text_bytes)
+                    .min(max_text_bytes);
+                let glyph_budget = self
+                    .glyph_budget(page_number)?
+                    .unwrap_or(max_glyphs)
+                    .min(max_glyphs);
+                let cache = InterpreterCache::new();
+                let scan = crate::extract::scan_page(
+                    &pdf,
+                    page,
+                    &cache,
+                    settings,
+                    crate::extract::ScanLimits {
+                        max_text_size: text_budget,
+                        max_glyphs: glyph_budget,
+                        max_images: 8_192,
+                        spans,
+                        images,
+                        host_coverage,
+                    },
+                )
+                .map_err(text_page_limit_err)?;
+                self.admit_text_usage(page_number, scan.text_size, scan.glyph_count)?;
+                self.warn_skipped_no_unicode(scan.unmapped_glyphs);
+                let span_rows = scan
+                    .spans
+                    .into_iter()
+                    .map(|span| {
+                        (
+                            span.text,
+                            span.bbox,
+                            span.font,
+                            span.size,
+                            span.flags,
+                            span.render_mode,
+                            span.unmapped,
+                            span.glyphs,
+                            span.type3,
+                            span.control_chars,
+                            span.over_image,
+                            span.direction,
+                        )
+                    })
+                    .collect();
+                let image_rows = scan
+                    .images
+                    .into_iter()
+                    .map(|image| {
+                        (
+                            image.bbox,
+                            image.width_px,
+                            image.height_px,
+                            image.dpi_x,
+                            image.dpi_y,
+                            image.stencil,
+                        )
+                    })
+                    .collect();
+                Ok((
+                    scan.width,
+                    scan.height,
+                    span_rows,
+                    image_rows,
+                    scan.unmapped_glyphs,
+                    scan.glyph_count,
+                ))
+            })();
+            self.hayro_pdf = Some(pdf);
+            result
+        })
+    }
+
     /// Return layout for a one-based page.
     ///
     /// Return `(width, height, blocks)`, where block=`(bbox, lines)`,
@@ -8976,6 +9135,150 @@ impl _Document {
                 placement,
                 drawing_plan,
             )
+        })
+    }
+
+    /// Select OCR words for an OCR-fill pass; see `ocr::select_fill_words`.
+    /// Return `(replace page, indexes of words to insert)`.
+    #[staticmethod]
+    #[allow(clippy::type_complexity)]
+    fn select_ocr_fill_words(
+        native_boxes: Vec<(f64, f64, f64, f64)>,
+        native_chars: usize,
+        unmapped_native: bool,
+        ocr_words: Vec<(f64, f64, f64, f64, String)>,
+        slack: f64,
+        unreliable_ratio: f64,
+    ) -> (bool, Vec<usize>) {
+        let native: Vec<[f64; 4]> = native_boxes
+            .into_iter()
+            .map(|b| [b.0, b.1, b.2, b.3])
+            .collect();
+        let selection = crate::ocr::select_fill_words(
+            &native,
+            native_chars,
+            unmapped_native,
+            &ocr_words,
+            slack,
+            unreliable_ratio,
+        );
+        (selection.replace_page, selection.keep)
+    }
+
+    /// Inventory fonts used by one page, or by every page when omitted.
+    ///
+    /// Each row is `(object number, generation, name, subtype, descendant
+    /// subtype, embedded, has ToUnicode, is Type 3, subset, encoding, pages)`.
+    #[allow(clippy::type_complexity)]
+    #[pyo3(signature = (page_number=None))]
+    fn inspect_fonts(
+        &self,
+        py: Python<'_>,
+        page_number: Option<u32>,
+    ) -> PyResult<Vec<FontRow>> {
+        py.detach(|| {
+            let ordered = self.ordered_page_ids()?;
+            let pages: Vec<(u32, ObjectId)> = match page_number {
+                Some(number) => vec![(number, page_id_from_index(&ordered, number)?)],
+                None => ordered
+                    .iter()
+                    .enumerate()
+                    .map(|(index, id)| (index as u32 + 1, *id))
+                    .collect(),
+            };
+            Ok(crate::inspect::collect_fonts(&self.doc, &pages)
+                .into_iter()
+                .map(|font| {
+                    (
+                        font.object.map(|id| id.0),
+                        font.object.map(|id| id.1),
+                        font.name,
+                        font.subtype,
+                        font.descendant_subtype,
+                        font.embedded,
+                        font.has_to_unicode,
+                        font.is_type3,
+                        font.subset,
+                        font.encoding,
+                        font.pages.into_iter().collect(),
+                    )
+                })
+                .collect())
+        })
+    }
+
+    /// Locate JavaScript actions: `(scope, one-based page, trigger)` rows.
+    fn inspect_javascript(
+        &self,
+        py: Python<'_>,
+    ) -> PyResult<Vec<(String, Option<u32>, Option<String>)>> {
+        py.detach(|| {
+            let ordered = self.ordered_page_ids()?;
+            let pages: Vec<(u32, ObjectId)> = ordered
+                .iter()
+                .enumerate()
+                .map(|(index, id)| (index as u32 + 1, *id))
+                .collect();
+            Ok(crate::inspect::collect_javascript(&self.doc, &pages)
+                .into_iter()
+                .map(|found| (found.scope.to_owned(), found.page, found.event))
+                .collect())
+        })
+    }
+
+    /// Optional content groups: `(object number, name, visible, intents)`.
+    fn inspect_optional_content(
+        &self,
+        py: Python<'_>,
+    ) -> PyResult<Vec<(u32, String, bool, Vec<String>)>> {
+        py.detach(|| {
+            Ok(crate::inspect::collect_optional_content(&self.doc)
+                .into_iter()
+                .map(|group| (group.object.0, group.name, group.visible, group.intent))
+                .collect())
+        })
+    }
+
+    /// Attachments: `(name, stored size, declared size, MIME type, description)`.
+    #[allow(clippy::type_complexity)]
+    fn inspect_attachments(
+        &self,
+        py: Python<'_>,
+    ) -> PyResult<Vec<(String, usize, Option<u64>, Option<String>, Option<String>)>> {
+        py.detach(|| {
+            Ok(crate::inspect::collect_attachments(&self.doc)
+                .into_iter()
+                .map(|file| (file.name, file.stored_size, file.size, file.mime, file.description))
+                .collect())
+        })
+    }
+
+    /// Form widgets placed on a one-based page, in display coordinates:
+    /// `(kind, name, value, filled, read only, required, bbox)`.
+    #[allow(clippy::type_complexity)]
+    fn read_widgets(
+        &self,
+        py: Python<'_>,
+        page_number: u32,
+    ) -> PyResult<Vec<(String, String, Option<String>, bool, bool, bool, (f64, f64, f64, f64))>> {
+        py.detach(|| {
+            let (crop, rotation) = self.page_display_geometry(page_number)?;
+            let page_id = self.page_id(page_number)?;
+            let to_display = |rect: [f64; 4]| draw::pdf_rect_to_display(crop, rotation, rect);
+            Ok(crate::inspect::collect_widgets(&self.doc, page_id, &to_display)
+                .into_iter()
+                .map(|w| {
+                    (
+                        w.kind.to_owned(),
+                        w.name,
+                        w.value,
+                        w.filled,
+                        w.read_only,
+                        w.required,
+                        (w.bbox[0], w.bbox[1], w.bbox[2], w.bbox[3]),
+                    )
+                })
+                .collect())
         })
     }
 

@@ -22,6 +22,9 @@ use hayro::hayro_syntax::{Filter, Pdf};
 use kurbo::{Affine, Cap, CubicBez, Join, Line, PathEl, PathSeg, Point, QuadBez, Rect, Shape};
 use unicode_bidi::{BidiClass, bidi_class};
 
+mod page_scan;
+pub(crate) use page_scan::{ScanLimits, scan_page};
+
 /// Per-font display attributes propagated to spans with pymupdf-compatible flags.
 #[derive(Clone, Default)]
 struct FontInfo {
@@ -340,9 +343,9 @@ impl TextCollector {
     /// the span text, or drop placeholders when the scan did not match.
     ///
     /// `parallel` is retained in lockstep with `glyphs`.
-    fn apply_actual_text(
+    fn apply_actual_text<T>(
         &mut self,
-        parallel: Option<&mut Vec<&'static str>>,
+        parallel: Option<&mut Vec<T>>,
     ) -> Result<(), TextPageLimit> {
         let Some(events) = self.marked.take() else {
             return Ok(());
@@ -5843,7 +5846,7 @@ fn collect_page_marks<'a>(
     if let Some(error) = collector.limit_error {
         return Err(error);
     }
-    collector.apply_actual_text(None)?;
+    collector.apply_actual_text(None::<&mut Vec<()>>)?;
     let glyph_count = collector.glyphs.len();
     Ok(PageMarks {
         glyphs: collector.glyphs,

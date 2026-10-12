@@ -194,3 +194,58 @@ pub fn ocr_ops(
     out.write_str("Q\n").map_err(output_error)?;
     Ok(out.0.into_bytes())
 }
+
+/// Which recognized words an OCR-fill pass should insert.
+pub struct FillSelection {
+    /// The native layer is unusable (glyphs without Unicode and fewer native
+    /// than half as many characters as recognized), so every word is kept.
+    pub replace_page: bool,
+    /// Indexes into the recognized words to insert, in input order.
+    pub keep: Vec<usize>,
+}
+
+/// Choose OCR words that add text the native layer lacks.
+///
+/// A recognized box is dropped when it contains the centre of any native word
+/// (widened by `slack` points), because OCR boxes are usually whole lines while
+/// native boxes approximate glyph bodies. When `unmapped_native` is set and the
+/// native characters are fewer than `unreliable_ratio` times the recognized
+/// characters (spaces excluded), the native layer cannot gate OCR and every
+/// word is kept.
+pub fn select_fill_words(
+    native_boxes: &[[f64; 4]],
+    native_chars: usize,
+    unmapped_native: bool,
+    ocr: &[OcrWord],
+    slack: f64,
+    unreliable_ratio: f64,
+) -> FillSelection {
+    let ocr_chars: usize = ocr
+        .iter()
+        .map(|(_, _, _, _, text)| text.chars().filter(|c| *c != ' ').count())
+        .sum();
+    if unmapped_native && (native_chars as f64) < unreliable_ratio * ocr_chars as f64 {
+        return FillSelection {
+            replace_page: true,
+            keep: (0..ocr.len()).collect(),
+        };
+    }
+    let centres: Vec<(f64, f64)> = native_boxes
+        .iter()
+        .map(|b| ((b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0))
+        .collect();
+    let keep = ocr
+        .iter()
+        .enumerate()
+        .filter(|(_, (x0, y0, x1, y1, _))| {
+            !centres.iter().any(|(cx, cy)| {
+                *x0 - slack <= *cx && *cx <= *x1 + slack && *y0 - slack <= *cy && *cy <= *y1 + slack
+            })
+        })
+        .map(|(index, _)| index)
+        .collect();
+    FillSelection {
+        replace_page: false,
+        keep,
+    }
+}

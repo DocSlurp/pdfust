@@ -16,6 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/PACKAGE_NAME.md`.
 
 ### Added
+- Public inspection APIs for routing probes and integrations:
+  `Page.scan()` / `get_text_spans()` return positioned text runs with PDF render
+  mode (`invisible` for mode 3), per-run counts of glyphs without Unicode,
+  Type 3 and control-character flags and text-over-image counts;
+  `Page.get_image_info()` returns image bbox, pixel size and effective DPI
+  without decoding pixels. They replace the private
+  `_doc.extract_glyph_snapshot()` for probes. `Page.get_fonts()` /
+  `Document.get_fonts()` inventory fonts (type including Type 3, embedded,
+  ToUnicode); `Document.get_javascript()` / `has_javascript()`,
+  `get_ocgs()` (layers with default visibility), `embfile_info()` (sizes, MIME)
+  and `Page.widgets()` (form widgets per page) expose document structure.
+  The Rust side is a pure function layer (`extract::page_scan`, `inspect`)
+  so other bindings can share it.
+- `Page.ocr_fill()` runs the OCR-fill and OCR-adaptive policies in the library:
+  OCR text is added only where native text is missing or unusable, native text
+  is kept, concurrency stays bounded by the shared `OcrEngine`, and the result
+  carries the updated `text`, `markdown` and filled-word count.
 - `Page.get_layout()` captures an owned spatial snapshot without rasterization,
   sharing one cold interpretation between text and table caches. Rectangle and
   label-relative queries preserve source IDs and abstain on ambiguity/conflicts;

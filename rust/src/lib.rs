@@ -11,6 +11,7 @@ mod font_cache;
 mod form;
 mod generate;
 mod image_compression;
+mod inspect;
 mod layout;
 pub mod markdown;
 mod ocr;

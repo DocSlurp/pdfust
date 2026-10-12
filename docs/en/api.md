@@ -36,6 +36,10 @@ Password input stops at 127 UTF-8 bytes.
 | `get_page_labels()` / `set_page_labels(labels)` | page label ranges; fixed caps: 4,096 entries/nodes, 32 levels, 1 MiB label text |
 | `get_form_fields()` / `set_form_field(name, value, fontfile=, fontbuffer=, fontindex=, font_language=, max_font_size=64 MiB)` | bounded AcroForm list & fill with 1 MiB caller name/value input plus native, bounded widget appearances and font input |
 | `embfile_add(..., max_size=64 MiB) / embfile_names / embfile_get(name, max_size=64 MiB) / embfile_del` | attachments with symmetric input/decoded-output defaults plus 1 MiB caller text, bounded metadata, and inline FileSpec clone shapes; `max_size=None` explicitly opts out |
+| `get_fonts()` | distinct fonts of every page, including Form XObject fonts: `name`, `type` (`Type1`, `TrueType`, `Type0`, `Type3`, ...), `embedded`, `has_tounicode`, `is_type3`, `subset`, `encoding`, referencing `pages`; bounded to 4,096 fonts and 4,096 forms |
+| `get_javascript()` / `has_javascript()` | where JavaScript actions exist (name tree, `OpenAction`, catalog, page, annotation and form-field actions) as `scope`/`page`/`event`; scripts are never run or returned; at most 64 locations |
+| `get_ocgs()` | optional content groups (layers) with `name`, default `visible` (from `BaseState`/`ON`/`OFF`) and `intent` |
+| `embfile_info()` | attachments with `stored_size`, declared `size`, `mime` and `description`, sorted by name |
 | `get_pdfa_claim(max_size=1 MiB)` | bounded XMP PDF/A declaration read; `max_size=None` explicitly opts out, and this is not validation |
 | `save(...)` / `tobytes(..., max_size=512 MiB)` | atomic replacement after a complete same-directory streamed write / bounded PDF bytes; `garbage=` `deflate=` `object_streams=` and 127-byte-bounded `user_pw=` / `owner_pw=`; `max_size=None` opts out |
 | `close()` | also via `with` |
@@ -75,6 +79,12 @@ from ordinary write failures, but does not provide an `fsync` durability promise
 | `get_layout(table_strategy="lines")` | owned spatial snapshot: words, source IDs, merged cells, rectangle/anchor field queries, and declared header relationships; one combined CPU interpretation, no rasterization |
 | `get_text_ocr(dpi=, engine=, tile_size=, overlap=, min_confidence=, rotation=, clip=)` | local PP-OCRv6 positioned words without editing; `rotation` corrects input clockwise and `clip` uses display coordinates |
 | `apply_ocr(..., rotation=, clip=, skip_existing=True)` | recognize and insert an orientation-aware invisible searchable layer; skip existing text in the selected region by default |
+| `ocr_fill(policy="fill", dpi=200, engine=None, min_confidence=0.7, table_strategy="lines")` | add OCR text only where the native layer is missing or unusable (native text always wins); `"adaptive"` runs full-page OCR when native text is absent and otherwise OCRs large raster placements; returns `text`, `markdown`, `filled`, `recognized` and replacement counts, see [Offline OCR](ocr.md#fill-only-what-is-missing) |
+| `scan(spans=True, images=True, host_coverage=0.25)` | one interpretation pass for routing probes: positioned runs with `render_mode`, `invisible`, `unmapped` glyph counts, `type3`, `control_chars`, `over_image`, image placements and glyph totals; no pixel decoding |
+| `get_text_spans()` | positioned text runs from `scan()`; includes invisible text (render mode 3) and runs made only of glyphs without Unicode |
+| `get_image_info()` | image placements from `scan()`: `bbox`, pixel `width`/`height`, `xdpi`/`ydpi`/`dpi`, `stencil`; unlike `get_images()` it decodes nothing |
+| `get_fonts()` | fonts this page references (see `Document.get_fonts()`) |
+| `widgets()` | form widgets on this page: `kind`, qualified `name`, `value`, `filled`, `read_only`, `required`, display `rect` |
 | `find_tables(strategy="lines", clip=None)` | complete or conservatively refined vector-bordered grids and merged cells; `"text"` opts into borderless detection; `clip` is a display-coordinate region |
 | `to_markdown(table_strategy="lines", max_size=64 MiB)` | single-page Markdown with the same table and UTF-8 output controls |
 | `get_images()` | drawn images (`bbox`, JPEG passthrough / PNG); rejects partial output above 4,096 placements, 64,000,000 cumulative pixels, or 64 MiB of payloads |
