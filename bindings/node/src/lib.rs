@@ -481,6 +481,8 @@ pub struct ScanSpan {
     pub over_image: u32,
     #[napi(ts_type = "[number, number]")]
     pub dir: Vec<f64>,
+    /// 1 for vertical writing, else 0.
+    pub writing_mode: u32,
 }
 
 #[napi(object)]
@@ -784,6 +786,7 @@ impl PdfPage {
                         control_chars: span.control_chars,
                         over_image: span.over_image,
                         dir: vec![span.direction.0, span.direction.1],
+                        writing_mode: u32::from(span.writing_mode),
                     })
                     .collect(),
                 images: scan

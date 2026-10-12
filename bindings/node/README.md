@@ -34,7 +34,7 @@ problem), `PDF_LIMIT` (plus `limit`, e.g. `decompressed_size`), `PDF_ERROR`, `IN
 | `text()` | done | identical to Python `get_text("text")` on the parity fixtures |
 | `markdown`, `markdownAsync` | done | `tableStrategy` `lines`/`text`/`none`; Rust port of the Python builder, byte-identical on the parity fixtures |
 | `spans()` | done | reading-order spans; `renderMode`/`invisible` come from the page's glyphs (OCR text layers show `invisible`); `dir`/`writingMode` give the line direction (vertical CJK). Always includes invisible text, even after `setSkipInvisibleText(true)`. `unmapped` is always 0 per span, use `scan()`/`glyphStats()` |
-| `scan(opts?)` | done | one interpretation pass: raw runs (`font`, `size`, `flags`, `renderMode`, `unmapped`, `glyphs`, `type3`, `controlChars`, `overImage`, `dir`), image placements with `dpiX`/`dpiY`/`dpi`/`stencil` (no pixels decoded) and `stats`. Parity-tested against Python `Page.scan()` |
+| `scan(opts?)` | done | one interpretation pass: raw runs (`font`, `size`, `flags`, `renderMode`, `unmapped`, `glyphs`, `type3`, `controlChars`, `overImage`, `dir`, `writingMode`), image placements with `dpiX`/`dpiY`/`dpi`/`stencil` (no pixels decoded) and `stats`. Parity-tested against Python `Page.scan()` |
 | `images()` | done | placements only, nothing decoded; `effectiveDpi` is the lower of x/y |
 | `drawings()` | done | `lineCount`, `rectCount`, `hRuleCount`/`vRuleCount` (`longRuleCount` is their sum), union `vectorArea` in pt², one `{bbox, paint}` per path, and `truncated: true` instead of an error when a drawing safety limit (8192 paths, 131,072 commands) cuts collection short |
 | `widgets()` | done | `inspect` module: kind, qualified name, value, `filled`, `readOnly`, `required` |
@@ -67,6 +67,20 @@ The recognized words become an invisible text layer in the in-memory document, s
 - `lang` is accepted for interface parity; the bundled model set is multilingual and not language-selected.
 - Use a release build: a debug build runs the model ~80x slower.
 
+### Runtime assets and build requirements
+
+The tarball carries only the addon. Two optional asset sets are supplied by the host, both located through
+process environment variables read once per process (set them before the first render or OCR call):
+
+| Asset | Env var | Size | Needed for |
+|---|---|---|---|
+| OCR models: `PP-OCRv6_det_small.rten`, `PP-OCRv6_rec_small.rten`, `ppocrv6_dict.txt` (from `models/pdfust-ocr-models`) | `PDFUST_OCR_MODEL_DIR` (or the `modelDir` option) | ~30 MB | `ocrFillAsync`; without it the call rejects with `NATIVE_PDF_UNSUPPORTED` |
+| CJK fallback fonts: the 8 `Noto{Sans,Serif}{JP,KR,SC,TC}-Regular.otf` files from `fonts/pdfust-fonts-*/` (OFL), flat in one directory or in a site-packages-style layout with `pdfust_fonts_*/` | `PDFUST_FONTS_DIR` | ~42 MB | rendering pages whose CJK fonts are not embedded (they render blank otherwise); loaded lazily |
+
+Also: `PDFUST_OCR_MAX_CONCURRENT` bounds concurrent OCR calls (default 1). Always run a **release** build
+(`npm run build`, or the packed tarball): the debug addon runs OCR about 80x slower and renders much slower too.
+`npm test` uses whichever addon is built; the OCR tests need the models and a release build.
+
 ### Memory
 
 `render()`/`renderAsync()` convert the raster straight to encoder samples (no intermediate RGBA copy) and, on glibc,
@@ -78,8 +92,7 @@ document (Node itself is ~50 MB) and from about 370 MB to about 260-300 MB for f
 
 ### TODO / known gaps
 
-- CJK fallback fonts: the Python wrapper auto-loads installed locale font packages; this binding does not, so
-  non-embedded CJK glyphs may render differently.
+- CJK fallback fonts are found only through `PDFUST_FONTS_DIR` (no programmatic option yet).
 - A span's `font` can still be empty for glyphs the core synthesizes itself (for example emoji fallback runs).
 - WebP output is lossless only (large and slow); prefer `jpeg` or `png`.
 - Not exposed yet: batch multi-page render, SVG render, image pixel extraction, search, editing/saving.

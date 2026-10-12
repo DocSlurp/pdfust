@@ -224,6 +224,8 @@ pub struct NativeScanSpan {
     pub control_chars: u32,
     pub over_image: u32,
     pub direction: (f64, f64),
+    /// 1 for vertical writing, else 0.
+    pub writing_mode: u8,
 }
 
 /// One image placement from `scan` (no pixels decoded).
@@ -793,7 +795,7 @@ impl NativeDoc {
         }
         let (width, height, raw_spans, raw_images, unmapped_total, glyph_total) =
             self.doc
-                .scan_page(py(), number, spans, images, host_coverage, 65_536, 1_048_576)?;
+                .scan_page_ext(py(), number, spans, images, host_coverage, 65_536, 1_048_576)?;
         let spans: Vec<NativeScanSpan> = raw_spans
             .into_iter()
             .map(
@@ -811,7 +813,8 @@ impl NativeDoc {
                         type3,
                         control_chars: controls,
                         over_image: over,
-                        direction,
+                        direction: (direction.0, direction.1),
+                        writing_mode: direction.2 as u8,
                     }
                 },
             )

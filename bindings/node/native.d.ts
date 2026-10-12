@@ -317,6 +317,8 @@ export interface ScanSpan {
   /** Glyphs drawn over a page-sized image (an OCR text layer or text on a scan). */
   overImage: number
   dir: [number, number]
+  /** 1 for vertical writing, else 0. */
+  writingMode: number
 }
 
 export interface ScanStats {

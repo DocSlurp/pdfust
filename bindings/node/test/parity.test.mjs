@@ -36,7 +36,7 @@ for (const name of fixtures) {
     const expected = JSON.parse(
       execFileSync(python, [join(here, 'parity.py'), path, String(MAX_PAGES)], {
         maxBuffer: 256 * 1024 * 1024,
-        env: { ...process.env, PYTHONPATH: join(here, '../../../src') },
+        env: { ...process.env, PYTHONPATH: process.env.PDFUST_PYTHONPATH ?? join(here, '../../../src') },
       }),
     )
     const doc = pdfust.openPath(path)
