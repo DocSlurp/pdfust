@@ -20,6 +20,7 @@ import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -132,8 +133,57 @@ def markdown_tables(markdown: str) -> list[list[list[str]]]:
     return tables
 
 
+class _HtmlTables(HTMLParser):
+    """Collect <table> cell text as row matrices; colspan cells are repeated once each."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.tables: list[list[list[str]]] = []
+        self.row: list[str] | None = None
+        self.cell: list[str] | None = None
+        self.span = 1
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "table":
+            self.tables.append([])
+        elif tag == "tr" and self.tables:
+            self.row = []
+        elif tag in {"td", "th"} and self.row is not None:
+            self.cell = []
+            colspan = str(dict(attrs).get("colspan") or "1")
+            self.span = max(1, int(colspan)) if colspan.isdigit() else 1
+        elif tag == "br" and self.cell is not None:
+            self.cell.append(" ")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"td", "th"} and self.row is not None and self.cell is not None:
+            text = " ".join("".join(self.cell).split())
+            self.row.extend([text] + [""] * (self.span - 1))
+            self.cell = None
+        elif tag == "tr" and self.row is not None and self.tables:
+            self.tables[-1].append(self.row)
+            self.row = None
+
+    def handle_data(self, data: str) -> None:
+        if self.cell is not None:
+            self.cell.append(data)
+
+
+def html_tables(text: str) -> list[list[list[str]]]:
+    """Parse HTML tables, which several open OCR models emit, into cell matrices."""
+    parser = _HtmlTables()
+    parser.feed(text)
+    return [table for table in parser.tables if table]
+
+
+def strip_front_matter(text: str) -> str:
+    """Drop a leading YAML front-matter block (olmOCR emits one)."""
+    return re.sub(r"\A---\n.*?\n---\n", "", text, count=1, flags=re.DOTALL)
+
+
 def plain_text(markdown: str) -> str:
-    """Strip Markdown syntax so text scoring compares content, not markup."""
+    """Strip Markdown and HTML syntax so text scoring compares content, not markup."""
+    markdown = re.sub(r"<[^>]+>", " ", strip_front_matter(markdown))
     text = re.sub(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$", "", markdown, flags=re.MULTILINE)
     text = re.sub(r"[|#*_`>]", " ", text)
     text = re.sub(r"^\s*(?:[-+]|\d+\.)\s+", "", text, flags=re.MULTILINE)
@@ -145,7 +195,7 @@ def score(truth: dict[str, Any], markdown: str) -> dict[str, Any]:
     text = plain_text(markdown)
     reference = wild.truth_text(truth)
     images = wild.image_text(truth)
-    tables = wild.table_scores(truth, markdown_tables(markdown))
+    tables = wild.table_scores(truth, markdown_tables(markdown) + html_tables(markdown))
     return {
         "text": wild.bigram_f1(reference, text),
         "image_only_text_recovered": wild.bigram_f1(images, text)["recall"] if images else None,
