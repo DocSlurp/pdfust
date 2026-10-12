@@ -11,13 +11,18 @@ from typing import Any
 
 from bench.decision_hosted import DecisionClient
 
+# Concurrent P003 requests; the ledger's stored policy must match.
+P003_TRANSPORT_SLOTS = 8
+
 
 @contextmanager
-def transport_slot(directory: Path, *, enabled: bool = False, timeout: float = 120.0) -> Iterator[float]:
-    """Bound waiting outside paid admission with three process-safe Linux locks.
+def transport_slot(
+    directory: Path, *, enabled: bool = False, timeout: float = 120.0, slots: int = P003_TRANSPORT_SLOTS
+) -> Iterator[float]:
+    """Bound waiting outside paid admission with process-safe Linux locks.
 
     This reserves no money and transmits nothing. The ledger independently
-    enforces its existing three-request limit after a slot is acquired.
+    enforces its in-flight limit after a slot is acquired.
     """
     if not enabled:
         yield 0.0
@@ -26,7 +31,7 @@ def transport_slot(directory: Path, *, enabled: bool = False, timeout: float = 1
 
     started = time.monotonic()
     with ExitStack() as stack:
-        handles = [stack.enter_context((directory / f"p003-transport-slot-{i}.lock").open("a+b")) for i in range(3)]
+        handles = [stack.enter_context((directory / f"p003-transport-slot-{i}.lock").open("a+b")) for i in range(slots)]
         while time.monotonic() - started < timeout:
             for handle in handles:
                 try:
@@ -79,15 +84,16 @@ class P003ConcurrentClient(P003DecisionClient):
 
         base = client if client is not None else DecisionClient(ROOT if root is None else root)
         self._concurrent = ConcurrentDecisionClient(
-            base, max_inflight=3, wave_limits={"P003": 280.0}, opener=opener, allow_matched_replicates=True,
+            base, max_inflight=P003_TRANSPORT_SLOTS, wave_limits={"P003": 280.0}, opener=opener,
+            allow_matched_replicates=True,
         )
         self.root, self.directory, self.ledger = base.root, base.directory, base.ledger
         self.stopped = False
         slot_mode = os.environ.get("JEV_P003_TRANSPORT_SLOTS")
-        if slot_mode not in (None, "3"):
+        if slot_mode not in (None, "3", str(P003_TRANSPORT_SLOTS)):
             message = "P003 transport slots must be absent or exactly three"
             raise ValueError(message)
-        self.wait_for_slot = slot_mode == "3"
+        self.wait_for_slot = slot_mode is not None
 
     def request(self, body: dict[str, Any], **kwargs: Any) -> dict[str, Any]:  # noqa: ANN401
         """Settle independently reserved calls; stop this arm after any error."""
@@ -97,7 +103,7 @@ class P003ConcurrentClient(P003DecisionClient):
                 result = self._concurrent.request(body, **kwargs)
             if self.wait_for_slot:
                 result["transport_admission"] = {
-                    "slots": 3, "wait_seconds": waited,
+                    "slots": P003_TRANSPORT_SLOTS, "wait_seconds": waited,
                     "scope": "Local pre-admission wait; excluded from provider latency and no extra request",
                 }
             return result  # noqa: TRY300 - circuit covers slot, transport and annotation failures.

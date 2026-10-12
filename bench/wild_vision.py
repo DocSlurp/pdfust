@@ -155,12 +155,12 @@ def score(truth: dict[str, Any], markdown: str) -> dict[str, Any]:
 
 
 def run_arm(  # noqa: PLR0913 - one named arm and its inputs.
-    model: str, levels: list[str], docs: list[str], output: Path, *, workers: int = 3, suffix: str = ""
+    model: str, levels: list[str], docs: list[str], output: Path, *, workers: int = 8, suffix: str = ""
 ) -> dict[str, Any]:
     """Transcribe every page of the selected variants with one model."""
     from bench.p003_client import P003ConcurrentClient  # noqa: PLC0415 - paid transport only when running.
 
-    os.environ.setdefault("JEV_P003_TRANSPORT_SLOTS", "3")
+    os.environ.setdefault("JEV_P003_TRANSPORT_SLOTS", "8")
     client = P003ConcurrentClient(ROOT)
     arm = model.replace("/", "-") + (f"-{suffix}" if suffix else "")
     arm_dir = guard_path(output / arm)

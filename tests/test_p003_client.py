@@ -30,7 +30,7 @@ def test_stops_arm_without_second_reservation(tmp_path, monkeypatch):
     opener = MagicMock(side_effect=OSError("mock transport failure"))
     client = P003ConcurrentClient(client=base, opener=opener)
     assert client._concurrent.policy == {
-        "max_inflight": 3, "wave_limits_usd": {"P003": 280.0}, "allow_matched_replicates": True,
+        "max_inflight": 8, "wave_limits_usd": {"P003": 280.0}, "allow_matched_replicates": True,
     }
     with pytest.raises(RuntimeError):
         client.request({"model": hosted.JEV, "questions": {}}, tag="P003/mock")
