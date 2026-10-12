@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/PylopdfQuality` marker. Environment variables use the `PDFUST_` prefix. See
   `docs/PACKAGE_NAME.md`.
 
+### Fixed
+- Reading order on multi-column and sidebar pages: a gutter of exactly two ems no
+  longer fails a floating-point tie, the segmentation gap uses the smaller of the
+  two adjacent font sizes (a larger heading beside body text no longer merges two
+  columns), a few lines crossing the gutter (centred page number, caption) no
+  longer hide it, and a running header or footer on one side is ordered as a
+  heading/footer instead of cancelling the column split.
+- PDFs whose trailer carries `/Encrypt` inline (written by MuPDF) open, with or
+  without a password; previously they failed with `object ID 1 0 not found`.
+
 ### Added
 - Public inspection APIs for routing probes and integrations:
   `Page.scan()` / `get_text_spans()` return positioned text runs with PDF render

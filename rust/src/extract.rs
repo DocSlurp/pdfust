@@ -343,10 +343,7 @@ impl TextCollector {
     /// the span text, or drop placeholders when the scan did not match.
     ///
     /// `parallel` is retained in lockstep with `glyphs`.
-    fn apply_actual_text<T>(
-        &mut self,
-        parallel: Option<&mut Vec<T>>,
-    ) -> Result<(), TextPageLimit> {
+    fn apply_actual_text<T>(&mut self, parallel: Option<&mut Vec<T>>) -> Result<(), TextPageLimit> {
         let Some(events) = self.marked.take() else {
             return Ok(());
         };
@@ -1509,8 +1506,8 @@ fn split_line_segment_slices(
     let mut previous_end: Option<f64> = None;
     let mut previous_size = 0.0_f64;
     for (index, glyph) in line.iter().enumerate() {
-        let threshold = previous_size.max(glyph.size).max(1.0) * gap;
-        if previous_end.is_some_and(|end| glyph_progress(glyph) - end > threshold) {
+        let threshold = previous_size.min(glyph.size).max(1.0) * gap;
+        if previous_end.is_some_and(|end| gap_exceeds(glyph_progress(glyph) - end, threshold)) {
             try_push_text(
                 &mut segments,
                 &line[segment_start..index],
@@ -1531,6 +1528,13 @@ fn split_line_segment_slices(
     Ok(segments)
 }
 
+/// Whether a gap reaches a segmentation threshold. A gutter set to exactly the
+/// threshold in em (for example CSS `column-gap: 2em`) differs from it only by
+/// floating-point noise in glyph advances, so ties count as separations.
+fn gap_exceeds(gap: f64, threshold: f64) -> bool {
+    gap > threshold - 0.01
+}
+
 /// Split one owned physical line without cloning its glyph strings or metadata.
 fn split_line_segments_owned(
     line: Vec<GlyphRecord>,
@@ -1539,9 +1543,9 @@ fn split_line_segments_owned(
     let mut previous_end: Option<f64> = None;
     let mut previous_size = 0.0_f64;
     for glyph in line {
-        let threshold = previous_size.max(glyph.size).max(1.0) * LINE_SEGMENT_GAP;
+        let threshold = previous_size.min(glyph.size).max(1.0) * LINE_SEGMENT_GAP;
         let starts_segment = segments.is_empty()
-            || previous_end.is_some_and(|end| glyph_progress(&glyph) - end > threshold);
+            || previous_end.is_some_and(|end| gap_exceeds(glyph_progress(&glyph) - end, threshold));
         previous_end = Some(glyph_end(&glyph));
         previous_size = glyph.size;
         if starts_segment {
@@ -1569,8 +1573,8 @@ fn line_segment_count_at(line: &[GlyphRecord], gap: f64) -> usize {
     let mut previous_end: Option<f64> = None;
     let mut previous_size = 0.0_f64;
     for glyph in line {
-        let threshold = previous_size.max(glyph.size).max(1.0) * gap;
-        if previous_end.is_some_and(|end| glyph_progress(glyph) - end > threshold) {
+        let threshold = previous_size.min(glyph.size).max(1.0) * gap;
+        if previous_end.is_some_and(|end| gap_exceeds(glyph_progress(glyph) - end, threshold)) {
             count += 1;
         }
         previous_end = Some(glyph_end(glyph));
@@ -1820,8 +1824,8 @@ fn append_segment_geometry(
     let mut previous_end: Option<f64> = None;
     let mut previous_size = 0.0_f64;
     for (index, glyph) in line.iter().enumerate() {
-        let threshold = previous_size.max(glyph.size).max(1.0) * LINE_SEGMENT_GAP;
-        if previous_end.is_some_and(|end| glyph_progress(glyph) - end > threshold) {
+        let threshold = previous_size.min(glyph.size).max(1.0) * LINE_SEGMENT_GAP;
+        if previous_end.is_some_and(|end| gap_exceeds(glyph_progress(glyph) - end, threshold)) {
             try_push_text(
                 output,
                 line_geometry(&line[segment_start..index], orientation),
@@ -2246,23 +2250,65 @@ fn geometry_column_boundary(lines: &[LineGeometry]) -> Result<Option<f64>, TextP
             )?;
         }
     }
-    intervals.sort_unstable_by(|left, right| {
-        left.0.total_cmp(&right.0).then(left.1.total_cmp(&right.1))
-    });
-    let Some((_, mut current_end)) = intervals.first().copied() else {
+    if intervals.is_empty() {
         return Ok(None);
-    };
+    }
     let minimum_gap = (typical_geometry_size(lines)? * COLUMN_GUTTER).max(12.0);
+    // A gutter may be crossed by a few outlier lines (a centred page number, a
+    // caption, a pull quote). Search with no tolerated crossings first, then
+    // with a small share of lines allowed to cross. The caller still rejects
+    // splits that cut through the middle of the column region.
+    let tolerated_crossings = [0, (intervals.len() / 25).clamp(1, 4)];
+    for tolerated in tolerated_crossings {
+        if let Some(boundary) =
+            widest_gutter(&intervals, region_x0, region_x1, minimum_gap, tolerated)?
+        {
+            return Ok(Some(boundary));
+        }
+    }
+    Ok(None)
+}
+
+/// Midpoint of the widest x-range at least `minimum_gap` wide that at most
+/// `tolerated` intervals cover, away from the region edges.
+fn widest_gutter(
+    intervals: &[(f64, f64)],
+    region_x0: f64,
+    region_x1: f64,
+    minimum_gap: f64,
+    tolerated: usize,
+) -> Result<Option<f64>, TextPageLimit> {
+    let mut events: Vec<(f64, i32)> = Vec::new();
+    events
+        .try_reserve_exact(intervals.len() * 2)
+        .map_err(|error| {
+            TextPageLimit::Allocation(format!("failed to allocate gutter events: {error}"))
+        })?;
+    for &(x0, x1) in intervals {
+        events.push((x0, 1));
+        events.push((x1, -1));
+    }
+    // Ends before starts at equal x so touching intervals do not overlap.
+    events.sort_unstable_by(|left, right| left.0.total_cmp(&right.0).then(left.1.cmp(&right.1)));
+    let mut covered = 0i64;
+    let mut free_since = Some(region_x0);
     let mut best: Option<(f64, f64)> = None;
-    for &(x0, x1) in intervals.iter().skip(1) {
-        if x0 <= current_end {
-            current_end = current_end.max(x1);
-        } else {
-            let gap = x0 - current_end;
-            if gap >= minimum_gap && best.is_none_or(|(best_gap, _)| gap > best_gap) {
-                best = Some((gap, (current_end + x0) * 0.5));
+    let limit = tolerated as i64;
+    for (x, delta) in events {
+        let was_free = covered <= limit;
+        covered += i64::from(delta);
+        let is_free = covered <= limit;
+        if was_free && !is_free {
+            if let Some(start) = free_since.take() {
+                let gap = x - start;
+                // The first free run touches the region edge: it is margin.
+                let interior = start > region_x0 && x < region_x1;
+                if interior && gap >= minimum_gap && best.is_none_or(|(g, _)| gap > g) {
+                    best = Some((gap, (start + x) * 0.5));
+                }
             }
-            current_end = x1;
+        } else if !was_free && is_free {
+            free_since = Some(x);
         }
     }
     Ok(best.map(|(_, boundary)| boundary))
@@ -2374,6 +2420,28 @@ fn valid_geometry_column_split(
     Ok(true)
 }
 
+/// First and last line centre of the largest vertically contiguous group.
+/// A new group starts when the next line is more than three font sizes away.
+fn dominant_vertical_group(samples: &mut [(f64, f64)]) -> Option<(f64, f64)> {
+    samples.sort_unstable_by(|left, right| left.0.total_cmp(&right.0));
+    let mut best: Option<(usize, f64, f64)> = None;
+    let mut start = 0usize;
+    for index in 1..=samples.len() {
+        let ended = index == samples.len()
+            || samples[index].0 - samples[index - 1].0
+                > samples[index].1.max(samples[index - 1].1).max(1.0) * 3.0;
+        if !ended {
+            continue;
+        }
+        let count = index - start;
+        if count > 0 && best.is_none_or(|(c, _, _)| count > c) {
+            best = Some((count, samples[start].0, samples[index - 1].0));
+        }
+        start = index;
+    }
+    best.map(|(_, first, last)| (first, last))
+}
+
 /// Recursively order column regions left-to-right while preserving spanning
 /// headings above them and footers below them.
 fn order_columns(
@@ -2395,6 +2463,12 @@ fn order_columns(
         return Ok(lines);
     }
 
+    let spans_gutter_inside = |first: f64, last: f64| {
+        geometry.iter().any(|line| {
+            let center = (line.bbox.1 + line.bbox.3) * 0.5;
+            line.bbox.0 < boundary && line.bbox.2 > boundary && center > first && center < last
+        })
+    };
     let mut first_center = f64::INFINITY;
     let mut last_center = f64::NEG_INFINITY;
     let mut has_side_line = false;
@@ -2409,15 +2483,42 @@ fn order_columns(
     if !has_side_line {
         return Ok(lines);
     }
-    let has_middle_spanning = geometry.iter().any(|line| {
-        let center = (line.bbox.1 + line.bbox.3) * 0.5;
-        line.bbox.0 < boundary
-            && line.bbox.2 > boundary
-            && center > first_center
-            && center < last_center
-    });
-    if has_middle_spanning {
-        return Ok(lines);
+    // When a line crosses the gutter between the first and last column lines,
+    // retry with the zone where both sides hold dense text: a short running
+    // header or footer on one side of the gutter then sits outside the zone
+    // and is ordered as a heading or footer rather than as column text.
+    let mut dense_zone = false;
+    if spans_gutter_inside(first_center, last_center) {
+        let mut left_samples = Vec::new();
+        let mut right_samples = Vec::new();
+        for line in &geometry {
+            let center = (line.bbox.1 + line.bbox.3) * 0.5;
+            if line.bbox.2 <= boundary {
+                try_push_text(
+                    &mut left_samples,
+                    (center, line.size),
+                    "left column samples",
+                )?;
+            } else if line.bbox.0 >= boundary {
+                try_push_text(
+                    &mut right_samples,
+                    (center, line.size),
+                    "right column samples",
+                )?;
+            }
+        }
+        let (Some(left_zone), Some(right_zone)) = (
+            dominant_vertical_group(&mut left_samples),
+            dominant_vertical_group(&mut right_samples),
+        ) else {
+            return Ok(lines);
+        };
+        first_center = left_zone.0.min(right_zone.0);
+        last_center = left_zone.1.max(right_zone.1);
+        if spans_gutter_inside(first_center, last_center) {
+            return Ok(lines);
+        }
+        dense_zone = true;
     }
 
     let mut top = Vec::new();
@@ -2425,11 +2526,18 @@ fn order_columns(
     let mut right = Vec::new();
     let mut bottom = Vec::new();
     for (line, line_geometry) in lines.into_iter().zip(geometry) {
-        if line_geometry.bbox.2 <= boundary {
+        let center = (line_geometry.bbox.1 + line_geometry.bbox.3) * 0.5;
+        let on_left = line_geometry.bbox.2 <= boundary;
+        let on_right = line_geometry.bbox.0 >= boundary;
+        if dense_zone && (on_left || on_right) && center < first_center {
+            try_push_text(&mut top, line, "column-spanning headings")?;
+        } else if dense_zone && (on_left || on_right) && center > last_center {
+            try_push_text(&mut bottom, line, "column-spanning footers")?;
+        } else if on_left {
             try_push_text(&mut left, line, "left-column text lines")?;
-        } else if line_geometry.bbox.0 >= boundary {
+        } else if on_right {
             try_push_text(&mut right, line, "right-column text lines")?;
-        } else if (line_geometry.bbox.1 + line_geometry.bbox.3) * 0.5 <= first_center {
+        } else if center <= first_center {
             try_push_text(&mut top, line, "column-spanning headings")?;
         } else {
             try_push_text(&mut bottom, line, "column-spanning footers")?;
