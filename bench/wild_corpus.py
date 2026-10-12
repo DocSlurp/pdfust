@@ -481,7 +481,7 @@ def _center_inside(native: tuple[float, float, float, float], box: Any, slack: f
     return x0 - slack <= cx <= x1 + slack and y0 - slack <= cy <= y1 + slack
 
 
-def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str, Any]:
+def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4, reverse: bool = False) -> dict[str, Any]:
     """Write `{level}+ocr-fill.pdf`: add OCR words only where no native word exists.
 
     Each page is recognized without modification; OCR boxes containing the
@@ -495,7 +495,9 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str
     engine = jev_pdf.OcrEngine(threads=threads)
     report: dict[str, Any] = {"dpi": dpi, "threads": threads, "min_confidence": FILL_MIN_CONFIDENCE,
                               "documents": {}}
-    for variant_dir in sorted((directory / "variants").iterdir()):
+    # A second worker can walk the documents in reverse; saves are atomic and
+    # existing targets are skipped, so two workers meet without conflict.
+    for variant_dir in sorted((directory / "variants").iterdir(), reverse=reverse):
         raster = sorted(p.stem for p in variant_dir.glob("R[0-9][0-9]_*.pdf") if "+" not in p.stem)
         for level in (*FILL_OCR_LEVELS, *raster):
             source = variant_dir / f"{level}.pdf"
@@ -537,7 +539,7 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str
     return report
 
 
-def build(directory: Path, *, steps: list[str], workers: int) -> None:
+def build(directory: Path, *, steps: list[str], workers: int, reverse: bool = False) -> None:
     """Run the requested pipeline steps as fresh subprocesses, then audit."""
     directory = guard_path(directory)
     py = sys.executable
@@ -559,7 +561,7 @@ def build(directory: Path, *, steps: list[str], workers: int) -> None:
         elif step == "ocr-adaptive":
             adaptive_ocr(directory)
         elif step == "ocr-fill":
-            fill_ocr(directory)
+            fill_ocr(directory, reverse=reverse)
     if "audit" in steps:
         audit(directory)
 
@@ -620,8 +622,9 @@ def main() -> None:
     parser.add_argument("--steps", nargs="+", default=["photos", "documents", "flatten", "audit"],
                         choices=["photos", "documents", "flatten", "ocr", "ocr-adaptive", "ocr-fill", "audit"])
     parser.add_argument("--workers", type=int, default=2)
+    parser.add_argument("--reverse", action="store_true", help="Walk documents in reverse for a second OCR worker")
     args = parser.parse_args()
-    build(args.directory, steps=args.steps, workers=args.workers)
+    build(args.directory, steps=args.steps, workers=args.workers, reverse=args.reverse)
     print((guard_path(args.directory) / "audit.md").read_text(encoding="utf-8"))
 
 
