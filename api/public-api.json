@@ -71,6 +71,7 @@
     "TextLine",
     "TextPage",
     "TextSpan",
+    "UnsupportedEncryptionError",
     "WidgetInfo",
     "WordEntry",
     "open",
@@ -4049,6 +4050,13 @@
         "size",
         "text"
       ]
+    },
+    "UnsupportedEncryptionError": {
+      "bases": [
+        "pdfust.PdfError"
+      ],
+      "kind": "exception",
+      "members": {}
     },
     "WidgetInfo": {
       "fields": {

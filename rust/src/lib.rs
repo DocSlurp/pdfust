@@ -26,7 +26,7 @@ mod pixmap;
 mod python_writer;
 mod text_replace;
 #[cfg(feature = "python")]
-use document::{_Document, LimitError, PasswordError, PdfError};
+use document::{_Document, LimitError, PasswordError, PdfError, UnsupportedEncryptionError};
 #[cfg(feature = "python")]
 use ocr_engine::{_OcrEngine, OcrError};
 #[cfg(feature = "python")]
@@ -41,6 +41,7 @@ fn pdfust_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("PdfError", m.py().get_type::<PdfError>())?;
     m.add("LimitError", m.py().get_type::<LimitError>())?;
     m.add("PasswordError", m.py().get_type::<PasswordError>())?;
+    m.add("UnsupportedEncryptionError", m.py().get_type::<UnsupportedEncryptionError>())?;
     m.add("OcrError", m.py().get_type::<OcrError>())?;
     Ok(())
 }
