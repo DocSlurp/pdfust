@@ -504,6 +504,8 @@ def sync_wild_runs(client: Client) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     for level, rows in sorted(by_level.items()):
         run_name = f"wild-v1 audit {level} @ {digest}"
+        if level.startswith("Q:"):  # Quirk rows link to dev/wild-v1-quirks by case (bench.langfuse_wild_extras).
+            continue
         if _done("wild-run", run_name):
             results.append({"run": run_name, "status": "replayed"})
             continue
@@ -659,10 +661,12 @@ def sync_reports(client: Client) -> dict[str, int]:
     return {"exported": exported, "replayed": replayed}
 
 
-def main() -> None:  # noqa: C901 - one dispatch per step.
+def main() -> None:  # noqa: C901, PLR0912 - one dispatch per step.
     """Run the requested backfill steps and print a compact status."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("step", choices=["all", "datasets", "runs", "experiments", "reports", "adapters", "heldout"])
+    parser.add_argument(
+        "step", choices=["all", "datasets", "wild-extras", "runs", "experiments", "reports", "adapters", "heldout"]
+    )
     parser.add_argument("--custodian-release", action="store_true", help="Required for the held-out upload")
     parser.add_argument("--only", action="append", help="Adapters step: run only these adapter NAMEs")
     parser.add_argument("--dry-run", action="store_true", help="Adapters step: collect and validate without network")
@@ -682,10 +686,15 @@ def main() -> None:  # noqa: C901 - one dispatch per step.
             sys.exit("The held-out upload requires --custodian-release (explicit user release).")
         print(json.dumps(sync_heldout(client)))
         return
-    steps = ["datasets", "runs", "adapters", "experiments", "reports"] if args.step == "all" else [args.step]
+    everything = ["datasets", "wild-extras", "runs", "adapters", "experiments", "reports"]
+    steps = everything if args.step == "all" else [args.step]
     for step in steps:
         if step == "datasets":
             result: Any = sync_dev_datasets(client)
+        elif step == "wild-extras":
+            from bench.langfuse_wild_extras import sync_all  # noqa: PLC0415 - it imports this module.
+
+            result = sync_all(client)
         elif step == "runs":
             result = sync_silver_runs(client) + sync_wild_runs(client)
         elif step == "adapters":
