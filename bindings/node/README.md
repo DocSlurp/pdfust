@@ -40,6 +40,7 @@ Types: [`index.d.ts`](index.d.ts) re-exports the generated [`native.d.ts`](nativ
 | `tables()` | done | `lines` and `text` strategies; adds `rowCount`, `colCount`, `confidence` |
 | `render`, `renderAsync` | done | `dpi`, `maxEdgePx`, `clip` (points), `format` png/jpeg/webp, `gray`, `quality` |
 | `ocrFillAsync` | **unsupported** | throws `NATIVE_PDF_UNSUPPORTED` |
+| `words()` (extra) | done | `{text, bbox}` per word; unlike `spans()` it never merges text that shares a baseline across side-by-side columns, so callers can detect gutters |
 | `glyphStats()` (extra) | done | `{glyphs, invisible, stroke, unmapped, fonts}` for text-layer probes |
 | `takeWarnings()` (extra) | done | engine warnings, e.g. repaired cross-reference table |
 

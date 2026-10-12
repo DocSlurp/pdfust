@@ -100,6 +100,20 @@ test('spans, glyph stats, images, drawings, tables on a scanned page', () => {
   assert.ok(Array.isArray(page.tables()))
 })
 
+test('words keep their own boxes and cover the span text', () => {
+  const doc = pdfust.openPath(real('patent-us223898.pdf'))
+  const page = doc.page(0)
+  const words = page.words()
+  assert.ok(words.length > 0)
+  for (const word of words) {
+    assert.equal(word.bbox.length, 4)
+    assert.ok(word.text.length > 0)
+    assert.ok(word.bbox[2] >= word.bbox[0] && word.bbox[3] >= word.bbox[1])
+  }
+  const spanWords = page.spans().flatMap((span) => span.text.split(/\s+/).filter(Boolean)).length
+  assert.ok(words.length >= spanWords * 0.8, 'words are not fewer than span tokens by a wide margin')
+})
+
 test('annotations, links and widgets', () => {
   const doc = pdfust.openPath(real('pdfium-links-highlights-annots.pdf'))
   let annotations = 0

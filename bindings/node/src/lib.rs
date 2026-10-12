@@ -340,6 +340,13 @@ pub struct Span {
 }
 
 #[napi(object)]
+pub struct Word {
+    pub text: String,
+    #[napi(ts_type = "[number, number, number, number]")]
+    pub bbox: Vec<f64>,
+}
+
+#[napi(object)]
 pub struct GlyphStats {
     pub glyphs: u32,
     pub invisible: u32,
@@ -540,6 +547,19 @@ impl PdfPage {
                     invisible: span.invisible,
                     unmapped: span.unmapped,
                 })
+                .collect())
+        })
+    }
+
+    /// Words with boxes. `spans()` merges text that shares a baseline across
+    /// columns into one entry; words keep their own boxes for column analysis.
+    #[napi]
+    pub fn words(&self) -> Result<Vec<Word>> {
+        with_doc(&self.shared, |doc| {
+            Ok(doc
+                .words(self.index)?
+                .into_iter()
+                .map(|word| Word { text: word.text, bbox: bbox(word.bbox) })
                 .collect())
         })
     }

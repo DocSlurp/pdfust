@@ -119,6 +119,13 @@ pub struct NativeFont {
     pub is_type3: bool,
 }
 
+/// One word with its page-space box (points, top-left origin).
+#[derive(Debug, Clone)]
+pub struct NativeWord {
+    pub text: String,
+    pub bbox: BBox,
+}
+
 #[derive(Debug, Clone)]
 pub struct NativeSpan {
     pub text: String,
@@ -651,6 +658,23 @@ impl NativeDoc {
             }
         }
         Ok(spans)
+    }
+
+    /// Words with boxes, in layout order. Unlike `spans`, a line shared by
+    /// side-by-side columns is not merged into one entry, so callers can find
+    /// gutters and fix column reading order.
+    pub fn words(&mut self, index: u32) -> NativeResult<Vec<NativeWord>> {
+        let number = self.page_number(index)?;
+        let (_, _, blocks) = self.doc.extract_layout(py(), number, false, true)?;
+        let mut words = Vec::new();
+        for block in &blocks {
+            for line in &block.1 {
+                for (bbox, text) in &line.2 {
+                    words.push(NativeWord { text: text.clone(), bbox: *bbox });
+                }
+            }
+        }
+        Ok(words)
     }
 
     /// Glyph-level counts for probes: invisible (Tr 3), stroked, unmapped, distinct fonts.

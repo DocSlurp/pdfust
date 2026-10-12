@@ -29,6 +29,11 @@ export declare class PdfPage {
   markdown(options?: MarkdownOptions | undefined | null): string
   markdownAsync(options?: MarkdownOptions | undefined | null): Promise<string>
   spans(): Array<Span>
+  /**
+   * Words with boxes. `spans()` merges text that shares a baseline across
+   * columns into one entry; words keep their own boxes for column analysis.
+   */
+  words(): Array<Word>
   /** Glyph counts for probes: invisible (Tr 3), stroked, unmapped, distinct fonts. */
   glyphStats(): GlyphStats
   images(): Array<ImageInfo>
@@ -209,5 +214,10 @@ export interface Widget {
   kind: string
   name?: string
   value?: string
+  bbox: [number, number, number, number]
+}
+
+export interface Word {
+  text: string
   bbox: [number, number, number, number]
 }
