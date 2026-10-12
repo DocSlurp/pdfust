@@ -154,13 +154,15 @@ def score(truth: dict[str, Any], markdown: str) -> dict[str, Any]:
     }
 
 
-def run_arm(model: str, levels: list[str], docs: list[str], output: Path, *, workers: int = 3) -> dict[str, Any]:
+def run_arm(  # noqa: PLR0913 - one named arm and its inputs.
+    model: str, levels: list[str], docs: list[str], output: Path, *, workers: int = 3, suffix: str = ""
+) -> dict[str, Any]:
     """Transcribe every page of the selected variants with one model."""
     from bench.p003_client import P003ConcurrentClient  # noqa: PLC0415 - paid transport only when running.
 
     os.environ.setdefault("JEV_P003_TRANSPORT_SLOTS", "3")
     client = P003ConcurrentClient(ROOT)
-    arm = model.replace("/", "-")
+    arm = model.replace("/", "-") + (f"-{suffix}" if suffix else "")
     arm_dir = guard_path(output / arm)
     arm_dir.mkdir(parents=True, exist_ok=True)
     jobs = []
@@ -271,12 +273,13 @@ def main() -> None:
     parser.add_argument("--docs", nargs="*")
     parser.add_argument("--run-hosted", action="store_true")
     parser.add_argument("--score", action="store_true")
+    parser.add_argument("--arm-suffix", default="", help="Separately named rerun of an arm, e.g. r1")
     args = parser.parse_args()
     docs = args.docs or sorted(p.parent.name for p in (WILD / "docs").glob("*/truth.json"))
     if args.models and not args.run_hosted:
         parser.error("hosted transcription requires --run-hosted")
     for model in args.models:
-        print(json.dumps(run_arm(model, args.levels, docs, args.output)), flush=True)
+        print(json.dumps(run_arm(model, args.levels, docs, args.output, suffix=args.arm_suffix)), flush=True)
     if args.score:
         for arm, result in evaluate(args.output).items():
             print(arm, json.dumps(result["levels"]))
