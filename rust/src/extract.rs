@@ -5955,18 +5955,6 @@ impl Device<'_> for DrawingCollector {
     fn pop_transparency_group(&mut self) {}
 }
 
-/// Extract interpreted vector paint operations in display coordinates.
-pub(crate) fn extract_page_drawings(
-    pdf: &Pdf,
-    page: &Page<'_>,
-    settings: InterpreterSettings,
-) -> Result<Vec<DrawingTuple>, String> {
-    let cache = InterpreterCache::new();
-    let mut context = extraction_context(pdf, page, &cache, settings);
-    let mut collector = DrawingCollector {
-        drawings: Vec::new(),
-        command_count: 0,
-        dash_value_count: 0,
 /// Like `extract_page_drawings`, but hitting a path, command or dash-value safety
 /// limit keeps the paths collected so far and reports `truncated` instead of failing.
 pub(crate) fn extract_page_drawings_partial(
@@ -5999,6 +5987,18 @@ pub(crate) fn extract_page_drawings_partial(
     Ok((output, truncated))
 }
 
+/// Extract interpreted vector paint operations in display coordinates.
+pub(crate) fn extract_page_drawings(
+    pdf: &Pdf,
+    page: &Page<'_>,
+    settings: InterpreterSettings,
+) -> Result<Vec<DrawingTuple>, String> {
+    let cache = InterpreterCache::new();
+    let mut context = extraction_context(pdf, page, &cache, settings);
+    let mut collector = DrawingCollector {
+        drawings: Vec::new(),
+        command_count: 0,
+        dash_value_count: 0,
         error: None,
     };
     interpret_page(page, &mut context, &mut collector);
