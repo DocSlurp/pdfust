@@ -239,3 +239,32 @@ def test_password_input_is_bounded_before_save_mutation(
         doc.save(output, **kwargs)  # type: ignore[arg-type]
     assert file_limit.value.code == "password_input_size"
     assert not output.exists()
+
+
+def test_inline_encrypt_dictionary_opens_with_and_without_password() -> None:
+    """MuPDF writes /Encrypt inline in the trailer; lopdf alone loads nothing from that."""
+    empty = pdfust.open(ASSETS / "inline-encrypt-aes-256-empty.pdf")
+    assert (empty.needs_pass, len(empty)) == (False, 1)
+    assert empty[0].get_text().startswith("Protected report")
+
+    locked = pdfust.open(ASSETS / "inline-encrypt-aes-256-user.pdf")
+    assert locked.needs_pass
+    assert locked.authenticate("wrong") == 0
+    assert locked.authenticate("docslurp-test") == 2
+    assert locked[0].get_text().startswith("Protected report")
+
+    with pytest.raises(pdfust.PasswordError):
+        pdfust.open(ASSETS / "inline-encrypt-aes-256-user.pdf", password="wrong")
+    opened = pdfust.open(ASSETS / "inline-encrypt-aes-256-user.pdf", password="docslurp-test")
+    assert opened[0].get_text().startswith("Protected report")
+    owner = pdfust.open(ASSETS / "inline-encrypt-aes-256-user.pdf", password="owner-secret")
+    assert len(owner) == 1
+
+
+def test_inline_encrypt_dictionary_peek_metadata_and_roundtrip(tmp_path: Path) -> None:
+    meta = pdfust.peek_metadata(ASSETS / "inline-encrypt-aes-256-user.pdf", password="docslurp-test")
+    assert meta["page_count"] == 1
+    doc = pdfust.open(ASSETS / "inline-encrypt-aes-256-user.pdf", password="docslurp-test")
+    out = tmp_path / "copy.pdf"
+    doc.save(out)
+    assert pdfust.open(out)[0].get_text().startswith("Protected report")

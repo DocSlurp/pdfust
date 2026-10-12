@@ -1004,10 +1004,174 @@ fn xref_recovery_candidate(error: &lopdf::Error) -> bool {
     )
 }
 
+/// Index just past the PDF object that starts at `start` (`<<`, `[`, `(`, `<`).
+fn end_of_pdf_object(data: &[u8], start: usize) -> Option<usize> {
+    let mut depth = 0usize;
+    let mut index = start;
+    while index < data.len() {
+        match data[index] {
+            b'(' => {
+                let mut nesting = 1usize;
+                index += 1;
+                while index < data.len() && nesting > 0 {
+                    match data[index] {
+                        b'\\' => index += 1,
+                        b'(' => nesting += 1,
+                        b')' => nesting -= 1,
+                        _ => {}
+                    }
+                    index += 1;
+                }
+                continue;
+            }
+            b'<' if data.get(index + 1) == Some(&b'<') => {
+                depth += 1;
+                index += 2;
+                continue;
+            }
+            b'<' => {
+                while index < data.len() && data[index] != b'>' {
+                    index += 1;
+                }
+            }
+            b'>' if data.get(index + 1) == Some(&b'>') => {
+                depth = depth.checked_sub(1)?;
+                index += 2;
+                if depth == 0 {
+                    return Some(index);
+                }
+                continue;
+            }
+            b'[' => depth += 1,
+            b']' => depth = depth.checked_sub(1)?,
+            _ => {}
+        }
+        index += 1;
+    }
+    None
+}
+
+/// Rewrite a file whose final trailer carries `/Encrypt <<...>>` inline so the
+/// dictionary becomes an indirect object. lopdf only decrypts documents whose
+/// `/Encrypt` entry is a reference, and silently loads zero objects otherwise.
+///
+/// The change is an appended classic incremental update (new object, xref
+/// subsection and trailer with `/Prev`); the original bytes stay untouched.
+/// Returns `None` when the file is not a classic-xref file with an inline
+/// `/Encrypt` dictionary in its last trailer.
+fn lift_inline_encrypt_dictionary(data: &[u8]) -> Option<Vec<u8>> {
+    const TAIL: usize = 2048;
+    let tail_start = data.len().saturating_sub(TAIL);
+    let startxref = tail_start
+        + data[tail_start..]
+            .windows(b"startxref".len())
+            .rposition(|window| window == b"startxref")?;
+    let mut number_start = startxref + b"startxref".len();
+    while matches!(data.get(number_start), Some(byte) if is_pdf_whitespace(*byte)) {
+        number_start += 1;
+    }
+    let mut number_end = number_start;
+    while matches!(data.get(number_end), Some(byte) if byte.is_ascii_digit()) {
+        number_end += 1;
+    }
+    let previous_xref: usize = std::str::from_utf8(data.get(number_start..number_end)?)
+        .ok()?
+        .parse()
+        .ok()?;
+    let trailer_keyword = startxref
+        - data[..startxref]
+            .windows(b"trailer".len())
+            .rev()
+            .position(|window| window == b"trailer")?
+        - b"trailer".len();
+    let dict_start = trailer_keyword + b"trailer".len();
+    let mut dict_open = dict_start;
+    while matches!(data.get(dict_open), Some(byte) if is_pdf_whitespace(*byte)) {
+        dict_open += 1;
+    }
+    if data.get(dict_open..dict_open + 2)? != b"<<" {
+        return None;
+    }
+    let dict_end = end_of_pdf_object(data, dict_open)?;
+    let trailer = &data[dict_open..dict_end];
+    let key = trailer
+        .windows(b"/Encrypt".len())
+        .position(|window| window == b"/Encrypt")?;
+    let mut value_start = key + b"/Encrypt".len();
+    while matches!(trailer.get(value_start), Some(byte) if is_pdf_whitespace(*byte)) {
+        value_start += 1;
+    }
+    if trailer.get(value_start..value_start + 2)? != b"<<" {
+        return None;
+    }
+    let value_end = end_of_pdf_object(trailer, value_start)?;
+    let size_key = trailer
+        .windows(b"/Size".len())
+        .position(|window| window == b"/Size")?;
+    let mut size_start = size_key + b"/Size".len();
+    while matches!(trailer.get(size_start), Some(byte) if is_pdf_whitespace(*byte)) {
+        size_start += 1;
+    }
+    let mut size_end = size_start;
+    while matches!(trailer.get(size_end), Some(byte) if byte.is_ascii_digit()) {
+        size_end += 1;
+    }
+    let size: u32 = std::str::from_utf8(trailer.get(size_start..size_end)?)
+        .ok()?
+        .parse()
+        .ok()?;
+    let object_number = size;
+
+    let mut out = Vec::new();
+    out.try_reserve_exact(data.len() + trailer.len() + 512).ok()?;
+    out.extend_from_slice(data);
+    if out.last() != Some(&b'\n') {
+        out.push(b'\n');
+    }
+    let object_offset = out.len();
+    out.extend_from_slice(format!("{object_number} 0 obj\n").as_bytes());
+    out.extend_from_slice(&trailer[value_start..value_end]);
+    out.extend_from_slice(b"\nendobj\n");
+    let xref_offset = out.len();
+    out.extend_from_slice(
+        format!("xref\n{object_number} 1\n{object_offset:010} 00000 n \n").as_bytes(),
+    );
+    out.extend_from_slice(b"trailer\n");
+    // Original trailer with the inline dictionary replaced by a reference and
+    // /Size grown by one, whichever order the two keys appear in.
+    let mut edits = [
+        (size_start, size_end, (object_number + 1).to_string()),
+        (value_start, value_end, format!(" {object_number} 0 R")),
+    ];
+    edits.sort_by_key(|edit| edit.0);
+    if edits[0].1 > edits[1].0 {
+        return None;
+    }
+    let mut new_trailer = Vec::new();
+    let mut cursor = 0;
+    for (start, end, replacement) in &edits {
+        new_trailer.extend_from_slice(&trailer[cursor..*start]);
+        new_trailer.extend_from_slice(replacement.as_bytes());
+        cursor = *end;
+    }
+    new_trailer.extend_from_slice(&trailer[cursor..]);
+    // Insert /Prev before the closing `>>`.
+    let close = new_trailer.len().checked_sub(2)?;
+    out.extend_from_slice(&new_trailer[..close]);
+    out.extend_from_slice(format!(" /Prev {previous_xref} >>").as_bytes());
+    out.extend_from_slice(format!("\nstartxref\n{xref_offset}\n%%EOF\n").as_bytes());
+    Some(out)
+}
+
 fn load_document_with_recovery(
     data: &[u8],
     options: LoadOptions,
 ) -> lopdf::Result<(Document, Option<Vec<u8>>)> {
+    // lopdf cannot decrypt a trailer with an inline /Encrypt dictionary (it
+    // loads zero objects, or rejects a correct password); rewrite it as an
+    // indirect object first.
+    let lifted = lift_inline_encrypt_dictionary(data);
+    let data = lifted.as_deref().unwrap_or(data);
     let original_error = match Document::load_mem_with_options(data, options.clone()) {
         Ok(document) => return Ok((document, None)),
         Err(error) => error,
@@ -1028,6 +1192,8 @@ fn load_metadata_with_recovery(
     data: &[u8],
     password: Option<&str>,
 ) -> lopdf::Result<(PdfMetadata, bool)> {
+    let lifted = lift_inline_encrypt_dictionary(data);
+    let data = lifted.as_deref().unwrap_or(data);
     let load = |input: &[u8]| match password {
         Some(password) => Document::load_metadata_mem_with_password(input, password),
         None => Document::load_metadata_mem(input),
