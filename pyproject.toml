@@ -100,6 +100,7 @@ cache-keys = [
     { file = "rust/Cargo.toml" },
     { file = "rust/build.rs" },
     { file = "rust/src/*.rs" },
+    { file = "rust/vendor/**/*.rs" },
 ]
 
 [tool.uv.workspace]

@@ -96,10 +96,24 @@ impl<'a> Type3<'a> {
     }
 
     pub(crate) fn char_code_to_unicode(&self, char_code: u32) -> Option<BfString> {
-        // Type3 fonts can only provide Unicode via ToUnicode CMap.
+        // Prefer the ToUnicode CMap. Without an entry, fall back to the encoding's
+        // glyph name through the Adobe Glyph List and uniXXXX/uXXXXX names, as
+        // pdf.js, MuPDF and Poppler do. (Local pylopdf patch; proposed upstream.)
         self.to_unicode
             .as_ref()
             .and_then(|t| t.lookup_bf_string(char_code))
+            .or_else(|| {
+                let code = u8::try_from(char_code).ok()?;
+                let name = self
+                    .encodings
+                    .get(&code)
+                    .map(|s| s.as_str())
+                    .or_else(|| self.encoding.map_code(code))?;
+                crate::font::generated::glyph_names::get(name)
+                    .and_then(|text| text.chars().next())
+                    .or_else(|| crate::font::unicode_from_name(name))
+                    .map(BfString::Char)
+            })
     }
 
     pub(crate) fn render_glyph(

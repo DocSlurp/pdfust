@@ -228,7 +228,11 @@ overview.
   failure. A U+0000 ToUnicode mapping is treated as unmapped. Type 3 glyphs
   advance by their `/Widths` through `Type3Glyph::advance_width`, a method
   added in the vendored `rust/vendor/hayro-interpret` (hayro-interpret 0.7.0
-  via `[patch.crates-io]`; drop the vendor copy once upstream exposes it).
+  via `[patch.crates-io]`; drop the vendor copy once upstream exposes it). The
+  same patch maps a Type 3 code without a ToUnicode entry through its encoding
+  glyph name (Adobe Glyph List, `uniXXXX`/`uXXXXX`), as pdf.js, MuPDF and
+  Poppler do; unmappable names such as `g31` stay unmapped. uv cache keys
+  include `rust/vendor/**/*.rs` so vendored edits rebuild the extension.
   Without a usable width they advance one em for a single full-width CJK,
   kana, Hangul or full-width-form character (`rust/src/cjk_radicals.rs`) and
   half an em otherwise. Single-character

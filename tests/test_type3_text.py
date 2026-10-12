@@ -20,18 +20,21 @@ def _tounicode(mapping: dict[int, str]) -> str:
     return f"<< /Length {len(body)} >>\nstream\n{body}\nendstream"
 
 
-def build_type3_pdf(
+def build_type3_pdf(  # noqa: PLR0913 - keyword-only fixture options.
     mapping: dict[int, str],
     codes: bytes,
     *,
     width: int = 1000,
     content: str | None = None,
     per_code_widths: dict[int, int] | None = None,
+    glyph_names: dict[int, str] | None = None,
+    to_unicode: bool = True,
 ) -> bytes:
     """One Chromium-style Type 3 font: flipped 0.001 FontMatrix, per-code widths, ToUnicode."""
     proc = f"{width} 0 0 -880 {width} 120 d1\n60 -800 {width - 120} 760 re f"
-    names = " ".join(f"/g{code}" for code in mapping)
-    procs = " ".join(f"/g{code} 6 0 R" for code in mapping)
+    glyph = glyph_names or {code: f"g{code}" for code in mapping}
+    names = " ".join(f"/{glyph[code]}" for code in mapping)
+    procs = " ".join(f"/{glyph[code]} 6 0 R" for code in mapping)
     first, last = min(mapping), max(mapping)
     per_code = per_code_widths or {}
     widths = " ".join(str(per_code.get(code, width)) for code in range(first, last + 1))
@@ -46,7 +49,8 @@ def build_type3_pdf(
         5: f"<< /Type /Font /Subtype /Type3 /FontBBox [0 -880 {width} 120] "
            "/FontMatrix [0.001 0 0 -0.001 0 0] "
            f"/CharProcs << {procs} >> /Encoding << /Type /Encoding /Differences [{first} {names}] >> "
-           f"/FirstChar {first} /LastChar {last} /Widths [{widths}] /ToUnicode 7 0 R /Resources << >> >>",
+           f"/FirstChar {first} /LastChar {last} /Widths [{widths}] "
+           f"{'/ToUnicode 7 0 R ' if to_unicode else ''}/Resources << >> >>",
         6: f"<< /Length {len(proc)} >>\nstream\n{proc}\nendstream",
         7: _tounicode(mapping),
     })
@@ -138,3 +142,12 @@ def test_combining_mark_stays_with_its_base_when_its_origin_passes_the_next_lett
     )
     doc = pylopdf.open(stream=build_type3_pdf(mapping, b"", content=content, per_code_widths=widths))
     assert doc.get_text().strip() == "ọc"
+
+
+def test_type3_glyph_names_map_to_unicode_without_tounicode() -> None:
+    # Without ToUnicode, AGL and uniXXXX glyph names identify the characters,
+    # as pdf.js, MuPDF and Poppler resolve them.
+    mapping = {1: "\u00e9", 2: "\u0410", 3: "\u20ac", 4: "a"}
+    names = {1: "eacute", 2: "afii10017", 3: "uni20AC", 4: "a"}
+    pdf = build_type3_pdf(mapping, bytes([4, 1, 2, 3]), width=500, glyph_names=names, to_unicode=False)
+    assert pylopdf.open(stream=pdf).get_text().strip() == "a\u00e9\u0410\u20ac"

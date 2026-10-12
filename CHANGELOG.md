@@ -55,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Half-em word-processor padding splits a column when the gap is open at
   the same position in every row, and centered or left-aligned header rows
   join the table below them.
+- Type 3 text without a ToUnicode CMap now extracts through its encoding glyph
+  names (`eacute`, `afii10017`, `uni20AC`), as pdf.js, MuPDF and Poppler do,
+  instead of being skipped.
 - Latin presentation-form ligatures (U+FB00–U+FB06) in extracted text expand
   to their letters, as PyMuPDF and pdftotext do, so `ﬁnal` reads and
   searches as `final`.
