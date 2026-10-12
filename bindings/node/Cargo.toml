@@ -1,0 +1,32 @@
+# Node binding (N-API) for the pdfust Rust core. This is its own Cargo workspace
+# root so rust/ (the Python wheel) keeps its layout; the [patch] below repeats the
+# one in rust/Cargo.toml because patches only apply at a workspace root.
+[workspace]
+
+[package]
+publish = false
+name = "pdfust-node"
+description = "N-API binding for the pdfust Rust core"
+license = "MIT"
+version = "0.13.0"
+edition = "2024"
+
+[lib]
+name = "pdfust_node"
+crate-type = ["cdylib"]
+
+[dependencies]
+pdfust-core = { path = "../../rust", default-features = false, features = ["native"] }
+napi = { version = "3", default-features = false, features = ["napi9"] }
+napi-derive = "3"
+
+[build-dependencies]
+napi-build = "2"
+
+[profile.release]
+lto = "thin"
+codegen-units = 4
+strip = "symbols"
+
+[patch.crates-io]
+hayro-interpret = { path = "../../rust/vendor/hayro-interpret" }

@@ -1,0 +1,35 @@
+{
+  "name": "@pdfust/node",
+  "version": "0.13.0",
+  "description": "In-process Node binding for the pdfust Rust PDF core (private, never published)",
+  "private": true,
+  "license": "MIT",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "native.js",
+    "native.d.ts",
+    "*.node",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "napi": {
+    "binaryName": "pdfust-node",
+    "targets": [
+      "x86_64-unknown-linux-gnu"
+    ]
+  },
+  "scripts": {
+    "build:debug": "napi build --platform --js native.js --dts native.d.ts",
+    "build": "napi build --platform --release --js native.js --dts native.d.ts",
+    "test": "node --test test/"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  }
+}
