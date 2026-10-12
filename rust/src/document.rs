@@ -26,6 +26,10 @@ use crate::py::*;
 #[cfg(not(target_os = "emscripten"))]
 use rayon::prelude::*;
 
+#[cfg(all(feature = "native", not(feature = "python")))]
+#[path = "native.rs"]
+pub mod native;
+
 use crate::draw;
 use crate::form;
 use crate::generate;

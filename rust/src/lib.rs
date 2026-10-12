@@ -12,6 +12,7 @@ mod form;
 mod generate;
 mod image_compression;
 mod layout;
+pub mod markdown;
 mod ocr;
 #[cfg(all(feature = "python", not(target_os = "emscripten")))]
 mod ocr_engine;

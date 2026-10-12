@@ -22,6 +22,8 @@ unexpected_cfgs = { level = "warn", check-cfg = ["cfg(Py_LIMITED_API)", "cfg(Py_
 # engine compiles as a plain Rust library for the Node binding (bindings/node).
 default = ["python"]
 python = ["dep:pyo3", "dep:pyo3-build-config"]
+# `native` exposes `document::native`, the plain-Rust API used by bindings/node.
+native = ["dep:image-webp"]
 
 [dependencies]
 pdfust-shim = { path = "pdfust-shim" }
@@ -61,6 +63,8 @@ getrandom = "0.4.3"
 # Use the zlib-rs backend. Enabling any_zlib disables miniz_oxide's rust_backend,
 # so the whole tree uses zlib-rs even alongside lopdf's default features.
 flate2 = { version = "1", features = ["zlib-rs"] }
+# Lossless WebP output for the native render API.
+image-webp = { version = "0.2", optional = true }
 [target.'cfg(not(target_os = "emscripten"))'.dependencies]
 # Expose the already-linked rayon runtime for supported batch rendering.
 rayon = "1"
