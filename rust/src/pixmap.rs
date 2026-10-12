@@ -7,12 +7,12 @@
 //! The abi3-py310 wheel cannot use `Py_buffer`, which entered the stable ABI in
 //! Python 3.11, so `samples` remains the portable one-copy fallback.
 
-use pyo3::exceptions::{PyTypeError, PyValueError};
-use pyo3::prelude::*;
+use crate::py::*;
+#[cfg(feature = "python")]
 use pyo3::types::{PyBool, PyInt};
-#[cfg(any(not(Py_LIMITED_API), Py_3_11))]
+#[cfg(all(feature = "python", any(not(Py_LIMITED_API), Py_3_11)))]
 use pyo3::{exceptions::PyBufferError, ffi};
-#[cfg(any(not(Py_LIMITED_API), Py_3_11))]
+#[cfg(all(feature = "python", any(not(Py_LIMITED_API), Py_3_11)))]
 use std::{
     ffi::{CString, c_int, c_void},
     ptr,
@@ -37,6 +37,7 @@ fn save_error(path: &Path, error: impl std::fmt::Display) -> PyErr {
     PdfError::new_err(format!("failed to save PNG to {}: {error}", path.display()))
 }
 
+#[cfg(feature = "python")]
 fn extract_max_size(value: &Bound<'_, PyAny>) -> PyResult<Option<usize>> {
     if value.is_none() {
         return Ok(None);
@@ -153,6 +154,7 @@ impl Pixmap {
     }
 }
 
+#[cfg(feature = "python")]
 #[pymethods]
 impl Pixmap {
     /// Width in pixels.

@@ -867,6 +867,7 @@ dependencies = [
  "kurbo",
  "lopdf",
  "pdf-base14-metrics",
+ "pdfust-shim",
  "png",
  "pyo3",
  "pyo3-build-config",
@@ -879,6 +880,10 @@ dependencies = [
  "unicode-segmentation",
  "zune-jpeg",
 ]
+
+[[package]]
+name = "pdfust-shim"
+version = "0.13.0"
 
 [[package]]
 name = "peniko"

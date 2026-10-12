@@ -54,7 +54,7 @@ manifest-path = "rust/Cargo.toml"
 python-source = "src"
 python-packages = ["pdfust", "jev_pdf", "pylopdf"]
 module-name = "pdfust.pdfust_core"
-features = ["pyo3/extension-module"]
+features = ["python", "pyo3/extension-module"]
 
 [dependency-groups]
 dev = [

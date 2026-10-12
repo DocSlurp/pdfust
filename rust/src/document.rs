@@ -22,8 +22,7 @@ use lopdf::{
     Bookmark, DecompressError, Dictionary, Document, LoadOptions, Object, ObjectId, PdfMetadata,
     SaveOptions, Stream, StringFormat, decode_text_string, dictionary, text_string,
 };
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
+use crate::py::*;
 #[cfg(not(target_os = "emscripten"))]
 use rayon::prelude::*;
 
@@ -691,20 +690,17 @@ type FieldNode = (
 );
 
 // Python-visible exceptions. PdfError subclasses ValueError for compatibility.
-pyo3::create_exception!(
-    pdfust,
+crate::py::define_exception!(
     PdfError,
     PyValueError,
     "Base pdfust exception compatible with ValueError."
 );
-pyo3::create_exception!(
-    pdfust,
+crate::py::define_exception!(
     PasswordError,
     PdfError,
     "A password is required or incorrect."
 );
-pyo3::create_exception!(
-    pdfust,
+crate::py::define_exception!(
     LimitError,
     PdfError,
     "A configured resource limit was exceeded."
@@ -7498,6 +7494,7 @@ impl _Document {
     }
 
     /// Stream to the caller's exclusively opened file, retaining its descriptor.
+    #[cfg(feature = "python")]
     #[pyo3(signature = (file, object_streams=false))]
     fn save_to_file(
         &mut self,
@@ -8607,6 +8604,7 @@ impl _Document {
     }
 
     /// Stream an encrypted clone to a file whose exclusive descriptor stays open.
+    #[cfg(feature = "python")]
     fn save_encrypted_to_file(
         &self,
         py: Python<'_>,
@@ -8864,6 +8862,7 @@ impl _Document {
     /// Draw a rendered RGBA8 Pixmap directly into display `rect`.
     ///
     /// This avoids a PNG encode/decode round trip while preserving alpha.
+    #[cfg(feature = "python")]
     #[allow(clippy::too_many_arguments)] // Mirrors Python's keyword-oriented drawing API.
     fn insert_pixmap(
         &mut self,

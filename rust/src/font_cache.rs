@@ -11,7 +11,7 @@ use std::{
     time::SystemTime,
 };
 
-use pyo3::PyResult;
+use crate::py::PyResult;
 
 use crate::document::{PdfError, read_font_input, validate_font_input};
 
