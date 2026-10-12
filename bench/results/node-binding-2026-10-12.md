@@ -33,10 +33,12 @@ Task U1. `@pdfust/node` (release build, commit-pinned, Node v26.8.2 on the dev h
 
 ## Reading
 
-- Single-document, single-thread speed is the same engine, so the two should track each other. On multi-page documents (usrguide 27 pp, bill-hr815 110 pp) they do: text within noise, markdown 1.3-1.7x faster on Node (the Rust Markdown builder replaces Python glue), render equal within noise.
-- Small, dense pages (senate, nics, f1040, mhlw) are 1.5-3x faster on Node for text and markdown in both runs; the Python wrapper pays per-call object construction (tuples, `Rect`s, dict layouts) on pages where the core finishes in a few milliseconds. Treat the 2-3x as an upper bound given the noise.
-- `open` is a few milliseconds either way and dominated by file read plus xref parse.
-- Peak RSS of the whole benchmark process: Node about 210 MB, Python about 115 MB (the Node figure includes V8 and the 110-page document held while Buffers are in flight; it is a process total, not binding overhead). Neither run exceeded 250 MB.
+Ratio is Node time / Python time, so values below 1 favour Node.
+
+- The binding adds no measurable cost: both call the same Rust core, and on the 110-page and small dense fixtures Node is the same speed or faster (ratios 0.25-0.98 on bill-hr815, f1040, senate, nics, mhlw). On the 27-page usrguide, Node was slower in run 2 (1.2-1.5x) and equal in run 1; with only two runs on a loaded machine this is unexplained noise or an effect I did not isolate, not an established regression.
+- Markdown is where Node pulls ahead most on the large and dense fixtures (0.36-0.58) because the Markdown builder runs in Rust rather than Python glue; text and render gain less (0.5-1.0), consistent with Python's per-call tuple/`Rect`/dict construction on pages the core finishes in a few ms. Treat the size of the gap as indicative only.
+- `open` is a few milliseconds either way (file read plus xref parse).
+- Peak RSS of the whole benchmark process: Node about 210 MB, Python about 115 MB. The Node figure is a process total (V8 heap, Buffers in flight, the 110-page document), not binding overhead; neither run exceeded 250 MB. Not measured separately: RSS per open document.
 
 ## Async scaling (`scripts/bench-concurrency.mjs`, 8 documents x 6 pages of usrguide.pdf)
 
