@@ -63,7 +63,7 @@ def content_f1(precision: float, recall: float) -> float:
 
 def build(root: Path, output: Path) -> Path:
     """Render only five declared cases from frozen independently audited evidence."""
-    import pylopdf
+    import pdfust
 
     root, output = guard_path(root.resolve()), guard_path(output.resolve())
     started, cpu = time.monotonic(), time.process_time()
@@ -124,7 +124,7 @@ def build(root: Path, output: Path) -> Path:
     destination.mkdir(parents=True, exist_ok=False)
     evidence = []
     for scope, name, identifier, index, reference_table, tables, pair, record, strict in admitted:
-        with pylopdf.Document(record["pdf_path"]) as document:
+        with pdfust.Document(record["pdf_path"]) as document:
             source_page = document[record["page_number"]]
             scale = 2400 / source_page.rect.width
             pixmap = source_page.get_pixmap(scale=scale, background=(255, 255, 255))

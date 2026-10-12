@@ -1,6 +1,6 @@
 ---
 title: 安全
-description: pylopdf支持版本、私密漏洞报告方式，以及处理不受信任PDF时的安全建议。
+description: pdfust支持版本、私密漏洞报告方式，以及处理不受信任PDF时的安全建议。
 ---
 
 # 安全
@@ -14,23 +14,23 @@ description: pylopdf支持版本、私密漏洞报告方式，以及处理不受
 
 ## 处理不受信任的PDF { #untrusted-pdfs }
 
-pylopdf由Rust编写且没有必需的Python依赖，但解析恶意PDF输入仍然存在固有风险。
+pdfust由Rust编写且没有必需的Python依赖，但解析恶意PDF输入仍然存在固有风险。
 
 !!! warning "使用完整的资源策略"
-    请向`pylopdf.open()`传入`limits=pylopdf.DocumentLimits.web()`。
+    请向`pdfust.open()`传入`limits=pdfust.DocumentLimits.web()`。
     该预设适合作为内存受限Web或queue worker处理用户上传内容的保守起点。
 
 ```python
-import pylopdf
+import pdfust
 
 try:
-    with pylopdf.open(
+    with pdfust.open(
         "upload.pdf",
-        limits=pylopdf.DocumentLimits.web(),
+        limits=pdfust.DocumentLimits.web(),
     ) as doc:
         facts = doc.complexity
         preview = doc[0].get_pixmap(dpi=144)
-except pylopdf.LimitError as error:
+except pdfust.LimitError as error:
     reject_upload(error.code)
 ```
 
@@ -72,7 +72,7 @@ page-indexing操作。
 `password_input_size`、`pixmap_output_size`、`ocr_model_size`、`ocr_dictionary_entries`、
 `stream_filter_count`、`decompression_unverifiable`之一；
 同一值也位于`error.args[0]`。无法安全估算上限的filter chain会被拒绝，而不是
-乐观解码。pylopdf自有的有界lopdf解码路径还会在materialize filter列表前拒绝
+乐观解码。pdfust自有的有界lopdf解码路径还会在materialize filter列表前拒绝
 超过16层的`/Filter` chain。
 
 `doc.complexity`无需解码流或调用renderer，即可报告页数、对象数、流数、编码流
@@ -81,7 +81,7 @@ page-indexing操作。
 直接深度验证与complexity检查的迭代遍历stack采用fallible扩展，因此allocation
 refusal会抛出`PdfError`，而不会暴露部分facts。
 
-`max_interpretation_size`在hayro首次读取保留input，以及pylopdf在编辑、解密或
+`max_interpretation_size`在hayro首次读取保留input，以及pdfust在编辑、解密或
 AcroForm state选择后serialize当前状态时生效。有界writer会拒绝越界write，且不会
 安装不完整的renderer／extractor cache。为保持兼容，默认值为`None`；
 `DocumentLimits.web()`使用64 MiB。
@@ -97,7 +97,7 @@ block、line、span和word数量。同一页的文本与表格解释共享一次
 
 宽松打开只执行一种受限修复：仅当同一最终revision中存在完整classic xref table，
 并且在原有上限下完整解析成功时，才替换错误的最终`startxref`。它不会扫描object
-header、修复xref stream或回退到旧revision。修复会发出`PylopdfWarning`，令
+header、修复xref stream或回退到旧revision。修复会发出`PdfustWarning`，令
 `doc.is_repaired`（metadata probe中的`repaired`）为`True`；保存会规范化xref数据。
 
 - 每页渲染上限为6400万像素。
@@ -127,7 +127,7 @@ header、修复xref stream或回退到旧revision。修复会发出`PylopdfWarni
   展开量。可信插入input可用`max_text_size=None`显式取消，拒绝code为
   `text_input_size`或`text_line_count`。AcroForm文本／选项外观保留固定4,096行上限。
   UAX #14／grapheme index、行collection与保留的行text均采用fallible扩展，因此
-  allocation refusal不会暴露部分layout或document编辑。pylopdf自有的规范化、
+  allocation refusal不会暴露部分layout或document编辑。pdfust自有的规范化、
   grapheme引用、shaped line／glyph collection、WinAnsi输出与输入派生的text operator
   扩展也采用fallible处理。Standard 14宽度检查不会分配encoded text copy。
   allocation refusal返回`PdfError`；插入保持不修改文档，form fill则原子rollback。
@@ -140,7 +140,7 @@ header、修复xref stream或回退到旧revision。修复会发出`PylopdfWarni
   `password_input_size`，保存拒绝发生在document mutation或创建output之前。
 - `render_page_svg()`和`Page.render_svg()`的UTF-8输出默认上限为64 MiB，在
   PyO3创建Python string前拒绝超限结果；`max_size=None`可显式取消。
-  hayro-svg 0.7只返回完整`String`，因此pylopdf应用边界前的一份内部Rust string
+  hayro-svg 0.7只返回完整`String`，因此pdfust应用边界前的一份内部Rust string
   不受此限制。
 - 绘图插入会在cache失效、输入decode或创建dependent object前检查page
   `/Contents`的raw array和引用chain。raw array上限为4,096个entry，chain深度为
@@ -236,7 +236,7 @@ OCR准入按engine生效，多个engine会增加推理buffer。clip仍生成整�
 
 上传服务应使用受宿主deadline和内存限制的worker。等待Python future超时不会取消正在
 执行的native操作；宿主必须能终止worker。根据实测内存行为回收worker；如果不能接受
-不完整的提取或渲染，也应检查`PylopdfWarning`。
+不完整的提取或渲染，也应检查`PdfustWarning`。
 
 打开、编辑和保存不等于PDF净化。JavaScript不会执行，但保存不保证移除action、附件或
 敏感metadata。highlight、overlay和`replace_text()`不是安全redaction。展示或提交给LLM时，

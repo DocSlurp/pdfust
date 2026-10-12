@@ -34,7 +34,7 @@ def _freeze_native_correction(output: Path) -> dict[str, Any]:
         pipeline_run,
         pipeline_vision_transcription,
     )
-    from pylopdf import _markdown
+    from pdfust import _markdown
 
     directory = output / "native-correction-runtime"
     directory.mkdir()
@@ -62,7 +62,7 @@ def _correct_native(
     record: dict[str, Any], row: dict[str, Any], physical_structure: Path, output: Path,
 ) -> tuple[dict[str, Any], Path, Path]:
     """Create complete logical sidecars while retaining physical source geometry."""
-    import pylopdf
+    import pdfust
     from bench import generalization_run as native
     from bench import pipeline_hybrid_composition as hybrid
     from bench import pipeline_native_orientation as orientation
@@ -76,7 +76,7 @@ def _correct_native(
         data = stream.read(MAX_PDF_BYTES + 1)
     if len(data) > MAX_PDF_BYTES or sha(data) != record["pdf_sha256"]:
         raise ValueError("Native correction source PDF hash or size changed")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[record["page_number"]]
         direction = orientation.evidence(page, hybrid.native_boxes(source, state))
     composed = orientation.compose(
@@ -145,7 +145,7 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
     max_pages: int = DEFAULT_MAX_PAGES,
 ) -> dict[str, Any]:
     """Freeze source-only records and retain complete/partial document artifacts."""
-    import pylopdf
+    import pdfust
 
     if mode not in MODES:
         raise ValueError("Unknown experimental extraction mode")
@@ -158,7 +158,7 @@ def extract(  # noqa: C901, PLR0912 - bounded admission, dispatch and artifact r
         data = stream.read(MAX_PDF_BYTES + 1)
     if len(data) > MAX_PDF_BYTES:
         raise ValueError("Experimental document input exceeds 64 MiB")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page_count = len(document)
     if (pages is None and page_count > max_pages) or (pages is not None and len(pages) > max_pages):
         raise ValueError("Requested page count exceeds max_pages admission")

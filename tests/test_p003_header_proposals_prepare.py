@@ -14,14 +14,14 @@ from bench.silver import sha, write_json
 from PIL import Image
 from test_p003_header_proposals import page, table
 
-import pylopdf
+import pdfust
 
 
 def fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:
     directory = tmp_path / "baseline"
     directory.mkdir()
     pdf = tmp_path / "source.pdf"
-    with pylopdf.open() as doc:
+    with pdfust.open() as doc:
         doc.new_page(width=100, height=100)
         doc.save(pdf)
     buffer = io.BytesIO()

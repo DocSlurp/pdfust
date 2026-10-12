@@ -67,11 +67,11 @@ def _raster(*, japanese: bool = False, decoration: bool = False) -> bytes:
 
 def source_cases() -> list[dict[str, Any]]:
     """Construct source bytes only, without extraction-derived targets."""
-    import pylopdf
+    import pdfust
 
     output = []
     for identifier in IDS:
-        with pylopdf.Document() as document:
+        with pdfust.Document() as document:
             page = document.new_page(width=600, height=800)
             if identifier in {"native-only", "mixed-inset", "two-image-tables", "native-intersection"}:
                 page.insert_text((30, 45), "Native header")
@@ -131,15 +131,15 @@ def construction_references() -> dict[str, dict[str, int]]:
 
 def run(*, ocr: bool = False) -> dict[str, Any]:
     """Measure discovery or real optional OCR with one CPU engine and no mutations."""
-    import pylopdf
+    import pdfust
 
     cases = source_cases()
     references = construction_references()
     start, cpu = time.perf_counter(), time.process_time()
-    engine = pylopdf.OcrEngine(threads=1) if ocr else None
+    engine = pdfust.OcrEngine(threads=1) if ocr else None
     rows = []
     for case in cases:
-        with pylopdf.Document(stream=case["pdf"]) as document:
+        with pdfust.Document(stream=case["pdf"]) as document:
             page = document[case["page_number"]]
             before = document.tobytes()
             native = [{"text": word[4], "bbox": list(word[:4])} for word in page.get_text("words")]
@@ -177,7 +177,7 @@ def run(*, ocr: bool = False) -> dict[str, Any]:
         "python": platform.python_version(),
         "machine": platform.machine(),
         "logical_cpu_count": os.cpu_count(),
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "font": "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
         "scope": "authored DEV source contracts; no OCR/table quality score",
         "ocr": ocr,

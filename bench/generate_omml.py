@@ -67,7 +67,7 @@ def main() -> None:
         executable = shutil.which("libreoffice")
         if executable is None:
             parser.error("--export requires LibreOffice on PATH")
-        with tempfile.TemporaryDirectory(prefix="pylopdf-omml-") as profile:
+        with tempfile.TemporaryDirectory(prefix="pdfust-omml-") as profile:
             subprocess.run(  # noqa: S603 - resolved executable and repository-authored input.
                 [
                     executable,

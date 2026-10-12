@@ -15,7 +15,7 @@ from bench import generalization_vision_run as vision
 from bench.silver import sha
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def raw(matrix: list | None = None, bbox: list | None = None) -> dict[str, Any]:
@@ -114,7 +114,7 @@ class Detector:
 
 
 def _record(tmp_path: Path) -> dict[str, Any]:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page(width=600, height=800)
         data = document.tobytes()
     path = tmp_path / "source.pdf"

@@ -135,10 +135,10 @@ frozen-config robustness check, not an automatic production default.
 
 ## Package identity
 
-The user renamed the project to **jev-pdf**. GitHub is now private
+The user renamed the project to **pdfust**. GitHub is now private
 `justsml/jev-pdf`; both remotes and the private-main pre-push guard target that
-name. GitHub Actions remain disabled. Distribution `jev-pdf` adds the public
-`jev_pdf` import while keeping `pylopdf` as the compatible implementation/API.
+name. GitHub Actions remain disabled. Distribution `pdfust` adds the public
+`pdfust` import while keeping `pdfust` as the compatible implementation/API.
 Original license notices and data-package names are retained. Existing artifact
 paths remain unchanged to preserve frozen experiment provenance. No package
 release or index publication is authorized by this rename.
@@ -165,7 +165,7 @@ fresh cohort has no such controls. Both are DEV, not heldout confirmation.
 The next topology experiment targets small tables, header/data edge mismatches,
 and blank columns while prompt changes test admission on unchanged candidates.
 
-Local editable migration to `jev-pdf` succeeded. Full Python suite: 1,919 passed,
+Local editable migration to `pdfust` succeeded. Full Python suite: 1,919 passed,
 16 skipped, two expected failures. Benchmark typing fixes are being integrated
 before the next private push. Raw artifacts and credentials remain ignored.
 

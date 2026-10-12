@@ -34,7 +34,7 @@ def analyze(directory: Path, corpus: Path, *, rolling_trusted_code: dict[str, st
             trusted_code: dict[str, str], source_trusted_code: dict[str, str],
             yolo_trusted_code: dict[str, str]) -> dict[str, Any]:
     """Rebuild source drawings, row hypotheses and complete states before references."""
-    import pylopdf
+    import pdfust
     from bench import p003_rolling_tracks as rolling
     from bench import p003_rolling_tracks_prepare as prepare
     from bench.p003_yolo_structure_analysis import verify
@@ -85,7 +85,7 @@ def analyze(directory: Path, corpus: Path, *, rolling_trusted_code: dict[str, st
         pdf = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(pdf) != record["pdf_sha256"]:
             raise ValueError("Rolling source PDF differs")
-        with pylopdf.open(stream=pdf) as document:
+        with pdfust.open(stream=pdf) as document:
             p = document[record["page_number"]]
             if list(p.rect) != source["page_size"] or p.rotation != page["original_rotation"]:
                 raise ValueError("Rolling drawing coordinates differ")

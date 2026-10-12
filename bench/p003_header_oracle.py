@@ -10,7 +10,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench import generalization_vision_regions as regions
 from bench import p003_candidate_run as baseline
 from bench import p003_header_proposals as headers
@@ -40,7 +40,7 @@ def verify_page_inputs(
     if [{k: c[k] for k in keys} for c in page["transcription_regions"]] != [{k: c[k] for k in keys} for c in expected]:
         raise ValueError("Header hypotheses changed original acquisition inventory")
     refusal = None
-    with pylopdf.open(stream=raw) as document:
+    with pdfust.open(stream=raw) as document:
         source = document[record["page_number"]]
         if list(source.rect) != page["viewport"] or source.rotation != page["original_rotation"]:
             raise ValueError("Original header source display geometry changed")

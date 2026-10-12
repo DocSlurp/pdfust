@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-import pylopdf
+import pdfust
 from bench.structure_core import geometry_tables, markdown_tables, render_tables, validate_patch
 from bench.structure_native import header_guided_records, header_word_ids
 
@@ -21,7 +21,7 @@ def contains(box: list[float], word: dict[str, Any], *, logical: bool = False) -
     return box[0] <= (bounds[0] + bounds[2]) / 2 <= box[2] and box[1] <= (bounds[1] + bounds[3]) / 2 <= box[3]
 
 
-def native_spans(table: pylopdf.Table) -> list[list[int]]:
+def native_spans(table: pdfust.Table) -> list[list[int]]:
     """Recover rectangular spans from accepted native cell boxes and divider coordinates."""
     cells = [cell for cell in table.cells if cell is not None]
     xs = sorted({value for cell in cells for value in (cell.x0, cell.x1)})
@@ -39,7 +39,7 @@ def native_spans(table: pylopdf.Table) -> list[list[int]]:
     return spans
 
 
-def recover(bundle: dict[str, Any], directory: Path, ocr: pylopdf.OcrEngine, *, bullets: bool) -> dict[str, Any]:
+def recover(bundle: dict[str, Any], directory: Path, ocr: pdfust.OcrEngine, *, bullets: bool) -> dict[str, Any]:
     """Reuse verified layout predictions; prefer vector evidence before inferred rows."""
     from bench.structure import REPORT  # noqa: PLC0415 - avoid the runner import cycle.
 
@@ -59,7 +59,7 @@ def recover(bundle: dict[str, Any], directory: Path, ocr: pylopdf.OcrEngine, *, 
     covered: set[str] = set()
     choices = []
     retained_headers: set[str] = set()
-    with pylopdf.open(directory / "input.pdf") as document:
+    with pdfust.open(directory / "input.pdf") as document:
         page = document[0]
         if not words:
             recognized = page.apply_ocr(dpi=150, engine=ocr)

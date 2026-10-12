@@ -35,7 +35,7 @@ Every bundled document has a redistributable license.
 - **Text extraction from `pdf20-simple.pdf` returned nothing.** lopdf's content
   parser dropped every operation after a `%` comment followed by an indented
   line, reported upstream as
-  [lopdf#535](https://github.com/J-F-Liu/lopdf/issues/535). pylopdf v0.7 replaced
+  [lopdf#535](https://github.com/J-F-Liu/lopdf/issues/535). pdfust v0.7 replaced
   extraction with the hayro engine. `test_pdf20_comment_streams_extract`
   protects the regression and the same engine also extracts non-embedded CJK
   text using `90ms-RKSJ-H`.

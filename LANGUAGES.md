@@ -19,7 +19,7 @@ strict build produces warnings.
 
 1. Python's official documentation has an active coordination team and a
    published translation for the language.
-2. The language overlaps with pylopdf's differentiators: CJK handling, OCR,
+2. The language overlaps with pdfust's differentiators: CJK handling, OCR,
    lightweight wheels, and production PDF workflows.
 3. Every page, including API, security, and benchmark content, can be maintained
    in the same release.

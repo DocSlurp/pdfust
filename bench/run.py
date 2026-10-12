@@ -1,4 +1,4 @@
-"""Run reproducible pylopdf benchmarks against major PDF libraries.
+"""Run reproducible pdfust benchmarks against major PDF libraries.
 
 Usage:
 
@@ -26,7 +26,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pylopdf
+import pdfust
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -86,27 +86,27 @@ except Exception:  # pragma: no cover
     _pdfplumber_extract = None  # type: ignore[assignment]
 
 
-def _pylopdf_extract(data: bytes) -> str:
-    with pylopdf.open(stream=data) as doc:
+def _pdfust_extract(data: bytes) -> str:
+    with pdfust.open(stream=data) as doc:
         return doc.get_text()
 
 
-def _pylopdf_merge(docs: list[bytes]) -> bytes:
-    merged = pylopdf.Document()
+def _pdfust_merge(docs: list[bytes]) -> bytes:
+    merged = pdfust.Document()
     for data in docs:
-        with pylopdf.open(stream=data) as src:
+        with pdfust.open(stream=data) as src:
             merged.insert_pdf(src)
     return merged.tobytes()
 
 
-def _pylopdf_render(data: bytes) -> bytes:
-    with pylopdf.open(stream=data) as doc:
+def _pdfust_render(data: bytes) -> bytes:
+    with pdfust.open(stream=data) as doc:
         return doc.render_page(0, scale=2)
 
 
-def _pylopdf_render_batch(data: bytes, workers: int) -> int:
+def _pdfust_render_batch(data: bytes, workers: int) -> int:
     """Render up to twelve pages and return total PNG bytes."""
-    with pylopdf.open(stream=data) as doc:
+    with pdfust.open(stream=data) as doc:
         pages = list(range(min(12, doc.page_count)))
         return sum(len(png) for png in doc.render_pages(pages, scale=2, workers=workers))
 
@@ -144,7 +144,7 @@ def _append_parallel_render_results(lines: list[str], corpus: dict[str, bytes]) 
     lines.append("| Workers | Time | Speedup vs 1 worker |")
     lines.append("|---:|---:|---:|")
     batch_times = {
-        workers: _median_ms(lambda w=workers: _pylopdf_render_batch(batch_data, w)) for workers in (1, 2, 4, 8)
+        workers: _median_ms(lambda w=workers: _pdfust_render_batch(batch_data, w)) for workers in (1, 2, 4, 8)
     }
     baseline = batch_times[1]
     for workers, elapsed in batch_times.items():
@@ -169,14 +169,14 @@ def main() -> None:
     corpus = {f.name: f.read_bytes() for f in files}
 
     versions = {}
-    for dist in ("pylopdf", "pymupdf", "pypdf", "pdfplumber"):
+    for dist in ("pdfust", "pymupdf", "pypdf", "pdfplumber"):
         try:
             versions[dist] = metadata.version(dist)
         except metadata.PackageNotFoundError:
             versions[dist] = "n/a"
 
     lines: list[str] = []
-    lines.append("# pylopdf benchmark results")
+    lines.append("# pdfust benchmark results")
     lines.append("")
     lines.append(f"- Run at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
     lines.append(
@@ -191,11 +191,11 @@ def main() -> None:
     # --- Text extraction across all pages. ---
     lines.append("## Text extraction (all pages, ms)")
     lines.append("")
-    lines.append("| File | pylopdf | pymupdf | pypdf | pdfplumber |")
+    lines.append("| File | pdfust | pymupdf | pypdf | pdfplumber |")
     lines.append("|---|---|---|---|---|")
     for name, data in corpus.items():
         row = [
-            _median_ms(lambda d=data: _pylopdf_extract(d)),
+            _median_ms(lambda d=data: _pdfust_extract(d)),
             _median_ms(lambda d=data: _pymupdf_extract(d)) if _pymupdf_extract else None,
             _median_ms(lambda d=data: _pypdf_extract(d)) if _pypdf_extract else None,
             _median_ms(lambda d=data: _pdfplumber_extract(d)) if _pdfplumber_extract else None,
@@ -207,10 +207,10 @@ def main() -> None:
     # --- Quality proxies: character counts and similarity to PyMuPDF. ---
     lines.append("## Extracted-content comparison (quality proxy)")
     lines.append("")
-    lines.append("| File | pylopdf characters | pymupdf characters | Similarity after whitespace normalization |")
+    lines.append("| File | pdfust characters | pymupdf characters | Similarity after whitespace normalization |")
     lines.append("|---|---|---|---|")
     for name, data in corpus.items():
-        ours = _normalize(_pylopdf_extract(data))
+        ours = _normalize(_pdfust_extract(data))
         if _pymupdf_extract:
             try:
                 theirs = _normalize(_pymupdf_extract(data))
@@ -222,9 +222,9 @@ def main() -> None:
             lines.append(f"| {name} | {len(ours)} | n/a | - |")
     lines.append("")
     lines.append("Similarity approaches 1.0 as output converges with PyMuPDF.")
-    lines.append("Low scores can reflect the PyMuPDF reference convention rather than pylopdf quality:")
+    lines.append("Low scores can reflect the PyMuPDF reference convention rather than pdfust quality:")
     lines.append("on rotated table reports PyMuPDF emits unsorted content order (its own sort=True")
-    lines.append("scores lower still there), and on dense forms pylopdf matches PyMuPDF's sorted")
+    lines.append("scores lower still there), and on dense forms pdfust matches PyMuPDF's sorted")
     lines.append("mode while the default reference stays in content order.")
     lines.append("A zero-character row is image-only with no text layer, so zero is correct for both.")
     lines.append("")
@@ -233,10 +233,10 @@ def main() -> None:
     lines.append("## Merge (all corpus files into one document, ms)")
     lines.append("")
     docs = list(corpus.values())
-    lines.append("| Task | pylopdf | pymupdf | pypdf |")
+    lines.append("| Task | pdfust | pymupdf | pypdf |")
     lines.append("|---|---|---|---|")
     merge_row = [
-        _median_ms(lambda: _pylopdf_merge(docs)),
+        _median_ms(lambda: _pdfust_merge(docs)),
         _median_ms(lambda: _pymupdf_merge(docs)) if _pymupdf_merge else None,
         _median_ms(lambda: _pypdf_merge(docs)) if _pypdf_merge else None,
     ]
@@ -247,11 +247,11 @@ def main() -> None:
     # --- Render the first page to a 2x PNG. ---
     lines.append("## Rendering (first page to 2x PNG, ms)")
     lines.append("")
-    lines.append("| File | pylopdf | pymupdf |")
+    lines.append("| File | pdfust | pymupdf |")
     lines.append("|---|---|---|")
     for name, data in corpus.items():
         row = [
-            _median_ms(lambda d=data: _pylopdf_render(d)),
+            _median_ms(lambda d=data: _pdfust_render(d)),
             _median_ms(lambda d=data: _pymupdf_render(d)) if _pymupdf_render else None,
         ]
         lines.append(f"| {name} | " + " | ".join(_fmt(v) for v in row) + " |")

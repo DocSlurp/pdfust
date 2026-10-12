@@ -1,11 +1,11 @@
 ---
 title: Language policy
-description: The languages pylopdf treats as first-class documentation and how translations stay trustworthy.
+description: The languages pdfust treats as first-class documentation and how translations stay trustworthy.
 ---
 
 # Language policy
 
-pylopdf is built for the global Python community, with an especially strong
+pdfust is built for the global Python community, with an especially strong
 commitment to CJK documents. Language support is therefore part of the product,
 not a decorative machine-translated layer.
 

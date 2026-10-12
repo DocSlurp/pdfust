@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def _invalid_page_inheritance_pdf() -> bytes:
@@ -21,9 +21,9 @@ def _invalid_page_inheritance_pdf() -> bytes:
 
 @pytest.mark.parametrize("operation", ["select", "copy", "new"])
 def test_rejected_structural_plan_preserves_document_and_views(operation: str) -> None:
-    doc = pylopdf.open(stream=_invalid_page_inheritance_pdf())
+    doc = pdfust.open(stream=_invalid_page_inheritance_pdf())
     page = doc[0]
-    assert page.mediabox == pylopdf.Rect(0, 0, 100, 200)
+    assert page.mediabox == pdfust.Rect(0, 0, 100, 200)
     before = doc.tobytes()
 
     def mutate() -> None:
@@ -35,22 +35,22 @@ def test_rejected_structural_plan_preserves_document_and_views(operation: str) -
             doc.new_page(width=300, height=400)
 
     for _ in range(2):
-        with pytest.raises(pylopdf.PdfError, match=r"inheritance.*cycle"):
+        with pytest.raises(pdfust.PdfError, match=r"inheritance.*cycle"):
             mutate()
 
         assert doc.page_count == 1
-        assert page.mediabox == pylopdf.Rect(0, 0, 100, 200)
+        assert page.mediabox == pdfust.Rect(0, 0, 100, 200)
         assert doc.tobytes() == before
 
 
 def test_rejected_import_preserves_target_document_and_views(one_page_pdf: bytes) -> None:
-    target = pylopdf.open(stream=one_page_pdf)
-    source = pylopdf.open(stream=_invalid_page_inheritance_pdf())
+    target = pdfust.open(stream=one_page_pdf)
+    source = pdfust.open(stream=_invalid_page_inheritance_pdf())
     page = target[0]
     original_box = page.mediabox
     before = target.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match=r"inheritance.*cycle"):
+    with pytest.raises(pdfust.PdfError, match=r"inheritance.*cycle"):
         target.insert_pdf(source)
 
     assert target.page_count == 1
@@ -59,14 +59,14 @@ def test_rejected_import_preserves_target_document_and_views(one_page_pdf: bytes
 
 
 def test_rejected_import_into_malformed_target_preserves_document(one_page_pdf: bytes) -> None:
-    target = pylopdf.open(stream=_invalid_page_inheritance_pdf())
-    source = pylopdf.open(stream=one_page_pdf)
+    target = pdfust.open(stream=_invalid_page_inheritance_pdf())
+    source = pdfust.open(stream=one_page_pdf)
     page = target[0]
     before = target.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match=r"inheritance.*cycle"):
+    with pytest.raises(pdfust.PdfError, match=r"inheritance.*cycle"):
         target.insert_pdf(source)
 
     assert target.page_count == 1
-    assert page.mediabox == pylopdf.Rect(0, 0, 100, 200)
+    assert page.mediabox == pdfust.Rect(0, 0, 100, 200)
     assert target.tobytes() == before

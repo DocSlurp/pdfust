@@ -1,6 +1,6 @@
 # CPU color-region experiment
 
-Measured 2026-10-08, Linux x86_64, CPython 3.14, pylopdf 0.13.0, standalone rustc 1.99.0 optimized std-only executable. CPU only; no wheel rebuild, hosted model, or public API change.
+Measured 2026-10-08, Linux x86_64, CPython 3.14, pdfust 0.13.0, standalone rustc 1.99.0 optimized std-only executable. CPU only; no wheel rebuild, hosted model, or public API change.
 
 This pilot extracts contiguous raster color spaces and compares them with native fill/stroke paint bounds. Region geometry can support grouping headers, bands, and outlined white spaces; it does not establish table semantics, cell relationships, or pixel visibility for native paths.
 

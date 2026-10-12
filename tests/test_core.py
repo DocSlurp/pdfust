@@ -1,4 +1,4 @@
-"""Low-level behavior tests for the pylopdf_core._Document Rust binding."""
+"""Low-level behavior tests for the pdfust_core._Document Rust binding."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from pylopdf.pylopdf_core import LimitError, PdfError, _Document
+from pdfust.pdfust_core import LimitError, PdfError, _Document
 
 
 def _oversized_png_header() -> bytes:

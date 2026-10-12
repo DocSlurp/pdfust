@@ -54,7 +54,7 @@ Actions:
 2. Build a silver-v3 cohort by reusing the 16 layout interventions with
    wild-v1-style content packs, such as real section prose and named columns.
    Emit each family through two or three real producers: Chromium, LibreOffice
-   and `pylopdf.insert_text` with embedded OpenType.
+   and `pdfust.insert_text` with embedded OpenType.
 3. Replace the four math expressions with 20 or more natural formulas typeset by
    pdfTeX/LuaLaTeX (Type1 CM fonts and Differences) and LibreOffice Math. Keep
    the 10 encoding transforms as a separate axis.

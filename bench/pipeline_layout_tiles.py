@@ -170,7 +170,7 @@ def tile_regions(page: dict[str, Any], boxes: list[dict[str, Any]], **kwargs: An
 
 def baseline(manifest_path: Path, sources_directory: Path, output: Path) -> dict[str, Any]:
     """Retain a fixed-screen whole/2x2/3x3 CPU comparison with cached source ownership."""
-    import pylopdf
+    import pdfust
     from bench.silver import guard_path, sha, write_json
 
     manifest = json.loads(guard_path(manifest_path).read_bytes())
@@ -191,7 +191,7 @@ def baseline(manifest_path: Path, sources_directory: Path, output: Path) -> dict
                     cached = json.loads(guard_path(sources_directory / f"{record['id']}-result.json").read_bytes())
                     if cached["id"] != record["id"]:
                         raise ValueError("Cached source ID does not match frozen page")
-                    with pylopdf.open(stream=data) as document:
+                    with pdfust.open(stream=data) as document:
                         page = document[record["page_number"]]
                         if page.rotation:
                             page.set_rotation(0)

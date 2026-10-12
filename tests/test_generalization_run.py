@@ -18,7 +18,7 @@ from bench.pipeline_regions import split
 from PIL import Image
 from test_pipeline_run import config, pdf_bytes, record
 
-import pylopdf
+import pdfust
 
 
 @pytest.mark.parametrize("factor", [0.5, 1, 2, 4])
@@ -55,7 +55,7 @@ def test_region_native_output_is_complete_and_has_no_api_calls(tmp_path: Path) -
 
 
 def test_invalid_native_topology_retains_all_words_for_rediscovery() -> None:
-    with pylopdf.open(stream=pdf_bytes()) as doc:
+    with pdfust.open(stream=pdf_bytes()) as doc:
         source = baseline.source(doc[0])
     source["vector_candidates"][0]["spans"].pop()
     clean, warnings = runner.sanitize_vectors(source)
@@ -69,7 +69,7 @@ def test_invalid_native_topology_retains_all_words_for_rediscovery() -> None:
 @pytest.mark.parametrize("edge", [256, 512, 1024])
 def test_crop_raster_records_global_viewport(edge: int) -> None:
     box: list[float] = [40, 40, 300, 120]
-    with pylopdf.open(stream=pdf_bytes()) as doc:
+    with pdfust.open(stream=pdf_bytes()) as doc:
         url, metadata = runner.region_image(doc[0], box, edge)
     assert url is not None
     assert metadata["image_viewport"] == box
@@ -142,7 +142,7 @@ def test_generation_can_construct_without_a_geometry_alternative(
 
 
 def test_raster_grid_requires_semantic_admission(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    with pylopdf.open(stream=pdf_bytes()) as doc:
+    with pdfust.open(stream=pdf_bytes()) as doc:
         source = baseline.source(doc[0])
     region = split(source)["regions"][0]
     region["kind"] = "raster"

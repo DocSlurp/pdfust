@@ -12,7 +12,7 @@ from typing import Any
 import pytest
 from bench.decision_cases import baseline, build_cases, model_payload, write_cases
 
-import pylopdf
+import pdfust
 
 
 @pytest.fixture(scope="module")
@@ -85,7 +85,7 @@ def test_preserved_pdf_extraction_and_hashes(tmp_path: Path, cases: list[dict[st
     for case in cases:
         data = (tmp_path / f"{case['id']}.pdf").read_bytes()
         assert hashlib.sha256(data).hexdigest() == manifest["pdfs"][case["id"]]
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             layout = document[0].get_layout(table_strategy=None)
         assert [word.text for word in layout.words] == [word["text"] for word in case["state"]["words"]]
         assert [word.id for word in layout.words] == [word["id"] for word in case["state"]["words"]]

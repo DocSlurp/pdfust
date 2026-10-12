@@ -18,9 +18,9 @@ readonly XBUILDENV_SHA256="7c1229a3d634e07a440fc916d56738ac4db61410dc6f50eb59a11
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly REPOSITORY_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-readonly BUILD_ROOT="${PYLOPDF_PYODIDE_BUILD_ROOT:-${REPOSITORY_ROOT}/.tmp/pyodide-${PYODIDE_VERSION}}"
-readonly OUTPUT_DIR="${PYLOPDF_PYODIDE_OUTPUT_DIR:-${REPOSITORY_ROOT}/dist/pyodide-${PYODIDE_VERSION}}"
-readonly PYTHON_BIN="${PYLOPDF_PYODIDE_PYTHON:-python3.13}"
+readonly BUILD_ROOT="${PDFUST_PYODIDE_BUILD_ROOT:-${REPOSITORY_ROOT}/.tmp/pyodide-${PYODIDE_VERSION}}"
+readonly OUTPUT_DIR="${PDFUST_PYODIDE_OUTPUT_DIR:-${REPOSITORY_ROOT}/dist/pyodide-${PYODIDE_VERSION}}"
+readonly PYTHON_BIN="${PDFUST_PYODIDE_PYTHON:-python3.13}"
 readonly XBUILDENV_CACHE="${BUILD_ROOT}/xbuildenv-cache"
 readonly XBUILDENV_VERSION_ROOT="${XBUILDENV_CACHE}/${PYODIDE_VERSION}"
 readonly EMSDK_ROOT="${BUILD_ROOT}/emsdk"
@@ -70,8 +70,8 @@ readonly TOOL_VENV="${BUILD_ROOT}/tool-venv-${tool_requirements_sha:0:16}"
 mkdir -p -- "${BUILD_ROOT}" "${DOWNLOADS}" "${OUTPUT_DIR}"
 
 project_version="$("${PYTHON_BIN}" -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"])')"
-runtime_wheel="${OUTPUT_DIR}/pylopdf-${project_version}-cp310-abi3-${PYODIDE_PLATFORM}.whl"
-release_wheel="${OUTPUT_DIR}/pylopdf-${project_version}-cp310-abi3-${PYEMSCRIPTEN_PLATFORM}.whl"
+runtime_wheel="${OUTPUT_DIR}/pdfust-${project_version}-cp310-abi3-${PYODIDE_PLATFORM}.whl"
+release_wheel="${OUTPUT_DIR}/pdfust-${project_version}-cp310-abi3-${PYEMSCRIPTEN_PLATFORM}.whl"
 # Remove only the two exact artifacts this invocation owns so repeated builds
 # cannot accidentally validate a wheel from an earlier source tree.
 rm -f -- "${runtime_wheel}" "${release_wheel}"
@@ -99,11 +99,11 @@ actual_node_version="$("${EMSDK_NODE}" --version)"
 
 export RUSTUP_HOME="${BUILD_ROOT}/rustup"
 export CARGO_TARGET_DIR="${BUILD_ROOT}/cargo-target"
-export CARGO_BUILD_JOBS="${PYLOPDF_PYODIDE_BUILD_JOBS:-2}"
+export CARGO_BUILD_JOBS="${PDFUST_PYODIDE_BUILD_JOBS:-2}"
 rustup toolchain install "${RUST_TOOLCHAIN}" --profile minimal
 rustup target add wasm32-unknown-emscripten --toolchain "${RUST_TOOLCHAIN}"
 
-xbuildenv_marker="${XBUILDENV_VERSION_ROOT}/.pylopdf-sha256"
+xbuildenv_marker="${XBUILDENV_VERSION_ROOT}/.pdfust-sha256"
 if [[ ! -f "${xbuildenv_marker}" ]] || [[ "$(<"${xbuildenv_marker}")" != "${XBUILDENV_SHA256}" ]]; then
     [[ ! -e "${XBUILDENV_VERSION_ROOT}" ]] \
         || fail "${XBUILDENV_VERSION_ROOT} is incomplete or has an unexpected checksum marker; remove it and retry"
@@ -138,10 +138,10 @@ export RUSTFLAGS="-C symbol-mangling-version=v0 -C link-arg=-sSIDE_MODULE=2"
 # profile and compile-time tradeoff.
 export CARGO_PROFILE_RELEASE_LTO="fat"
 export CARGO_PROFILE_RELEASE_CODEGEN_UNITS="1"
-source_date_epoch="${PYLOPDF_SOURCE_DATE_EPOCH:-}"
+source_date_epoch="${PDFUST_SOURCE_DATE_EPOCH:-}"
 if [[ -z "${source_date_epoch}" ]]; then
     source_date_epoch="$(git log -1 --format=%ct)" \
-        || fail "cannot determine SOURCE_DATE_EPOCH; set PYLOPDF_SOURCE_DATE_EPOCH outside a Git checkout"
+        || fail "cannot determine SOURCE_DATE_EPOCH; set PDFUST_SOURCE_DATE_EPOCH outside a Git checkout"
 fi
 [[ "${source_date_epoch}" =~ ^[0-9]+$ ]] || fail "SOURCE_DATE_EPOCH must be an integer"
 export SOURCE_DATE_EPOCH="${source_date_epoch}"
@@ -157,7 +157,7 @@ export SOURCE_DATE_EPOCH="${source_date_epoch}"
     --version "${project_version}" \
     --platform "${PYODIDE_PLATFORM}"
 
-if [[ "${PYLOPDF_PYODIDE_SKIP_SMOKE:-0}" != "1" ]]; then
+if [[ "${PDFUST_PYODIDE_SKIP_SMOKE:-0}" != "1" ]]; then
     compatibility_assets="$("${PYTHON_BIN}" "${SCRIPT_DIR}/pyodide_compat.py" --list-assets)"
     smoke_arguments=(
         "${XBUILDENV_CACHE}/xbuildenv/xbuildenv/pyodide-root/dist"
@@ -165,7 +165,7 @@ if [[ "${PYLOPDF_PYODIDE_SKIP_SMOKE:-0}" != "1" ]]; then
         "${REPOSITORY_ROOT}"
         "${compatibility_assets}"
     )
-    native_results="${PYLOPDF_PYODIDE_NATIVE_RESULTS:-}"
+    native_results="${PDFUST_PYODIDE_NATIVE_RESULTS:-}"
     if [[ -n "${native_results}" ]]; then
         [[ -f "${native_results}" ]] || fail "native compatibility baseline is unavailable: ${native_results}"
         smoke_arguments+=("${native_results}")
@@ -184,9 +184,9 @@ fi
     --version "${project_version}" \
     --platform "${PYEMSCRIPTEN_PLATFORM}"
 
-mapfile -t wheels < <(find "${OUTPUT_DIR}" -maxdepth 1 -type f -name "pylopdf-${project_version}-*.whl" -print)
+mapfile -t wheels < <(find "${OUTPUT_DIR}" -maxdepth 1 -type f -name "pdfust-${project_version}-*.whl" -print)
 [[ "${#wheels[@]}" -eq 1 ]] \
-    || fail "expected one publishable pylopdf ${project_version} wheel in ${OUTPUT_DIR}, found ${#wheels[@]}"
+    || fail "expected one publishable pdfust ${project_version} wheel in ${OUTPUT_DIR}, found ${#wheels[@]}"
 [[ "${wheels[0]}" == "${release_wheel}" ]] || fail "unexpected publishable artifact: ${wheels[0]}"
 
 printf 'Pyodide %s build completed with Python %s, Emscripten %s, Node.js %s, Rust %s, pyodide-build %s, and maturin %s\n' \

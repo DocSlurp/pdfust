@@ -7,7 +7,7 @@ from itertools import permutations
 import pytest
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def _glyph_pdf(
@@ -49,11 +49,11 @@ def _glyph_pdf(
     ],
 )
 def test_disjoint_fields_keep_words_under_reverse_glyph_painting(texts: list[tuple[str, float]], rotation: int) -> None:
-    with pylopdf.open(stream=_glyph_pdf(texts, reverse=False, rotation=rotation)) as forward:
+    with pdfust.open(stream=_glyph_pdf(texts, reverse=False, rotation=rotation)) as forward:
         expected = forward[0].get_text()
         expected_words = [word[4] for word in forward[0].get_text("words")]
         expected_lines = forward[0].get_text("dict")["blocks"]
-    with pylopdf.open(stream=_glyph_pdf(texts, reverse=True, rotation=rotation)) as reverse:
+    with pdfust.open(stream=_glyph_pdf(texts, reverse=True, rotation=rotation)) as reverse:
         assert reverse[0].get_text() == expected
         assert [word[4] for word in reverse[0].get_text("words")] == expected_words
         assert reverse[0].get_text("dict")["blocks"] == expected_lines
@@ -62,7 +62,7 @@ def test_disjoint_fields_keep_words_under_reverse_glyph_painting(texts: list[tup
 
 
 def test_wide_gaps_do_not_hide_true_overprinted_words() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     page = doc.new_page(width=400, height=200)
     # One complete overprint has two physically disconnected words. It must
     # remain a distinct source layer after the forward-gap run split.
@@ -78,13 +78,13 @@ def test_wide_gaps_do_not_hide_true_overprinted_words() -> None:
 @pytest.mark.parametrize("reverse", [False, True])
 def test_sparse_monotone_glyphs_preserve_every_word(*, reverse: bool) -> None:
     texts = [("A", float(40 + index * 20)) for index in range(256)]
-    with pylopdf.open(stream=_glyph_pdf(texts, reverse=reverse, width=6000)) as doc:
+    with pdfust.open(stream=_glyph_pdf(texts, reverse=reverse, width=6000)) as doc:
         assert [word[4] for word in doc[0].get_text("words")] == ["A"] * 256
         assert doc[0].get_text().split() == ["A"] * 256
 
 
 @pytest.mark.parametrize("paint_order", list(permutations(range(4))))
 def test_disjoint_fields_ignore_arbitrary_glyph_paint_order(paint_order: tuple[int, ...]) -> None:
-    with pylopdf.open(stream=_glyph_pdf([("12", 40), ("AB", 100)], reverse=False, paint_order=paint_order)) as doc:
+    with pdfust.open(stream=_glyph_pdf([("12", 40), ("AB", 100)], reverse=False, paint_order=paint_order)) as doc:
         assert doc[0].get_text() == "12 AB\n"
         assert [word[4] for word in doc[0].get_text("words")] == ["12", "AB"]

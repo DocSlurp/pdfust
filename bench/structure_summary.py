@@ -70,7 +70,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=Path("bench/results/structure-comparison.md"))
     args = parser.parse_args()
     baseline = json.loads(args.reference.read_text())
-    references = {row["case"]: row for row in baseline["results"] if row["adapter"] == "pylopdf"}
+    references = {row["case"]: row for row in baseline["results"] if row["adapter"] == "pdfust"}
     lines = [
         "# Structured recovery comparison",
         "",

@@ -3,7 +3,7 @@
 This file is the canonical development context for coding agents.
 `CLAUDE.md` only imports this file; update this file instead.
 
-pylopdf is a published Python library for PDF editing, rendering, extraction,
+pdfust is a published Python library for PDF editing, rendering, extraction,
 and generation, implemented in Rust. Editing is powered by
 [lopdf](https://github.com/J-F-Liu/lopdf), rendering and extraction by
 [hayro](https://github.com/LaurenzV/hayro), and generated text and form
@@ -13,8 +13,9 @@ overview.
 
 ## Working conventions
 
-- This workspace is private `jev-pdf` development (formerly `pdf-master`). Remotes `origin` and
-  `private` target `justsml/jev-pdf`, renamed and verified private on 2026-10-08.
+- This workspace is private `pdfust` development (formerly `pdf-master`, then `jev-pdf`,
+  derived from upstream `pylopdf`). Remotes `origin` and `private` target
+  `justsml/pdfust`, verified private; it was `justsml/jev-pdf` until the 2026-10-12 rename.
   Public upstream/fork remotes remain disconnected.
 - The user explicitly authorized pushing the completed work to private
   `origin/main` on 2026-10-08. Keep future pushes within the user's requested
@@ -22,8 +23,12 @@ overview.
   development artifacts. The local pre-push hook permits only this private
   repository's main branch and verifies private visibility; do not bypass it.
   GitHub Actions remain disabled. Previously published history remains public.
-- The distribution is `jev-pdf`, with public import `jev_pdf`. Keep `pylopdf`
-  as a compatibility import and retain original authors, licenses and notices.
+- The distribution is `pdfust`, with public import `pdfust`. Keep `jev_pdf` and
+  `pylopdf` as thin compatibility imports (`src/jev_pdf`, `src/pylopdf`; see
+  `docs/PACKAGE_NAME.md`) and retain original authors, licenses and notices.
+  Five bench modules pinned by frozen P003 digests (`p003_synthetic_relations.py`,
+  `feature_cases.py`, `pipeline_row_evidence.py`, `pipeline_regions.py`, `silver.py`)
+  and the wild-v2 producer id `"pylopdf"` keep their original text for provenance.
   Historical artifact directories keep `pdf-master-artifacts` for provenance;
   do not rename frozen paths or hashes during active experiments.
 - The user authorizes parallel research/experiment agents using `gpt-6.1-sol`
@@ -198,7 +203,7 @@ overview.
 ## Architecture and invariants
 
 - `_Document` (`rust/src/document.rs`) is a thin conversion and error-mapping
-  layer. The Python `Document` (`src/pylopdf/__init__.py`) owns validation,
+  layer. The Python `Document` (`src/pdfust/__init__.py`) owns validation,
   zero-/one-based conversion, and closed-state handling.
 - Python API page numbers are zero-based; Rust/lopdf page numbers are one-based.
   Keep the conversion centralized in `_lopdf_page_number`.
@@ -223,7 +228,7 @@ overview.
   text. Glyphs hayro delivers without any Unicode mapping (for example a Type 3
   font with no ToUnicode CMap, upstream gap LaurenzV/hayro#1331) are skipped;
   each fresh page interpretation with such glyphs surfaces one deduplicated
-  static `PylopdfWarning` through the pending-warnings sink, and
+  static `PdfustWarning` through the pending-warnings sink, and
   `pdfium-type3.pdf` pins the extraction gap as an upstream-linked expected
   failure. A U+0000 ToUnicode mapping is treated as unmapped. Type 3 glyphs
   advance by their `/Widths` through `Type3Glyph::advance_width`, a method
@@ -466,7 +471,7 @@ overview.
   lopdf's bounded decoder. Strict zune-jpeg decoding, Lanczos3 resizing, and
   jpeg-encoder optimized Huffman coding are used, and a candidate is committed
   only when its encoded payload becomes smaller. The
-  private `/PylopdfQuality` marker prevents repeat calls at the same or higher
+  private `/PdfustQuality` marker prevents repeat calls at the same or higher
   quality from introducing generational loss when dimensions are unchanged.
   Candidate JPEG bytes and Flate streams remain borrowed through admission,
   decode, resize, and re-encode; release those borrows before mutating the cloned
@@ -489,7 +494,7 @@ overview.
 - Native OCR uses RTen 0.24 with only its `rten_format` feature. The core wheel
   contains the pure-Rust inference engine; PP-OCRv6 small detector,
   recognizer, and dictionary data come from the independently versioned
-  `pylopdf-ocr-models` package through the `[ocr]` extra. `OcrEngine` loads one
+  `pdfust-ocr-models` package through the `[ocr]` extra. `OcrEngine` loads one
   immutable model set and owns a dedicated 1–16 thread pool. Detector,
   recognizer, and dictionary paths share a default 64 MiB cumulative input
   budget enforced before RTen parses either model; `max_model_size=None` is
@@ -646,7 +651,7 @@ overview.
   reserved fallibly only after confirming that narrow shape; allocation
   refusal surfaces as `PdfError` rather than the original parse failure.
   Repaired bytes feed hayro,
-  `PylopdfWarning` makes the event visible, `Document.is_repaired` and
+  `PdfustWarning` makes the event visible, `Document.is_repaired` and
   `MetadataProbe.repaired` retain it, and saving normalizes the xref data.
 - CJK fallback replaces hayro's `font_resolver`
   (`pick_cjk_fallback` in `rust/src/document.rs`). Detect CJK through
@@ -654,7 +659,7 @@ overview.
   CNS1 to independent `ja`, `ko`, `zh-CN`, and `zh-TW` slots, and use
   conservative BaseFont-name hints only when collection metadata is absent.
   Serif-like names use the serif slot; other names use sans. Font files come
-  from locale workspace packages under `fonts/pylopdf-fonts-{jp,ko,zh-cn,zh-tw}/`
+  from locale workspace packages under `fonts/pdfust-fonts-{jp,ko,zh-cn,zh-tw}/`
   and are exposed only through matching locale extras. Explicit and
   auto-selected fallback font input shares the 64 MiB default OpenType boundary
   described below. Auto-discovery keeps package assets as paths and must read
@@ -716,7 +721,7 @@ overview.
   planned once, with borrowed dictionary reads and fallible collections, before
   preparing the rendering clone. Quad bounding boxes do not materialize a
   second point vector, and generated appearance buffers grow fallibly.
-  Pylopdf-created Highlights prepare quads, appearance operators, and
+  Pdfust-created Highlights prepare quads, appearance operators, and
   `QuadPoints` before cache invalidation or dependent-object creation.
   Annotation appends validate the final page limit and preallocate their
   `/Annots` target before dependent-object creation. Direct arrays and unshared
@@ -743,7 +748,7 @@ overview.
   in target display coordinates, subset-embeds the selected OpenType face, and
   returns bytes that the existing lopdf Form-XObject path imports. It releases
   the GIL and rejects missing glyphs. Without an explicit font source,
-  optional providers `pylopdf[ar]`, `[he]`, `[hi]`, `[jp]`, `[ko]`, `[th]`,
+  optional providers `pdfust[ar]`, `[he]`, `[hi]`, `[jp]`, `[ko]`, `[th]`,
   `[zh-cn]`, and `[zh-tw]` supply Noto Sans/Serif fonts. Unambiguous script
   markers select a provider; pure Han remains JP-first for compatibility and
   `font_language` resolves the intended locale. This selects one font for the
@@ -765,7 +770,7 @@ overview.
   plus binary refinement so long unbreakable runs do not repeatedly rescan or
   measure complete tails. Boundary indexes, line collections, and retained line
   text grow fallibly; allocation refusal becomes `PdfError` without exposing a
-  partial layout or mutating the document. Pylopdf-owned single-line
+  partial layout or mutating the document. Pdfust-owned single-line
   normalization, grapheme references, shaped-line/glyph collections, WinAnsi
   output, and input-derived text-operator growth are also fallible. Standard 14
   width checks and WinAnsi support probes do not allocate an encoded text copy.
@@ -779,7 +784,7 @@ overview.
   `/ActualText` for complex glyph-to-Unicode mappings.
   Generated PDFs retain it for compliant viewers, but hayro 0.7 does not expose
   that property to extraction devices, so some reordered or context-dependent
-  complex-script clusters remain an explicit pylopdf extraction limitation.
+  complex-script clusters remain an explicit pdfust extraction limitation.
   Keep third-party acknowledgements in `NOTICE.md` and include both license
   files through PEP 639. The Windows abi3 wheel measured 5.42 MB after
   integration, up from 4.44 MB.
@@ -843,7 +848,7 @@ overview.
   dictionary lookup after a bounded name-tree miss. `Page.get_links` builds one
   borrowed index lazily per call; do not rescan the tree for each link.
   Traversal stacks, cycle sets, and the borrowed index grow fallibly.
-- TOC reads use pylopdf's iterative outline walk rather than lopdf's recursive
+- TOC reads use pdfust's iterative outline walk rather than lopdf's recursive
   parser. They visit indirect cycles once, release the GIL, index named
   destinations once, and reject partial results above 4,096 nodes/entries,
   8,192 edges, 64 levels, 32 destination indirections, or 1 MiB of
@@ -910,7 +915,7 @@ overview.
   wasm-bindgen shim. CI and release builds must also pass
   `tools/smoke_cloudflare.py`, which pins workers-py 1.15.0 and Wrangler
   4.114.0, builds the bundle, starts local `workerd`, and requires the
-  module-scope `import pylopdf` in the example to serve `/health`. Emscripten
+  module-scope `import pdfust` in the example to serve `/health`. Emscripten
   enables PyO3's foldhash-backed `hashbrown` maps because its normal class
   builder uses Rust `RandomState`, while Cloudflare denies entropy during
   module startup. Native targets retain PyO3's standard backend. Emscripten
@@ -953,7 +958,7 @@ overview.
   depth validation and complexity inspection share an iterative traversal
   whose stack grows fallibly, including for wide dictionaries and stream
   dictionaries; allocation refusal raises `PdfError` without partial facts.
-  Bounded pylopdf-owned lopdf decode entry points inspect `/Filter` directly
+  Bounded pdfust-owned lopdf decode entry points inspect `/Filter` directly
   before its infallible materialization and reject more than 16 sequential
   layers with `stream_filter_count`; Form imports, text replacement,
   attachment/XMP reads, and load-time decompression validation share this
@@ -980,7 +985,7 @@ overview.
   guard this boundary.
 - Hayro warnings are collected by the interpreter settings sink in
   `pending_warnings`; Python's `_emit_warnings` drains them as
-  `PylopdfWarning` after each operation.
+  `PdfustWarning` after each operation.
 - `Pixmap` is immutable. Version-specific builds expose its RGBA8 storage
   through a read-only zero-copy buffer. The buffer protocol remains unavailable
   under `abi3-py310` because `Py_buffer` entered the stable ABI in Python 3.11;
@@ -1000,14 +1005,14 @@ overview.
   implementation introduced in 0.43.0. Upstream #527 is fixed but unreleased,
   so this project uses `chrono`.
 - lopdf's content parser drops all operations after a comment line followed by
-  an indented line, reported as lopdf#535. pylopdf is unaffected since v0.7
+  an indented line, reported as lopdf#535. pdfust is unaffected since v0.7
   because extraction moved to hayro (`rust/src/extract.rs`).
 - The pre-commit `validate-pyproject` hook with `trove-classifiers` validates
   classifier existence. v0.4.0 was rejected by PyPI because of the invalid
   classifier `Topic :: Text Processing :: Markup :: PDF`.
   Do not add `validate-pyproject-schema-store`; it raises `UnboundLocalError`.
 - Synchronize the version manually in three places: `pyproject.toml`,
-  `rust/Cargo.toml`, and `src/pylopdf/__init__.py`.
+  `rust/Cargo.toml`, and `src/pdfust/__init__.py`.
 - Release CI cross-compiles macOS x86_64 on an arm64 runner because Intel runner
   queues are slow.
 
@@ -1020,7 +1025,7 @@ overview.
    for five platforms and publishes through PyPI Trusted Publishing.
 
 Locale/script font wheels have a separate release process. Update the selected
-`fonts/pylopdf-fonts-{locale}/pyproject.toml`, then push a
+`fonts/pdfust-fonts-{locale}/pyproject.toml`, then push a
 `fonts-{locale}-vX.Y.Z` tag to run `release-fonts.yml`. Supported release codes
 are `ar`, `he`, `hi`, `jp`, `ko`, `th`, `zh-cn`, and `zh-tw`. Every PyPI
 project requires a Trusted Publisher with workflow `release-fonts.yml` and
@@ -1028,13 +1033,13 @@ environment `pypi`. Publish every wheel referenced by a main-package extra
 before releasing that main package.
 
 The OCR model wheel also releases separately. Update the version in
-`models/pylopdf-ocr-models/pyproject.toml` and
-`models/pylopdf-ocr-models/src/pylopdf_ocr_models/__init__.py`, keep the
+`models/pdfust-ocr-models/pyproject.toml` and
+`models/pdfust-ocr-models/src/pdfust_ocr_models/__init__.py`, keep the
 artifact hashes synchronized in `SHA256SUMS` and its README, then push an
 `ocr-models-vX.Y.Z` tag. Tests and `release-ocr-models.yml` consume that
 manifest. The release workflow runs `tools/smoke_ocr_models_artifact.py`
 against isolated wheel and sdist installations before attestation. The first
-release requires registering the `pylopdf-ocr-models` Trusted Publisher on
+release requires registering the `pdfust-ocr-models` Trusted Publisher on
 PyPI with workflow `release-ocr-models.yml` and environment `pypi`. Publish the
 model wheel before the main package because the main `[ocr]` extra references
 it.
@@ -1061,6 +1066,6 @@ integrations, a watchlist, and explicit non-goals.
   field feedback, meaningful external adoption with roughly 1,000 GitHub stars
   as an indicative signal, and further product refinement justify the API
   freeze. Stars are not a mechanical release trigger.
-- lopdf#535 no longer affects pylopdf since the v0.7 hayro extraction engine.
+- lopdf#535 no longer affects pdfust since the v0.7 hayro extraction engine.
   An upstream fix remains a parallel contribution candidate.
 - See [CHANGELOG.md](CHANGELOG.md) for completed history.

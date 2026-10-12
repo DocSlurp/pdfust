@@ -9,7 +9,7 @@ import pytest
 from bench import p003_confirmation_corpus as corpus
 from bench.silver import sha
 
-import pylopdf
+import pdfust
 
 
 def row(identifier: str, count: int) -> dict[str, object]:
@@ -82,7 +82,7 @@ def test_authored_new_designs_finite_nonoverlapping_slots() -> None:
         data, targets = corpus.authored(plan)
         assert data == corpus.authored(plan)[0]
         hashes.add(sha(data))
-        with pylopdf.Document(stream=data) as doc:
+        with pdfust.Document(stream=data) as doc:
             assert len(doc) == 1
             assert "Trial" in doc[0].get_text()
         for table in targets:

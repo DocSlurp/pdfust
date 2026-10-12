@@ -288,7 +288,7 @@ def process(
     client: Any,
 ) -> dict[str, Any]:
     """Gate an authenticated copied baseline; fail atomically on missing/failed admission."""
-    import pylopdf
+    import pdfust
 
     identifier = _identifier(record["id"])
     baseline = guard_path(Path(config["baseline_directory"]))
@@ -329,7 +329,7 @@ def process(
             data = guard_path(Path(record["pdf_path"])).read_bytes()
             if sha(data) != record["pdf_sha256"]:
                 raise ValueError("Frozen gate source PDF changed")
-            with pylopdf.open(stream=data) as document:
+            with pdfust.open(stream=data) as document:
                 page = document[record["page_number"]]
                 if page.rotation != original["original_rotation"]:
                     raise ValueError("Source original rotation differs from baseline")

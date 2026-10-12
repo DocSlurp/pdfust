@@ -16,7 +16,7 @@ from typing import Any
 from PIL import Image
 from PIL import __version__ as pillow_version
 
-import pylopdf
+import pdfust
 from bench.lowlevel_evidence import _glyphs, digest, encode, write
 from bench.lowlevel_evidence import request as original_request
 from bench.lowlevel_images import MODELS, non_image_bytes
@@ -71,7 +71,7 @@ def select(pdf_bytes: bytes, *, count: int = 24) -> dict[str, Any]:
         raise ValueError(message)
     pairs = []
     source_hash = digest(pdf_bytes)
-    with pylopdf.Document(stream=pdf_bytes) as document:
+    with pdfust.Document(stream=pdf_bytes) as document:
         for page_index in range(min(len(document), POLICY["maximum_source_pages"])):
             lines = _lines(document[page_index].get_text("words"))
             for index, (first, second) in enumerate(pairwise(lines)):
@@ -208,7 +208,7 @@ def prepare(source: Path, directory: Path, *, count: int = 24) -> dict[str, Any]
     selection_hash = write(directory / "selection.json", selection)
     pages: list[dict[str, Any]] = []
     records: list[dict[str, Any]] = []
-    with pylopdf.Document(stream=raw) as document:
+    with pdfust.Document(stream=raw) as document:
         cache = {}
         for pair in selection["pairs"]:
             page_index = pair["page_index"]

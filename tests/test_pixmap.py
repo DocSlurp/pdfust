@@ -12,15 +12,15 @@ from pathlib import Path
 import pytest
 from conftest import build_pdf
 
-import pylopdf
+import pdfust
 
 ASSETS = Path(__file__).parent / "assets" / "real_world"
 
 
 def test_pixmap_dimensions_and_samples(one_page_pdf: bytes) -> None:
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     pix = doc[0].get_pixmap()
-    assert isinstance(pix, pylopdf.Pixmap)
+    assert isinstance(pix, pdfust.Pixmap)
     assert pix.width == 612
     assert pix.height == 792
     assert pix.n == 4
@@ -29,7 +29,7 @@ def test_pixmap_dimensions_and_samples(one_page_pdf: bytes) -> None:
 
 
 def test_pixmap_buffer_protocol_matches_build_abi(one_page_pdf: bytes) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     if sysconfig.get_config_var("Py_GIL_DISABLED") != 1:
         with pytest.raises(TypeError, match="bytes-like object"):
             memoryview(pix)  # type: ignore[arg-type]  # Buffer exists only in version-specific builds.
@@ -50,7 +50,7 @@ def test_pixmap_buffer_protocol_matches_build_abi(one_page_pdf: bytes) -> None:
 
 
 def test_pixmap_scale_and_dpi(one_page_pdf: bytes) -> None:
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     assert doc[0].get_pixmap(scale=2.0).width == 612 * 2
     assert doc[0].get_pixmap(dpi=144).width == 612 * 2
     with pytest.raises(ValueError, match="cannot both be specified"):
@@ -58,42 +58,42 @@ def test_pixmap_scale_and_dpi(one_page_pdf: bytes) -> None:
 
 
 def test_pixmap_tobytes_is_png(one_page_pdf: bytes) -> None:
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     pix = doc[0].get_pixmap()
     assert pix.tobytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_pixmap_tobytes_bounds_encoded_output(one_page_pdf: bytes) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     expected = pix.tobytes(max_size=None)
 
     assert pix.tobytes(max_size=len(expected)) == expected
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         pix.tobytes(max_size=len(expected) - 1)
     assert caught.value.code == "pixmap_output_size"
 
 
 @pytest.mark.parametrize("max_size", [0, -1, True, 1.5])
 def test_pixmap_tobytes_validates_output_limit(one_page_pdf: bytes, max_size: object) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
 
     with pytest.raises((TypeError, ValueError), match="max_size"):
         pix.tobytes(max_size=max_size)  # type: ignore[arg-type]
 
 
 def test_pixmap_save_writes_png_to_pathlike(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     target = tmp_path / "rendered page.png"
     target.write_bytes(b"existing output")
 
     pix.save(target)
     assert target.read_bytes() == pix.tobytes()
-    assert list(tmp_path.glob(".pylopdf-*.tmp")) == []
+    assert list(tmp_path.glob(".pdfust-*.tmp")) == []
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Windows mode bits do not expose the POSIX contract")
 def test_pixmap_save_preserves_existing_file_mode(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     target = tmp_path / "page.png"
     target.write_bytes(b"existing output")
     target.chmod(0o640)
@@ -105,7 +105,7 @@ def test_pixmap_save_preserves_existing_file_mode(one_page_pdf: bytes, tmp_path:
 
 @pytest.mark.skipif(os.name == "nt", reason="Windows symlink creation needs host configuration")
 def test_pixmap_save_atomically_updates_a_symlink_target(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     target = tmp_path / "target.png"
     target.write_bytes(b"existing output")
     link = tmp_path / "page.png"
@@ -118,37 +118,37 @@ def test_pixmap_save_atomically_updates_a_symlink_target(one_page_pdf: bytes, tm
 
 
 def test_pixmap_save_cleans_up_after_replace_failure(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     target = tmp_path / "page.png"
     target.mkdir()
     marker = target / "existing"
     marker.write_bytes(b"preserved")
 
-    with pytest.raises(pylopdf.PdfError, match="failed to save PNG"):
+    with pytest.raises(pdfust.PdfError, match="failed to save PNG"):
         pix.save(target)
 
     assert marker.read_bytes() == b"preserved"
-    assert list(tmp_path.glob(".pylopdf-*.tmp")) == []
+    assert list(tmp_path.glob(".pdfust-*.tmp")) == []
 
 
 def test_pixmap_save_reports_io_error(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     target = tmp_path / "missing" / "page.png"
 
-    with pytest.raises(pylopdf.PdfError, match="failed to save PNG"):
+    with pytest.raises(pdfust.PdfError, match="failed to save PNG"):
         pix.save(target)
 
 
 def test_pixmap_save_rejects_non_png_extension(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pix = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pix = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
 
-    with pytest.raises(pylopdf.PdfError, match=r"\.png extension"):
+    with pytest.raises(pdfust.PdfError, match=r"\.png extension"):
         pix.save(tmp_path / "page.jpg")
 
 
 def test_pixmap_background(one_page_pdf: bytes) -> None:
     """Use opaque pixels with a background and transparency by default."""
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     transparent = doc[0].get_pixmap()
     white = doc[0].get_pixmap(background=(255, 255, 255))
     assert transparent.samples[3] == 0
@@ -157,12 +157,12 @@ def test_pixmap_background(one_page_pdf: bytes) -> None:
 
 def test_pixmap_matches_png_rendering(one_page_pdf: bytes) -> None:
     """Produce identical PNG pixels through Pixmap and render_page."""
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     assert doc[0].get_pixmap().tobytes() == doc.render_page(0)
 
 
 def test_pixmap_clip_matches_full_render_region(one_page_pdf: bytes) -> None:
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     full = doc[0].get_pixmap()
     clipped = doc[0].get_pixmap(clip=(10, 20, 110, 70))
 
@@ -172,7 +172,7 @@ def test_pixmap_clip_matches_full_render_region(one_page_pdf: bytes) -> None:
 
 
 def test_pixmap_clip_rounds_outward_and_intersects_page(one_page_pdf: bytes) -> None:
-    page = pylopdf.open(stream=one_page_pdf)[0]
+    page = pdfust.open(stream=one_page_pdf)[0]
 
     fractional = page.get_pixmap(scale=2, clip=(0.25, 0.25, 1.25, 1.25))
     assert (fractional.width, fractional.height) == (3, 3)
@@ -182,15 +182,15 @@ def test_pixmap_clip_rounds_outward_and_intersects_page(one_page_pdf: bytes) -> 
 
 
 def test_pixmap_clip_rejects_invalid_or_non_intersecting_rect(one_page_pdf: bytes) -> None:
-    page = pylopdf.open(stream=one_page_pdf)[0]
+    page = pdfust.open(stream=one_page_pdf)[0]
     with pytest.raises(ValueError, match="clip must be a finite rect"):
         page.get_pixmap(clip=(10, 10, 10, 20))
-    with pytest.raises(pylopdf.PdfError, match="does not intersect"):
+    with pytest.raises(pdfust.PdfError, match="does not intersect"):
         page.get_pixmap(clip=(700, 800, 710, 810))
 
 
 def test_pixmap_clip_uses_rotated_display_coordinates(one_page_pdf: bytes) -> None:
-    page = pylopdf.open(stream=one_page_pdf)[0]
+    page = pdfust.open(stream=one_page_pdf)[0]
     page.set_rotation(90)
     full = page.get_pixmap()
     clipped = page.get_pixmap(clip=(0, 0, 100, 50))
@@ -228,46 +228,46 @@ def build_broken_image_pdf() -> bytes:
 
 
 def test_broken_image_emits_warning() -> None:
-    doc = pylopdf.open(stream=build_broken_image_pdf())
-    with pytest.warns(pylopdf.PylopdfWarning, match="decode"):
+    doc = pdfust.open(stream=build_broken_image_pdf())
+    with pytest.warns(pdfust.PdfustWarning, match="decode"):
         doc.render_page(0)
 
 
 def test_clean_render_emits_no_warning(one_page_pdf: bytes) -> None:
-    doc = pylopdf.open(stream=one_page_pdf)
+    doc = pdfust.open(stream=one_page_pdf)
     with warnings.catch_warnings():
-        warnings.simplefilter("error", pylopdf.PylopdfWarning)
+        warnings.simplefilter("error", pdfust.PdfustWarning)
         doc.render_page(0)
         doc.get_page_text(0)
 
 
 def test_warnings_do_not_leak_between_operations() -> None:
     """Do not leak a broken-PDF warning into the next clean operation."""
-    broken = pylopdf.open(stream=build_broken_image_pdf())
-    with pytest.warns(pylopdf.PylopdfWarning):
+    broken = pdfust.open(stream=build_broken_image_pdf())
+    with pytest.warns(pdfust.PdfustWarning):
         broken.render_page(0)
     with warnings.catch_warnings():
-        warnings.simplefilter("error", pylopdf.PylopdfWarning)
+        warnings.simplefilter("error", pdfust.PdfustWarning)
         broken.get_page_text(0)
 
 
 def test_corpus_render_has_no_warnings() -> None:
     """Render a regular corpus PDF without warnings."""
-    doc = pylopdf.open(ASSETS / "usrguide.pdf")
+    doc = pdfust.open(ASSETS / "usrguide.pdf")
     with warnings.catch_warnings():
-        warnings.simplefilter("error", pylopdf.PylopdfWarning)
+        warnings.simplefilter("error", pdfust.PdfustWarning)
         doc[0].get_pixmap(scale=0.5)
 
 
 def test_multi_page_pixmap() -> None:
-    doc = pylopdf.open(stream=build_pdf(["One", "Two"], page_size=(200, 100)))
+    doc = pdfust.open(stream=build_pdf(["One", "Two"], page_size=(200, 100)))
     pix = doc[1].get_pixmap()
     assert (pix.width, pix.height) == (200, 100)
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Windows mode bits do not expose the POSIX contract")
 def test_pixmap_save_new_file_is_private_with_permissive_umask(one_page_pdf: bytes, tmp_path: Path) -> None:
-    pixmap = pylopdf.open(stream=one_page_pdf)[0].get_pixmap()
+    pixmap = pdfust.open(stream=one_page_pdf)[0].get_pixmap()
     target = tmp_path / "private.png"
     previous_umask = os.umask(0)
     try:
@@ -277,4 +277,4 @@ def test_pixmap_save_new_file_is_private_with_permissive_umask(one_page_pdf: byt
 
     assert stat.S_IMODE(target.stat().st_mode) == 0o600
     assert target.read_bytes() == pixmap.tobytes()
-    assert not list(tmp_path.glob(".pylopdf-*.tmp"))
+    assert not list(tmp_path.glob(".pdfust-*.tmp"))

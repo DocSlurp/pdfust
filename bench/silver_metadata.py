@@ -22,7 +22,7 @@ from typing import Any
 from pypdf import PdfReader
 from pypdf.generic import ByteStringObject, ContentStream, IndirectObject, TextStringObject
 
-import pylopdf
+import pdfust
 
 MAX_FILE_BYTES = 64 * 1024 * 1024
 MAX_PAGES = 64
@@ -453,7 +453,7 @@ def analyze_pdf(data: bytes) -> dict[str, Any]:
     pages: list[dict[str, Any]] = []
     document = None
     try:
-        document = pylopdf.Document(stream=data)
+        document = pdfust.Document(stream=data)
     except Exception as exc:
         errors.append({"scope": "geometry", "type": type(exc).__name__, "message": str(exc)})
     for index, page in enumerate(reader.pages):

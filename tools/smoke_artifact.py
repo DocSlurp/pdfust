@@ -10,7 +10,7 @@ import sysconfig
 import tempfile
 from pathlib import Path
 
-_SMOKE_TEXT = "pylopdf artifact smoke test"
+_SMOKE_TEXT = "pdfust artifact smoke test"
 _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
@@ -27,7 +27,7 @@ def _check_free_threaded_pixmap(pixmap: object, expected: bytes) -> None:
     is_gil_enabled = getattr(sys, "_is_gil_enabled", None)
     _require(
         condition=is_gil_enabled is not None and not is_gil_enabled(),
-        message="importing pylopdf unexpectedly enabled the GIL",
+        message="importing pdfust unexpectedly enabled the GIL",
     )
     view = memoryview(pixmap)
     _require(condition=view.readonly, message="Pixmap buffer must be read-only")
@@ -41,15 +41,15 @@ def _check_free_threaded_pixmap(pixmap: object, expected: bytes) -> None:
 
 def _run_smoke() -> None:
     """Exercise create, save, open, extract, and render from the installed package."""
-    import pylopdf  # noqa: PLC0415  # Import only after the artifact is installed.
+    import pdfust  # noqa: PLC0415  # Import only after the artifact is installed.
 
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     page = doc.new_page(width=200, height=200)
     page.insert_text((20, 40), _SMOKE_TEXT)
     data = doc.tobytes()
     doc.close()
 
-    with pylopdf.open(stream=data) as reopened:
+    with pdfust.open(stream=data) as reopened:
         _require(
             condition=reopened.page_count == 1,
             message="reopened document has the wrong page count",
@@ -66,13 +66,13 @@ def _run_smoke() -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "smoke.pdf"
             reopened.save(output)
-            with pylopdf.open(output) as saved:
+            with pdfust.open(output) as saved:
                 _require(
                     condition=_SMOKE_TEXT in saved[0].get_text(),
                     message="saved file lost inserted text",
                 )
 
-    sys.stdout.write(f"artifact smoke test passed with pylopdf {pylopdf.__version__}\n")
+    sys.stdout.write(f"artifact smoke test passed with pdfust {pdfust.__version__}\n")
 
 
 def _install_and_spawn(artifact_dir: Path, pattern: str) -> None:

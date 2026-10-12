@@ -2,7 +2,7 @@
 
 The final experimental CLI extracted all four generated pages successfully, with zero hosted calls, zero ledger attempts and USD 0 cost. Retained outputs are under `bench/results/pdf-master-artifacts/pipeline-p002/document-smoke-final/`; the complete document is `native-all/document.md`, with page artifacts and provenance linked from `native-all/document.json`. This is a generated-source smoke test, not corpus quality scoring.
 
-The source contains an upright 2×2 grid, two-column prose, bold/list/link examples, and the same grid with page rotation 90°. PDF SHA-256: `1e38989d5cf559f2bc8637bc8e667dea41dee9f799e459a8866646936f70a0af`. Runtime: Python 3.14.7, jev-pdf 0.13.0, Linux x86_64, eight logical CPUs, one native runner worker. No OCR, detector, network inference or local GPU was needed for these text-bearing pages.
+The source contains an upright 2×2 grid, two-column prose, bold/list/link examples, and the same grid with page rotation 90°. PDF SHA-256: `1e38989d5cf559f2bc8637bc8e667dea41dee9f799e459a8866646936f70a0af`. Runtime: Python 3.14.7, pdfust 0.13.0, Linux x86_64, eight logical CPUs, one native runner worker. No OCR, detector, network inference or local GPU was needed for these text-bearing pages.
 
 Commands ran from `/home/dan/code/oss/jev-pdf-p002-evaluation` at revision `764ca965e40c0722ef19bc767b966f92ce81b0b3`:
 

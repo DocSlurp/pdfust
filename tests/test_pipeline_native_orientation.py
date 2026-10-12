@@ -11,7 +11,7 @@ from bench.pipeline_run import source
 from bench.pipeline_vision_transcription import _canonical
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def grid(*, counterrotate: bool = False, heading: bool = False) -> bytes:
@@ -44,7 +44,7 @@ def grid(*, counterrotate: bool = False, heading: bool = False) -> bytes:
 
 
 def project(rotation: int, *, cropped: bool = False, counterrotate: bool = False, heading: bool = False) -> tuple:
-    with pylopdf.open(stream=grid(counterrotate=counterrotate, heading=heading)) as document:
+    with pdfust.open(stream=grid(counterrotate=counterrotate, heading=heading)) as document:
         page = document[0]
         if cropped:
             page.set_cropbox((20, 20, 340, 340))

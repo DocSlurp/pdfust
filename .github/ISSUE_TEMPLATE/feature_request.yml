@@ -22,7 +22,7 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: Mention existing pylopdf recipes or other libraries that partly solve the problem.
+      description: Mention existing pdfust recipes or other libraries that partly solve the problem.
   - type: textarea
     id: evidence
     attributes:

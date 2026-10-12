@@ -385,7 +385,7 @@ def menu_th() -> dict[str, Any]:
 
 
 def menu_vi() -> dict[str, Any]:
-    """Hanoi pho house (pylopdf): zero-decimal dong, one NFD paragraph."""
+    """Hanoi pho house (pdfust): zero-decimal dong, one NFD paragraph."""
     pho = [["Món", "Mô tả", "Nhỏ", "Lớn"],
            ["Phở bò tái", "Thịt bò tái chần, hành hoa, rau mùi", dong(55000), dong(70000)],
            ["Phở bò chín", "Thịt nạm, gầu luộc mềm, thái mỏng", dong(55000), dong(70000)],
@@ -603,7 +603,7 @@ def menu_engb() -> dict[str, Any]:
 
 
 def program_en() -> dict[str, Any]:
-    """Two-day civic data conference program (pylopdf); CJK/Hangul names sit in their own table cells."""
+    """Two-day civic data conference program (pdfust); CJK/Hangul names sit in their own table cells."""
     schedule = [
         ["Thu 8:00–9:00", "Registration, coffee and pastries", "—", "Lobby B"],
         ["Thu 9:00–9:30", "Welcome and opening remarks", "Dana Whitfield, Program Chair", "Puget Hall"],
@@ -1526,7 +1526,7 @@ def newsletter_ru() -> dict[str, Any]:
 
 
 def newsletter_el() -> dict[str, Any]:
-    """Cultural association newsletter in Greek (pylopdf): no emoji, raster chart."""
+    """Cultural association newsletter in Greek (pdfust): no emoji, raster chart."""
     members = {"title": "Μέλη του συλλόγου", "categories": ["2022", "2023", "2024", "2025", "2026"],
                "series": [("Μέλη", [184, 203, 221, 247, 268])], "max": 300, "ticks": 3, "tick_format": lambda v: f"{v:.0f}"}
     income = [("Συνδρομές μελών (268 × 30 €)", 804000), ("Δίδακτρα χορευτικών τμημάτων", 1146000), ("Επιχορήγηση Δήμου", 500000),

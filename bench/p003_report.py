@@ -916,7 +916,7 @@ def verify_regions_output(
 
     from PIL import Image
 
-    import pylopdf
+    import pdfust
     from bench import generalization_vision_regions as crops
     from bench import p003_region_candidates as candidates
     from bench import p003_regions_run as processor
@@ -965,7 +965,7 @@ def verify_regions_output(
     data = guard_path(Path(record["pdf_path"])).read_bytes()
     if sha(data) != record["pdf_sha256"]:
         raise ValueError("Frozen proposal PDF changed")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[record["page_number"]]
         viewport = list(page.rect)
         if prediction["viewport"] != viewport or prediction["original_rotation"] != page.rotation:

@@ -89,8 +89,8 @@ def build(root: Path, base: Path, output: Path) -> Path:
         if receipts[str(pdf.resolve())] != record["pdf_sha256"]:
             raise ValueError("Frozen source PDF changed")
         # The retained source page and reference bbox use display coordinates; no invented cell boxes.
-        import pylopdf
-        with pylopdf.Document(record["pdf_path"]) as document:
+        import pdfust
+        with pdfust.Document(record["pdf_path"]) as document:
             scale = source.width / document[record["page_number"]].rect.width
         crop = source.crop(tuple(round(v * scale) for v in reference["bbox"]))
         crop.thumbnail((630, 1100))

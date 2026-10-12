@@ -1,7 +1,7 @@
 """Authored wild-v2 office documents: government forms, contracts, CVs and meeting minutes.
 
 Sixteen documents across four producers. Forms carry real AcroForm widgets
-(ReportLab) filled by pylopdf; contracts use nested ordered clause lists and
+(ReportLab) filled by pdfust; contracts use nested ordered clause lists and
 payment schedules; CVs vary single- and two-column layouts; minutes carry
 action-item tables that continue across pages and vote tallies that add up.
 All people, companies, addresses and identifiers are fictional.
@@ -1501,7 +1501,7 @@ def cv_de() -> dict[str, Any]:
 
 
 def cv_ko() -> dict[str, Any]:
-    """이력서 및 경력기술서 (pylopdf, 3 pages)."""
+    """이력서 및 경력기술서 (pdfust, 3 pages)."""
     return {
         "template": "resume", "page_size": "A4", "languages": ["ko-KR", "en"],
         "metadata": {"title": "이력서 – 박서연", "author": "박서연", "subject": "배터리 셀 공정 엔지니어 경력직 지원",
@@ -2032,7 +2032,7 @@ def minutes_tr() -> dict[str, Any]:
 
 
 def minutes_he() -> dict[str, Any]:
-    """פרוטוקול ישיבת ועד הורים (pylopdf, RTL, 3 pages)."""
+    """פרוטוקול ישיבת ועד הורים (pdfust, RTL, 3 pages)."""
     checks: list[dict[str, Any]] = []
     votes = [("אישור תקציב ועד ההורים לשנת הלימודים", 9, 1, 1), ("בחירת ספק ההסעות לטיול השנתי", 8, 2, 1),
              ("הצטרפות לתוכנית ״בית ספר ירוק״", 11, 0, 0)]

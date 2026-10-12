@@ -1,7 +1,7 @@
 //! Optional PP-OCR inference through the pure-Rust RTen runtime.
 //!
 //! Model data is deliberately not embedded in the core wheel. The Python
-//! layer locates the independently versioned `pylopdf-ocr-models` package and
+//! layer locates the independently versioned `pdfust-ocr-models` package and
 //! constructs this engine with explicit detector, recognizer, and dictionary
 //! paths.
 
@@ -17,7 +17,7 @@ use crate::document::{LimitError, PdfError, read_file_fallibly};
 use crate::pixmap::Pixmap;
 
 pyo3::create_exception!(
-    pylopdf,
+    pdfust,
     OcrError,
     PdfError,
     "OCR model loading or inference failed."
@@ -1040,7 +1040,7 @@ fn recognition_input(
 }
 
 /// Loaded OCR model set. Python owns rendering and coordinate conversion.
-#[pyclass(frozen, module = "pylopdf.pylopdf_core")]
+#[pyclass(frozen, module = "pdfust.pdfust_core")]
 pub struct _OcrEngine {
     engine: Engine,
 }
@@ -1134,6 +1134,6 @@ impl _OcrEngine {
     }
 
     fn __repr__(&self) -> &'static str {
-        "<pylopdf.OcrEngine native models>"
+        "<pdfust.OcrEngine native models>"
     }
 }

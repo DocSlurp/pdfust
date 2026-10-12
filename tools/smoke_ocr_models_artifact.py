@@ -1,4 +1,4 @@
-"""Validate an installed pylopdf OCR model distribution."""
+"""Validate an installed pdfust OCR model distribution."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ import sys
 from importlib import metadata
 from pathlib import Path
 
-import pylopdf_ocr_models
+import pdfust_ocr_models
 
-_DISTRIBUTION = "pylopdf-ocr-models"
+_DISTRIBUTION = "pdfust-ocr-models"
 _EXPECTED_ARTIFACTS = {
     "PP-OCRv6_det_small.rten",
     "PP-OCRv6_rec_small.rten",
@@ -62,10 +62,10 @@ def _check_metadata(version: str) -> metadata.Distribution:
     distribution = metadata.distribution(_DISTRIBUTION)
     package_metadata = distribution.metadata
     _require(
-        condition=distribution.version == version and pylopdf_ocr_models.__version__ == version,
+        condition=distribution.version == version and pdfust_ocr_models.__version__ == version,
         message=(
             f"version mismatch: metadata={distribution.version!r}, "
-            f"module={pylopdf_ocr_models.__version__!r}, expected={version!r}"
+            f"module={pdfust_ocr_models.__version__!r}, expected={version!r}"
         ),
     )
     _require(
@@ -90,7 +90,7 @@ def _check_metadata(version: str) -> metadata.Distribution:
 
 def _check_resources() -> tuple[Path, dict[str, Path]]:
     """Validate installed resource names and return their common root."""
-    paths = pylopdf_ocr_models.model_paths()
+    paths = pdfust_ocr_models.model_paths()
     artifacts = {
         paths.detector.name: paths.detector,
         paths.recognizer.name: paths.recognizer,

@@ -1,34 +1,34 @@
 ---
 title: Benchmarks
-description: Reproducible pylopdf benchmarks for extraction, merging and rendering, with wins and losses published together.
+description: Reproducible pdfust benchmarks for extraction, merging and rendering, with wins and losses published together.
 ---
 
 # Benchmarks
 
-pylopdf publishes **wins and losses together**. These measurements are a
+pdfust publishes **wins and losses together**. These measurements are a
 snapshot of one machine and corpus—not a universal ranking. Use them to choose
 what to measure in your own workload.
 
 !!! info "Latest run"
     **2026-07-26 08:18 UTC** · Windows 11 · Python 3.14.6 · AMD64<br>
-    pylopdf 0.11.0 · pymupdf 1.28.0 · pypdf 6.14.2 · pdfplumber 0.11.10<br>
+    pdfust 0.11.0 · pymupdf 1.28.0 · pypdf 6.14.2 · pdfplumber 0.11.10<br>
     One warm-up plus five measured runs; tables show median milliseconds.
 
 ## At a glance { #overview }
 
 | Workload | What the latest corpus shows |
 |---|---|
-| Merge 10 real-world PDFs | pylopdf **36.6 ms**, pymupdf 131.8 ms, pypdf 426.3 ms |
-| Render first page at 2× | pylopdf led on all ten corpus files |
+| Merge 10 real-world PDFs | pdfust **36.6 ms**, pymupdf 131.8 ms, pypdf 426.3 ms |
+| Render first page at 2× | pdfust led on all ten corpus files |
 | Render 12 pages at 2× | `render_pages()` scaled from 317.4 ms (1 worker) to 81.5 ms (8 workers), a **3.89× speedup** |
-| Extract all text | pylopdf led on four files; pymupdf led on six |
+| Extract all text | pdfust led on four files; pymupdf led on six |
 | Extraction fidelity proxy | Similarity ranged from 0.121 to 1.000 depending on reading-order conventions |
 
 ## Text extraction { #text-extraction }
 
 All pages, milliseconds; lower is faster.
 
-| File | pylopdf | pymupdf | pypdf | pdfplumber |
+| File | pdfust | pymupdf | pypdf | pdfplumber |
 |---|---:|---:|---:|---:|
 | bill-hr815.pdf | 191.6 | **183.2** | 689.7 | 9997.1 |
 | bunka-kokugo-series-019-p4.pdf | 1.9 | **0.5** | 1.0 | 1.8 |
@@ -47,7 +47,7 @@ This is a proxy, not a correctness score. Text is whitespace-normalized and
 compared with pymupdf. Lower similarity for forms and OCR layers can reflect a
 different reading order or whitespace policy even when character counts match.
 
-| File | pylopdf characters | pymupdf characters | Similarity |
+| File | pdfust characters | pymupdf characters | Similarity |
 |---|---:|---:|---:|
 | bill-hr815.pdf | 300559 | 300559 | 1.000 |
 | bunka-kokugo-series-019-p4.pdf | 0 | 0 | 1.000 |
@@ -62,7 +62,7 @@ different reading order or whitespace policy even when character counts match.
 
 ## Merge { #merge }
 
-| Task | pylopdf | pymupdf | pypdf |
+| Task | pdfust | pymupdf | pypdf |
 |---|---:|---:|---:|
 | Merge all 10 corpus files | **36.6** | 131.8 | 426.3 |
 
@@ -70,7 +70,7 @@ different reading order or whitespace policy even when character counts match.
 
 First page to a 2× PNG, milliseconds; lower is faster.
 
-| File | pylopdf | pymupdf |
+| File | pdfust | pymupdf |
 |---|---:|---:|
 | bill-hr815.pdf | **41.1** | 88.9 |
 | bunka-kokugo-series-019-p4.pdf | **48.2** | 110.5 |

@@ -83,7 +83,7 @@ def _baseline_run(directory: Path) -> Run | None:
         for row in baseline.get("rows", [])
     ]
     return Run(
-        name=f"baseline pylopdf-{baseline.get('pylopdf_version')}",
+        name=f"baseline pdfust-{baseline.get('pdfust_version')}",
         description=(
             "Image-carrier PDF baseline: native text/table/image/Markdown counts on image-only pages. "
             "A CPU measurement, not an OCR accuracy score."

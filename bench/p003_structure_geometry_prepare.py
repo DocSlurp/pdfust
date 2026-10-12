@@ -14,7 +14,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench.generalization_vision_regions import _crop
 from bench.p003_gate_run import authenticate
 from bench.p003_structure_geometry import digest, encode
@@ -46,7 +46,7 @@ def prepare(baseline: Path, trusted_code: Path, output: Path) -> dict[str, Any]:
         (output / source_path).write_bytes(encode(source))
         crops = []
         if regions:
-            with pylopdf.open(stream=Path(record["pdf_path"]).read_bytes()) as document:
+            with pdfust.open(stream=Path(record["pdf_path"]).read_bytes()) as document:
                 page = document[record["page_number"]]
                 page.set_rotation(original["effective_rotation"])
                 image_bytes = page.render(

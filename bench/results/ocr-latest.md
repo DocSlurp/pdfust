@@ -1,8 +1,8 @@
-# pylopdf native OCR results
+# pdfust native OCR results
 
 - Run at: 2026-07-27 01:00 UTC
 - Environment: Windows-11-10.0.26200-SP0 / Python 3.14.6 / CPU AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
-- Versions: pylopdf 0.12.0, pylopdf-ocr-models 0.1.0
+- Versions: pdfust 0.12.0, pdfust-ocr-models 0.1.0
 - Fixtures (sources and licenses in `tests/assets/real_world/README.md`):
   - `mhlw-digital`: `tests/assets/real_world/mhlw-doc.pdf` - embedded text retained as independent ground truth
   - `bunka-scan`: `tests/assets/real_world/bunka-kokugo-series-019-p4.pdf` - image-only archival scan with manually verified ground truth

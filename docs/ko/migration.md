@@ -1,32 +1,32 @@
 ---
 title: pymupdf에서 이전
-description: pymupdf 작업 흐름을 pylopdf로 옮기고 타입, 동작 및 범위의 의도적인 차이를 이해합니다.
+description: pymupdf 작업 흐름을 pdfust로 옮기고 타입, 동작 및 범위의 의도적인 차이를 이해합니다.
 ---
 
 # pymupdf에서 이전
 
-pylopdf는 pymupdf와 *비슷한 방식*으로 사용할 수 있지만 완전한 대체품은 아닙니다.
+pdfust는 pymupdf와 *비슷한 방식*으로 사용할 수 있지만 완전한 대체품은 아닙니다.
 이전 비용을 좌우하는 `"words"` 튜플, `"dict"` 구조, `search_for → list[Rect]`,
 1부터 시작하는 목차 페이지 번호는 pymupdf와 일치하므로, 대부분의 텍스트 추출과
 페이지 관리 코드는 작은 수정만으로 옮길 수 있습니다. 이 페이지에서는 그대로
 사용할 수 있는 부분, 달라진 부분, 의도적으로 구현하지 않은 기능의 대안을 설명합니다.
 
 !!! note
-    pylopdf는 **PDF 파일만** 처리합니다. pymupdf가 지원하는 XPS / EPUB / 이미지
+    pdfust는 **PDF 파일만** 처리합니다. pymupdf가 지원하는 XPS / EPUB / 이미지
     열기는 지원하지 않습니다.
 
 ## 빠른 대응표 { #mapping }
 
-| pymupdf | pylopdf | 비고 |
+| pymupdf | pdfust | 비고 |
 |---|---|---|
-| `import pymupdf`(`fitz`는 이전 이름) | `import pylopdf` | |
-| `pymupdf.open(path)` / `open(stream=…)` | `pylopdf.open(path)` / `open(stream=…)` | 같은 형태, `password=`도 지원하며UTF-8 127 byte로 제한 |
+| `import pymupdf`(`fitz`는 이전 이름) | `import pdfust` | |
+| `pymupdf.open(path)` / `open(stream=…)` | `pdfust.open(path)` / `open(stream=…)` | 같은 형태, `password=`도 지원하며UTF-8 127 byte로 제한 |
 | `doc[i]`, `len(doc)`, 반복 | 동일 | 0부터 시작, 음수 인덱스 |
 | `doc.metadata` / `set_metadata` | 동일 | 같은 키 이름 |
 | `page.get_text()` | 동일 | 옵션: `text` / `words` / `blocks` / `dict` |
 | `page.search_for(t)` | 동일, 추가로`max_hits=4096` | 상한이 있는`list[Rect]` 반환. 검색어는4,096 byte, `max_hits=None`으로 해제, `quads=` 없음 |
 | `page.get_pixmap(matrix=pymupdf.Matrix(2, 2))` | `page.get_pixmap(scale=2)` | 또는 `dpi=144`, Matrix 클래스 없음 |
-| `pix.samples / width / height / stride / save()` | 동일 | 항상 straight-alpha RGBA8, pylopdf의 상한이 있는 `tobytes(max_size=64 MiB)`와 streaming `save(path)`는 PNG를 만들며 `save`에는 `.png` 확장자 필요 |
+| `pix.samples / width / height / stride / save()` | 동일 | 항상 straight-alpha RGBA8, pdfust의 상한이 있는 `tobytes(max_size=64 MiB)`와 streaming `save(path)`는 PNG를 만들며 `save`에는 `.png` 확장자 필요 |
 | `page.get_images()` / 추출 | `page.get_images()` | 그려진 이미지와 bbox 반환, JPEG 직접 추출 |
 | `page.get_drawings()` | 동일 | 타입 지정path 딕셔너리. line/cubic과 주요paint/stroke 속성. `extended=`의clip/group 계층은 미지원 |
 | `doc.rewrite_images(dpi_target=, quality=)` | `doc.compress_images(dpi=, quality=)` | mask 없는 안전한DeviceGray/DeviceRGB DCT/Flate raster를JPEG로 변환. `dpi`는 최대 배치를 직접 제한하며lossless 변환은 미지원 |
@@ -45,12 +45,12 @@ pylopdf는 pymupdf와 *비슷한 방식*으로 사용할 수 있지만 완전한
 | `doc.embfile_add / names / get / del` | 동일 | |
 | `doc.get_page_labels / set_page_labels`, `page.get_label` | 동일 | |
 | `page.widgets()` / widget 객체 | `doc.get_form_fields()` / `doc.set_form_field(name, value, fontfile=)` | 문서 수준, 텍스트／선택／checkbox／radio 네이티브 appearance |
-| `page.get_textpage_ocr(...)` | `page.get_text_ocr(...)` / `page.apply_ocr(...)` | `pylopdf[ocr]`의 오프라인 순수 Rust PP-OCR, 임의의 위치 결과에는 `insert_ocr_text_layer`도 사용 가능 |
+| `page.get_textpage_ocr(...)` | `page.get_text_ocr(...)` / `page.apply_ocr(...)` | `pdfust[ocr]`의 오프라인 순수 Rust PP-OCR, 임의의 위치 결과에는 `insert_ocr_text_layer`도 사용 가능 |
 | `pymupdf4llm.to_markdown(doc)` | `doc.to_markdown()` | 내장, MIT |
 
 ## 동작 차이 { #behavioral-differences }
 
-- **좌표**는 두 라이브러리 모두 왼쪽 위 원점의 표시 공간을 사용합니다. pylopdf는
+- **좌표**는 두 라이브러리 모두 왼쪽 위 원점의 표시 공간을 사용합니다. pdfust는
   회전된 페이지에서도 추출, 검색, 그리기, 렌더링에 일관되게 적용합니다.
 - **타입**: `Rect`는 불변 `NamedTuple`(`x0, y0, x1, y1`과 `width` / `height`)입니다.
   `Point` / `Matrix` / `Quad` 클래스는 없으며, API는 일반 튜플과 `scale=` / `dpi=`
@@ -82,7 +82,7 @@ pylopdf는 pymupdf와 *비슷한 방식*으로 사용할 수 있지만 완전한
 - **`to_markdown()`**는 완전한 테두리 표를 읽기 순서에 삽입하고 주변 본문에서
   셀 텍스트를 제거합니다. `table_strategy="text"`로 보수적인 테두리 없는 후보를
   추가하거나 `None`으로 표 변환을 끌 수 있습니다.
-- **폼 입력**은 값과 네이티브 appearance를 기록해 pylopdf와 외부 뷰어 모두에서
+- **폼 입력**은 값과 네이티브 appearance를 기록해 pdfust와 외부 뷰어 모두에서
   렌더링됩니다. WinAnsi는 Helvetica로 자동 축소하며 Unicode는 OpenType 글꼴을
   지정하거나 대응하는script／locale font extra를 설치합니다. 지역별 한자는
   `font_language=`로 지정합니다. comb 텍스트 필드는 상속된 `MaxLen`과
@@ -93,7 +93,7 @@ pylopdf는 pymupdf와 *비슷한 방식*으로 사용할 수 있지만 완전한
 
 ## 의도적으로 구현하지 않은 범위와 대안 { #deliberate-scope }
 
-| pymupdf 기능 | pylopdf의 대안 |
+| pymupdf 기능 | pdfust의 대안 |
 |---|---|
 | Story API / `insert_htmlbox`(조판) | typst-py를 통한 typst — [사용법](ecosystem.md) |
 | 디지털 서명 | pyHanko(MIT) — [사용법](ecosystem.md) |
@@ -115,9 +115,9 @@ doc.save("out.pdf", garbage=4, deflate=True)
 ```
 
 ```python
-# pylopdf
-import pylopdf
-doc = pylopdf.open("in.pdf")
+# pdfust
+import pdfust
+doc = pdfust.open("in.pdf")
 page = doc[0]
 page.add_highlight_annot(page.search_for("total"))   # 전체 목록을 한 번에 전달
 page.get_pixmap(scale=2).save("page.png")

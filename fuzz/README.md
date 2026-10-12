@@ -12,9 +12,9 @@ To run locally:
 
 ```bash
 uv sync --locked --group fuzz --python 3.13
-uv run --no-sync python fuzz/generate_corpus.py --output /tmp/pylopdf-corpus
+uv run --no-sync python fuzz/generate_corpus.py --output /tmp/pdfust-corpus
 uv run --no-sync python fuzz/fuzz_api.py -max_total_time=600 -timeout=60 \
-  -rss_limit_mb=2048 -max_len=1048576 /tmp/pylopdf-corpus tests/assets/real_world
+  -rss_limit_mb=2048 -max_len=1048576 /tmp/pdfust-corpus tests/assets/real_world
 ```
 
 Expected `PdfError` refusals are handled; crashes, Rust panics, and exceptions

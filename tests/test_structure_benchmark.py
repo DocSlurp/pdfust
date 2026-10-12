@@ -15,7 +15,7 @@ from bench.structure_core import markdown_spans, markdown_tables, render_tables,
 from bench.structure_hosted import HostedVision
 from bench.structure_summary import summarize
 
-import pylopdf
+import pdfust
 
 
 def test_summary_keeps_failed_calls_in_reference_denominators() -> None:
@@ -80,7 +80,7 @@ def test_neutral_header_fallback_keeps_displaced_source_words(
     data = page_pdf(content)
     (directory / "input.pdf").write_bytes(data)
     (directory / "yolo-normalized-geometry-wrapped-detections.json").write_text("[]")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         words = [
             {"id": f"p0w{i}", "text": word[4], "bbox": list(word[:4]), "logical_bbox": list(word[:4])}
             for i, word in enumerate(document[0].get_text("words"))

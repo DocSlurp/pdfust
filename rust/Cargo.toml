@@ -1,7 +1,7 @@
 [package]
 publish = false
-name = "pylopdf-core"
-description = "Rust core for pylopdf PDF editing, rendering, extraction, and generation"
+name = "pdfust-core"
+description = "Rust core for pdfust PDF editing, rendering, extraction, and generation"
 license = "MIT"
 homepage = "https://github.com/yhay81/pylopdf"
 repository = "https://github.com/yhay81/pylopdf.git"
@@ -11,7 +11,7 @@ edition = "2024"
 authors = ["Yusuke Hayashi <yusuke8h@gmail.com>"]
 
 [lib]
-name = "pylopdf"
+name = "pdfust"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -59,7 +59,7 @@ rayon = "1"
 # chrono's browser-only js-sys clock.
 lopdf = { version = "0.44.0", default-features = false, features = ["chrono", "rayon"] }
 # Run optional PP-OCR models without a C++ runtime. Preconverted RTen model data
-# ships independently through pylopdf[ocr], keeping the ONNX parser out of the
+# ships independently through pdfust[ocr], keeping the ONNX parser out of the
 # core wheel. Emscripten exposes an explicit unsupported stub instead of
 # shipping an inference runtime that cannot use the model distribution.
 rten = { version = "0.24.0", default-features = false, features = ["rten_format"] }

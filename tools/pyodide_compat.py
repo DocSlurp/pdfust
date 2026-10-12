@@ -1,4 +1,4 @@
-"""Run one logical pylopdf compatibility suite on native Python or Pyodide."""
+"""Run one logical pdfust compatibility suite on native Python or Pyodide."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ _ASSETS = (
     "tests/assets/real_world/senate-expenditures.pdf",
     "tests/assets/real_world/bunka-kokugo-series-019-p4.pdf",
     "tests/assets/encrypted/user-aes-256.pdf",
-    "fonts/pylopdf-fonts-jp/src/pylopdf_fonts_jp/NotoSansJP-Regular.otf",
+    "fonts/pdfust-fonts-jp/src/pdfust_fonts_jp/NotoSansJP-Regular.otf",
 )
 _PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 _EXPECTED_TWO_PAGES = 2
@@ -174,12 +174,12 @@ def _limit_results(
     pdf20_complexity: dict[str, int],
     bounded_scan_complexity: dict[str, int],
 ) -> dict[str, Any]:
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
     def limit_code(callback: Callable[[], object]) -> str:
         try:
             callback()
-        except pylopdf.LimitError as error:
+        except pdfust.LimitError as error:
             return error.code
         msg = "limited operation unexpectedly succeeded"
         raise RuntimeError(msg)
@@ -197,39 +197,39 @@ def _limit_results(
         }
     )
     unverifiable = _build_limited_content_pdf(b"opaque", "Crypt")
-    cyclic = pylopdf.Document(
+    cyclic = pdfust.Document(
         stream=_build_reference_cycle_pdf(),
-        limits=pylopdf.DocumentLimits(max_object_depth=16),
+        limits=pdfust.DocumentLimits(max_object_depth=16),
     )
     return {
         "file_size": limit_code(
-            lambda: pylopdf.Document(
+            lambda: pdfust.Document(
                 stream=pdf20_bytes,
-                limits=pylopdf.DocumentLimits(max_file_size=len(pdf20_bytes) - 1),
+                limits=pdfust.DocumentLimits(max_file_size=len(pdf20_bytes) - 1),
             )
         ),
         "page_count": limit_code(
-            lambda: pylopdf.Document(
+            lambda: pdfust.Document(
                 stream=form_bytes,
-                limits=pylopdf.DocumentLimits(max_pages=1),
+                limits=pdfust.DocumentLimits(max_pages=1),
             )
         ),
         "decompressed_size": limit_code(
-            lambda: pylopdf.Document(
+            lambda: pdfust.Document(
                 stream=compressed_bomb,
-                limits=pylopdf.DocumentLimits(max_decompressed_size=1024),
+                limits=pdfust.DocumentLimits(max_decompressed_size=1024),
             )
         ),
         "object_depth": limit_code(
-            lambda: pylopdf.Document(
+            lambda: pdfust.Document(
                 stream=deep_object,
-                limits=pylopdf.DocumentLimits(max_object_depth=4),
+                limits=pdfust.DocumentLimits(max_object_depth=4),
             )
         ),
         "unverifiable": limit_code(
-            lambda: pylopdf.Document(
+            lambda: pdfust.Document(
                 stream=unverifiable,
-                limits=pylopdf.DocumentLimits(max_decompressed_size=1024),
+                limits=pdfust.DocumentLimits(max_decompressed_size=1024),
             )
         ),
         "reference_cycle_pages": cyclic.page_count,
@@ -239,19 +239,19 @@ def _limit_results(
 
 
 def _fixture_results(root: Path) -> dict[str, Any]:  # noqa: PLR0915 - explicit compatibility scenarios.
-    import pylopdf  # noqa: PLC0415 - list-assets must work without an installed extension.
+    import pdfust  # noqa: PLC0415 - list-assets must work without an installed extension.
 
     real_world = root / "tests/assets/real_world"
 
     pdf20_bytes = (real_world / "pdf20-simple.pdf").read_bytes()
-    pdf20 = pylopdf.Document(stream=pdf20_bytes)
+    pdf20 = pdfust.Document(stream=pdf20_bytes)
     pdf20_text = pdf20.get_page_text(0)
     pdf20_markdown = pdf20.to_markdown()
     _require(pdf20.page_count == 1, "PDF 2.0 fixture has the wrong page count")
     _require("Hello World" in pdf20_text, "PDF 2.0 fixture lost Hello World")
     _require("Hello World" in pdf20_markdown, "PDF 2.0 Markdown lost Hello World")
 
-    mhlw = pylopdf.Document(stream=(real_world / "mhlw-doc.pdf").read_bytes())
+    mhlw = pdfust.Document(stream=(real_world / "mhlw-doc.pdf").read_bytes())
     mhlw_text = [mhlw.get_page_text(index) for index in range(mhlw.page_count)]
     mhlw_markdown = mhlw.to_markdown()
     _require(mhlw.page_count == _EXPECTED_TWO_PAGES, "MHLW fixture has the wrong page count")
@@ -260,7 +260,7 @@ def _fixture_results(root: Path) -> dict[str, Any]:  # noqa: PLR0915 - explicit 
     _require(mhlw.get_text() == "".join(mhlw_text), "batched get_text diverged from per-page extraction")
 
     form_bytes = (real_world / "f1040.pdf").read_bytes()
-    form = pylopdf.Document(stream=form_bytes)
+    form = pdfust.Document(stream=form_bytes)
     form_text = form.get_page_text(0)
     form_markdown = form[0].to_markdown()
     form_tables = form[0].find_tables()
@@ -273,7 +273,7 @@ def _fixture_results(root: Path) -> dict[str, Any]:  # noqa: PLR0915 - explicit 
     _require("Full-time<br>student" in form_markdown, "Form 1040 table was not integrated into Markdown")
     _require(len(form_drawings) >= _MIN_FORM_DRAWINGS, "Form 1040 vector extraction is incomplete")
 
-    senate = pylopdf.Document(stream=(real_world / "senate-expenditures.pdf").read_bytes())
+    senate = pdfust.Document(stream=(real_world / "senate-expenditures.pdf").read_bytes())
     senate_lines = senate[0].find_tables()
     senate_text = senate[0].find_tables(strategy="text")
     _require(senate[0].rotation == _SENATE_ROTATION, "Senate fixture lost its page rotation")
@@ -292,22 +292,22 @@ def _fixture_results(root: Path) -> dict[str, Any]:  # noqa: PLR0915 - explicit 
     )
 
     scan_bytes = (real_world / "bunka-kokugo-series-019-p4.pdf").read_bytes()
-    scan = pylopdf.Document(stream=scan_bytes)
+    scan = pdfust.Document(stream=scan_bytes)
     _require(scan.page_count == 1, "Japanese scan has the wrong page count")
     _require(scan.get_page_text(0) == "", "image-only Japanese scan unexpectedly exposed text")
-    bounded_scan = pylopdf.Document(stream=scan_bytes, limits=pylopdf.DocumentLimits.web())
+    bounded_scan = pdfust.Document(stream=scan_bytes, limits=pdfust.DocumentLimits.web())
     _require(bounded_scan.page_count == 1, "web limits rejected a representative scan")
 
     encrypted_bytes = (root / "tests/assets/encrypted/user-aes-256.pdf").read_bytes()
-    encrypted = pylopdf.Document(stream=encrypted_bytes)
+    encrypted = pdfust.Document(stream=encrypted_bytes)
     encrypted_error = _exception_name(lambda: encrypted.page_count)
     _require(encrypted.is_encrypted and encrypted.needs_pass, "encrypted fixture did not require authentication")
     _require(encrypted_error == "EncryptedDocumentError", "encrypted access returned the wrong exception")
-    decrypted = pylopdf.Document(stream=encrypted_bytes, password="userpw")  # noqa: S106
+    decrypted = pdfust.Document(stream=encrypted_bytes, password="userpw")  # noqa: S106
     _require(decrypted.page_count == _EXPECTED_TWO_PAGES, "AES-256 fixture did not decrypt")
     _require("Encrypted page one" in decrypted.get_page_text(0), "decrypted text is incomplete")
     authentication_error = _exception_name(
-        lambda: pylopdf.Document(stream=encrypted_bytes, password="wrong")  # noqa: S106
+        lambda: pdfust.Document(stream=encrypted_bytes, password="wrong")  # noqa: S106
     )
     _require(authentication_error == "PasswordError", "wrong password returned the wrong exception")
 
@@ -353,9 +353,9 @@ def _fixture_results(root: Path) -> dict[str, Any]:  # noqa: PLR0915 - explicit 
 
 
 def _layout_results() -> dict[str, Any]:
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
-    vertical = pylopdf.Document(stream=_build_vertical_cjk_pdf())[0]
+    vertical = pdfust.Document(stream=_build_vertical_cjk_pdf())[0]
     vertical_lines = [line for block in vertical.get_text("dict")["blocks"] for line in block["lines"]]
     vertical_text = vertical.get_text().splitlines()
     _require(
@@ -366,7 +366,7 @@ def _layout_results() -> dict[str, Any]:
     _require(writing_modes == [0, 1, 1, 0], "vertical CJK writing modes changed")
     _require(len(vertical.search_for(_RIGHT_COLUMN)) == 1, "vertical CJK search failed")
 
-    columns = pylopdf.Document(stream=_build_multicolumn_pdf())[0]
+    columns = pdfust.Document(stream=_build_multicolumn_pdf())[0]
     column_lines = columns.get_text().splitlines()
     expected_columns = [
         "A heading spanning both columns",
@@ -377,13 +377,13 @@ def _layout_results() -> dict[str, Any]:
         "A footer spanning both columns",
     ]
     _require(column_lines == expected_columns, "multicolumn reading order changed")
-    limited_columns = pylopdf.Document(
+    limited_columns = pdfust.Document(
         stream=_build_multicolumn_pdf(),
-        limits=pylopdf.DocumentLimits(max_text_size=8),
+        limits=pdfust.DocumentLimits(max_text_size=8),
     )
     try:
         limited_columns[0].get_text()
-    except pylopdf.LimitError as error:
+    except pdfust.LimitError as error:
         text_limit_code = error.code
     else:
         msg = "text budget unexpectedly admitted the multicolumn fixture"
@@ -404,10 +404,10 @@ def _layout_results() -> dict[str, Any]:
 
 
 def _generation_results(root: Path) -> dict[str, Any]:
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
-    font = (root / "fonts/pylopdf-fonts-jp/src/pylopdf_fonts_jp/NotoSansJP-Regular.otf").read_bytes()
-    document = pylopdf.Document()
+    font = (root / "fonts/pdfust-fonts-jp/src/pdfust_fonts_jp/NotoSansJP-Regular.otf").read_bytes()
+    document = pdfust.Document()
     _require(document.page_count == 0, "new document is not empty")
     first = document.new_page(width=240, height=180)
     first.insert_text((20, 35), "Generated on Wasm", fontsize=14)
@@ -426,7 +426,7 @@ def _generation_results(root: Path) -> dict[str, Any]:
     _require(spare_height >= 0, "generated textbox unexpectedly overflowed")
 
     serialized = document.tobytes()
-    reopened = pylopdf.Document(stream=serialized)
+    reopened = pdfust.Document(stream=serialized)
     texts = [reopened.get_page_text(index).strip() for index in range(reopened.page_count)]
     _require(reopened.page_count == _EXPECTED_TWO_PAGES, "generated document has the wrong page count")
     _require("Generated on Wasm" in texts[0] and _JAPANESE in texts[0], "generated text did not round-trip")
@@ -438,7 +438,7 @@ def _generation_results(root: Path) -> dict[str, Any]:
     render_sizes = [_png_size(data) for data in requested_parallel_renders]
     _require(render_sizes == [[90, 120], [120, 90], [90, 120]], "batch rendering lost input order")
 
-    merged = pylopdf.Document()
+    merged = pdfust.Document()
     merged.insert_pdf(reopened)
     merged.select([1, 0, 1])
     merged_texts = [merged.get_page_text(index).strip() for index in range(merged.page_count)]
@@ -446,15 +446,15 @@ def _generation_results(root: Path) -> dict[str, Any]:
     _require("Second page wraps text" in merged_texts[0], "merge/select changed page order")
     _require("Generated on Wasm" in merged_texts[1], "merge/select lost generated content")
 
-    selected = pylopdf.Document(stream=serialized)
+    selected = pdfust.Document(stream=serialized)
     selected.select([1])
     _require(selected.page_count == 1, "page selection did not produce a one-page document")
     _require("Second page wraps text" in selected.get_page_text(0), "page selection retained the wrong page")
 
-    with tempfile.TemporaryDirectory(prefix="pylopdf-pyodide-") as directory:
+    with tempfile.TemporaryDirectory(prefix="pdfust-pyodide-") as directory:
         saved_path = Path(directory) / "roundtrip.pdf"
         reopened.save(saved_path)
-        saved = pylopdf.Document(saved_path)
+        saved = pdfust.Document(saved_path)
         _require(saved.page_count == _EXPECTED_TWO_PAGES, "virtual-filesystem save did not round-trip")
 
     closed_page = reopened[0]
@@ -462,9 +462,9 @@ def _generation_results(root: Path) -> dict[str, Any]:
     closed_error = _exception_name(lambda: closed_page.rect)
     _require(closed_error == "DocumentClosedError", "closed page returned the wrong exception")
 
-    malformed_error = _exception_name(lambda: pylopdf.Document(stream=b"not a PDF"))
+    malformed_error = _exception_name(lambda: pdfust.Document(stream=b"not a PDF"))
     _require(malformed_error == "PdfError", "malformed bytes returned the wrong exception")
-    recovery = pylopdf.Document(stream=serialized)
+    recovery = pdfust.Document(stream=serialized)
     _require(recovery.page_count == _EXPECTED_TWO_PAGES, "runtime did not recover after malformed input")
 
     return {
@@ -485,7 +485,7 @@ def _generation_results(root: Path) -> dict[str, Any]:
 
 def collect_results(root: Path) -> dict[str, Any]:
     """Run compatibility assertions and return stable native/Wasm comparison data."""
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
     root = root.resolve()
     for relative_path in _ASSETS:
@@ -493,7 +493,7 @@ def collect_results(root: Path) -> dict[str, Any]:
         _require(path.is_file(), f"compatibility asset is missing: {path}")
     return {
         "schema": 2,
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "fixtures": _fixture_results(root),
         "layout": _layout_results(),
         "generation": _generation_results(root),
@@ -527,29 +527,29 @@ def _peak_rss_bytes() -> int | None:
 
 def benchmark_limits(root: Path, repeats: int = 5) -> dict[str, Any]:
     """Measure bounded open/extract/rejection costs on native Python or Wasm."""
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
     root = root.resolve()
     real_world = root / "tests/assets/real_world"
     form = (real_world / "f1040.pdf").read_bytes()
     scan = (real_world / "bunka-kokugo-series-019-p4.pdf").read_bytes()
     pdf20 = (real_world / "pdf20-simple.pdf").read_bytes()
-    limits = pylopdf.DocumentLimits.web()
+    limits = pdfust.DocumentLimits.web()
 
     def bounded_open(data: bytes) -> None:
-        pylopdf.Document(stream=data, limits=limits).close()
+        pdfust.Document(stream=data, limits=limits).close()
 
     def bounded_extract() -> None:
-        with pylopdf.Document(stream=form, limits=limits) as document:
+        with pdfust.Document(stream=form, limits=limits) as document:
             document.get_page_text(0)
 
     def reject_file_size() -> None:
         try:
-            pylopdf.Document(
+            pdfust.Document(
                 stream=pdf20,
-                limits=pylopdf.DocumentLimits(max_file_size=len(pdf20) - 1),
+                limits=pdfust.DocumentLimits(max_file_size=len(pdf20) - 1),
             )
-        except pylopdf.LimitError as error:
+        except pdfust.LimitError as error:
             _require(error.code == "file_size", "file rejection returned the wrong code")
             return
         msg = "file-size rejection unexpectedly succeeded"
@@ -557,11 +557,11 @@ def benchmark_limits(root: Path, repeats: int = 5) -> dict[str, Any]:
 
     def reject_page_count() -> None:
         try:
-            pylopdf.Document(
+            pdfust.Document(
                 stream=form,
-                limits=pylopdf.DocumentLimits(max_pages=1),
+                limits=pdfust.DocumentLimits(max_pages=1),
             )
-        except pylopdf.LimitError as error:
+        except pdfust.LimitError as error:
             _require(error.code == "page_count", "page rejection returned the wrong code")
             return
         msg = "page-count rejection unexpectedly succeeded"

@@ -146,7 +146,7 @@ details{{margin-top:16px}}.markdown{{overflow:auto}}@media(max-width:800px){{.gr
 
 def build(run: Path, page_id: str, output: Path, *, image_edge: int = 1024) -> dict[str, Any]:
     """Verify the frozen PDF, render one page, and write only ignored local artifacts."""
-    import pylopdf  # noqa: PLC0415 - optional rendering dependency.
+    import pdfust  # noqa: PLC0415 - optional rendering dependency.
     from bench.pipeline_assembly import native_state  # noqa: PLC0415 - completed assembly artifact integration.
 
     if re.fullmatch(r"p[a-f0-9]{20}", page_id) is None:
@@ -175,7 +175,7 @@ def build(run: Path, page_id: str, output: Path, *, image_edge: int = 1024) -> d
     native = native_state(source)
     validate(source, native)
     markdown = _read(run / f"{page_id}.md").decode("utf-8")
-    with pylopdf.open(stream=pdf) as pdf_document:
+    with pdfust.open(stream=pdf) as pdf_document:
         page = pdf_document[record["page_number"]]
         original_rotation = page.rotation
         if result.get("rotation_normalized"):

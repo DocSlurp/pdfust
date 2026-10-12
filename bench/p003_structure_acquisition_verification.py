@@ -12,7 +12,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench.generalization_vision_regions import _crop
 from bench.p003_gate_run import authenticate
 from bench.silver import guard_path, sha
@@ -176,7 +176,7 @@ def verify_acquisition(directory: Path, trusted_code: dict[str, str]) -> tuple[s
         pdf = guard_path(Path(page["record"]["pdf_path"]))
         if sha(pdf.read_bytes()) != page["record"]["pdf_sha256"]:
             raise ValueError("Acquisition PDF changed")
-        with pylopdf.open(stream=pdf.read_bytes()) as document:
+        with pdfust.open(stream=pdf.read_bytes()) as document:
             pdf_page = document[page["record"]["page_number"]]
             pdf_page.set_rotation(page["effective_rotation"])
             raster = pdf_page.render(

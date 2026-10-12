@@ -17,7 +17,7 @@ from typing import Any, cast
 from PIL import Image
 from PIL import __version__ as pillow_version
 
-import pylopdf
+import pdfust
 from bench.decision_gateway_vision import translate, validate_wire
 from bench.lowlevel_control_freeze import begin, encoded_body, finish
 from bench.lowlevel_images import MODELS, non_image_bytes
@@ -44,7 +44,7 @@ def raster(source: Path, bbox: list[float], edge: int) -> tuple[Image.Image, dic
         raise ValueError(msg)
     # One extra source pixel avoids outward clip rounding requiring an upscale.
     scale = (edge + 2) / max(width, height)
-    with pylopdf.Document(source) as document:
+    with pdfust.Document(source) as document:
         page = document[0]
         rect = page.rect
         if math.ceil(rect.width * scale) * math.ceil(rect.height * scale) > RASTER_PIXELS:

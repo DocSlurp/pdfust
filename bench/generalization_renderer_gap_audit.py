@@ -59,7 +59,7 @@ def audit(
     import pypdfium2 as pdfium  # type: ignore[import-untyped]
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     began, cpu = time.perf_counter(), time.process_time()
     manifest = json.loads(guard_path(manifest_path).read_bytes())
@@ -73,7 +73,7 @@ def audit(
     initialization = None
     if ocr:
         started, process_cpu = time.perf_counter(), time.process_time()
-        engine = pylopdf.OcrEngine(threads=4)
+        engine = pdfust.OcrEngine(threads=4)
         initialization = {
             "wall_seconds": time.perf_counter() - started,
             "cpu_seconds": time.process_time() - process_cpu,
@@ -95,7 +95,7 @@ def audit(
                 with warnings.catch_warnings(record=True) as observed:
                     warnings.simplefilter("always")
                     if name == "hayro":
-                        with pylopdf.open(stream=source) as document:
+                        with pdfust.open(stream=source) as document:
                             page = document[record["page_number"]]
                             viewport = list(page.rect)
                             text = page.get_text()
@@ -139,7 +139,7 @@ def audit(
                 if engine is not None:
                     ocr_started, ocr_cpu = time.perf_counter(), time.process_time()
                     # All three inputs take the same image-only surrogate route; original PDFs remain untouched.
-                    with Image.open(io.BytesIO(raster)) as image, pylopdf.Document() as surrogate:
+                    with Image.open(io.BytesIO(raster)) as image, pdfust.Document() as surrogate:
                         page = surrogate.new_page(width=image.width * 72 / dpi, height=image.height * 72 / dpi)
                         page.insert_image(page.rect, stream=raster)
                         words = page.get_text_ocr(dpi=dpi, engine=engine)
@@ -175,7 +175,7 @@ def audit(
         "dpi": dpi,
         "pages": pages,
         "ocr_initialization": initialization,
-        "versions": {name: version(name) for name in ("PyMuPDF", "pypdfium2", "jev-pdf")},
+        "versions": {name: version(name) for name in ("PyMuPDF", "pypdfium2", "pdfust")},
         "metrics": {
             "wall_seconds": time.perf_counter() - began,
             "cpu_seconds": time.process_time() - cpu,

@@ -15,62 +15,62 @@ The provenance device is the requested backend; native geometry/OCR and replay/r
 
 | Case | Adapter | Exact grid | Cells | Relations recalled | Record cells | Seconds | CUDA GiB | Result |
 | --- | --- | --- | --- | --- | --- | ---: | ---: | --- |
-| text-structure-and-literals | pylopdf | True | — | — | — | 0.000 | — | ok |
-| positioned-math | pylopdf | True | — | — | — | 0.000 | — | ok |
-| math-actualtext | pylopdf | True | — | — | — | 0.000 | — | ok |
-| accessible-actualtext | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| two-column-order | pylopdf | True | — | — | — | 0.000 | — | ok |
-| unicode-cmap-and-emoji | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| table-bordered | pylopdf | True | 9/9 | 12/12 | — | 0.000 | — | ok |
-| table-borderless | pylopdf | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-merged | pylopdf | True | 9/9 | 12/12 | — | 0.000 | — | ok |
-| links-and-outline | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| images-and-vectors | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| image-only | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| table-borderless-aligned | pylopdf | False | 0/8 | 0/10 | — | 0.001 | — | ok |
-| rotated-columns | pylopdf | True | — | — | — | 0.000 | — | ok |
-| footnotes-and-page-furniture | pylopdf | True | — | — | — | 0.000 | — | ok |
-| rtl-visual-glyph-order | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| tagged-reading-order | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| corpus-usrguide | pylopdf | unscored | — | — | — | 0.001 | — | ok |
-| corpus-senate-expenditures | pylopdf | unscored | — | — | 0/23 | 0.001 | — | ok |
-| corpus-nics-background-checks-2015-11 | pylopdf | unscored | — | — | 12/12 | 0.019 | — | ok |
-| corpus-pdfium-type3 | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| corpus-f1040 | pylopdf | unscored | — | — | — | 0.001 | — | ok |
-| omml-equations | pylopdf | unscored | — | — | — | 0.000 | — | ok |
-| table-borderless-rotate-90 | pylopdf | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-borderless-rotate-180 | pylopdf | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-borderless-rotate-270 | pylopdf | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-borderless-scanned | pylopdf | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-wrapped-records | pylopdf | False | 0/12 | 0/17 | — | 0.000 | — | ok |
-| text-structure-and-literals | pylopdf-text | True | — | — | — | 0.000 | — | ok |
-| positioned-math | pylopdf-text | True | — | — | — | 0.000 | — | ok |
-| math-actualtext | pylopdf-text | True | — | — | — | 0.000 | — | ok |
-| accessible-actualtext | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| two-column-order | pylopdf-text | False | — | — | — | 0.000 | — | ok |
-| unicode-cmap-and-emoji | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| table-bordered | pylopdf-text | True | 9/9 | 12/12 | — | 0.000 | — | ok |
-| table-borderless | pylopdf-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-merged | pylopdf-text | True | 9/9 | 12/12 | — | 0.000 | — | ok |
-| links-and-outline | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| images-and-vectors | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| image-only | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| table-borderless-aligned | pylopdf-text | True | 8/8 | 10/10 | — | 0.000 | — | ok |
-| rotated-columns | pylopdf-text | True | — | — | — | 0.000 | — | ok |
-| footnotes-and-page-furniture | pylopdf-text | True | — | — | — | 0.000 | — | ok |
-| rtl-visual-glyph-order | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| tagged-reading-order | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| corpus-usrguide | pylopdf-text | unscored | — | — | — | 0.001 | — | ok |
-| corpus-senate-expenditures | pylopdf-text | unscored | — | — | 0/23 | 0.001 | — | ok |
-| corpus-nics-background-checks-2015-11 | pylopdf-text | unscored | — | — | 12/12 | 0.017 | — | ok |
-| corpus-pdfium-type3 | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| corpus-f1040 | pylopdf-text | unscored | — | — | — | 0.002 | — | ok |
-| omml-equations | pylopdf-text | unscored | — | — | — | 0.000 | — | ok |
-| table-borderless-rotate-90 | pylopdf-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-borderless-rotate-180 | pylopdf-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-borderless-rotate-270 | pylopdf-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-borderless-scanned | pylopdf-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
-| table-wrapped-records | pylopdf-text | False | 0/12 | 0/17 | — | 0.000 | — | ok |
+| text-structure-and-literals | pdfust | True | — | — | — | 0.000 | — | ok |
+| positioned-math | pdfust | True | — | — | — | 0.000 | — | ok |
+| math-actualtext | pdfust | True | — | — | — | 0.000 | — | ok |
+| accessible-actualtext | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| two-column-order | pdfust | True | — | — | — | 0.000 | — | ok |
+| unicode-cmap-and-emoji | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| table-bordered | pdfust | True | 9/9 | 12/12 | — | 0.000 | — | ok |
+| table-borderless | pdfust | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-merged | pdfust | True | 9/9 | 12/12 | — | 0.000 | — | ok |
+| links-and-outline | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| images-and-vectors | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| image-only | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| table-borderless-aligned | pdfust | False | 0/8 | 0/10 | — | 0.001 | — | ok |
+| rotated-columns | pdfust | True | — | — | — | 0.000 | — | ok |
+| footnotes-and-page-furniture | pdfust | True | — | — | — | 0.000 | — | ok |
+| rtl-visual-glyph-order | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| tagged-reading-order | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| corpus-usrguide | pdfust | unscored | — | — | — | 0.001 | — | ok |
+| corpus-senate-expenditures | pdfust | unscored | — | — | 0/23 | 0.001 | — | ok |
+| corpus-nics-background-checks-2015-11 | pdfust | unscored | — | — | 12/12 | 0.019 | — | ok |
+| corpus-pdfium-type3 | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| corpus-f1040 | pdfust | unscored | — | — | — | 0.001 | — | ok |
+| omml-equations | pdfust | unscored | — | — | — | 0.000 | — | ok |
+| table-borderless-rotate-90 | pdfust | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-borderless-rotate-180 | pdfust | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-borderless-rotate-270 | pdfust | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-borderless-scanned | pdfust | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-wrapped-records | pdfust | False | 0/12 | 0/17 | — | 0.000 | — | ok |
+| text-structure-and-literals | pdfust-text | True | — | — | — | 0.000 | — | ok |
+| positioned-math | pdfust-text | True | — | — | — | 0.000 | — | ok |
+| math-actualtext | pdfust-text | True | — | — | — | 0.000 | — | ok |
+| accessible-actualtext | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| two-column-order | pdfust-text | False | — | — | — | 0.000 | — | ok |
+| unicode-cmap-and-emoji | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| table-bordered | pdfust-text | True | 9/9 | 12/12 | — | 0.000 | — | ok |
+| table-borderless | pdfust-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-merged | pdfust-text | True | 9/9 | 12/12 | — | 0.000 | — | ok |
+| links-and-outline | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| images-and-vectors | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| image-only | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| table-borderless-aligned | pdfust-text | True | 8/8 | 10/10 | — | 0.000 | — | ok |
+| rotated-columns | pdfust-text | True | — | — | — | 0.000 | — | ok |
+| footnotes-and-page-furniture | pdfust-text | True | — | — | — | 0.000 | — | ok |
+| rtl-visual-glyph-order | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| tagged-reading-order | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| corpus-usrguide | pdfust-text | unscored | — | — | — | 0.001 | — | ok |
+| corpus-senate-expenditures | pdfust-text | unscored | — | — | 0/23 | 0.001 | — | ok |
+| corpus-nics-background-checks-2015-11 | pdfust-text | unscored | — | — | 12/12 | 0.017 | — | ok |
+| corpus-pdfium-type3 | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| corpus-f1040 | pdfust-text | unscored | — | — | — | 0.002 | — | ok |
+| omml-equations | pdfust-text | unscored | — | — | — | 0.000 | — | ok |
+| table-borderless-rotate-90 | pdfust-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-borderless-rotate-180 | pdfust-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-borderless-rotate-270 | pdfust-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-borderless-scanned | pdfust-text | False | 0/9 | 0/12 | — | 0.000 | — | ok |
+| table-wrapped-records | pdfust-text | False | 0/12 | 0/17 | — | 0.000 | — | ok |
 | text-structure-and-literals | yolo-geometry | True | — | — | — | 2.317 | — | ok |
 | positioned-math | yolo-geometry | True | — | — | — | 0.041 | — | ok |
 | math-actualtext | yolo-geometry | True | — | — | — | 0.039 | — | ok |
@@ -786,8 +786,8 @@ The provenance device is the requested backend; native geometry/OCR and replay/r
 
 | Run | Adapter | Initialization seconds | Repetitions | Device | Model |
 | --- | --- | ---: | ---: | --- | --- |
-| 0 | pylopdf | 0.000 | 3 | cuda:0 | none |
-| 1 | pylopdf-text | 0.000 | 3 | cuda:0 | none |
+| 0 | pdfust | 0.000 | 3 | cuda:0 | none |
+| 1 | pdfust-text | 0.000 | 3 | cuda:0 | none |
 | 2 | geometry | 0.000 | 3 | cuda:0 | none |
 | 3 | geometry-bullets | 0.000 | 3 | cuda:0 | none |
 | 4 | geometry-wrapped | 0.000 | 3 | cuda:0 | none |

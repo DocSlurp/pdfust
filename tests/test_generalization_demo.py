@@ -13,7 +13,7 @@ from bench import pipeline_vision_transcription as vision
 from test_generalization_report import hybrid_prediction
 from test_pipeline_run import config, record
 
-import pylopdf
+import pdfust
 
 
 def retained(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, processor: str = "whole") -> tuple[Path, Path, Path]:
@@ -214,7 +214,7 @@ def test_vision_gallery_preserves_original_rotation_despite_assembly_flags(
     manifest, run, output = retained(tmp_path, monkeypatch, processor)
     records = json.loads(manifest.read_text())["pages"]
     pdf = Path(records[0]["pdf_path"])
-    with pylopdf.open(stream=pdf.read_bytes()) as document:
+    with pdfust.open(stream=pdf.read_bytes()) as document:
         document[0].set_rotation(90)
         data = document.tobytes()
     pdf.write_bytes(data)

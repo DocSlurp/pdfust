@@ -8,10 +8,10 @@ from types import SimpleNamespace
 import pytest
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 NOTO_SANS_JP = (
-    Path(__file__).parents[1] / "fonts" / "pylopdf-fonts-jp" / "src" / "pylopdf_fonts_jp" / "NotoSansJP-Regular.otf"
+    Path(__file__).parents[1] / "fonts" / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp" / "NotoSansJP-Regular.otf"
 )
 
 
@@ -109,13 +109,13 @@ def _build_button_state_pdf(states: str, *, indirect_kids: bool = False) -> byte
     return build_raw_pdf(objects)
 
 
-def _opaque_pixels(doc: pylopdf.Document, clip: tuple[float, float, float, float]) -> int:
+def _opaque_pixels(doc: pdfust.Document, clip: tuple[float, float, float, float]) -> int:
     pix = doc[0].get_pixmap(clip=clip)
     return sum(alpha != 0 for alpha in pix.samples[3::4])
 
 
 def test_get_form_fields_lists_all() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     fields = {f["name"]: f for f in doc.get_form_fields()}
     assert set(fields) == {"customer", "agree", "person.first", "level", "plan", "notes", "code"}
     assert fields["customer"]["type"] == "text"
@@ -131,14 +131,14 @@ def test_get_form_fields_lists_all() -> None:
 
 
 def test_fill_text_field_roundtrip_without_unicode_font(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pylopdf, "_bundled_font_providers", lambda: ())
-    doc = pylopdf.open(stream=_build_form_pdf())
+    monkeypatch.setattr(pdfust, "_bundled_font_providers", lambda: ())
+    doc = pdfust.open(stream=_build_form_pdf())
     assert _opaque_pixels(doc, (45, 67, 255, 97)) == 0
     doc.set_form_field("customer", "山田 太郎")
     doc.set_form_field("person.first", "Taro")
     data = doc.tobytes()
     assert b"/NeedAppearances true" in data
-    reopened = pylopdf.open(stream=data)
+    reopened = pdfust.open(stream=data)
     fields = {f["name"]: f["value"] for f in reopened.get_form_fields()}
     assert fields["customer"] == "山田 太郎"
     assert fields["person.first"] == "Taro"
@@ -148,13 +148,13 @@ def test_fill_text_field_roundtrip_without_unicode_font(monkeypatch: pytest.Monk
 
 
 def test_fill_unicode_text_with_embedded_font_renders_and_roundtrips() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("customer", "山田 太郎", fontfile=NOTO_SANS_JP)
     assert _opaque_pixels(doc, (45, 67, 255, 97)) > 0
     data = doc.tobytes()
     assert b"/FontFile" in data
     assert b"/NeedAppearances false" in data
-    reopened = pylopdf.open(stream=data)
+    reopened = pdfust.open(stream=data)
     assert {field["name"]: field["value"] for field in reopened.get_form_fields()}["customer"] == "山田 太郎"
     assert _opaque_pixels(reopened, (45, 67, 255, 97)) > 0
 
@@ -162,22 +162,22 @@ def test_fill_unicode_text_with_embedded_font_renders_and_roundtrips() -> None:
 def test_fill_unicode_text_auto_uses_optional_jp_font(monkeypatch: pytest.MonkeyPatch) -> None:
     font_data = NOTO_SANS_JP.read_bytes()
     provider = SimpleNamespace(language="ja", extra="jp", sans=font_data, serif=font_data)
-    monkeypatch.setattr(pylopdf, "_bundled_font_providers", lambda: (provider,))
-    doc = pylopdf.open(stream=_build_form_pdf())
+    monkeypatch.setattr(pdfust, "_bundled_font_providers", lambda: (provider,))
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("customer", "山田 太郎")
     assert _opaque_pixels(doc, (45, 67, 255, 97)) > 0
     assert b"/NeedAppearances false" in doc.tobytes()
 
 
 def test_fill_choice_field_generates_appearance() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("level", "pro")
     assert {field["name"]: field["value"] for field in doc.get_form_fields()}["level"] == "pro"
     assert _opaque_pixels(doc, (295, 67, 505, 97)) > 0
 
 
 def test_fill_multiline_text_field_wraps_and_renders() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     value = "A deliberately long first line that wraps inside the field.\nA second line."
     doc.set_form_field("notes", value)
     assert {field["name"]: field["value"] for field in doc.get_form_fields()}["notes"] == value
@@ -185,10 +185,10 @@ def test_fill_multiline_text_field_wraps_and_renders() -> None:
 
 
 def test_fill_multiline_text_field_bounds_layout_lines_atomically() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.set_form_field("notes", "\n" * 4096)
 
     assert caught.value.code == "text_line_count"
@@ -196,7 +196,7 @@ def test_fill_multiline_text_field_bounds_layout_lines_atomically() -> None:
 
 
 def test_fill_comb_field_centers_characters_and_enforces_maxlen() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("code", "A12")
     fields = {field["name"]: field["value"] for field in doc.get_form_fields()}
     assert fields["code"] == "A12"
@@ -210,17 +210,17 @@ def test_fill_comb_field_centers_characters_and_enforces_maxlen() -> None:
     assert all(count > 0 for count in counts[1:4])
     assert counts[4:] == [0, 0]
 
-    with pytest.raises(pylopdf.PdfError, match="exceeding MaxLen 6"):
+    with pytest.raises(pdfust.PdfError, match="exceeding MaxLen 6"):
         doc.set_form_field("code", "1234567")
     assert {field["name"]: field["value"] for field in doc.get_form_fields()}["code"] == "A12"
 
 
 def test_fill_comb_field_supports_unicode_graphemes() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("code", "日A\u0301", fontfile=NOTO_SANS_JP)
     data = doc.tobytes()
     assert b"/NeedAppearances false" in data
-    reopened = pylopdf.open(stream=data)
+    reopened = pdfust.open(stream=data)
     assert {field["name"]: field["value"] for field in reopened.get_form_fields()}["code"] == "日A\u0301"
     assert _opaque_pixels(reopened, (300, 227, 500, 252)) > 0
 
@@ -234,23 +234,23 @@ def test_fill_comb_field_supports_unicode_graphemes() -> None:
 )
 def test_malformed_comb_field_is_rejected_atomically(original: bytes, replacement: bytes, message: str) -> None:
     source = _build_form_pdf().replace(original, replacement)
-    doc = pylopdf.open(stream=source)
+    doc = pdfust.open(stream=source)
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match=message):
+    with pytest.raises(pdfust.PdfError, match=message):
         doc.set_form_field("code", "12")
     assert {field["name"]: field["value"] for field in doc.get_form_fields()}["code"] is None
     assert doc.tobytes() == before
 
 
 def test_fill_checkbox_with_bool() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("agree", True)
     on_pixels = doc[0].get_pixmap(clip=(45, 107, 75, 137)).samples
     fields = {f["name"]: f["value"] for f in doc.get_form_fields()}
     assert fields["agree"] == "Yes"  # Resolve the AP on-state name automatically.
     data = doc.tobytes()
     assert b"/NeedAppearances false" in data
-    reopened = pylopdf.open(stream=data)
+    reopened = pdfust.open(stream=data)
     assert {f["name"]: f["value"] for f in reopened.get_form_fields()}["agree"] == "Yes"
     assert _opaque_pixels(reopened, (45, 107, 75, 137)) > 0
 
@@ -260,21 +260,21 @@ def test_fill_checkbox_with_bool() -> None:
 
 
 def test_state_appearance_render_snapshot_obeys_interpretation_budget() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=_build_form_pdf(),
-        limits=pylopdf.DocumentLimits(max_interpretation_size=1),
+        limits=pdfust.DocumentLimits(max_interpretation_size=1),
     )
     doc.set_form_field("agree", True)
-    with pytest.raises(pylopdf.LimitError) as error:
+    with pytest.raises(pdfust.LimitError) as error:
         doc[0].get_pixmap()
     assert error.value.code == "interpretation_size"
     assert {field["name"]: field["value"] for field in doc.get_form_fields()}["agree"] == "Yes"
 
 
 def test_state_appearance_survives_bounded_snapshot_reload() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=_build_form_pdf(),
-        limits=pylopdf.DocumentLimits(max_interpretation_size=1024 * 1024),
+        limits=pdfust.DocumentLimits(max_interpretation_size=1024 * 1024),
     )
     doc.set_form_field("agree", True)
 
@@ -282,7 +282,7 @@ def test_state_appearance_survives_bounded_snapshot_reload() -> None:
 
 
 def test_fill_radio_selects_only_matching_widget() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     doc.set_form_field("plan", "Basic")
     assert {field["name"]: field["value"] for field in doc.get_form_fields()}["plan"] == "Basic"
     pro = _opaque_pixels(doc, (295, 107, 325, 137))
@@ -292,7 +292,7 @@ def test_fill_radio_selects_only_matching_widget() -> None:
 
 def test_nonempty_custom_button_appearance_is_preserved() -> None:
     green_square = "0 1 0 rg 0 0 20 20 re f"
-    doc = pylopdf.open(stream=_build_form_pdf(checkbox_on_content=green_square))
+    doc = pdfust.open(stream=_build_form_pdf(checkbox_on_content=green_square))
     doc.set_form_field("agree", True)
     pix = doc[0].get_pixmap(clip=(50, 112, 70, 132))
     center = (10 * pix.width + 10) * pix.n
@@ -302,7 +302,7 @@ def test_nonempty_custom_button_appearance_is_preserved() -> None:
 
 def test_widget_rotation_background_and_alignment_render() -> None:
     extra = "/Q 2 /MK << /R 90 /BG [1 1 0] /BC [1 0 0] >> /BS << /W 2 >>"
-    doc = pylopdf.open(stream=_build_form_pdf(text_widget_extra=extra))
+    doc = pdfust.open(stream=_build_form_pdf(text_widget_extra=extra))
     doc.set_form_field("customer", "right")
     data = doc.tobytes()
     assert b"/Matrix[0 1 -1 0 200 0]" in data
@@ -310,8 +310,8 @@ def test_widget_rotation_background_and_alignment_render() -> None:
 
 
 def test_invalid_embedded_font_does_not_partially_update_field() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
-    with pytest.raises(pylopdf.PdfError, match="font data"):
+    doc = pdfust.open(stream=_build_form_pdf())
+    with pytest.raises(pdfust.PdfError, match="font data"):
         doc.set_form_field("customer", "updated", fontbuffer=b"not a font")
     fields = {field["name"]: field["value"] for field in doc.get_form_fields()}
     assert fields["customer"] == "initial"
@@ -319,10 +319,10 @@ def test_invalid_embedded_font_does_not_partially_update_field() -> None:
 
 
 def test_form_font_input_boundary_preserves_field() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     font_size = NOTO_SANS_JP.stat().st_size
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.set_form_field("customer", "updated", fontfile=NOTO_SANS_JP, max_font_size=font_size - 1)
 
     assert caught.value.code == "font_input_size"
@@ -333,8 +333,8 @@ def test_form_font_input_boundary_preserves_field() -> None:
 
 
 def test_form_errors() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
-    with pytest.raises(pylopdf.PdfError, match="not found"):
+    doc = pdfust.open(stream=_build_form_pdf())
+    with pytest.raises(pdfust.PdfError, match="not found"):
         doc.set_form_field("nosuch", "x")
     with pytest.raises(ValueError, match="name"):
         doc.set_form_field("", "x")
@@ -345,7 +345,7 @@ def test_form_errors() -> None:
 
 
 def test_no_form_returns_empty() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     assert doc.get_form_fields() == []
 
@@ -360,7 +360,7 @@ def test_form_field_duplicate_reference_is_visited_once() -> None:
             5: "<< /FT /Tx /T (field) /V (value) >>",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     assert doc.get_form_fields() == [{"name": "field", "type": "text", "value": "value"}]
 
 
@@ -375,11 +375,11 @@ def test_form_field_tree_rejects_excessive_edges_atomically() -> None:
             5: "<< /FT /Tx /T (field) /V (value) >>",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match="8192-edge safety limit"):
+    with pytest.raises(pdfust.PdfError, match="8192-edge safety limit"):
         doc.get_form_fields()
-    with pytest.raises(pylopdf.PdfError, match="8192-edge safety limit"):
+    with pytest.raises(pdfust.PdfError, match="8192-edge safety limit"):
         doc.set_form_field("field", "updated")
     assert doc.tobytes() == before
 
@@ -398,8 +398,8 @@ def test_form_field_tree_rejects_excessive_nodes_without_partial_output() -> Non
     objects[4100] = "<< /FT /Tx /T (parent) /Kids [4101 0 R] >>"
     objects[4101] = "<< /T (child) >>"
 
-    doc = pylopdf.open(stream=build_raw_pdf(objects))
-    with pytest.raises(pylopdf.PdfError, match="4096-node safety limit"):
+    doc = pdfust.open(stream=build_raw_pdf(objects))
+    with pytest.raises(pdfust.PdfError, match="4096-node safety limit"):
         doc.get_form_fields()
 
 
@@ -414,8 +414,8 @@ def test_form_field_tree_rejects_excessive_depth() -> None:
         objects[object_id] = f"<< /FT /Tx /T (n{object_id}) /Kids [{object_id + 1} 0 R] >>"
     objects[69] = "<< /FT /Tx /T (leaf) >>"
 
-    doc = pylopdf.open(stream=build_raw_pdf(objects))
-    with pytest.raises(pylopdf.PdfError, match="64-level safety limit"):
+    doc = pdfust.open(stream=build_raw_pdf(objects))
+    with pytest.raises(pdfust.PdfError, match="64-level safety limit"):
         doc.get_form_fields()
 
 
@@ -430,8 +430,8 @@ def test_form_field_tree_rejects_excessive_name_text() -> None:
             5: f"<< /FT /Tx /T ({name}) >>",
         }
     )
-    doc = pylopdf.open(stream=pdf)
-    with pytest.raises(pylopdf.PdfError, match=r"field-name.*1048576-byte safety limit"):
+    doc = pdfust.open(stream=pdf)
+    with pytest.raises(pdfust.PdfError, match=r"field-name.*1048576-byte safety limit"):
         doc.get_form_fields()
 
 
@@ -446,8 +446,8 @@ def test_form_field_tree_rejects_excessive_value_items() -> None:
             5: f"<< /FT /Ch /T (choice) /V [{values}] >>",
         }
     )
-    doc = pylopdf.open(stream=pdf)
-    with pytest.raises(pylopdf.PdfError, match="4096-item safety limit"):
+    doc = pdfust.open(stream=pdf)
+    with pytest.raises(pdfust.PdfError, match="4096-item safety limit"):
         doc.get_form_fields()
 
 
@@ -462,15 +462,15 @@ def test_form_field_tree_rejects_excessive_value_text() -> None:
             5: f"<< /FT /Tx /T (field) /V ({value}) >>",
         }
     )
-    doc = pylopdf.open(stream=pdf)
-    with pytest.raises(pylopdf.PdfError, match=r"field-value.*1048576-byte safety limit"):
+    doc = pdfust.open(stream=pdf)
+    with pytest.raises(pdfust.PdfError, match=r"field-value.*1048576-byte safety limit"):
         doc.get_form_fields()
 
 
 def test_set_form_field_rejects_excessive_value_text_atomically() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     before = doc.tobytes()
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.set_form_field(
             "customer",
             "x" * (1024 * 1024 + 1),
@@ -481,10 +481,10 @@ def test_set_form_field_rejects_excessive_value_text_atomically() -> None:
 
 
 def test_set_form_field_rejects_excessive_name_before_button_lookup_atomically() -> None:
-    doc = pylopdf.open(stream=_build_form_pdf())
+    doc = pdfust.open(stream=_build_form_pdf())
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.set_form_field("é" * (512 * 1024 + 1), True)
 
     assert caught.value.code == "form_field_input_size"
@@ -505,8 +505,8 @@ def test_form_field_tree_bounds_inherited_returned_values() -> None:
     for object_id in child_ids:
         objects[object_id] = f"<< /T (child{object_id}) >>"
 
-    doc = pylopdf.open(stream=build_raw_pdf(objects))
-    with pytest.raises(pylopdf.PdfError, match=r"returned field-value.*1048576-byte safety limit"):
+    doc = pdfust.open(stream=build_raw_pdf(objects))
+    with pytest.raises(pdfust.PdfError, match=r"returned field-value.*1048576-byte safety limit"):
         doc.get_form_fields()
 
 
@@ -522,57 +522,57 @@ def test_form_field_tree_rejects_excessive_widgets_atomically() -> None:
             6: "<< /Parent 5 0 R /Type /Annot /Subtype /Widget /Rect [10 10 30 30] >>",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match="4096-widget safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-widget safety limit"):
         doc.get_form_fields()
-    with pytest.raises(pylopdf.PdfError, match="4096-widget safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-widget safety limit"):
         doc.set_form_field("button", "Yes")
     assert doc.tobytes() == before
 
 
 def test_form_button_states_reject_excessive_entries_atomically() -> None:
     states = " ".join(f"/S{index} 7 0 R" for index in range(8193))
-    doc = pylopdf.open(stream=_build_button_state_pdf(states))
+    doc = pdfust.open(stream=_build_button_state_pdf(states))
     assert doc.get_form_fields() == [{"name": "button", "type": "checkbox", "value": "Off"}]
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match="8192-entry safety limit"):
+    with pytest.raises(pdfust.PdfError, match="8192-entry safety limit"):
         doc.set_form_field("button", True)
-    with pytest.raises(pylopdf.PdfError, match="8192-entry safety limit"):
+    with pytest.raises(pdfust.PdfError, match="8192-entry safety limit"):
         doc.set_form_field("button", "S0")
     assert doc.tobytes() == before
 
 
 def test_form_button_states_reject_excessive_unique_names() -> None:
     states = " ".join(f"/S{index} 7 0 R" for index in range(4097))
-    doc = pylopdf.open(stream=_build_button_state_pdf(states))
+    doc = pdfust.open(stream=_build_button_state_pdf(states))
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match="4096-name safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-name safety limit"):
         doc.set_form_field("button", True)
     assert doc.tobytes() == before
 
 
 def test_form_button_states_reject_excessive_name_bytes() -> None:
     states = " ".join(f"/S{index}{'x' * 1024} 7 0 R" for index in range(1024))
-    doc = pylopdf.open(stream=_build_button_state_pdf(states))
+    doc = pdfust.open(stream=_build_button_state_pdf(states))
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match=r"button-state name.*1048576-byte safety limit"):
+    with pytest.raises(pdfust.PdfError, match=r"button-state name.*1048576-byte safety limit"):
         doc.set_form_field("button", True)
-    with pytest.raises(pylopdf.PdfError, match=r"button-state name.*1048576-byte safety limit"):
+    with pytest.raises(pdfust.PdfError, match=r"button-state name.*1048576-byte safety limit"):
         doc.set_form_field("button", "S0")
     assert doc.tobytes() == before
 
 
 def test_form_button_state_update_refuses_over_limit_output_atomically() -> None:
     states = " ".join(f"/S{index} 7 0 R" for index in range(8192))
-    doc = pylopdf.open(stream=_build_button_state_pdf(states))
+    doc = pdfust.open(stream=_build_button_state_pdf(states))
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match="update exceeds the 8192-entry safety limit"):
+    with pytest.raises(pdfust.PdfError, match="update exceeds the 8192-entry safety limit"):
         doc.set_form_field("button", "S0")
     assert doc.tobytes() == before
 
 
 def test_form_button_supports_indirect_kids_array() -> None:
-    doc = pylopdf.open(stream=_build_button_state_pdf("/Off 7 0 R /Yes 7 0 R", indirect_kids=True))
+    doc = pdfust.open(stream=_build_button_state_pdf("/Off 7 0 R /Yes 7 0 R", indirect_kids=True))
     doc.set_form_field("button", True)
     assert doc.get_form_fields() == [{"name": "button", "type": "checkbox", "value": "Yes"}]

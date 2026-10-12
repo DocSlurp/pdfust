@@ -1,13 +1,13 @@
 # WebAssembly compatibility
 
-pylopdf builds a static PyEmscripten wheel for the Python 3.13 ABI used by
+pdfust builds a static PyEmscripten wheel for the Python 3.13 ABI used by
 Pyodide 0.28.3 and Cloudflare Python Workers. The binary contains the same Rust
 PDF engines as the native wheel; it does not use a JavaScript PDF
 implementation or a wasm-bindgen shim.
 
 !!! note "Release status"
 
-    The WebAssembly wheel has shipped since pylopdf 0.11. v0.10.0 contains only
+    The WebAssembly wheel has shipped since pdfust 0.11. v0.10.0 contains only
     native wheels.
 
 ## Tested environment
@@ -44,7 +44,7 @@ It accepts a bounded PDF body and returns the page count and first-page text:
 
 ```bash
 git clone https://github.com/yhay81/pylopdf.git
-cd pylopdf/examples/cloudflare-worker
+cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
 ```
@@ -62,15 +62,15 @@ curl --request POST \
 
 Use `uv run pywrangler deploy` after reviewing the compatibility date and the
 limits for the selected Cloudflare plan. CI copies this exact example, replaces
-its public pylopdf requirement with the just-built wheel, resolves it through
+its public pdfust requirement with the just-built wheel, resolves it through
 `workers-py`, runs `wrangler deploy --dry-run`, then starts local `workerd` and
-requests `/health`. The module-scope `import pylopdf` must therefore complete
+requests `/health`. The module-scope `import pdfust` must therefore complete
 without startup-only entropy or other request-bound runtime state.
 
 The example caps its input at 4 MiB, its complete rendering/extraction PDF
 snapshot at 16 MiB, cumulative positioned text at 16,384 glyphs, and sets
 tighter structural and decoded-data budgets than `DocumentLimits.web()`. The
-complete request body is buffered because pylopdf currently accepts paths or
+complete request body is buffered because pdfust currently accepts paths or
 complete byte strings. Cloudflare's 128 MiB isolate budget also includes
 Python, JavaScript, WebAssembly linear memory, and request buffers, so
 production applications should reduce the file, interpretation, and text
@@ -78,7 +78,7 @@ budgets when their surrounding code needs more headroom.
 
 ## Direct Pyodide use
 
-For Pyodide 0.28.3 development, build pylopdf with
+For Pyodide 0.28.3 development, build pdfust with
 `tools/build_pyodide.sh` and install the generated runtime-tagged wheel from a
 URL visible to the runtime:
 
@@ -88,7 +88,7 @@ await pyodide.loadPackage("micropip");
 await pyodide.runPythonAsync(`
 import micropip
 await micropip.install(
-    "https://example.invalid/pylopdf-0.13.0-"
+    "https://example.invalid/pdfust-0.13.0-"
     "cp310-abi3-pyodide_2025_0_wasm32.whl"
 )
 `);
@@ -110,10 +110,10 @@ Paths refer to the virtual filesystem, not directly to browser files:
 
 ```python
 import sys
-import pylopdf
+import pdfust
 
 assert sys.platform == "emscripten"
-with pylopdf.Document(stream=pdf_bytes, limits=pylopdf.DocumentLimits.web()) as doc:
+with pdfust.Document(stream=pdf_bytes, limits=pdfust.DocumentLimits.web()) as doc:
     text = doc.get_page_text(0) if doc.page_count else ""
     output = doc.tobytes()
 ```
@@ -177,7 +177,7 @@ The pinned CI artifact is a 3.772 MiB wheel with a 9.910 MiB uncompressed Wasm
 extension. The tested Worker bundle is 3.817 MiB compressed and 10.383 MiB
 uncompressed. It therefore exceeds Cloudflare Workers Free's 3 MB compressed
 limit but fits the paid-plan 10 MB compressed and shared 64 MB uncompressed
-limits. pylopdf supports the paid-plan deployment path and does not publish a
+limits. pdfust supports the paid-plan deployment path and does not publish a
 separate reduced-feature distribution. The artifact uses fat LTO with one
 codegen unit only for PyEmscripten; native release profiles are unchanged.
 
@@ -214,7 +214,7 @@ explicit policy on both runtimes.
 
 ## Support and release policy
 
-Each pylopdf release that publishes a Wasm wheel must pass:
+Each pdfust release that publishes a Wasm wheel must pass:
 
 1. the reproducible build and wheel metadata/import verifier;
 2. the shared native/Pyodide logical compatibility suite;
@@ -226,7 +226,7 @@ Each pylopdf release that publishes a Wasm wheel must pass:
    GitHub release is finalized.
 
 Runtime upgrades are evaluated as a new tested matrix, not assumed compatible.
-The pinned versions stay supported for the corresponding pylopdf minor release;
+The pinned versions stay supported for the corresponding pdfust minor release;
 new Pyodide, PyEmscripten, Emscripten, `workers-py`, or Wrangler versions enter
 the claim only after the complete gate passes. Measurements and any regressions
 are published together in

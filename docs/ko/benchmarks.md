@@ -1,34 +1,34 @@
 ---
 title: 벤치마크
-description: 추출, 병합 및 렌더링에서의 pylopdf 성능을 재현 가능하게 측정하고 장단점을 함께 공개합니다.
+description: 추출, 병합 및 렌더링에서의 pdfust 성능을 재현 가능하게 측정하고 장단점을 함께 공개합니다.
 ---
 
 # 벤치마크
 
-pylopdf는 **빠른 결과와 느린 결과를 함께** 공개합니다. 이 측정은 특정 컴퓨터와
+pdfust는 **빠른 결과와 느린 결과를 함께** 공개합니다. 이 측정은 특정 컴퓨터와
 코퍼스의 스냅샷이며 보편적인 순위가 아닙니다. 여러분의 작업에서 무엇을 측정할지
 판단하는 자료로 사용하세요.
 
 !!! info "최신 실행"
     **2026-07-26 08:18 UTC** · Windows 11 · Python 3.14.6 · AMD64<br>
-    pylopdf 0.11.0 · pymupdf 1.28.0 · pypdf 6.14.2 · pdfplumber 0.11.10<br>
+    pdfust 0.11.0 · pymupdf 1.28.0 · pypdf 6.14.2 · pdfplumber 0.11.10<br>
     워밍업 1회와 측정 5회, 표는 중앙값(밀리초)을 표시합니다.
 
 ## 한눈에 보기 { #overview }
 
 | 작업 | 최신 코퍼스의 결과 |
 |---|---|
-| 실제 PDF 10개 병합 | pylopdf **36.6 ms**, pymupdf 131.8 ms, pypdf 426.3 ms |
-| 첫 페이지를 2×로 렌더링 | 코퍼스의 10개 파일 모두 pylopdf가 가장 빨랐음 |
+| 실제 PDF 10개 병합 | pdfust **36.6 ms**, pymupdf 131.8 ms, pypdf 426.3 ms |
+| 첫 페이지를 2×로 렌더링 | 코퍼스의 10개 파일 모두 pdfust가 가장 빨랐음 |
 | 12페이지를 2×로 렌더링 | `render_pages()`가 317.4 ms(1 worker)에서 81.5 ms(8 workers)로 줄어 **3.89배 가속** |
-| 전체 텍스트 추출 | 4개는 pylopdf, 6개는 pymupdf가 가장 빨랐음 |
+| 전체 텍스트 추출 | 4개는 pdfust, 6개는 pymupdf가 가장 빨랐음 |
 | 추출 충실도의 대용 지표 | 읽기 순서 규칙에 따라 유사도 0.121~1.000 |
 
 ## 텍스트 추출 { #text-extraction }
 
 모든 페이지, 밀리초 단위이며 낮을수록 빠릅니다.
 
-| 파일 | pylopdf | pymupdf | pypdf | pdfplumber |
+| 파일 | pdfust | pymupdf | pypdf | pdfplumber |
 |---|---:|---:|---:|---:|
 | bill-hr815.pdf | 191.6 | **183.2** | 689.7 | 9997.1 |
 | bunka-kokugo-series-019-p4.pdf | 1.9 | **0.5** | 1.0 | 1.8 |
@@ -47,7 +47,7 @@ pylopdf는 **빠른 결과와 느린 결과를 함께** 공개합니다. 이 측
 비교합니다. 폼과 OCR 레이어에서 유사도가 낮더라도 문자 수가 일치한다면 읽기 순서나
 공백 정책의 차이일 수 있습니다.
 
-| 파일 | pylopdf 문자 수 | pymupdf 문자 수 | 유사도 |
+| 파일 | pdfust 문자 수 | pymupdf 문자 수 | 유사도 |
 |---|---:|---:|---:|
 | bill-hr815.pdf | 300559 | 300559 | 1.000 |
 | bunka-kokugo-series-019-p4.pdf | 0 | 0 | 1.000 |
@@ -62,7 +62,7 @@ pylopdf는 **빠른 결과와 느린 결과를 함께** 공개합니다. 이 측
 
 ## 병합 { #merge }
 
-| 작업 | pylopdf | pymupdf | pypdf |
+| 작업 | pdfust | pymupdf | pypdf |
 |---|---:|---:|---:|
 | 코퍼스 파일 10개 모두 병합 | **36.6** | 131.8 | 426.3 |
 
@@ -70,7 +70,7 @@ pylopdf는 **빠른 결과와 느린 결과를 함께** 공개합니다. 이 측
 
 첫 페이지를 2× PNG로 변환한 밀리초이며 낮을수록 빠릅니다.
 
-| 파일 | pylopdf | pymupdf |
+| 파일 | pdfust | pymupdf |
 |---|---:|---:|
 | bill-hr815.pdf | **41.1** | 88.9 |
 | bunka-kokugo-series-019-p4.pdf | **48.2** | 110.5 |

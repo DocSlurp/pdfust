@@ -16,7 +16,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.borderless_challenge import score
 from bench.silver import guard_path
 from bench.silver_structure import process_peak_rss
@@ -77,7 +77,7 @@ def freeze(output: Path) -> None:
             message = "Source PDF identity or split changed"
             raise ValueError(message)
         start, clock = time.perf_counter(), time.process_time()
-        with pylopdf.open(pdf) as doc:
+        with pdfust.open(pdf) as doc:
             page = doc[0]
             words: list[dict[str, Any]] = [
                 {"id": f"{case['id']}-w{i}", "text": w[4], "bbox": list(w[:4]), "logical_bbox": list(w[:4])}
@@ -297,7 +297,7 @@ def worker(output: Path) -> None:
     frozen = json.loads((output / "source-frozen.json").read_text())
     rows: list[dict[str, Any]] = []
     for page in frozen["pages"]:
-        with pylopdf.open(page["pdf_path"]) as doc:
+        with pdfust.open(page["pdf_path"]) as doc:
             for dpi in DPIS:
                 start, clock = time.perf_counter(), time.process_time()
                 rect = page["rect"]

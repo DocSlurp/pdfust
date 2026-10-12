@@ -15,7 +15,7 @@ from typing import Any
 from urllib.parse import quote
 from urllib.request import urlopen
 
-import pylopdf
+import pdfust
 
 REVISION = "aa1ee96d106dbe53d0ae59474d75c6e6d9b53fec"
 SOURCE = "https://huggingface.co/datasets/opendatalab/OmniDocBench"
@@ -150,7 +150,7 @@ def baseline(artifacts: Path, registry: dict[str, Any]) -> dict[str, Any]:
         if digest(image.read_bytes()) != row["image_sha256"]:
             message = "image hash mismatch"
             raise ValueError(message)
-        with pylopdf.Document() as document:
+        with pdfust.Document() as document:
             page = document.new_page(width=row["width"] * 0.36, height=row["height"] * 0.36)
             page.insert_image((0, 0, page.rect.width, page.rect.height), filename=image)
             text = page.get_text()
@@ -172,7 +172,7 @@ def baseline(artifacts: Path, registry: dict[str, Any]) -> dict[str, Any]:
             results.append(output)
     after = resource.getrusage(resource.RUSAGE_SELF)
     result = {
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "rows": results,
         "elapsed_seconds": time.perf_counter() - started,
         "cpu_user_seconds": after.ru_utime - before.ru_utime,
@@ -244,7 +244,7 @@ def report(registry: dict[str, Any], measured: dict[str, Any], destination: Path
                 f"{measured['cpu_user_seconds']:.3f}s user + {measured['cpu_system_seconds']:.3f}s "
                 f"system CPU, {measured['peak_rss_kib'] / 1024:.1f} MiB process-lifetime peak RSS. "
                 f"Tool/scope: {measured['measurement']}. Machine: `{measured['machine']}`, "
-                f"{measured['cpu_count']} logical CPUs, pylopdf `{measured['pylopdf_version']}`. Network "
+                f"{measured['cpu_count']} logical CPUs, pdfust `{measured['pdfust_version']}`. Network "
                 f"download time is excluded; local image insertion/extraction/rendering is included. "
                 f"Remote resource usage is unmeasured because no remote inference ran."
             ),

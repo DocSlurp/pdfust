@@ -63,7 +63,7 @@ ENCODING_SEMANTICS = {
 
 
 def encodings(artifacts: Path) -> Iterable[Experiment]:
-    """Metamorphic encoding/visibility/OCR-routing audit: one pylopdf run over 21 cases."""
+    """Metamorphic encoding/visibility/OCR-routing audit: one pdfust run over 21 cases."""
     directory = artifacts / "encodings"
     path = directory / "results.json"
     if not path.exists():
@@ -118,8 +118,8 @@ def encodings(artifacts: Path) -> Iterable[Experiment]:
         items,
         [
             Run(
-                "pylopdf-get_layout",
-                "pylopdf 0.13 get_layout() tables plus get_images() routing signals; five CPU repetitions, "
+                "pdfust-get_layout",
+                "pdfust 0.13 get_layout() tables plus get_images() routing signals; five CPU repetitions, "
                 "median open+extract ms.",
                 rows,
                 {

@@ -16,10 +16,10 @@ from bench import wild_flatten  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
 from pypdf.generic import BooleanObject, DictionaryObject, NameObject, StreamObject, TextStringObject  # noqa: E402
 
-import pylopdf  # noqa: E402
+import pdfust  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-CJK_FONT = ROOT / "fonts/pylopdf-fonts-jp/src/pylopdf_fonts_jp/NotoSansJP-Regular.otf"
+CJK_FONT = ROOT / "fonts/pdfust-fonts-jp/src/pdfust_fonts_jp/NotoSansJP-Regular.otf"
 
 
 def _require(*tools: str) -> None:
@@ -32,7 +32,7 @@ def _require(*tools: str) -> None:
 def tagged_pdf(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """Two text pages with an outline, Info, XMP and a minimal structure tree."""
     directory = tmp_path_factory.mktemp("wild-flatten-source")
-    document = pylopdf.Document()
+    document = pdfust.Document()
     for index in range(2):
         page = document.new_page(width=300, height=200)
         page.insert_text((20, 40), f"Quarterly report page {index + 1}", fontsize=14)
@@ -124,7 +124,7 @@ def test_l9_deletes_tounicode(flattened: dict) -> None:
     record = flattened["variants"]["levels"]["L9_broken_tounicode"]
     if CJK_FONT.is_file():
         assert record["rewrite"]["tounicode_deleted"] >= 1
-        assert "請" not in record["survival"]["pylopdf"]["sample_after"]
+        assert "請" not in record["survival"]["pdfust"]["sample_after"]
     # Simple Standard-encoded fonts still decode without ToUnicode; the survival record shows how much.
     assert record["measured_text_layer"] in {"native", "partial", "broken", "none"}
     reader = pypdf.PdfReader(flattened["out"] / "L9_broken_tounicode.pdf")
@@ -134,7 +134,7 @@ def test_l9_deletes_tounicode(flattened: dict) -> None:
             assert "/ToUnicode" not in font
             for descendant in font.get("/DescendantFonts", []):
                 assert "/ToUnicode" not in descendant.get_object()
-    assert "pylopdf" in record["survival"]
+    assert "pdfust" in record["survival"]
 
 
 def test_records_are_complete_and_deterministic(flattened: dict, tagged_pdf: Path, tmp_path: Path) -> None:

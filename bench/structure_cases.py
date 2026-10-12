@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import pylopdf
+import pdfust
 from bench.feature_cases import FeatureCase, build_cases, page_pdf, text_op
 
 # Visual spot checks on bundled source pages; these are not full corpus gold grids.
@@ -73,7 +73,7 @@ def build_structure_cases() -> list[StructureCase]:
     ]
     base = next(case for case in cases if case.feature.name == "table-borderless")
     for rotation in (90, 180, 270):
-        with pylopdf.open(stream=base.feature.data) as document:
+        with pdfust.open(stream=base.feature.data) as document:
             document[0].set_rotation(rotation)
             data = document.tobytes()
         cases.append(
@@ -88,7 +88,7 @@ def build_structure_cases() -> list[StructureCase]:
                 base.tables,
             )
         )
-    with pylopdf.open(stream=base.feature.data) as source, pylopdf.open() as scanned:
+    with pdfust.open(stream=base.feature.data) as source, pdfust.open() as scanned:
         page = scanned.new_page(width=612, height=792)
         page.insert_image(page.rect, pixmap=source[0].get_pixmap(dpi=150))
         cases.append(

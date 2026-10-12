@@ -305,7 +305,7 @@ def _payload(  # noqa: C901, PLR0912 - explicit usage, cost and privacy projecti
         prices = {**original_prices, alias: original_prices.get(model, {})}
         model = alias
     attributes = {
-        "langfuse.trace.name": "pdf-master DEV decisions",
+        "langfuse.trace.name": "pdfust DEV decisions",
         "langfuse.trace.metadata.request_sha256": request_sha,
         "langfuse.observation.type": "embedding" if "input" in body and "questions" not in body else "generation",
         "langfuse.observation.model.name": model,

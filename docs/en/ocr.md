@@ -1,10 +1,10 @@
 # Offline OCR
 
-pylopdf can recognize scanned pages locally and add an invisible searchable
+pdfust can recognize scanned pages locally and add an invisible searchable
 text layer. Install the optional model package:
 
 ```bash
-pip install "pylopdf[ocr]"
+pip install "pdfust[ocr]"
 ```
 
 The core extension runs PP-OCRv6 small through the pure-Rust RTen runtime. It
@@ -18,9 +18,9 @@ and English.
 `Page.get_text_ocr()` returns positioned words without modifying the document:
 
 ```python
-import pylopdf
+import pdfust
 
-with pylopdf.open("scan.pdf") as doc:
+with pdfust.open("scan.pdf") as doc:
     words = doc[0].get_text_ocr()
     for word in words:
         print(word["bbox"], word["text"], word["confidence"])
@@ -35,10 +35,10 @@ recognizer ranking signal, not a calibrated probability.
 Load one engine and reuse it across pages:
 
 ```python
-import pylopdf
+import pdfust
 
-engine = pylopdf.OcrEngine(threads=4, max_concurrent=1)
-with pylopdf.open("scan.pdf") as doc:
+engine = pdfust.OcrEngine(threads=4, max_concurrent=1)
+with pdfust.open("scan.pdf") as doc:
     for page in doc:
         page.apply_ocr(engine=engine)
     doc.save("searchable.pdf", garbage=3, deflate=True, object_streams=True)
@@ -88,7 +88,7 @@ Reduce `threads` and `tile_size` when memory is tighter. Raise
 buffers:
 
 ```python
-engine = pylopdf.OcrEngine(threads=2, max_concurrent=1)
+engine = pdfust.OcrEngine(threads=2, max_concurrent=1)
 words = page.get_text_ocr(
     engine=engine,
     tile_size=1280,
@@ -107,7 +107,7 @@ including calls made from free-threaded Python, so an accidentally shared
 engine does not multiply the measured per-call memory. Set a higher value,
 up to 16, only when the workload has been measured. Each admitted call still
 owns its raster and inference buffers. Simultaneous external calls or edits on
-the same `Document` remain outside pylopdf's concurrency contract.
+the same `Document` remain outside pdfust's concurrency contract.
 
 ## Measured accuracy gate
 
@@ -125,7 +125,7 @@ the OCR contract.
 | archival scan | 300 | 1.302% | 1.042% | 5.37s |
 
 For the MHLW case, the RapidOCR v6 reference measured 0.926% and 0.758% NFKC
-CER respectively, so the report retains both pylopdf's 150-dpi win and 300-dpi
+CER respectively, so the report retains both pdfust's 150-dpi win and 300-dpi
 loss. Strict CER only removes whitespace; NFKC CER additionally folds
 compatibility forms such as full-width Latin characters. Timings are
 hardware-specific.
@@ -140,7 +140,7 @@ complete report with `uv run python bench/ocr.py`.
 ## Model and layout boundaries
 
 With no paths, `OcrEngine` discovers the verified model set installed by
-`pylopdf[ocr]`. Advanced users can pass a compatible RTen-format PP-OCR
+`pdfust[ocr]`. Advanced users can pass a compatible RTen-format PP-OCR
 detector, recognizer, and dictionary explicitly.
 
 The first native engine returns axis-aligned word boxes. Explicit clockwise
@@ -148,4 +148,4 @@ correction handles known 90-degree orientations, but it does not yet deskew
 arbitrary text, detect the required correction automatically, or interpret
 ruby, warichu, and mixed-orientation typography. PP-OCRv6 model provenance,
 source and artifact hashes, conversion commands, and Apache-2.0 notices are
-included in the `pylopdf-ocr-models` distribution.
+included in the `pdfust-ocr-models` distribution.

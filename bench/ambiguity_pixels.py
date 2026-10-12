@@ -325,7 +325,7 @@ def extract(
     font_scale: float | None = None,
 ) -> dict[str, Any]:
     """Fresh-render a bounded source ROI; retain PDF/crop/render provenance."""
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
     source_pdf = _safe(source_pdf)
     if (
@@ -338,7 +338,7 @@ def extract(
     if len(target_boxes) != 2:
         _fail("Pixel extractor requires two selectors")
     boxes = [_box(box) for box in target_boxes]
-    with pylopdf.Document(source_pdf, limits=pylopdf.DocumentLimits.web()) as document:
+    with pdfust.Document(source_pdf, limits=pdfust.DocumentLimits.web()) as document:
         page = document[page_index]
         rect = page.rect
         bbox = (
@@ -373,7 +373,7 @@ def extract(
     result["provenance"] = {
         "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
         "rgba_sha256": hashlib.sha256(image.tobytes()).hexdigest(),
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "policy": POLICY,
     }
     return result

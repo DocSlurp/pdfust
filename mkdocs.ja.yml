@@ -1,4 +1,4 @@
-site_name: pylopdf
+site_name: pdfust
 site_url: https://pylopdf.haya.works/ja/
 site_description: Rustを核にしたPythonネイティブなPDF編集・抽出・レンダリング。MITライセンス、必須Python依存なし、軽量wheel。
 site_author: Yusuke Hayashi
@@ -90,7 +90,7 @@ plugins:
 
 extra:
   current_language: ja
-  announcement: "pylopdf 0.13.0 · 狭い段組の読み順復元とアロケーション堅牢化"
+  announcement: "pdfust 0.13.0 · 狭い段組の読み順復元とアロケーション堅牢化"
   announcement_url: "https://github.com/yhay81/pylopdf/releases/tag/v0.13.0"
   social_image: "https://pylopdf.haya.works/assets/images/pylopdf-social-card.png"
   alternate:
@@ -109,7 +109,7 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/yhay81/pylopdf
-      name: GitHubのpylopdf
+      name: GitHubのpdfust
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/pylopdf/
-      name: PyPIのpylopdf
+      name: PyPIのpdfust

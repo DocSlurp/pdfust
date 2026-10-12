@@ -14,7 +14,7 @@ from typing import Any
 
 from PIL import Image, ImageFilter
 
-import pylopdf
+import pdfust
 
 SCHEMA = 1
 MIN_PAGE_EDGE = 64
@@ -51,10 +51,10 @@ class ImageCache:
         self.page_edge = page_edge
         self.pages: OrderedDict[str, tuple[Image.Image, dict[str, Any]]] = OrderedDict()
         # Version alone is insufficient for a locally rebuilt extension.
-        native_path = Path(pylopdf.pylopdf_core.__file__)
+        native_path = Path(pdfust.pdfust_core.__file__)
         self.renderer = {
             "native_sha256": hashlib.sha256(native_path.read_bytes()).hexdigest(),
-            "python_sha256": hashlib.sha256(Path(pylopdf.__file__).read_bytes()).hexdigest(),
+            "python_sha256": hashlib.sha256(Path(pdfust.__file__).read_bytes()).hexdigest(),
             "pillow": Image.__version__,
             "schema": SCHEMA,
         }
@@ -94,7 +94,7 @@ class ImageCache:
                 raster = opened.convert("RGB")
             status = "disk"
         else:
-            with pylopdf.open(stream=pdf) as document:
+            with pdfust.open(stream=pdf) as document:
                 page = document[page_index]
                 width, height = page.rect[2:]
                 scale = self.page_edge / max(width, height)

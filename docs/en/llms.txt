@@ -1,4 +1,4 @@
-# pylopdf
+# pdfust
 
 > Python-native PDF editing, extraction and rendering powered by Rust.
 

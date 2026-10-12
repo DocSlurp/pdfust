@@ -9,7 +9,7 @@ from bench.pipeline_ocr_sources import discover_regions, extract, select_four, w
 from bench.silver_layouts import _serialize
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def test_regions_reject_native_coverage_and_overlapping_placements() -> None:
@@ -42,13 +42,13 @@ def test_whitespace_ablation_preserves_characters_and_marks_approximate_geometry
     assert len({word["id"] for word in projected}) == 3
 
 
-def _fake_ocr(_page: pylopdf.Page, **_kwargs: object) -> list[dict]:
-    return [{"bbox": pylopdf.Rect(100, 200, 350, 220), "text": "North 12", "confidence": 0.9}]
+def _fake_ocr(_page: pdfust.Page, **_kwargs: object) -> list[dict]:
+    return [{"bbox": pdfust.Rect(100, 200, 350, 220), "text": "North 12", "confidence": 0.9}]
 
 
 def test_empty_extract_preserves_original_and_reextracts_retained_boxes(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", _fake_ocr)
-    with pylopdf.Document() as document:
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", _fake_ocr)
+    with pdfust.Document() as document:
         page = document.new_page(width=600, height=800)
         before = document.tobytes()
         result = extract(page)
@@ -62,7 +62,7 @@ def test_empty_extract_preserves_original_and_reextracts_retained_boxes(monkeypa
 
 
 def test_existing_text_skips_empty_mode_without_clone_or_engine() -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page()
         page.insert_text((20, 20), "Header")
         result = extract(page)
@@ -72,10 +72,10 @@ def test_existing_text_skips_empty_mode_without_clone_or_engine() -> None:
 
 
 def test_mixed_page_import_preserves_native_words_and_original(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", _fake_ocr)
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", _fake_ocr)
     raster = io.BytesIO()
     Image.new("RGB", (200, 200), "white").save(raster, format="PNG")
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=600, height=800)
         page.insert_text((20, 30), "Header")
         page.insert_text((20, 750), "Footer")
@@ -96,7 +96,7 @@ def test_mixed_page_import_preserves_native_words_and_original(monkeypatch: pyte
 def test_native_text_inside_image_is_visible_abstention() -> None:
     raster = io.BytesIO()
     Image.new("RGB", (200, 200), "white").save(raster, format="PNG")
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page()
         page.insert_image((100, 100, 400, 400), stream=raster.getvalue())
         page.insert_text((120, 200), "Already searchable")
@@ -106,7 +106,7 @@ def test_native_text_inside_image_is_visible_abstention() -> None:
 
 
 def test_selected_page_clone_materializes_inherited_resources_and_boxes(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", lambda *_args, **_kwargs: [])
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", lambda *_args, **_kwargs: [])
     data = _serialize(
         [
             "<< /Type /Catalog /Pages 2 0 R >>",
@@ -122,7 +122,7 @@ def test_selected_page_clone_materializes_inherited_resources_and_boxes(monkeypa
         ],
         "1.7",
     )
-    with pylopdf.Document(stream=data) as document:
+    with pdfust.Document(stream=data) as document:
         before = document.tobytes()
         result = extract(document[1])
         assert result["source"]["page_size"] == list(document[1].rect)
@@ -150,8 +150,8 @@ def test_metadata_selection_is_order_independent_and_requires_strata() -> None:
 def test_direct_whitespace_mode_preserves_native_ids_and_explicit_approximation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", _fake_ocr)
-    with pylopdf.Document() as document:
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", _fake_ocr)
+    with pdfust.Document() as document:
         page = document.new_page(width=600, height=800)
         result = extract(page, tokenization="whitespace")
         words = result["source"]["words"]
@@ -165,7 +165,7 @@ def test_direct_whitespace_mode_preserves_native_ids_and_explicit_approximation(
 
 
 def test_invalid_dpi_or_tokenization_refuses_before_ocr() -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page()
         with pytest.raises(ValueError, match="tokenization"):
             extract(page, tokenization="unknown")
@@ -178,14 +178,14 @@ def test_invalid_dpi_or_tokenization_refuses_before_ocr() -> None:
 def test_whitespace_source_words_can_exceed_recognized_box_limit(monkeypatch: pytest.MonkeyPatch) -> None:
     text = " ".join(str(index) for index in range(1500))
     monkeypatch.setattr(
-        pylopdf.Page,
+        pdfust.Page,
         "get_text_ocr",
         lambda *_args, **_kwargs: [
-            {"bbox": pylopdf.Rect(20, 20 + row * 30, 500, 40 + row * 30), "text": text, "confidence": 0.9}
+            {"bbox": pdfust.Rect(20, 20 + row * 30, 500, 40 + row * 30), "text": text, "confidence": 0.9}
             for row in range(4)
         ],
     )
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page()
         before = document.tobytes()
         result = extract(page, tokenization="whitespace")
@@ -200,11 +200,11 @@ def test_source_limit_refusal_retains_before_limit_diagnostics_and_caller(monkey
 
     monkeypatch.setattr(pipeline_ocr_sources, "MAX_SOURCE_WORDS", 5)
     monkeypatch.setattr(
-        pylopdf.Page,
+        pdfust.Page,
         "get_text_ocr",
-        lambda *_args, **_kwargs: [{"bbox": pylopdf.Rect(20, 20, 500, 40), "text": "A B C D E F", "confidence": 0.9}],
+        lambda *_args, **_kwargs: [{"bbox": pdfust.Rect(20, 20, 500, 40), "text": "A B C D E F", "confidence": 0.9}],
     )
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page()
         before = document.tobytes()
         with pytest.raises(pipeline_ocr_sources.SourceAdmissionError) as caught:
@@ -225,11 +225,11 @@ def test_native_character_admission_matches_character_units_including_ids(monkey
         "_native_words",
         lambda _page: [{"id": "w0", "text": "日本語", "bbox": [20, 20, 40, 40], "line": [0, 0]}],
     )
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         result = extract(document.new_page())
         assert result["diagnostics"]["source_admission_observation"]["characters_including_ids"] == 5
     monkeypatch.setattr(pipeline_ocr_sources, "MAX_SOURCE_CHARACTERS", 4)
-    with pylopdf.Document() as document, pytest.raises(pipeline_ocr_sources.SourceAdmissionError):
+    with pdfust.Document() as document, pytest.raises(pipeline_ocr_sources.SourceAdmissionError):
         extract(document.new_page())
 
 
@@ -237,10 +237,10 @@ def test_recognized_box_admission_is_per_ocr_call(monkeypatch: pytest.MonkeyPatc
     from bench import pipeline_ocr_sources  # noqa: PLC0415
 
     monkeypatch.setattr(
-        pylopdf.Page,
+        pdfust.Page,
         "get_text_ocr",
-        lambda *_args, **_kwargs: [{"bbox": pylopdf.Rect(20, 20, 500, 40), "text": "A", "confidence": 0.9}] * 4097,
+        lambda *_args, **_kwargs: [{"bbox": pdfust.Rect(20, 20, 500, 40), "text": "A", "confidence": 0.9}] * 4097,
     )
-    with pylopdf.Document() as document, pytest.raises(pipeline_ocr_sources.SourceAdmissionError) as caught:
+    with pdfust.Document() as document, pytest.raises(pipeline_ocr_sources.SourceAdmissionError) as caught:
         extract(document.new_page(), tokenization="whitespace")
     assert caught.value.diagnostics["last_region_recognized_box_count"] == 4097

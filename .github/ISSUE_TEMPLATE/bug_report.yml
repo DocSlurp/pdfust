@@ -11,7 +11,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: pylopdf version
+      label: pdfust version
       placeholder: "0.11.1"
     validations:
       required: true
@@ -56,7 +56,7 @@ body:
     id: actual
     attributes:
       label: Actual behavior
-      description: Include the complete traceback and any PylopdfWarning messages.
+      description: Include the complete traceback and any PdfustWarning messages.
     validations:
       required: true
   - type: textarea

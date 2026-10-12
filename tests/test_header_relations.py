@@ -15,7 +15,7 @@ from bench.header_relations import (
     strict_bands,
 )
 
-import pylopdf
+import pdfust
 
 
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
@@ -23,7 +23,7 @@ import pylopdf
 def test_source_graph_matches_declared_scope(family: str, rotation: int) -> None:
     """Merged ancestry, repeated labels, and row scope survive rotation."""
     fixture = next(item for item in fixtures() if item.family == family)
-    with pylopdf.open(stream=fixture_pdf(fixture, rotation=rotation)) as doc:
+    with pdfust.open(stream=fixture_pdf(fixture, rotation=rotation)) as doc:
         layout = doc[0].get_layout()
     table = layout.tables[0]
     decision = infer_bands(table)
@@ -41,7 +41,7 @@ def test_source_graph_matches_declared_scope(family: str, rotation: int) -> None
 def test_ambiguous_semantics_preserve_original_cells(family: str) -> None:
     """Lack of semantic evidence produces no invented header edges."""
     fixture = next(item for item in fixtures() if item.family == family)
-    with pylopdf.open(stream=fixture_pdf(fixture)) as doc:
+    with pdfust.open(stream=fixture_pdf(fixture)) as doc:
         table = doc[0].get_layout().tables[0]
     before = table.cells
     decision = infer_bands(table)
@@ -53,7 +53,7 @@ def test_ambiguous_semantics_preserve_original_cells(family: str) -> None:
 def test_repeated_labels_keep_distinct_parent_ids() -> None:
     """Repeated Count labels have separate East/West ancestries."""
     fixture = next(item for item in fixtures() if item.family == "repeated-labels")
-    with pylopdf.open(stream=fixture_pdf(fixture)) as doc:
+    with pdfust.open(stream=fixture_pdf(fixture)) as doc:
         table = doc[0].get_layout().tables[0]
     counts = [cell for cell in table.cells if cell.text == "Count"]
     assert len(counts) == 2
@@ -67,7 +67,7 @@ def test_repeated_labels_keep_distinct_parent_ids() -> None:
 def test_known_type_shift_false_positive_is_scored_as_wrong() -> None:
     """A plausible source-only edge can still be semantically false."""
     fixture = next(item for item in fixtures() if item.family == "headerless-type-shift")
-    with pylopdf.open(stream=fixture_pdf(fixture)) as doc:
+    with pdfust.open(stream=fixture_pdf(fixture)) as doc:
         table = doc[0].get_layout().tables[0]
     decision = infer_bands(table)
     assert decision.header_rows == 1
@@ -78,9 +78,9 @@ def test_known_type_shift_false_positive_is_scored_as_wrong() -> None:
 def test_declared_band_cannot_split_a_merged_header() -> None:
     """Graph construction enforces the production merged-cell invariant."""
     fixture = next(item for item in fixtures() if item.family == "hierarchy")
-    with pylopdf.open(stream=fixture_pdf(fixture)) as doc:
+    with pdfust.open(stream=fixture_pdf(fixture)) as doc:
         table = doc[0].get_layout().tables[0]
-    with pytest.raises(pylopdf.PdfError, match="merged"):
+    with pytest.raises(pdfust.PdfError, match="merged"):
         graph(table, Decision(1, 0, "invalid declaration"))
 
 
@@ -90,7 +90,7 @@ def test_identical_observations_require_independent_role_evidence(rotation: int)
     data = next(item for item in fixtures() if item.family == "headerless-type-shift")
     header = next(item for item in fixtures() if item.family == "type-shift-declared-header")
     assert fixture_pdf(data, rotation=rotation) == fixture_pdf(header, rotation=rotation)
-    with pylopdf.open(stream=fixture_pdf(data, rotation=rotation)) as doc:
+    with pdfust.open(stream=fixture_pdf(data, rotation=rotation)) as doc:
         table = doc[0].get_layout().tables[0]
     assert strict_bands(table).header_rows is None
     assert graph(table, strict_bands(table)) == ()
@@ -105,7 +105,7 @@ def test_segmented_outer_border_preserves_pixels_and_native_detection() -> None:
     fixture = next(item for item in fixtures() if item.family == "three-level")
     results = []
     for coalesce in (False, True):
-        with pylopdf.open(stream=fixture_pdf(fixture, coalesce=coalesce)) as doc:
+        with pdfust.open(stream=fixture_pdf(fixture, coalesce=coalesce)) as doc:
             results.append((doc[0].get_pixmap().samples, doc[0].get_layout()))
     assert results[0][0] == results[1][0]
     assert results[0][1].tables == results[1][1].tables

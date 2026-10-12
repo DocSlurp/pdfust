@@ -1,8 +1,8 @@
-# OCR model wheel release CI: publish pylopdf-ocr-models on an ocr-models-v* tag.
+# OCR model wheel release CI: publish pdfust-ocr-models on an ocr-models-v* tag.
 #
 # Publishing requires a Trusted Publisher configured on PyPI:
-#   PyPI → project pylopdf-ocr-models → Publishing → GitHub
-#   owner: yhay81 / repository: pylopdf / workflow: release-ocr-models.yml / environment: pypi
+#   PyPI → project pdfust-ocr-models → Publishing → GitHub
+#   owner: yhay81 / repository: pdfust / workflow: release-ocr-models.yml / environment: pypi
 name: Release OCR models
 
 on:
@@ -14,7 +14,7 @@ permissions: {}
 
 jobs:
   build:
-    name: Build and attest pylopdf-ocr-models
+    name: Build and attest pdfust-ocr-models
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -32,21 +32,21 @@ jobs:
       - name: Verify package versions and release tag
         id: package
         run: |
-          package_version="$(python -c 'import tomllib; print(tomllib.load(open("models/pylopdf-ocr-models/pyproject.toml", "rb"))["project"]["version"])')"
-          module_version="$(PYTHONPATH=models/pylopdf-ocr-models/src python -c 'import pylopdf_ocr_models; print(pylopdf_ocr_models.__version__)')"
+          package_version="$(python -c 'import tomllib; print(tomllib.load(open("models/pdfust-ocr-models/pyproject.toml", "rb"))["project"]["version"])')"
+          module_version="$(PYTHONPATH=models/pdfust-ocr-models/src python -c 'import pdfust_ocr_models; print(pdfust_ocr_models.__version__)')"
           test "${package_version}" = "${module_version}"
           echo "version=${package_version}" >> "${GITHUB_OUTPUT}"
           if [[ "${GITHUB_REF_TYPE}" = "tag" ]]; then
             test "ocr-models-v${package_version}" = "${GITHUB_REF_NAME}"
           fi
       - name: Verify bundled model artifacts
-        working-directory: models/pylopdf-ocr-models/src/pylopdf_ocr_models
+        working-directory: models/pdfust-ocr-models/src/pdfust_ocr_models
         run: sha256sum --check SHA256SUMS
       - name: Build sdist and wheel
-        run: uv build --package pylopdf-ocr-models --out-dir dist
+        run: uv build --package pdfust-ocr-models --out-dir dist
       - name: Verify reproducible distributions
         run: |
-          uv build --package pylopdf-ocr-models --out-dir dist-repro
+          uv build --package pdfust-ocr-models --out-dir dist-repro
           for artifact in dist/*.whl dist/*.tar.gz; do
             cmp "${artifact}" "dist-repro/$(basename "${artifact}")"
           done
@@ -97,7 +97,7 @@ jobs:
           path: release/sbom.spdx.json
 
   publish:
-    name: Publish pylopdf-ocr-models
+    name: Publish pdfust-ocr-models
     if: startsWith(github.ref, 'refs/tags/ocr-models-v')
     needs: build
     runs-on: ubuntu-latest

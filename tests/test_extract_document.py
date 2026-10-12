@@ -119,10 +119,10 @@ def test_child_startup_failure_retains_missing_page_denominator(
 
 
 def test_subset_success_never_claims_complete_document(tmp_path: Path) -> None:
-    import pylopdf  # noqa: PLC0415 - generated local PDF only.
+    import pdfust  # noqa: PLC0415 - generated local PDF only.
 
     pdf = tmp_path / "two-pages.pdf"
-    with pylopdf.open() as document:
+    with pdfust.open() as document:
         document.new_page().insert_text((50, 50), "First page retained prose")
         document.new_page().insert_text((50, 50), "Second page retained prose")
         document.save(pdf)
@@ -226,11 +226,11 @@ def test_explicit_mixed_label_is_preserved_and_native_label_cannot_override_mode
 def test_whole_page_admission_precedes_range_materialization(
     pdf: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import pylopdf  # noqa: PLC0415 - metadata-only mock.
+    import pdfust  # noqa: PLC0415 - metadata-only mock.
 
     document = MagicMock()
     document.__enter__.return_value.__len__.return_value = 129
-    monkeypatch.setattr(pylopdf, "open", lambda **_kwargs: document)
+    monkeypatch.setattr(pdfust, "open", lambda **_kwargs: document)
     materialize = MagicMock(side_effect=AssertionError("Must reject before allocating page indices"))
     monkeypatch.setattr(wrapper, "range", materialize, raising=False)
     with pytest.raises(ValueError, match="max_pages admission"):
@@ -246,10 +246,10 @@ def test_native_logical_sidecars_preserve_physical_child_and_merged_grid(
 ) -> None:
     from test_pipeline_native_orientation import grid  # noqa: PLC0415
 
-    import pylopdf  # noqa: PLC0415 - generated native PDF only.
+    import pdfust  # noqa: PLC0415 - generated native PDF only.
 
     pdf = tmp_path / "grid.pdf"
-    with pylopdf.open(stream=grid(counterrotate=counterrotate)) as document:
+    with pdfust.open(stream=grid(counterrotate=counterrotate)) as document:
         document[0].set_rotation(rotation)
         document.save(pdf)
     output = tmp_path / "logical-native"
@@ -282,10 +282,10 @@ def test_native_logical_sidecars_preserve_physical_child_and_merged_grid(
 
 
 def test_native_corrected_multicolumn_prose_retains_original_line_order(tmp_path: Path) -> None:
-    import pylopdf  # noqa: PLC0415 - generated native PDF only.
+    import pdfust  # noqa: PLC0415 - generated native PDF only.
 
     pdf = tmp_path / "columns.pdf"
-    with pylopdf.open() as document:
+    with pdfust.open() as document:
         page = document.new_page(width=600, height=800)
         for column, x in (("Left", 40), ("Right", 330)):
             for index in range(1, 9):

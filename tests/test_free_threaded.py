@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-import pylopdf
+import pdfust
 
 IS_FREE_THREADED = sysconfig.get_config_var("Py_GIL_DISABLED") == 1
 pytestmark = pytest.mark.skipif(not IS_FREE_THREADED, reason="requires a free-threaded CPython build")
@@ -20,7 +20,7 @@ ASSETS = Path(__file__).parent / "assets" / "real_world"
 
 
 def _extract_document(data: bytes) -> str:
-    with pylopdf.open(stream=data) as doc:
+    with pdfust.open(stream=data) as doc:
         return "".join(doc.get_page_text(index) for index in range(doc.page_count))
 
 
@@ -35,8 +35,8 @@ def _timed_extract_pair(data: bytes, *, parallel: bool) -> tuple[float, tuple[st
     return time.perf_counter() - start, outputs
 
 
-def _compress_jpeg(data: bytes) -> tuple[pylopdf.ImageCompressionResult, tuple[int, int], bytes]:
-    doc = pylopdf.Document()
+def _compress_jpeg(data: bytes) -> tuple[pdfust.ImageCompressionResult, tuple[int, int], bytes]:
+    doc = pdfust.Document()
     page = doc.new_page(width=100, height=100)
     page.insert_image((0, 0, 72, 72), stream=data)
     result = doc.compress_images(dpi=100, quality=65)
@@ -75,7 +75,7 @@ def test_distinct_documents_are_correct_and_scale_across_threads() -> None:
 
 
 def test_distinct_documents_compress_images_concurrently() -> None:
-    source = pylopdf.open(ASSETS / "wdl6812-manuscript.pdf")[0].get_images()[0]["image"]
+    source = pdfust.open(ASSETS / "wdl6812-manuscript.pdf")[0].get_images()[0]["image"]
     expected = _compress_jpeg(source)
 
     with ThreadPoolExecutor(max_workers=2) as executor:

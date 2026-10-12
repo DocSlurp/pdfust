@@ -8,7 +8,7 @@ import pytest
 from bench.pipeline_ocr_orientation import choose, evidence, recognize
 from bench.pipeline_ocr_sources import extract, whitespace_projection
 
-import pylopdf
+import pdfust
 
 
 def _words(text: str = "North district total 123", confidence: float = 0.95) -> list[dict[str, Any]]:
@@ -42,12 +42,12 @@ def test_uncertain_evidence_abstains(weak: str) -> None:
 def test_four_passes_retained_and_costed(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
 
-    def fake(_page: pylopdf.Page, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
+    def fake(_page: pdfust.Page, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
         calls.append(kwargs["rotation"])
         return _words() if kwargs["rotation"] == 90 else []
 
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", fake)
-    with pylopdf.Document() as document:
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", fake)
+    with pdfust.Document() as document:
         result = recognize(document.new_page(), dpi=150)
     assert calls == [0, 90, 180, 270]
     assert result["selected_rotation"] == 90
@@ -74,11 +74,11 @@ def test_whitespace_projection_follows_corrected_baseline(rotation: int) -> None
 def test_orientation_extract_preserves_caller_and_native_text(
     tokenization: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def fake(_page: pylopdf.Page, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
+    def fake(_page: pdfust.Page, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
         return _words() if kwargs["rotation"] == 0 else []
 
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", fake)
-    with pylopdf.Document() as document:
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", fake)
+    with pdfust.Document() as document:
         page = document.new_page()
         before = document.tobytes()
         result = extract(page, orientation="candidates", tokenization=tokenization)
@@ -89,8 +89,8 @@ def test_orientation_extract_preserves_caller_and_native_text(
 
 
 def test_abstention_exposes_no_candidate_text(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", lambda *_args, **_kwargs: _words())
-    with pylopdf.Document() as document:
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", lambda *_args, **_kwargs: _words())
+    with pdfust.Document() as document:
         result = extract(document.new_page(), orientation="candidates")
     assert result["source"]["words"] == []
     assert result["diagnostics"]["orientation_passes"][0]["status"] == "abstained_uncertain_orientation"
@@ -98,10 +98,10 @@ def test_abstention_exposes_no_candidate_text(monkeypatch: pytest.MonkeyPatch) -
 
 @pytest.mark.parametrize("dpi", [0, -1, float("nan"), True])
 def test_orientation_refuses_invalid_dpi_before_ocr(dpi: float) -> None:
-    with pylopdf.Document() as document, pytest.raises(ValueError, match="DPI"):
+    with pdfust.Document() as document, pytest.raises(ValueError, match="DPI"):
         recognize(document.new_page(), dpi=dpi)
 
 
 def test_four_pass_pixel_admission_is_complete() -> None:
-    with pylopdf.Document() as document, pytest.raises(ValueError, match="raster"):
+    with pdfust.Document() as document, pytest.raises(ValueError, match="raster"):
         recognize(document.new_page(width=3000, height=3000), dpi=150)

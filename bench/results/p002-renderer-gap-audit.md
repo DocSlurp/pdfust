@@ -1,6 +1,6 @@
 # P002 missing-text renderer audit
 
-The four explicit `unsupported_no_text` native diagnostic pages in the fixed full276 run were compared at 150 DPI using installed hayro/jev-pdf, PyMuPDF, and PDFium. Original PDFs were preserved; no default renderer, extraction policy, or pipeline runner changed. This is a rendering and OCR-availability diagnostic, with no table-quality scoring or provider calls.
+The four explicit `unsupported_no_text` native diagnostic pages in the fixed full276 run were compared at 150 DPI using installed hayro/pdfust, PyMuPDF, and PDFium. Original PDFs were preserved; no default renderer, extraction policy, or pipeline runner changed. This is a rendering and OCR-availability diagnostic, with no table-quality scoring or provider calls.
 
 | Diagnostic ID | Source | Hayro native chars | PyMuPDF chars | PDFium chars | Hayro OCR boxes | PyMuPDF OCR boxes | PDFium OCR boxes |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -24,6 +24,6 @@ Rasters have small rounding differences in dimensions, so pixel metrics resize o
 | Blend | 0.545 | 19.036 | 417×417 to 416×416 |
 | JPX/LZW | 0 | 0 | 1275×1650 / 1651 to 1275×1649 |
 
-Installed distribution versions were jev-pdf 0.13.0, PyMuPDF 1.28.2, and pypdfium2 5.12.1. The single CPU process used 10.453 s wall time, 30.480 s process CPU time, and 500,536 KiB Linux `getrusage(RUSAGE_SELF)` peak RSS. Wall/CPU scope starts after imports and includes all twelve render/text/PNG paths, twelve matched OCR passes and artifact writes. Process RSS includes imported libraries and native OCR resources. Native OCR initialization was separately recorded at 0.011 s wall and 0.012 s CPU. No subprocesses, utilization sampling, network, credentials, GPU, or paid calls were used. Two pixel-metric tests, Ruff, and focused mypy checks passed.
+Installed distribution versions were pdfust 0.13.0, PyMuPDF 1.28.2, and pypdfium2 5.12.1. The single CPU process used 10.453 s wall time, 30.480 s process CPU time, and 500,536 KiB Linux `getrusage(RUSAGE_SELF)` peak RSS. Wall/CPU scope starts after imports and includes all twelve render/text/PNG paths, twelve matched OCR passes and artifact writes. Process RSS includes imported libraries and native OCR resources. Native OCR initialization was separately recorded at 0.011 s wall and 0.012 s CPU. No subprocesses, utilization sampling, network, credentials, GPU, or paid calls were used. Two pixel-metric tests, Ruff, and focused mypy checks passed.
 
 The isolated audit is reproducible with `bench.generalization_renderer_gap_audit` and its explicit DEV manifest, output directory, and `--ocr` opt-in. It intentionally examines only the four named missing-text diagnostics; it does not select a fallback based on references or alter any baseline behavior.

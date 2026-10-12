@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from pylopdf import Page, Pixmap
+    from pdfust import Page, Pixmap
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -199,7 +199,7 @@ def display_boxes(regions: list[dict[str, Any]], *, scale: float) -> list[list[f
 
 def benchmark(output: Path, executable: Path | None = None) -> dict[str, Any]:
     """Measure controlled grouping evidence and prose false positives on CPU."""
-    import pylopdf  # noqa: PLC0415 - only the PDF benchmark requires the extension.
+    import pdfust  # noqa: PLC0415 - only the PDF benchmark requires the extension.
     from bench.feature_cases import page_pdf, text_op  # noqa: PLC0415
 
     cases = []
@@ -226,7 +226,7 @@ def benchmark(output: Path, executable: Path | None = None) -> dict[str, Any]:
     rows = []
     binary = executable or build_executable()
     for name, data, expected in cases:
-        document = pylopdf.Document(stream=data)
+        document = pdfust.Document(stream=data)
         page = document[0]
         start = time.perf_counter()
         vector = vector_regions(page)
@@ -279,7 +279,7 @@ def benchmark(output: Path, executable: Path | None = None) -> dict[str, Any]:
             )
         document.close()
     result = {
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "dpi": 96,
         "min_area_pixels": 300,
         "connectivity": 4,

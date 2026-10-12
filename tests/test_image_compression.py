@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from conftest import build_pdf, build_raw_pdf
 
-import pylopdf
+import pdfust
 
 ASSETS = Path(__file__).parent / "assets" / "real_world"
 # Generated 64x64 grayscale linear-gradient JPEG, kept inline to avoid a
@@ -32,7 +32,7 @@ GRAY_GRADIENT_JPEG = base64.b64decode(
 @functools.cache
 def source_jpeg() -> tuple[bytes, int, int]:
     """Return a licensed real-world JPEG already bundled inside the corpus."""
-    images = pylopdf.open(ASSETS / "wdl6812-manuscript.pdf")[0].get_images()
+    images = pdfust.open(ASSETS / "wdl6812-manuscript.pdf")[0].get_images()
     image = next(image for image in images if image["ext"] == "jpeg")
     return image["image"], image["width"], image["height"]
 
@@ -125,7 +125,7 @@ def build_flate_pdf(
 
 
 def test_compress_images_downsamples_and_reduces_jpeg() -> None:
-    doc = pylopdf.open(stream=build_jpeg_pdf([(72, 72, 0, 0)]))
+    doc = pdfust.open(stream=build_jpeg_pdf([(72, 72, 0, 0)]))
     page = doc[0]
     original = page.get_images()[0]
     before = page.get_pixmap().samples
@@ -147,12 +147,12 @@ def test_compress_images_downsamples_and_reduces_jpeg() -> None:
     assert len(after) == len(before)
     assert sum(abs(a - b) for a, b in zip(before, after, strict=True)) / len(after) < 40
 
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert (reopened[0].get_images()[0]["width"], reopened[0].get_images()[0]["height"]) == (100, 100)
 
 
 def test_compress_images_preserves_pixels_needed_by_largest_reuse() -> None:
-    doc = pylopdf.open(stream=build_jpeg_pdf([(72, 72, 0, 0), (18, 18, 100, 0)]))
+    doc = pdfust.open(stream=build_jpeg_pdf([(72, 72, 0, 0), (18, 18, 100, 0)]))
 
     result = doc.compress_images(dpi=100, quality=65)
 
@@ -162,7 +162,7 @@ def test_compress_images_preserves_pixels_needed_by_largest_reuse() -> None:
 
 
 def test_compress_images_limits_each_placement_axis_independently() -> None:
-    doc = pylopdf.open(stream=build_jpeg_pdf([(144, 72, 0, 0)]))
+    doc = pdfust.open(stream=build_jpeg_pdf([(144, 72, 0, 0)]))
 
     result = doc.compress_images(dpi=100, quality=65)
 
@@ -172,7 +172,7 @@ def test_compress_images_limits_each_placement_axis_independently() -> None:
 
 
 def test_compress_images_can_recompress_without_downsampling() -> None:
-    doc = pylopdf.open(stream=build_jpeg_pdf([(72, 72, 0, 0)]))
+    doc = pdfust.open(stream=build_jpeg_pdf([(72, 72, 0, 0)]))
     original = doc[0].get_images()[0]
 
     result = doc.compress_images(dpi=None, quality=60)
@@ -187,7 +187,7 @@ def test_compress_images_can_recompress_without_downsampling() -> None:
 
 
 def test_compress_images_downsamples_grayscale_jpeg() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_jpeg_pdf(
             [(72, 72, 0, 0)],
             source=(GRAY_GRADIENT_JPEG, 64, 64),
@@ -213,7 +213,7 @@ def test_compress_images_converts_safe_flate_rasters(
     predictor: int | None,
 ) -> None:
     source, encoded = build_flate_pdf(color_space=color_space, predictor=predictor)
-    doc = pylopdf.open(stream=source)
+    doc = pdfust.open(stream=source)
     page = doc[0]
     before = page.get_pixmap().samples
 
@@ -235,14 +235,14 @@ def test_compress_images_converts_safe_flate_rasters(
     assert len(after) == len(before)
     assert sum(abs(a - b) for a, b in zip(before, after, strict=True)) / len(after) < 50
 
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert reopened[0].get_images()[0]["ext"] == "jpeg"
 
 
 @pytest.mark.parametrize("predictor", [2, 9])
 def test_compress_images_skips_unsupported_flate_predictors(predictor: int) -> None:
     source, _ = build_flate_pdf(predictor=predictor)
-    doc = pylopdf.open(stream=source)
+    doc = pdfust.open(stream=source)
     original = doc.tobytes()
 
     result = doc.compress_images(dpi=64, quality=65)
@@ -254,7 +254,7 @@ def test_compress_images_skips_unsupported_flate_predictors(predictor: int) -> N
 
 def test_compress_images_skips_flate_when_jpeg_is_not_smaller() -> None:
     source, _ = build_flate_pdf(compressible=True)
-    doc = pylopdf.open(stream=source)
+    doc = pdfust.open(stream=source)
     original = doc.tobytes()
 
     result = doc.compress_images(dpi=None, quality=65)
@@ -266,17 +266,17 @@ def test_compress_images_skips_flate_when_jpeg_is_not_smaller() -> None:
 
 def test_compress_images_rejects_malformed_flate_atomically() -> None:
     source, _ = build_flate_pdf(corrupt=True)
-    doc = pylopdf.open(stream=source)
+    doc = pdfust.open(stream=source)
     original = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match=r"failed to decode Flate image|unexpected sample count"):
+    with pytest.raises(pdfust.PdfError, match=r"failed to decode Flate image|unexpected sample count"):
         doc.compress_images(dpi=64, quality=65)
 
     assert doc.tobytes() == original
 
 
 def test_compress_images_skips_encoding_that_is_not_smaller() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_jpeg_pdf(
             [(72, 72, 0, 0)],
             source=(GRAY_GRADIENT_JPEG, 64, 64),
@@ -292,7 +292,7 @@ def test_compress_images_skips_encoding_that_is_not_smaller() -> None:
 
 
 def test_compress_images_is_idempotent_at_same_settings() -> None:
-    doc = pylopdf.open(stream=build_jpeg_pdf([(72, 72, 0, 0)]))
+    doc = pdfust.open(stream=build_jpeg_pdf([(72, 72, 0, 0)]))
     assert doc.compress_images(dpi=100, quality=65)["rewritten"] == 1
     once = doc.tobytes()
 
@@ -304,7 +304,7 @@ def test_compress_images_is_idempotent_at_same_settings() -> None:
 
 
 def test_compress_images_skips_custom_mask_semantics() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_jpeg_pdf(
             [(72, 72, 0, 0)],
             image_options="/Mask [0 0 0 0 0 0]",
@@ -322,13 +322,13 @@ def test_compress_images_skips_custom_mask_semantics() -> None:
 
 def test_compress_images_rolls_back_all_candidates_on_decode_error() -> None:
     jpeg, _, _ = source_jpeg()
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     page = doc.new_page(width=200, height=100)
     page.insert_image((0, 0, 72, 72), stream=jpeg)
     page.insert_image((100, 0, 172, 72), stream=jpeg[:-20])
     original = page.get_images()
 
-    with pytest.raises(pylopdf.PdfError, match="failed to decode JPEG"):
+    with pytest.raises(pdfust.PdfError, match="failed to decode JPEG"):
         doc.compress_images(dpi=100, quality=65)
 
     assert page.get_images() == original
@@ -336,7 +336,7 @@ def test_compress_images_rolls_back_all_candidates_on_decode_error() -> None:
 
 def test_compress_images_skips_source_above_pixel_limit_before_decode() -> None:
     jpeg, _, _ = source_jpeg()
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_jpeg_pdf(
             [(72, 72, 0, 0)],
             source=(jpeg, 10_000, 7_000),
@@ -351,7 +351,7 @@ def test_compress_images_skips_source_above_pixel_limit_before_decode() -> None:
 
 
 def test_compress_images_accepts_exact_placement_limit() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_jpeg_pdf(
             itertools.repeat((1, 1, 0, 0), 65_536),
             source=(GRAY_GRADIENT_JPEG, 64, 64),
@@ -365,7 +365,7 @@ def test_compress_images_accepts_exact_placement_limit() -> None:
 
 
 def test_compress_images_rejects_excessive_placements_atomically() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_jpeg_pdf(
             itertools.repeat((1, 1, 0, 0), 65_537),
             source=(GRAY_GRADIENT_JPEG, 64, 64),
@@ -374,14 +374,14 @@ def test_compress_images_rejects_excessive_placements_atomically() -> None:
     )
     original = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="65536-placement safety limit"):
+    with pytest.raises(pdfust.PdfError, match="65536-placement safety limit"):
         doc.compress_images()
 
     assert doc.tobytes() == original
 
 
 def test_compress_images_empty_document_is_a_noop() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Text only"]))
+    doc = pdfust.open(stream=build_pdf(["Text only"]))
     assert doc.compress_images() == {
         "considered": 0,
         "rewritten": 0,
@@ -394,7 +394,7 @@ def test_compress_images_empty_document_is_a_noop() -> None:
 
 def test_compress_images_does_not_count_inline_images() -> None:
     commands = "q 10 0 0 10 0 0 cm BI /W 1 /H 1 /CS /RGB /BPC 8 /F /AHx ID FF0000> EI Q"
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R >>",
@@ -417,11 +417,11 @@ def test_compress_images_does_not_count_inline_images() -> None:
 
 @pytest.mark.parametrize("dpi", [True, 0, 35, 2401, float("inf"), "150"])
 def test_compress_images_rejects_invalid_dpi(dpi: object) -> None:
-    with pytest.raises(pylopdf.PdfError, match="dpi must"):
-        pylopdf.open(stream=build_pdf(["Text only"])).compress_images(dpi=dpi)  # type: ignore[arg-type]
+    with pytest.raises(pdfust.PdfError, match="dpi must"):
+        pdfust.open(stream=build_pdf(["Text only"])).compress_images(dpi=dpi)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("quality", [True, 0, 101, 75.5, "75"])
 def test_compress_images_rejects_invalid_quality(quality: object) -> None:
-    with pytest.raises(pylopdf.PdfError, match="quality must"):
-        pylopdf.open(stream=build_pdf(["Text only"])).compress_images(quality=quality)  # type: ignore[arg-type]
+    with pytest.raises(pdfust.PdfError, match="quality must"):
+        pdfust.open(stream=build_pdf(["Text only"])).compress_images(quality=quality)  # type: ignore[arg-type]

@@ -213,7 +213,7 @@ def test_omnidoc_references_third_party_files_and_labels_training(artifacts: Pat
         artifacts.parents[1] / "omnidoc-dev" / "registry.json",
         {"revision": "abc", "rows": [{"sample": 1, "id": "p.jpg"}]},
     )
-    write(dev / "baseline.json", {"pylopdf_version": "0.1", "rows": [{"id": "p.jpg", "native_text_characters": 0}]})
+    write(dev / "baseline.json", {"pdfust_version": "0.1", "rows": [{"id": "p.jpg", "native_text_characters": 0}]})
     bags = {"nfkc": {"character_bag_recall": 0.5}, "strict": {"character_bag_recall": 0.25}}
     score = {"text_blocks": 2, "spatially_covered_text_blocks": 1, "character_bags": bags}
     write(dev / "ocr-admission" / "scores.json", [{"sample": 1, "edge": 640, "status": "complete", "score": score}])

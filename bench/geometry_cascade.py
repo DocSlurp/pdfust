@@ -1,7 +1,7 @@
 """Bounded CPU-only table recovery study with frozen evidence gates.
 
 Run ``.venv/bin/python -m bench.geometry_cascade --repeats 3``. This experiment
-does not modify pylopdf, call a model, or use fixture names/reference cells to
+does not modify pdfust, call a model, or use fixture names/reference cells to
 route extraction. Development and heldout transformations are reported apart;
 the latter are stress tests of related templates, not independent producers.
 """
@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import ROOT, FeatureCase, page_pdf, text_op
 from bench.structure_cases import RECORD_REFERENCES, StructureCase, build_structure_cases
 from bench.structure_core import (
@@ -166,7 +166,7 @@ def header_control(style: str) -> StructureCase:
     )
 
 
-def logical_orientation(page: pylopdf.Page) -> int:
+def logical_orientation(page: pdfust.Page) -> int:
     """Derive axes from interpreted baseline direction, not Rotate metadata."""
     directions: Counter[tuple[int, int]] = Counter()
     for block in page.get_text("dict")["blocks"]:
@@ -176,7 +176,7 @@ def logical_orientation(page: pylopdf.Page) -> int:
     return {(1, 0): 0, (0, 1): 90, (-1, 0): 180, (0, -1): 270}.get(direction, 0)
 
 
-def logical_box(page: pylopdf.Page, box: tuple[float, ...], orientation: int) -> tuple[float, ...]:
+def logical_box(page: pdfust.Page, box: tuple[float, ...], orientation: int) -> tuple[float, ...]:
     """Transform word and vector boxes with the same baseline-derived axes."""
     x0, y0, x1, y1 = box
     width, height = page.rect.width, page.rect.height
@@ -188,7 +188,7 @@ def logical_box(page: pylopdf.Page, box: tuple[float, ...], orientation: int) ->
     }[orientation]
 
 
-def positioned_words(page: pylopdf.Page) -> list[dict[str, Any]]:
+def positioned_words(page: pdfust.Page) -> list[dict[str, Any]]:
     """Normalize right-angle baseline direction without using page labels."""
     orientation = logical_orientation(page)
     raw = page.get_text("words")
@@ -246,7 +246,7 @@ def clustered_axis(values: list[float]) -> list[float]:
 
 
 def strict_header_records(  # noqa: C901, PLR0912
-    page: pylopdf.Page,
+    page: pdfust.Page,
     words: list[dict[str, Any]],
 ) -> tuple[list[list[list[str]]], set[str], list[dict[str, Any]]]:
     """Stop body extension at unsupported rows and preserve each header ID once.
@@ -366,7 +366,7 @@ def strict_header_records(  # noqa: C901, PLR0912
 
 
 def cascade(
-    page: pylopdf.Page,
+    page: pdfust.Page,
     words: list[dict[str, Any]],
 ) -> tuple[list[list[list[str]]], str, set[str], list[dict[str, Any]]]:
     """Route native grids, vector header extension, then numeric geometry.
@@ -397,7 +397,7 @@ def cascade(
     return bounded(accepted), "numeric-geometry" if accepted else "abstain", consumed, []
 
 
-def covered_ids(page: pylopdf.Page, words: list[dict[str, Any]], *, extend: bool = False) -> set[str]:
+def covered_ids(page: pdfust.Page, words: list[dict[str, Any]], *, extend: bool = False) -> set[str]:
     """Retain all source words outside selected vector extents as ordinary text."""
     boxes = [table.bbox for table in page.find_tables()]
     return {
@@ -410,7 +410,7 @@ def covered_ids(page: pylopdf.Page, words: list[dict[str, Any]], *, extend: bool
     }
 
 
-def extract(page: pylopdf.Page, method: str) -> dict[str, Any]:
+def extract(page: pdfust.Page, method: str) -> dict[str, Any]:
     """Return complete tables, retained text, routing evidence and source loss."""
     if method == "native":
         output = page.to_markdown()
@@ -475,7 +475,7 @@ def run(*, repeats: int = 3) -> dict[str, Any]:
             )
             + "\n"
         )
-        with pylopdf.open(stream=feature.data) as document:
+        with pdfust.open(stream=feature.data) as document:
             words = positioned_words(document[0])
         for method in METHODS:
             elapsed = []
@@ -489,7 +489,7 @@ def run(*, repeats: int = 3) -> dict[str, Any]:
             try:
                 for _ in range(repeats):
                     start = time.perf_counter()
-                    with pylopdf.open(stream=feature.data) as document:
+                    with pdfust.open(stream=feature.data) as document:
                         output = extract(document[0], method)
                     elapsed.append((time.perf_counter() - start) * 1000)
                 result.update(
@@ -504,13 +504,13 @@ def run(*, repeats: int = 3) -> dict[str, Any]:
                 result["error"] = f"{type(error).__name__}: {error}"
             (directory / f"{method}.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
             results.append(result)
-    extension_path = importlib.import_module("pylopdf.pylopdf_core").__file__
+    extension_path = importlib.import_module("pdfust.pdfust_core").__file__
     if extension_path is None:
         msg = "native extension path is unavailable for provenance"
         raise ValueError(msg)
     report = {
         "python": platform.python_version(),
-        "pylopdf": pylopdf.__version__,
+        "pdfust": pdfust.__version__,
         "repeats": repeats,
         "code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "platform": platform.platform(),
@@ -530,7 +530,7 @@ def write_report(report: dict[str, Any]) -> None:
         "",
         "Run `.venv/bin/python -m bench.geometry_cascade --repeats 3`.",
         "",
-        f"Python {report['python']}; pylopdf {report['pylopdf']}; {report['repeats']} fresh-document repeats.",
+        f"Python {report['python']}; pdfust {report['pdfust']}; {report['repeats']} fresh-document repeats.",
         "",
         (
             f"Native extension SHA-256: `{report['native_extension_sha256']}`. "

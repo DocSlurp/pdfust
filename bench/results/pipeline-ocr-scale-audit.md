@@ -58,7 +58,7 @@ Engine initialization took 0.0141 wall / 0.0148 CPU seconds, with 68.13 MiB samp
 RSS and 395.59 MiB lifetime peak RSS, illustrating the short-interval sampling limit.
 Four OCR threads and one admitted call were used. Other root experiments could run
 concurrently, so these are resource observations rather than isolated-machine
-throughput claims. Versions: jev-pdf 0.13.0, OCR models 0.1.0, Pillow 12.3.0.
+throughput claims. Versions: pdfust 0.13.0, OCR models 0.1.0, Pillow 12.3.0.
 Model hashes, source PDF/PNG hashes and recognition-code hash are retained locally.
 Two preliminary runner API errors were corrected before this completed run; the
 reported timing covers only the completed run.

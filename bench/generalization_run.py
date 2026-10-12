@@ -456,7 +456,7 @@ def process(
     record: dict[str, Any], config: dict[str, Any], output: Path, client: DecisionClient | None
 ) -> dict[str, Any]:
     """Extract and compose all regions, rejecting incomplete page output atomically."""
-    import pylopdf
+    import pdfust
     from bench.pipeline_regions import compose, split
 
     started, cpu = time.perf_counter(), time.process_time()
@@ -472,7 +472,7 @@ def process(
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Frozen source PDF hash changed")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             result["original_rotation"] = page.rotation
             rotation_mode = config.get("rotation_mode", "always")

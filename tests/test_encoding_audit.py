@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from bench.encoding_audit import REFERENCE, cases, encoded_pdf, evaluate, matrix
 
-import pylopdf
+import pdfust
 
 
 @pytest.mark.parametrize(
@@ -24,12 +24,12 @@ import pylopdf
     ],
 )
 def test_encoding_variants_preserve_known_cells(mode: str) -> None:
-    with pylopdf.open(stream=encoded_pdf(mode)) as document:
+    with pdfust.open(stream=encoded_pdf(mode)) as document:
         assert [matrix(table) for table in document[0].get_layout().tables] == [REFERENCE]
 
 
 def test_encoding_changes_preserve_pixels() -> None:
-    with pylopdf.open(stream=encoded_pdf()) as document:
+    with pdfust.open(stream=encoded_pdf()) as document:
         expected = document[0].get_pixmap(dpi=72).tobytes()
     for mode in (
         "glyph-tj",
@@ -41,15 +41,15 @@ def test_encoding_changes_preserve_pixels() -> None:
         "inherited-resources",
         "form-xobject",
     ):
-        with pylopdf.open(stream=encoded_pdf(mode)) as document:
+        with pdfust.open(stream=encoded_pdf(mode)) as document:
             assert document[0].get_pixmap(dpi=72).tobytes() == expected
 
 
 def test_visibility_controls_do_not_claim_visible_truth() -> None:
-    with pylopdf.open(stream=encoded_pdf()) as document:
+    with pdfust.open(stream=encoded_pdf()) as document:
         baseline = document[0].get_pixmap(dpi=72).tobytes()
     for mode in ("clip-empty", "white-cover", "invisible-text"):
-        with pylopdf.open(stream=encoded_pdf(mode)) as document:
+        with pdfust.open(stream=encoded_pdf(mode)) as document:
             assert [matrix(table) for table in document[0].get_layout().tables] == [REFERENCE]
             assert document[0].get_pixmap(dpi=72).tobytes() != baseline
 

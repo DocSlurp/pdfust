@@ -1,11 +1,11 @@
 ---
 title: 生态系统方案
-description: 经过集成测试的pylopdf与Typst、pyHanko、veraPDF及OCR引擎协作方案。
+description: 经过集成测试的pdfust与Typst、pyHanko、veraPDF及OCR引擎协作方案。
 ---
 
 # 生态系统方案
 
-pylopdf有意**不重复实现**排版、PDF/A生成或数字签名。每个领域都与成熟的库组合解决，
+pdfust有意**不重复实现**排版、PDF/A生成或数字签名。每个领域都与成熟的库组合解决，
 以下方案均由
 [`tests/test_interop.py`](https://github.com/yhay81/pylopdf/blob/main/tests/test_interop.py)
 中的集成测试保护。
@@ -13,14 +13,14 @@ pylopdf有意**不重复实现**排版、PDF/A生成或数字签名。每个领�
 ## 排版与新文档 — typst { #typesetting }
 
 使用[typst](https://typst.app/)（通过
-[typst-py](https://pypi.org/project/typst/)）排版报告，然后将字节直接交给pylopdf：
+[typst-py](https://pypi.org/project/typst/)）排版报告，然后将字节直接交给pdfust：
 
 ```python
 import typst
-import pylopdf
+import pdfust
 
 pdf_bytes = typst.compile("report.typ")   # 排版：typst
-doc = pylopdf.open(stream=pdf_bytes)      # 编辑、提取、合并：pylopdf
+doc = pdfust.open(stream=pdf_bytes)      # 编辑、提取、合并：pdfust
 ```
 
 ## 新文档的PDF/A — typst { #new-pdfa }
@@ -29,7 +29,7 @@ typst的PDF后端krilla支持经过验证的PDF/A-1b…4与PDF/UA-1导出：
 
 ```python
 pdf_a: bytes = typst.compile("report.typ", pdf_standards="a-2b")
-pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
+pdfust.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 ```
 
 转换或验证*已有*PDF是另一个问题。[veraPDF](https://verapdf.org/)（Java）是事实上的
@@ -37,19 +37,19 @@ pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 
 ## 排版复杂CJK水印与页眉 — typst × show_pdf_page { #cjk-watermarks }
 
-pylopdf安装`pylopdf[zh-cn]`后，可用`insert_text()`直接绘制本地化简体中文；
+pdfust安装`pdfust[zh-cn]`后，可用`insert_text()`直接绘制本地化简体中文；
 `[zh-tw]`、`[jp]`、`[ko]`分别提供其他CJK地区字形。如水印需要更复杂的整页排版，
 可用typst排版（字体会以子集嵌入），再以矢量形式写入每一页：
 
 ```python
-from pylopdf_fonts_zh_cn import sans_path  # pip install pylopdf[zh-cn]
+from pdfust_fonts_zh_cn import sans_path  # pip install pdfust[zh-cn]
 
 stamp_typ = """
 #set page(width: 595pt, height: 842pt, fill: none)
 #set text(font: "Noto Sans SC", size: 48pt, fill: rgb(255, 0, 0, 40%))
 #align(center + horizon)[机密]
 """
-stamp = pylopdf.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
+stamp = pdfust.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
 for page in doc:
     page.show_pdf_page((0, 0, page.rect.width, page.rect.height), stamp)
 ```
@@ -58,7 +58,7 @@ for page in doc:
 
 ## 数字签名（PAdES）— pyHanko { #signatures }
 
-[pyHanko](https://pypi.org/project/pyHanko/)（MIT）通过增量更新签名，因此pylopdf生成的
+[pyHanko](https://pypi.org/project/pyHanko/)（MIT）通过增量更新签名，因此pdfust生成的
 字节会原样保留为签名文件的前缀。集成测试会逐字节验证这一点：
 
 ```python
@@ -75,7 +75,7 @@ out = signers.sign_pdf(
 signed_pdf: bytes = out.getvalue()
 ```
 
-pylopdf自己的表单API会有意拒绝填写签名字段，并引导到本方案。
+pdfust自己的表单API会有意拒绝填写签名字段，并引导到本方案。
 
 ## OCR — 使用任意引擎 { #ocr }
 

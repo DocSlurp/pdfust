@@ -21,7 +21,7 @@ from bench.pipeline_assembly import native_state
 from conftest import build_raw_pdf
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def pdf_bytes(*, bordered: bool = True, third_row: bool = False) -> bytes:
@@ -102,7 +102,7 @@ def test_source_projection_cannot_include_page_metadata(monkeypatch: pytest.Monk
 
 @pytest.mark.parametrize("edge", [256, 512, 1024])
 def test_actual_full_page_image_edge_matches_record(edge: int) -> None:
-    with pylopdf.open(stream=pdf_bytes()) as document:
+    with pdfust.open(stream=pdf_bytes()) as document:
         url, metadata = runner.image(document[0], edge)
     assert url is not None
     png = base64.b64decode(url.split(",", 1)[1])
@@ -233,14 +233,14 @@ def test_stubbed_assembly_response_abstains_without_losing_source(tmp_path: Path
 @pytest.mark.parametrize("rotation", [90, 180, 270])
 def test_source_rotation_normalization_aligns_complete_words_and_raster(rotation: int) -> None:
     raw = pdf_bytes()
-    with pylopdf.open(stream=raw) as baseline:
+    with pdfust.open(stream=raw) as baseline:
         expected_source = runner.source(baseline[0])
         _, expected_image = runner.image(baseline[0], 256)
-    with pylopdf.open(stream=raw) as owned:
+    with pdfust.open(stream=raw) as owned:
         owned[0].set_rotation(rotation)
         rotated_bytes = owned.tobytes()
     frozen_hash = runner.sha(rotated_bytes)
-    with pylopdf.open(stream=rotated_bytes) as owned:
+    with pdfust.open(stream=rotated_bytes) as owned:
         page = owned[0]
         assert page.rotation == rotation
         # Interpret and render rotated state first to exercise both cache invalidations.
@@ -263,7 +263,7 @@ def test_process_normalizes_rotation_before_extraction_and_render(
 ) -> None:
     row = record(tmp_path, bordered=False)
     pdf = Path(row["pdf_path"])
-    with pylopdf.open(stream=pdf.read_bytes()) as document:
+    with pdfust.open(stream=pdf.read_bytes()) as document:
         document[0].set_rotation(rotation)
         rotated = document.tobytes()
     pdf.write_bytes(rotated)
@@ -271,11 +271,11 @@ def test_process_normalizes_rotation_before_extraction_and_render(
     original_source, original_image = runner.source, runner.image
     observed_rotations = []
 
-    def source(page: pylopdf.Page, **kwargs: object) -> dict:
+    def source(page: pdfust.Page, **kwargs: object) -> dict:
         observed_rotations.append(("source", page.rotation))
         return original_source(page, **cast("Any", kwargs))
 
-    def image(page: pylopdf.Page, edge: int) -> tuple:
+    def image(page: pdfust.Page, edge: int) -> tuple:
         observed_rotations.append(("image", page.rotation))
         return original_image(page, edge)
 
@@ -434,7 +434,7 @@ def test_ocr_only_attempts_empty_pages_when_enabled(
         return [{"text": "Recognized", "bbox": [5, 5, 25, 15]}]
 
     page.apply_ocr = apply_ocr
-    monkeypatch.setattr(pylopdf, "open", lambda **_kwargs: nullcontext([page]))
+    monkeypatch.setattr(pdfust, "open", lambda **_kwargs: nullcontext([page]))
     engine_calls = []
 
     def load_engine() -> object:
@@ -474,7 +474,7 @@ def test_zero_recognition_remains_explicitly_unsupported(
         find_tables=lambda **_kwargs: SimpleNamespace(tables=[]),
         apply_ocr=lambda **_kwargs: [],
     )
-    monkeypatch.setattr(pylopdf, "open", lambda **_kwargs: nullcontext([page]))
+    monkeypatch.setattr(pdfust, "open", lambda **_kwargs: nullcontext([page]))
     monkeypatch.setattr(runner, "ocr_engine", object)
     row = record(tmp_path)
     row["id"] = opaque_id

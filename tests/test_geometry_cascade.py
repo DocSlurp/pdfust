@@ -6,7 +6,7 @@ import re
 
 import pytest
 
-import pylopdf
+import pdfust
 
 pytest.importorskip("markdown_it", reason="geometry study uses optional benchmark Markdown parsing")
 
@@ -28,7 +28,7 @@ from bench.structure_core import score_tables, source_agreement
 @pytest.mark.parametrize("style", ["solid", "dashed", "filled", "broken", "missing", "partial"])
 def test_encodings_preserve_complete_cells(style: str) -> None:
     case = derivative(style, reverse=True)
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         output = extract(document[0], "geometry")
     assert score_tables(output["tables"], case.tables)["exact"]
 
@@ -36,7 +36,7 @@ def test_encodings_preserve_complete_cells(style: str) -> None:
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
 def test_geometry_restores_logical_rotation(rotation: int) -> None:
     case = derivative("partial", rotation=rotation, reverse=True)
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         output = extract(document[0], "geometry")
     assert score_tables(output["tables"], case.tables)["exact"]
 
@@ -44,7 +44,7 @@ def test_geometry_restores_logical_rotation(rotation: int) -> None:
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
 def test_header_boxes_follow_logical_axes(rotation: int) -> None:
     case = derivative("partial", rotation=rotation, reverse=True)
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         page = document[0]
         words = positioned_words(page)
         output = extract(page, "cascade")
@@ -61,7 +61,7 @@ def test_header_uses_baseline_instead_of_page_rotation() -> None:
     assert match is not None
     content = match.group(1).decode("latin-1")
     data = page_pdf("q 0 1 -1 0 750 0 cm\n" + content + "\nQ")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[0]
         assert page.rotation == 0
         words = positioned_words(page)
@@ -77,14 +77,14 @@ def test_header_uses_baseline_instead_of_page_rotation() -> None:
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
 def test_native_full_grid_uses_logical_markdown(rotation: int) -> None:
     case = derivative("solid", rotation=rotation, reverse=True)
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         output = extract(document[0], "native")
     assert score_tables(output["tables"], case.tables)["exact"]
 
 
 def test_prose_gate_abstains_and_preserves_source() -> None:
     case = derivative("prose", reverse=True)
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         page = document[0]
         words = positioned_words(page)
         unconditional = extract(page, "geometry")
@@ -99,7 +99,7 @@ def test_prose_gate_abstains_and_preserves_source() -> None:
 
 def test_wrapped_body_and_footnote_stop() -> None:
     case = header_control("footnote")
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         page = document[0]
         words = positioned_words(page)
         matrices, consumed, diagnostics = strict_header_records(page, words)
@@ -121,7 +121,7 @@ def test_wrapped_body_and_footnote_stop() -> None:
 
 def test_header_does_not_extend_into_prose() -> None:
     case = header_control("prose")
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         page = document[0]
         matrices, used, diagnostics = strict_header_records(page, positioned_words(page))
         original = extract(page, "header")
@@ -143,7 +143,7 @@ def test_bounded_admission_refuses_complete_result() -> None:
 
 def test_unassigned_literals_preserve_source_tokens() -> None:
     data = page_pdf(text_op("Literal <tag> *stars* [label] code_value = 42", 40, 700))
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[0]
         words = positioned_words(page)
         output = extract(page, "cascade")

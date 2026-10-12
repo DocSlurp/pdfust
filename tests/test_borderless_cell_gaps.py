@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 SIZE = 10
 # Helvetica AFM advances (per 1000 em) for the characters used below.
@@ -40,7 +40,7 @@ def test_right_aligned_amount_column_with_one_em_padding_splits_cleanly() -> Non
         y = 100 + index * 18
         # The fee column is right-aligned at x=330; the next column starts 1.2 em later.
         lines += [(50, y, date), (130, y, session), (330 - _width(fee), y, fee), (342, y, closes)]
-    doc = pylopdf.open(stream=_pdf(lines))
+    doc = pdfust.open(stream=_pdf(lines))
     tables = doc[0].find_tables(strategy="text")
     assert len(tables) == 1
     assert tables[0].extract() == [list(row) for row in rows]
@@ -65,7 +65,7 @@ def test_side_by_side_prose_columns_with_narrow_gutter_are_not_a_table() -> None
     assert all(len(line) == 40 for line in left)
     lines = [(50, 100 + i * 14, text) for i, text in enumerate(left)]
     lines += [(302, 100 + i * 14, text) for i, text in enumerate(right)]
-    doc = pylopdf.open(stream=_pdf(lines, font="Courier"))
+    doc = pdfust.open(stream=_pdf(lines, font="Courier"))
     assert len(doc[0].find_tables(strategy="text")) == 0
 
 
@@ -84,7 +84,7 @@ def test_half_em_padding_splits_at_a_channel_open_in_every_row_and_keeps_header(
         y = 100 + index * 18
         # The fee column is right-aligned at x=260; the activity starts 5 pt later.
         lines += [(50, y, date), (130, y, room), (260 - _width(fee), y, fee), (265, y, activity)]
-    doc = pylopdf.open(stream=_pdf(lines))
+    doc = pdfust.open(stream=_pdf(lines))
     tables = doc[0].find_tables(strategy="text")
     assert len(tables) == 1
     assert tables[0].extract() == [["Date", "Room", "Fee", "Activity"], *[list(row) for row in rows]]

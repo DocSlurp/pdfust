@@ -259,7 +259,7 @@ def build_v2(output: Path, registry_path: Path) -> dict[str, Any]:
     """Build authored derivatives after geometry freeze; retain private recipes and measurements."""
     from PIL import Image, ImageDraw
 
-    import pylopdf
+    import pdfust
     from bench.feature_cases import text_op
     from bench.silver_layouts import _pdf
     from bench.silver_metadata import analyze_pdf
@@ -306,7 +306,7 @@ def build_v2(output: Path, registry_path: Path) -> dict[str, Any]:
                             size=block["font_size"],
                         )
                     )
-        with pylopdf.open(stream=_pdf(["\n".join(ops)], 0, "training", "1.4")) as document:
+        with pdfust.open(stream=_pdf(["\n".join(ops)], 0, "training", "1.4")) as document:
             page = document[0]
             page.set_mediabox((0, 0, recipe["width"], height))
             for block in recipe["blocks"]:
@@ -718,7 +718,7 @@ def realistic_recipe(contract: dict[str, Any], style: dict[str, Any], index: int
 
 
 def _realism_pdf(recipe: dict[str, Any], font_bytes: bytes) -> bytes:
-    import pylopdf
+    import pdfust
     from bench.feature_cases import raw_pdf, stream_object, text_op
 
     height = recipe["height"]
@@ -896,7 +896,7 @@ def _realism_pdf(recipe: dict[str, Any], font_bytes: bytes) -> bytes:
             ],
         ]
     )
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         for block in recipe["blocks"]:
             if block["paint"] == "text" and block["cjk"] and block["lines"]:
                 # One embedding per block avoids a separate font program per glyph.
@@ -939,7 +939,7 @@ def build(output: Path, registry_path: Path) -> dict[str, Any]:
     import numpy as np
     from PIL import Image
 
-    import pylopdf
+    import pdfust
     from bench.silver_metadata import analyze_pdf
     from bench.silver_structure import process_peak_rss
 
@@ -1003,7 +1003,7 @@ def build(output: Path, registry_path: Path) -> dict[str, Any]:
         data = _realism_pdf(recipe, font_bytes)
         name = recipe["training_id"]
         (destination / (name + ".pdf")).write_bytes(data)
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[0]
             render = page.render(dpi=90, background=(255, 255, 255))
             (destination / (name + ".png")).write_bytes(render)

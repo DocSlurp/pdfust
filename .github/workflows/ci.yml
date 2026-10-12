@@ -67,13 +67,13 @@ jobs:
           python-version: "3.14t"
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
       - name: Build and install (Python 3.14t)
-        # Keep this lane focused on pylopdf: optional interop extensions may not
+        # Keep this lane focused on pdfust: optional interop extensions may not
         # publish cp314t wheels on the same schedule.
         run: uv sync --locked --all-extras --python 3.14t
       - name: Verify free-threaded import
         run: >-
           uv run --no-sync python -c
-          "import sys, sysconfig, pylopdf;
+          "import sys, sysconfig, pdfust;
           assert sysconfig.get_config_var('Py_GIL_DISABLED') == 1;
           assert not sys._is_gil_enabled()"
       - name: Test
@@ -114,9 +114,9 @@ jobs:
       - name: Build and smoke-test PyEmscripten wheel
         run: bash tools/build_pyodide.sh
         env:
-          PYLOPDF_PYODIDE_NATIVE_RESULTS: native-compat/results.json
-          PYLOPDF_PYODIDE_BENCHMARK_OUTPUT: pyodide-compat/limits-benchmark.json
-          PYLOPDF_PYODIDE_METRICS_OUTPUT: pyodide-compat/runtime-metrics.json
+          PDFUST_PYODIDE_NATIVE_RESULTS: native-compat/results.json
+          PDFUST_PYODIDE_BENCHMARK_OUTPUT: pyodide-compat/limits-benchmark.json
+          PDFUST_PYODIDE_METRICS_OUTPUT: pyodide-compat/runtime-metrics.json
       - name: Record PyEmscripten artifact size
         run: >-
           python tools/wasm_artifact_metrics.py

@@ -5,7 +5,7 @@
 Scores every arm in the hosted (`vision-v1`, `vision-raster-v1`) and open
 GPU (`vision-open-v1`) experiment directories with `bench.wild_vision.evaluate`,
 then reports three views: the ten scan levels every open model ran, the full
-21-level hard-raster set, and native pylopdf extraction from `audit.json`.
+21-level hard-raster set, and native pdfust extraction from `audit.json`.
 Costs are summed from per-page ledger entries; open-model GPU rental is
 billed separately and listed by hand in the report notes. DEV data only.
 """
@@ -116,10 +116,10 @@ def level_matrix(best: dict[str, dict[str, dict[str, Any]]], levels: tuple[str, 
 
 
 def native() -> list[str]:
-    """Native pylopdf extraction and OCR-fill reference rows from the audit."""
+    """Native pdfust extraction and OCR-fill reference rows from the audit."""
     summary = json.loads((WILD / "audit.json").read_text(encoding="utf-8"))["summary"]
     header = "| Level | Documents | Text F1 | Exact tables | Cell recall |"
-    out = ["### Native pylopdf extraction (no model)", "", header, "|---|---:|---:|---:|---:|"]
+    out = ["### Native pdfust extraction (no model)", "", header, "|---|---:|---:|---:|---:|"]
     for level in NATIVE_LEVELS:
         if level in summary:
             s = summary[level]

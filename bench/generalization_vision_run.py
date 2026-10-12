@@ -161,7 +161,7 @@ def process(
     client: DecisionClient | ConcurrentDecisionClient | None,
 ) -> dict[str, Any]:
     """Transcribe a whole source page's tables and refuse malformed output atomically."""
-    import pylopdf
+    import pdfust
 
     began, cpu = time.perf_counter(), time.process_time()
     result: dict[str, Any] = {
@@ -185,7 +185,7 @@ def process(
             raise ValueError("Frozen source PDF hash changed")
         result["pdf_sha256"] = sha(data)
         stage = "render"
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             result.update(original_rotation=page.rotation, rotation_normalized=False, viewport=list(page.rect))
             url, metadata = image(page, config.get("image_edge", 1200), config.get("jpeg_quality", 90))

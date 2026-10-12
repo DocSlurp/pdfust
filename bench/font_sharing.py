@@ -14,7 +14,7 @@ import sys
 import time
 from pathlib import Path
 
-import pylopdf
+import pdfust
 
 ROOT = Path(__file__).resolve().parent.parent
 MAX_DOCUMENTS = 64
@@ -37,10 +37,10 @@ def main() -> None:
                 check=True,
             )
         return
-    base = ROOT / "fonts" / "pylopdf-fonts-jp" / "src" / "pylopdf_fonts_jp"
+    base = ROOT / "fonts" / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp"
     sans = str(base / "NotoSansJP-Regular.otf")
     serif = str(base / "NotoSerifJP-Regular.otf")
-    documents = [pylopdf.Document() for _ in range(args.documents)]
+    documents = [pdfust.Document() for _ in range(args.documents)]
     start = time.perf_counter()
     for document in documents:
         if args.mode == "shared":

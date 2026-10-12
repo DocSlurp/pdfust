@@ -16,7 +16,7 @@ from bench import pipeline_vision_transcription as adapter
 from PIL import Image
 from test_pipeline_run import pdf_bytes, record
 
-import pylopdf
+import pdfust
 
 if TYPE_CHECKING:
     import pytest
@@ -27,7 +27,7 @@ def settings(**extra: Any) -> dict[str, Any]:
 
 
 def test_explicit_jpeg_quality_preserves_requested_pixel_dimensions() -> None:
-    with pylopdf.open(stream=pdf_bytes()) as document:
+    with pdfust.open(stream=pdf_bytes()) as document:
         default_url, default = runner.image(document[0], 2048)
         compressed_url, compressed = runner.image(document[0], 2048, 70)
     assert default["image_size"] == compressed["image_size"]
@@ -210,7 +210,7 @@ def test_over_body_admission_is_visible_without_resize_or_retry(
 
 def test_rotation_is_preserved_and_frozen_hash_mismatch_stops_before_request(tmp_path: Path) -> None:
     source = record(tmp_path)
-    with pylopdf.open(stream=pdf_bytes()) as document:
+    with pdfust.open(stream=pdf_bytes()) as document:
         document[0].set_rotation(90)
         data = document.tobytes()
     Path(source["pdf_path"]).write_bytes(data)

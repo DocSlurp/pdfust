@@ -1,9 +1,9 @@
 # 오프라인 OCR
 
-pylopdf는 스캔한 페이지를 로컬에서 인식하고 보이지 않는 검색 가능 텍스트 레이어를 추가할 수 있습니다. 선택적 모델 패키지를 설치합니다.
+pdfust는 스캔한 페이지를 로컬에서 인식하고 보이지 않는 검색 가능 텍스트 레이어를 추가할 수 있습니다. 선택적 모델 패키지를 설치합니다.
 
 ```bash
-pip install "pylopdf[ocr]"
+pip install "pdfust[ocr]"
 ```
 
 코어 확장은 순수 Rust RTen 런타임으로 PP-OCRv6 small을 실행합니다. 실행 시 시스템 실행 파일, 공유 라이브러리, 네트워크 요청 또는 ONNX 파서가 필요하지 않습니다. 별도로 버전이 관리되는 모델 wheel은 약 26.6 MB이며 일본어, 중국어 간체·번체, 영어를 포함한 50개 언어를 지원합니다.
@@ -13,9 +13,9 @@ pip install "pylopdf[ocr]"
 `Page.get_text_ocr()`은 문서를 변경하지 않고 위치가 포함된 단어를 반환합니다.
 
 ```python
-import pylopdf
+import pdfust
 
-with pylopdf.open("scan.pdf") as doc:
+with pdfust.open("scan.pdf") as doc:
     words = doc[0].get_text_ocr()
     for word in words:
         print(word["bbox"], word["text"], word["confidence"])
@@ -28,10 +28,10 @@ with pylopdf.open("scan.pdf") as doc:
 엔진 하나를 로드해 여러 페이지에서 재사용합니다.
 
 ```python
-import pylopdf
+import pdfust
 
-engine = pylopdf.OcrEngine(threads=4, max_concurrent=1)
-with pylopdf.open("scan.pdf") as doc:
+engine = pdfust.OcrEngine(threads=4, max_concurrent=1)
+with pdfust.open("scan.pdf") as doc:
     for page in doc:
         page.apply_ocr(engine=engine)
     doc.save("searchable.pdf", garbage=3, deflate=True, object_streams=True)
@@ -59,7 +59,7 @@ PDF 페이지 회전과 렌더링 픽셀은 바뀌지 않습니다. 반환된 �
 메모리가 부족하면 `threads`와 `tile_size`를 낮추십시오. 동시에 유지되는 래스터와 추론 버퍼를 측정한 뒤에만 `max_concurrent`를 높이십시오.
 
 ```python
-engine = pylopdf.OcrEngine(threads=2, max_concurrent=1)
+engine = pdfust.OcrEngine(threads=2, max_concurrent=1)
 words = page.get_text_ocr(
     engine=engine,
     tile_size=1280,
@@ -70,7 +70,7 @@ words = page.get_text_ocr(
 
 `clip`은 OCR 감지기 입력과 인식 작업을 줄이지만 hayro 0.7은 자르기 전에 여전히 전체 페이지를 렌더링합니다. 반환되는 상자는 전체 페이지 표시 좌표를 유지합니다.
 
-`OcrEngine`은 불변이며 서로 다른 문서에서 재사용할 수 있습니다. 기본 `max_concurrent=1`은 free-threaded Python의 호출을 포함해 렌더링부터 인식 완료까지의 전체 호출을 직렬화하므로 공유 엔진이 측정된 호출당 메모리를 실수로 배가하지 않습니다. 최대 16까지 높일 수 있지만 대상 작업 부하를 측정한 경우에만 사용하십시오. 허용된 각 호출은 여전히 자체 래스터 및 추론 버퍼를 사용합니다. 동일한 `Document`에 대한 외부 스레드의 동시 호출이나 편집은 pylopdf의 동시성 계약 범위 밖입니다.
+`OcrEngine`은 불변이며 서로 다른 문서에서 재사용할 수 있습니다. 기본 `max_concurrent=1`은 free-threaded Python의 호출을 포함해 렌더링부터 인식 완료까지의 전체 호출을 직렬화하므로 공유 엔진이 측정된 호출당 메모리를 실수로 배가하지 않습니다. 최대 16까지 높일 수 있지만 대상 작업 부하를 측정한 경우에만 사용하십시오. 허용된 각 호출은 여전히 자체 래스터 및 추론 버퍼를 사용합니다. 동일한 `Document`에 대한 외부 스레드의 동시 호출이나 편집은 pdfust의 동시성 계약 범위 밖입니다.
 
 ## 측정된 정확도 기준
 
@@ -83,12 +83,12 @@ words = page.get_text_ocr(
 | 기록물 이미지 스캔 | 150 | 1.823% | 1.562% | 2.05초 |
 | 기록물 이미지 스캔 | 300 | 1.302% | 1.042% | 5.37초 |
 
-후생노동성 사례에 대한 RapidOCR v6 참조의 NFKC CER은 각각 0.926%와 0.758%이므로 보고서에는 pylopdf의 150 dpi 우세와 300 dpi 열세가 모두 남아 있습니다. 엄격 CER은 공백만 제거하고 NFKC CER은 전각 라틴 문자 같은 호환 형식도 정규화합니다. 시간은 하드웨어에 따라 달라집니다.
+후생노동성 사례에 대한 RapidOCR v6 참조의 NFKC CER은 각각 0.926%와 0.758%이므로 보고서에는 pdfust의 150 dpi 우세와 300 dpi 열세가 모두 남아 있습니다. 엄격 CER은 공백만 제거하고 NFKC CER은 전각 라틴 문자 같은 호환 형식도 정규화합니다. 시간은 하드웨어에 따라 달라집니다.
 
 별도의 150 dpi 현장 검사에서는 문서 두 개가 엔진 하나를 공유했습니다. `max_concurrent=1`은 6.31초, `max_concurrent=2`는 6.75초였고 둘 다 순차 인식 텍스트와 정확히 일치했습니다. 이 작업 부하에서는 상한 증가로 처리량이 개선되지 않았으며 허용된 각 호출은 별도 버퍼를 사용하므로, 보수적인 기본값 1을 뒷받침합니다. 전체 보고서는 `uv run python bench/ocr.py`로 재현할 수 있습니다.
 
 ## 모델과 레이아웃 경계
 
-경로를 생략하면 `OcrEngine`은 `pylopdf[ocr]`가 설치한 검증된 모델 세트를 찾습니다. 고급 사용자는 호환되는 RTen 형식 PP-OCR 감지기, 인식기 및 사전을 명시적으로 전달할 수 있습니다.
+경로를 생략하면 `OcrEngine`은 `pdfust[ocr]`가 설치한 검증된 모델 세트를 찾습니다. 고급 사용자는 호환되는 RTen 형식 PP-OCR 감지기, 인식기 및 사전을 명시적으로 전달할 수 있습니다.
 
-첫 번째 네이티브 엔진은 축에 정렬된 단어 상자를 반환합니다. 알려진 90도 단위 방향은 명시적인 시계 방향 보정으로 처리할 수 있지만, 임의 각도 기울기 보정, 필요한 보정 각도의 자동 감지, 루비·와리추·혼합 방향 조판 해석은 아직 지원하지 않습니다. PP-OCRv6 모델의 출처, 원본 및 결과물 해시, 변환 명령과 Apache-2.0 고지는 `pylopdf-ocr-models` 배포물에 포함됩니다.
+첫 번째 네이티브 엔진은 축에 정렬된 단어 상자를 반환합니다. 알려진 90도 단위 방향은 명시적인 시계 방향 보정으로 처리할 수 있지만, 임의 각도 기울기 보정, 필요한 보정 각도의 자동 감지, 루비·와리추·혼합 방향 조판 해석은 아직 지원하지 않습니다. PP-OCRv6 모델의 출처, 원본 및 결과물 해시, 변환 명령과 Apache-2.0 고지는 `pdfust-ocr-models` 배포물에 포함됩니다.

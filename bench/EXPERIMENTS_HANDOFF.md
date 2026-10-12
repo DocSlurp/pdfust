@@ -1,4 +1,4 @@
-# Experiment handoff: pylopdf / jev-pdf research summary for DocSlurp
+# Experiment handoff: pdfust research summary for DocSlurp
 
 Prepared 2026-10-12 from the committed reports under `bench/` and
 `bench/results/`. Every number below is copied from the report named next to
@@ -19,7 +19,7 @@ repository root.
 - **Held-out data was never used.** `bench/heldout-silver/` and the Langfuse
   `HELD-OUT-NOT-FOR-TRAINING/` datasets are out of scope for tuning; do not read
   or score them.
-- **No model is wired into the library.** The public pylopdf API calls no hosted
+- **No model is wired into the library.** The public pdfust API calls no hosted
   model. Decision models, hosted transcription and OCR comparisons live only in
   `bench/`.
 
@@ -49,7 +49,7 @@ Detail and environments: `bench/results/latest.md` (Windows, Python 3.14.6),
 milliseconds across reports.
 
 - **Speed vs other libraries** (`latest.md`, 14 real PDFs, median of 7).
-  Text extraction: pylopdf was faster than pymupdf on 9 of 14 files and slower
+  Text extraction: pdfust was faster than pymupdf on 9 of 14 files and slower
   on 4 (patent 26.6 vs 5.5 ms, usrguide 58.4 vs 49.3 ms). First-page render at
   2x was faster than pymupdf on all 14 (usrguide 29.2 vs 55.9 ms). Merge x14:
   44.0 ms vs 129.3 ms (pymupdf) vs 346.8 ms (pypdf). `render_pages()` on 12
@@ -59,7 +59,7 @@ milliseconds across reports.
   hold 8 pages, so reuse of one Document helps small documents (f1040: 31.5 ms
   fresh vs 5.7 ms reused) and not past 8 pages.
 - **Markdown element scores** (`markdown-scores.md`, 27 synthetic PDFs with exact
-  truth, 0-100). pylopdf is strongest on text (99), headings (100) and lists (93);
+  truth, 0-100). pdfust is strongest on text (99), headings (100) and lists (93);
   tables score 50 with the default strategy and 83 with `table_strategy="text"`.
   It scores 0 on links and images and code, 12 on math and 29 on emphasis, so
   overall is 45 vs 71 for the best pymupdf4llm variants. It is cheap: 283 ms and
@@ -124,7 +124,7 @@ Ten matched scan levels, 320 pages (text F1 / exact tables of 270 / cost per pag
 | GLM-5.3 Flash, effort minimal | 0.863 | 98 | 0.0007 |
 | Nanonets-OCR2 3B (GPU) | 0.862 | 85 | rental |
 | DeepSeek-OCR-2 (GPU) | 0.811 | 25 | rental |
-| Native pylopdf + OCR (CPU) | 0.604 | 12 | none |
+| Native pdfust + OCR (CPU) | 0.604 | 12 | none |
 
 - On the 672-page hard-raster set, Sonnet scored 0.932 F1 and 324/567 exact
   tables; DeepSeek V4.1 Flash 0.911 and 273/567 for $0.77; GLM-5.3 Flash 0.870 and
@@ -202,7 +202,7 @@ Detail: `results/pipeline-conclusions.md`, `PIPELINE_EXPERIMENTS.md`,
    Bound OCR concurrency, since it saves little time and costs memory.
 3. **Open each Document once** and loop over pages; make table detection a
    per-page switch; keep `table_strategy="text"` opt-in.
-4. **Do not rely on pylopdf Markdown for links, images, code or math**; take them
+4. **Do not rely on pdfust Markdown for links, images, code or math**; take them
    from structured APIs or another path. Validate reading order on multi-column pages.
 5. **For scans, a hosted page-transcription model beats native OCR by a wide
    margin** (F1 0.86-0.94 vs 0.60 here). Haiku and Luna are about 0.001 $/page,

@@ -10,10 +10,10 @@ Scores are 0-100. Each check scores 0-1, a category is the mean of its checks, a
 | pymupdf4llm-legacy | **71** | 92 | 31 | 100 | 100 | 80 | 100 | 50 | 41 | 46 | 86 | 57 |
 | pymupdf4llm-layout | **71** | 87 | 33 | 100 | 100 | 80 | 100 | 50 | 89 | 42 | 100 | 0 |
 | marker-fast | **69** | 71 | 98 | 61 | 43 | 0 | 86 | 83 | 91 | 29 | 100 | 93 |
-| pylopdf-text-tables | **48** | 99 | 64 | 100 | 29 | 0 | 93 | 50 | 83 | 12 | 0 | 0 |
+| pdfust-text-tables | **48** | 99 | 64 | 100 | 29 | 0 | 93 | 50 | 83 | 12 | 0 | 0 |
 | docling | **48** | 93 | 62 | 61 | 0 | 0 | 93 | 67 | 36 | 17 | 100 | 0 |
 | docling-formulas | **48** | 93 | 62 | 61 | 0 | 0 | 93 | 67 | 36 | 17 | 100 | 0 |
-| pylopdf | **45** | 99 | 67 | 100 | 29 | 0 | 93 | 50 | 50 | 12 | 0 | 0 |
+| pdfust | **45** | 99 | 67 | 100 | 29 | 0 | 93 | 50 | 50 | 12 | 0 | 0 |
 | pymupdf † | **28** | 97 | 96 | 0 | 0 | 0 | 52 | 50 | 0 | 12 | 0 | 0 |
 | pypdf † | **27** | 95 | 96 | 0 | 0 | 0 | 52 | 50 | 0 | 0 | 0 | 0 |
 | markitdown | **26** | 84 | 33 | 0 | 0 | 0 | 52 | 50 | 69 | 0 | 0 | 0 |
@@ -46,10 +46,10 @@ Wall and CPU time sum all cases after one unmeasured warmup conversion; initiali
 | pymupdf4llm-legacy | pymupdf4llm 1.28.2, pymupdf 1.28.2, pymupdf-layout 1.28.2 | `use_layout(False); embed_images=True` | `12c38e9633cd` | 464 | 219 | 6.9 | 348 | 158 | 0 |
 | pymupdf4llm-layout | pymupdf4llm 1.28.2, pymupdf 1.28.2, pymupdf-layout 1.28.2 | `use_layout(True); embed_images=True; use_ocr=False` | `12c38e9633cd` | 463 | 2549 | 78.1 | 15972 | 370 | 0 |
 | marker-fast | marker-pdf 2.0.0, surya-ocr 0.22.1, torch 2.14.1+cpu | `mode=fast; disable_ocr=True; use_llm=False; pdftext_workers=1; torch threads 4` | `12c38e9633cd` | 4099 | 7299 | 255.7 | 1391 | 594 | 0 |
-| pylopdf-text-tables | pylopdf 0.13.0 | `Document.to_markdown(table_strategy='text')` | `12c38e9633cd` | 18 | 285 | 9.0 | 296 | 92 | 0 |
+| pdfust-text-tables | pdfust 0.13.0 | `Document.to_markdown(table_strategy='text')` | `12c38e9633cd` | 18 | 285 | 9.0 | 296 | 92 | 0 |
 | docling | docling 2.135.0, docling-core 2.100.0, torch 2.14.1+cpu | `do_ocr=False; do_formula_enrichment=False; embedded images; CPU 4 threads` | `12c38e9633cd` | 5313 | 25690 | 794.5 | 97125 | 1426 | 0 |
 | docling-formulas | docling 2.135.0, docling-core 2.100.0, torch 2.14.1+cpu | `do_ocr=False; do_formula_enrichment=True; embedded images; CPU 4 threads` | `12c38e9633cd` | 5827 | 25682 | 792.4 | 96857 | 1579 | 0 |
-| pylopdf | pylopdf 0.13.0 | `Document.to_markdown(table_strategy='lines')` | `12c38e9633cd` | 18 | 283 | 9.1 | 294 | 92 | 0 |
+| pdfust | pdfust 0.13.0 | `Document.to_markdown(table_strategy='lines')` | `12c38e9633cd` | 18 | 283 | 9.1 | 294 | 92 | 0 |
 | pymupdf | pymupdf 1.28.2 | `Page.get_text() plain text` | `12c38e9633cd` | 73 | 31 | 1.0 | 31 | 59 | 0 |
 | pypdf | pypdf 6.15.0 | `Page.extract_text() plain text` | `12c38e9633cd` | 63 | 39 | 1.1 | 39 | 42 | 0 |
 | markitdown | markitdown 0.1.8, pdfminer.six 20260107 | `MarkItDown(enable_plugins=False).convert()` | `12c38e9633cd` | 206 | 379 | 11.5 | 1513 | 100 | 0 |
@@ -61,7 +61,7 @@ Machine: Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44; converters ran sequentiall
 
 Mean of all checks in each case, per tool.
 
-| Case | pymupdf4llm-legacy | pymupdf4llm-layout | marker-fast | pylopdf-text-tables | docling | docling-formulas | pylopdf | pymupdf | pypdf | markitdown | pdfplumber |
+| Case | pymupdf4llm-legacy | pymupdf4llm-layout | marker-fast | pdfust-text-tables | docling | docling-formulas | pdfust | pymupdf | pypdf | markitdown | pdfplumber |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | text-structure-and-literals | 76 | 76 | 76 | 57 | 61 | 61 | 57 | 51 | 51 | 51 | 51 |
 | positioned-math | 50 | 62 | 50 | 50 | 62 | 62 | 50 | 50 | 50 | 50 | 50 |

@@ -11,7 +11,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.generalization_report import load_corpus
 from bench.p003_extension_cases import _vector
 from bench.p003_extension_headerband import POLICY, proposals
@@ -31,7 +31,7 @@ def extract_record(record: dict[str, Any]) -> dict[str, Any]:
     raw = guard_path(Path(record["pdf_path"])).read_bytes()
     if sha(raw) != record["pdf_sha256"]:
         raise ValueError("Frozen input PDF changed")
-    with warnings.catch_warnings(record=True) as collected, pylopdf.Document(stream=raw) as document:
+    with warnings.catch_warnings(record=True) as collected, pdfust.Document(stream=raw) as document:
         page = document[record["page_number"]]
         source = {"page_size": list(page.rect), "words": [
             {"id": "w" + sha(f"{record['id']}/{record['page_number']}/{i}".encode())[:16],

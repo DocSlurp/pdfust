@@ -5,7 +5,7 @@ description: Document, Page, Pixmap, 병렬 렌더링 및 CPython 3.14t에서 �
 
 # 동시성과 free-threaded Python
 
-v0.10부터 pylopdf는 GIL이 있는 CPython 3.10–3.14용 플랫폼별 `abi3` wheel과
+v0.10부터 pdfust는 GIL이 있는 CPython 3.10–3.14용 플랫폼별 `abi3` wheel과
 free-threaded CPython 3.14용 `cp314-cp314t` wheel을 모두 배포합니다. 후자를
 import해도 GIL이 다시 활성화되지 않습니다.
 
@@ -31,11 +31,11 @@ import해도 GIL이 다시 활성화되지 않습니다.
 ```python
 from concurrent.futures import ThreadPoolExecutor
 
-import pylopdf
+import pdfust
 
 
 def extract(path: str) -> str:
-    with pylopdf.open(path) as document:
+    with pdfust.open(path) as document:
         return document.to_markdown()
 
 

@@ -22,7 +22,7 @@ def audit(manifest_path: Path, output: Path, executable: Path) -> dict[str, Any]
     """Freeze source-only inputs and retain every component or complete refusal."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     manifest_path, output, executable = map(guard_path, (manifest_path, output, executable))
     manifest_bytes = manifest_path.read_bytes()
@@ -53,7 +53,7 @@ def audit(manifest_path: Path, output: Path, executable: Path) -> dict[str, Any]
             data = guard_path(Path(record["pdf_path"])).read_bytes()
             if sha(data) != record["pdf_sha256"]:
                 raise ValueError("Frozen PDF bytes changed")
-            with pylopdf.open(stream=data) as document:
+            with pdfust.open(stream=data) as document:
                 page = document[record["page_number"]]
                 viewport = list(page.rect)
                 for edge in frozen["edges"]:

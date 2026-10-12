@@ -1,4 +1,4 @@
-# pylopdf roadmap
+# pdfust roadmap
 
 This is the canonical medium-term plan. It began with a 2026-07-22 survey of
 the market and upstream projects (all APIs in lopdf 0.44, all hayro 0.7 crates,
@@ -19,16 +19,16 @@ rendering, positioned text extraction, and editing in one package**.
   AGPL; [pypdfium2](https://pypdfium2-team.github.io/pypdfium2/readme.html)
   documents a volunteer support model, limited editing, and no raw PDF
   dictionary/stream/name-tree access; pikepdf deliberately excludes extraction
-  and rendering; pypdf has no renderer and is slower on the published pylopdf
+  and rendering; pypdf has no renderer and is slower on the published pdfust
   extraction corpus.
 - pymupdf's structural weaknesses are difficult to erase: AGPL licensing and
   [officially unsupported multithreaded use](https://pymupdf.readthedocs.io/en/latest/faq/index.html),
   including on free-threaded Python. Version 1.28.0 does publish an experimental
-  Linux x86-64 cp314t wheel, so differentiate through pylopdf's explicit
+  Linux x86-64 cp314t wheel, so differentiate through pdfust's explicit
   concurrency contract and five-target cp314t release matrix rather than merely
   claiming free-threaded availability. Published
   [pymupdf 1.28.0](https://pypi.org/project/pymupdf/1.28.0/) wheels are about
-  17.5–24.7 MiB versus 5.0–5.8 MiB for pylopdf 0.10.0. pymupdf-layout was first
+  17.5–24.7 MiB versus 5.0–5.8 MiB for pdfust 0.10.0. pymupdf-layout was first
   published in 2025-11; its current
   [1.28.0 package](https://pypi.org/project/pymupdf-layout/1.28.0/) has a roughly
   39.6 MiB wheel and uses PolyForm Noncommercial plus commercial licensing.
@@ -68,7 +68,7 @@ rendering, positioned text extraction, and editing in one package**.
   dictionary operations; hayro `Device`, `RenderSettings`, `warning_sink`, and
   immutable render/extraction snapshots. Evaluate incomplete or unstable
   surfaces such as incremental save and offset viewports before exposing them.
-- Implement areas absent from lopdf through pylopdf's own dictionary operations:
+- Implement areas absent from lopdf through pdfust's own dictionary operations:
   AcroForm, annotation creation, attachments, and page labels.
 - Keep the core wheel small by choosing between native implementation and
   ecosystem integration. Use typst/typst-py for typesetting and new-document
@@ -134,7 +134,7 @@ Released as v0.7.0 on 2026-07-23.
       non-embedded CJK extraction. MCID retention remains unimplemented and can
       be added when `to_markdown` requires it.
 - [x] Add `Page.get_images`, passing through filter chains ending in DCT as JPEG.
-- [x] Route hayro's `warning_sink` through Python warnings as `PylopdfWarning`.
+- [x] Route hayro's `warning_sink` through Python warnings as `PdfustWarning`.
 - [x] Add `Pixmap`. The buffer protocol was deferred because `Py_buffer` entered
       the stable ABI in Python 3.11 and conflicts with `abi3-py310`; `samples`
       performs one copy. Reconsider when raising the abi3 floor or adding cp314t.
@@ -148,8 +148,8 @@ Make intentionally external features “solved through integration.”
 - [x] Document typst-py for typesetting and new-document PDF/A, pyHanko for
       signatures, and veraPDF for validation.
 - [x] Add integration tests in `tests/test_interop.py` under the `interop`
-      dependency group. Verify `typst.compile → pylopdf.open(stream=)` and that a
-      pyHanko incremental signature preserves the entire pylopdf output as an
+      dependency group. Verify `typst.compile → pdfust.open(stream=)` and that a
+      pyHanko incremental signature preserves the entire pdfust output as an
       unchanged prefix. Include the group in CI.
 
 ### v0.8 — drawing
@@ -166,7 +166,7 @@ Released as v0.8.0 on 2026-07-23.
       resolve rotation and CropBox visually.
 - [x] Solve CJK watermarks and headers through typst integration: typeset a
       one-page PDF, then apply it with `show_pdf_page`. typst subset-embeds fonts
-      and can reuse `pylopdf-fonts-cjk` through `font_paths`. Integration tests
+      and can reuse `pdfust-fonts-cjk` through `font_paths`. Integration tests
       cover the recipe. At v0.8, krilla remained the future option for
       self-contained CJK `insert_text`; that path shipped in the later v0.11
       work.
@@ -195,7 +195,7 @@ Released as v0.9.0 on 2026-07-23.
       `get_form_fields` and `set_form_field`: inherited `FT`/`Ff`/`V`, fully
       qualified dotted names, checkbox bool-to-on-state resolution, `/AS`
       synchronization, and `NeedAppearances`. At v0.9, native appearance
-      generation remained stage two and pylopdf's renderer did not display
+      generation remained stage two and pdfust's renderer did not display
       filled values; the current v0.11 work completes that stage.
 - [x] Add EmbeddedFiles through `embfile_add`, `names`, `get`, and `del`, with
       recursive Kids reading, flat rewriting, preservation of other `/Names`
@@ -360,7 +360,7 @@ deadline, only accurate, measurable, coherent boundaries.
 - [x] Complete second-stage AcroForm appearance generation for text, choice,
       checkbox, and radio widgets. Standard text auto-fits with canonical
       Helvetica metrics; explicit OpenType sources and optional
-      `pylopdf[cjk]` use HarfRust/krilla subsetting. Preserve non-empty authored
+      `pdfust[cjk]` use HarfRust/krilla subsetting. Preserve non-empty authored
       button states, synthesize missing vector states, honor inherited
       alignment/multiline flags plus widget rotation/background/border, and make
       updates atomic. Comb text fields additionally honor inherited `MaxLen`,
@@ -414,13 +414,13 @@ deadline, only accurate, measurable, coherent boundaries.
 - [x] Adopt the optional OCR track below after RTen execution, model packaging,
       memory use, multilingual accuracy, and distribution-size gates passed.
 
-#### Optional OCR track for v0.11 — `pylopdf[ocr]`
+#### Optional OCR track for v0.11 — `pdfust[ocr]`
 
 The gate is **go** as of 2026-07-25. “pip-only, no shared libraries,
 permissively licensed Japanese OCR” remains an ecosystem gap: pymupdf integrates
 the Tesseract engine but still requires
 [external language data (`tessdata`) and configuration](https://pymupdf.readthedocs.io/en/latest/installation.html#enabling-integrated-ocr-support),
-pponnxcr is AGPL, and rapidocr depends on the C++ onnxruntime. pylopdf now fills
+pponnxcr is AGPL, and rapidocr depends on the C++ onnxruntime. pdfust now fills
 that gap without broadening the mandatory Python dependency set.
 
 - [x] Statically link RTen 0.24, a pure-Rust runtime under MIT/Apache-2.0, with
@@ -438,7 +438,7 @@ that gap without broadening the mandatory Python dependency set.
       0.842% after NFKC at 150 / 300 dpi. The RapidOCR v6 reference measured
       0.926% / 0.758% after NFKC, exposing both the 150-dpi win and 300-dpi loss.
 - [x] Publish model data through a separately versioned
-      `pylopdf-ocr-models` wheel, following the font-wheel pattern. It contains
+      `pdfust-ocr-models` wheel, following the font-wheel pattern. It contains
       deterministic RTen conversions plus the multilingual dictionary, with
       pinned source URLs, source and artifact SHA-256 values, conversion
       commands, Apache-2.0 licensing, wheel smoke tests, SBOM generation,
@@ -487,8 +487,8 @@ that gap without broadening the mandatory Python dependency set.
   changing PDF page rotation. Arbitrary skew, automatic sideways-page
   detection, ruby, warichu, and mixed-orientation typography remain explicit
   depth. Use ocrs-cjk (MIT/Apache) as a reference, not a dependency.
-- [x] Register the first `pylopdf-ocr-models` PyPI Trusted Publisher, publish
-      model v0.1.0, then publish pylopdf v0.11.0 (2026-07-26).
+- [x] Register the first `pdfust-ocr-models` PyPI Trusted Publisher, publish
+      model v0.1.0, then publish pdfust v0.11.0 (2026-07-26).
 - [x] Extend field validation to a licensed, image-only Japanese archival scan
       with 384 manually verified characters. It measured 1.823% / 1.302% strict
       CER and 1.562% / 1.042% NFKC CER at 150 / 300 dpi. A shared-engine,
@@ -554,7 +554,7 @@ recovery. Work beyond the release continues on the same line.
       same-baseline cell segments. The NICS statistics table similarity proxy
       improved from 0.121 to 0.855 without changing any other corpus result.
       Diagnosis also established that the remaining rotated-table and form
-      scores measure pymupdf reference conventions: pylopdf beats pymupdf's
+      scores measure pymupdf reference conventions: pdfust beats pymupdf's
       own sorted mode on the rotated Senate table and matches it at 0.991 on
       the 1040 form, which the benchmark caveat now records.
 - [x] Restore pure RTL lines and one Latin or numeric token bracketed by RTL
@@ -570,7 +570,7 @@ recovery. Work beyond the release continues on the same line.
 ### v1.0 — product-quality declaration of trust
 
 No target date or minor release is assigned. Continue the 0.x line until
-pylopdf has sustained external adoption, an indicative signal of roughly 1,000
+pdfust has sustained external adoption, an indicative signal of roughly 1,000
 GitHub stars, independent field reports across its core workflows, and enough
 limitation evidence to make a durable compatibility promise. Stars are an
 adoption signal rather than a mechanical release trigger: v1.0 still ships only
@@ -595,7 +595,7 @@ known-limit behavior are polished together.
       deploys on pushes to main without building Rust.
 - [x] Publish reproducible benchmarks from `bench/run.py` using one corpus, one
       task definition, medians, wins and losses, and pymupdf similarity as a
-      fidelity proxy. The first 2026-07-23 run found pylopdf faster on four of
+      fidelity proxy. The first 2026-07-23 run found pdfust faster on four of
       seven extraction files, 4.1× faster for merge, and faster on all seven 2×
       renders. Free-threaded extraction now has its own generated report so a
       regular benchmark rerun cannot erase manually appended 3.14t evidence.
@@ -699,7 +699,7 @@ known-limit behavior are polished together.
       generation-preserving no-op (2026-07-26).
 - [x] Align normal text generation with the optional CJK product experience:
       `insert_text` and `insert_textbox` now auto-select the JP-subset sans or
-      serif font for Japanese/Han input when `pylopdf[cjk]` is installed,
+      serif font for Japanese/Han input when `pdfust[cjk]` is installed,
       without weakening the single-font, no-per-glyph-fallback boundary.
       Hangul and locale-specific Chinese typography remain explicit-font cases
       until the data package has measured pan-CJK coverage.
@@ -812,7 +812,7 @@ rather than waiting automatically for v1.x.
 - [x] Complete a krilla integration spike on 2026-07-23: **go**. krilla 0.8.2
       builds in isolation with `default-features = false` and `simple-text`.
       It subset-embedded a 4.5 MB Noto Sans JP font into an 8 KB one-page PDF,
-      which pylopdf opened, extracted with exact Unicode through ToUnicode, and
+      which pdfust opened, extracted with exact Unicode through ToUnicode, and
       rendered. The spike executable is 3.3 MB, but skrifa and related
       dependencies are shared with hayro. Production integration is now
       complete with HarfRust replacing that spike-only shaping feature: the
@@ -849,7 +849,7 @@ rather than waiting automatically for v1.x.
 - [x] Improve rendering speed (2026-07-23). Profiling found PNG encoding, not
       rasterization, responsible for up to 85%; png's default
       Balanced+Adaptive managed about 11 MB/s on photos. Switching to
-      Fast/fdeflate and releasing the GIL made pylopdf faster than pymupdf on all
+      Fast/fdeflate and releasing the GIL made pdfust faster than pymupdf on all
       seven corpus renders, including `wdl6812` from 278 to 43 ms. Per-call
       `RenderCache` reuse now improves serial and bounded parallel batches
       without unsafe self-references or cross-thread cache sharing.
@@ -916,7 +916,7 @@ rather than waiting automatically for v1.x.
   module-scope import under `workerd`, and #20 through #24 are complete.
 - [x] Extend the Cloudflare gate from bundle-only validation to an actual local
   `workerd` startup and `/health` request (2026-07-26). The example imports
-  pylopdf at module scope. Emscripten selects PyO3's foldhash-backed
+  pdfust at module scope. Emscripten selects PyO3's foldhash-backed
   `hashbrown` class-builder maps so import does not request entropy that
   Cloudflare makes available only after startup. The same runtime gate runs
   against both the locally built wheel and the PyPI artifact.

@@ -23,7 +23,7 @@ use ocr_engine::{_OcrEngine, OcrError};
 use pixmap::Pixmap;
 
 #[pymodule(gil_used = false)]
-fn pylopdf_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn pdfust_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<_Document>()?;
     m.add_class::<_OcrEngine>()?;
     m.add_class::<Pixmap>()?;

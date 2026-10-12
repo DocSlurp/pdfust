@@ -1,9 +1,9 @@
 # オフラインOCR
 
-pylopdfは、スキャンページをローカルで認識し、非表示の検索可能なテキスト層を追加できます。任意のモデルパッケージをインストールします。
+pdfustは、スキャンページをローカルで認識し、非表示の検索可能なテキスト層を追加できます。任意のモデルパッケージをインストールします。
 
 ```bash
-pip install "pylopdf[ocr]"
+pip install "pdfust[ocr]"
 ```
 
 コア拡張は、純RustのRTenランタイムでPP-OCRv6 smallを実行します。実行時にシステム実行ファイル、共有ライブラリ、ネットワーク通信、ONNXパーサーは不要です。独立してバージョン管理されるモデルwheelは約26.6 MBで、日本語、簡体字・繁体字中国語、英語を含む50言語に対応します。
@@ -13,9 +13,9 @@ pip install "pylopdf[ocr]"
 `Page.get_text_ocr()`は、文書を変更せず位置付きの単語を返します。
 
 ```python
-import pylopdf
+import pdfust
 
-with pylopdf.open("scan.pdf") as doc:
+with pdfust.open("scan.pdf") as doc:
     words = doc[0].get_text_ocr()
     for word in words:
         print(word["bbox"], word["text"], word["confidence"])
@@ -28,10 +28,10 @@ with pylopdf.open("scan.pdf") as doc:
 1つのエンジンを読み込み、ページ間で再利用します。
 
 ```python
-import pylopdf
+import pdfust
 
-engine = pylopdf.OcrEngine(threads=4, max_concurrent=1)
-with pylopdf.open("scan.pdf") as doc:
+engine = pdfust.OcrEngine(threads=4, max_concurrent=1)
+with pdfust.open("scan.pdf") as doc:
     for page in doc:
         page.apply_ocr(engine=engine)
     doc.save("searchable.pdf", garbage=3, deflate=True, object_streams=True)
@@ -59,7 +59,7 @@ PDFのページ回転と描画ピクセルは変わりません。返される�
 メモリを抑える場合は、`threads`と`tile_size`を下げます。`max_concurrent`は、同時に存在するラスターデータと推論バッファーを測定した後にだけ引き上げてください。
 
 ```python
-engine = pylopdf.OcrEngine(threads=2, max_concurrent=1)
+engine = pdfust.OcrEngine(threads=2, max_concurrent=1)
 words = page.get_text_ocr(
     engine=engine,
     tile_size=1280,
@@ -70,7 +70,7 @@ words = page.get_text_ocr(
 
 `clip`はOCR検出器への入力と認識処理を減らしますが、hayro 0.7は切り出し前にページ全体を描画します。返される矩形はページ全体の表示座標のままです。
 
-`OcrEngine`は不変で、異なる文書間で再利用できます。既定の`max_concurrent=1`は、free-threaded Pythonからの呼び出しも含め、描画から認識完了までを直列化するため、共有したエンジンが実測済みの呼び出し単位メモリを意図せず倍増させません。最大16まで引き上げられますが、対象workloadを測定した場合に限ってください。許可された各呼び出しは個別のラスターデータと推論バッファーを持ちます。同じ`Document`への外部スレッドからの同時呼び出しや編集は、pylopdfの並行処理契約の対象外です。
+`OcrEngine`は不変で、異なる文書間で再利用できます。既定の`max_concurrent=1`は、free-threaded Pythonからの呼び出しも含め、描画から認識完了までを直列化するため、共有したエンジンが実測済みの呼び出し単位メモリを意図せず倍増させません。最大16まで引き上げられますが、対象workloadを測定した場合に限ってください。許可された各呼び出しは個別のラスターデータと推論バッファーを持ちます。同じ`Document`への外部スレッドからの同時呼び出しや編集は、pdfustの並行処理契約の対象外です。
 
 ## 実測した精度ゲート
 
@@ -83,12 +83,12 @@ words = page.get_text_ocr(
 | 古い画像スキャン | 150 | 1.823% | 1.562% | 2.05秒 |
 | 古い画像スキャン | 300 | 1.302% | 1.042% | 5.37秒 |
 
-厚労省のケースに対するRapidOCR v6参照値のNFKC CERはそれぞれ0.926%と0.758%で、pylopdfの150 dpiでの勝ちと300 dpiでの負けをともに残しています。厳密CERは空白だけを除外し、NFKC CERはさらに全角英数字などの互換文字を正規化します。処理時間はハードウェアに依存します。
+厚労省のケースに対するRapidOCR v6参照値のNFKC CERはそれぞれ0.926%と0.758%で、pdfustの150 dpiでの勝ちと300 dpiでの負けをともに残しています。厳密CERは空白だけを除外し、NFKC CERはさらに全角英数字などの互換文字を正規化します。処理時間はハードウェアに依存します。
 
 別の150 dpiフィールド検証では、1個の共有エンジンで2文書を処理しました。`max_concurrent=1`は6.31秒、`max_concurrent=2`は6.75秒で、いずれも逐次処理のテキストと完全に一致しました。このworkloadでは上限を増やしてもthroughputは改善せず、許可された各呼び出しは個別のバッファーを持つため、既定値1という保守的な判断を支持します。完全なレポートは`uv run python bench/ocr.py`で再現できます。
 
 ## モデルとレイアウトの境界
 
-パスを省略すると、`OcrEngine`は`pylopdf[ocr]`がインストールした検証済みモデルセットを検出します。上級者は、互換性のあるRTen形式のPP-OCR検出器、認識器、辞書を明示できます。
+パスを省略すると、`OcrEngine`は`pdfust[ocr]`がインストールした検証済みモデルセットを検出します。上級者は、互換性のあるRTen形式のPP-OCR検出器、認識器、辞書を明示できます。
 
-最初のネイティブエンジンが返す単語矩形は軸平行です。既知の90度単位の向きは明示的な時計回り補正で扱えますが、任意角度の傾き補正、必要な補正角度の自動検出、ルビ・割注・混在方向の組版解釈にはまだ対応していません。PP-OCRv6モデルの出所、元データと成果物のハッシュ、変換手順、Apache-2.0表記は`pylopdf-ocr-models`配布物に含まれます。
+最初のネイティブエンジンが返す単語矩形は軸平行です。既知の90度単位の向きは明示的な時計回り補正で扱えますが、任意角度の傾き補正、必要な補正角度の自動検出、ルビ・割注・混在方向の組版解釈にはまだ対応していません。PP-OCRv6モデルの出所、元データと成果物のハッシュ、変換手順、Apache-2.0表記は`pdfust-ocr-models`配布物に含まれます。

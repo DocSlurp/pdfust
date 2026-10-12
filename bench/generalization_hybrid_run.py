@@ -118,7 +118,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
         boxes = helper.native_boxes(source, state)
         result["native_boxes"] = boxes
         if config.get("native_table_orientation", "physical") == "logical":
-            import pylopdf
+            import pdfust
             from bench import pipeline_native_orientation as orientation
 
             stage = "native_orientation"
@@ -127,7 +127,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
 
             if sha(data) != record["pdf_sha256"]:
                 raise ValueError("Frozen source PDF changed before native orientation")
-            with pylopdf.open(stream=data) as document:
+            with pdfust.open(stream=data) as document:
                 result["native_orientation_evidence"] = orientation.evidence(document[record["page_number"]], boxes)
         wrapper = NativeExcludingDetector(config["_layout_detector"], boxes, helper)
         vision_config = {**config, "processor": "vision_regions", "_layout_detector": wrapper}

@@ -193,7 +193,9 @@ fn is_safe_image_stream<'a>(
             if stream.dict.get(b"DecodeParms").is_err()
                 && stream.content.starts_with(&[0xFF, 0xD8, 0xFF]) =>
         {
-            let previous_quality = direct_integer(&stream.dict, b"PylopdfQuality")
+            // Files compressed before the rename carry the legacy marker; honor it.
+            let previous_quality = direct_integer(&stream.dict, b"PdfustQuality")
+                .or_else(|| direct_integer(&stream.dict, b"PylopdfQuality"))
                 .and_then(|value| u8::try_from(value).ok())
                 .filter(|value| (1..=100).contains(value));
             (CandidateSource::Jpeg(&stream.content), previous_quality)
@@ -670,8 +672,9 @@ pub(crate) fn compress_images(
         stream.dict.set("Filter", "DCTDecode");
         stream.dict.remove(b"DecodeParms");
         stream.dict.remove(b"DL");
+        stream.dict.remove(b"PylopdfQuality");
         stream.dict.set(
-            "PylopdfQuality",
+            "PdfustQuality",
             i64::from(previous_quality.map_or(quality, |previous| previous.min(quality))),
         );
         stream.set_content(encoded);

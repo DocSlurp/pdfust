@@ -36,7 +36,7 @@ discovery/                             license and metadata lookups
 ```
 .venv/bin/python -m bench.real_world_v2 fetch [--id ID]   # sequential, 2 s apart, cached
 .venv/bin/python -m bench.real_world_v2 profile           # producer, version, fonts, filters
-.venv/bin/python -m bench.real_world_v2 health            # pylopdf vs pdftotext vs PyMuPDF
+.venv/bin/python -m bench.real_world_v2 health            # pdfust vs pdftotext vs PyMuPDF
 .venv/bin/python -m bench.real_world_v2 candidates --id ID --page N
 .venv/bin/python -m bench.real_world_v2 validate          # manifest + truth schemas, sha256
 ```
@@ -179,7 +179,7 @@ cell text. A table that crosses a page is one logical table with
 `continues_on_pages`.
 
 **Method.** For every covered page, `candidates` writes four candidates:
-pdftotext `-layout`, PyMuPDF, pylopdf `get_text`, and pylopdf `to_markdown`.
+pdftotext `-layout`, PyMuPDF, pdfust `get_text`, and pdfust `to_markdown`.
 It also renders the page at 100 dpi. Every disagreement and table cell was
 reconciled on the image, with 200 dpi crops for small text and CJK. No truth
 was copied from a single extractor. Several pages were completed by parallel
@@ -211,22 +211,22 @@ The table below lists defects that were reconciled visually.
 
 | Area | Finding |
 |---|---|
-| Two-column and sidebar layouts | pylopdf `to_markdown` merges columns line by line on GAO p1 (sidebar + main), CRS p1, the RuleArena paper and census p18. pdftotext `-layout` also interleaves CRS. |
-| Clipped Word cell | On UK p9, "23.2" sits beyond the cell border and page edge, so it is not rendered, but it is needed for the TOTAL. PyMuPDF drops it, pdftotext keeps it in the row, and pylopdf Markdown emits it as a stray paragraph after the table. |
-| Text outside the visible page | pylopdf extracts off-page and outside-CropBox titles on Eurostat p2–3; PyMuPDF omits them. |
-| Ligatures | pylopdf drops the "fi" ligature in "Sofia" (unmapped glyph warning). |
-| Fake bold in Japanese Word output | Repeated glyph draws come out as `宮宮城城県県…` in pylopdf. |
-| Kana chart | pdftotext and pylopdf read "ha"/"he" plus the superscript note "i" as "hai"/"hei". All three extractors return hiragana ぺ in the katakana pe slot, where the page shows ペ. |
-| Tables | pylopdf finds none of the three W-4 wage tables. It drops spaces in shaded cells (`0.9190.9210.32`) and repeats merged-cell values. PyMuPDF splits decimals in census Table 1 (`0. 0049`). |
+| Two-column and sidebar layouts | pdfust `to_markdown` merges columns line by line on GAO p1 (sidebar + main), CRS p1, the RuleArena paper and census p18. pdftotext `-layout` also interleaves CRS. |
+| Clipped Word cell | On UK p9, "23.2" sits beyond the cell border and page edge, so it is not rendered, but it is needed for the TOTAL. PyMuPDF drops it, pdftotext keeps it in the row, and pdfust Markdown emits it as a stray paragraph after the table. |
+| Text outside the visible page | pdfust extracts off-page and outside-CropBox titles on Eurostat p2–3; PyMuPDF omits them. |
+| Ligatures | pdfust drops the "fi" ligature in "Sofia" (unmapped glyph warning). |
+| Fake bold in Japanese Word output | Repeated glyph draws come out as `宮宮城城県県…` in pdfust. |
+| Kana chart | pdftotext and pdfust read "ha"/"he" plus the superscript note "i" as "hai"/"hei". All three extractors return hiragana ぺ in the katakana pe slot, where the page shows ペ. |
+| Tables | pdfust finds none of the three W-4 wage tables. It drops spaces in shaded cells (`0.9190.9210.32`) and repeats merged-cell values. PyMuPDF splits decimals in census Table 1 (`0. 0049`). |
 
 ## Extraction health
 
-`health` runs pylopdf, pdftotext and PyMuPDF on every kept file. Each tool runs
+`health` runs pdfust, pdftotext and PyMuPDF on every kept file. Each tool runs
 sequentially in its own isolated subprocess. The table reports:
 
 - non-space characters
 - errors
-- whitespace-free character-bigram F1 of pylopdf against each other tool
+- whitespace-free character-bigram F1 of pdfust against each other tool
 - wall time, plus CPU time and peak RSS from `getrusage` (self + children) at
   process exit
 
@@ -239,8 +239,8 @@ sequentially in its own isolated subprocess. The table reports:
   Paper Capture OCR scan 0.93.
 - The RTL scores reflect visual-versus-logical order differences, and
   pdftotext emits about 9% more non-space characters.
-- pylopdf finished each file in 0.08–0.62 s wall time with 84–286 MiB peak RSS
-  (Python + pylopdf, including interpreter start).
+- pdfust finished each file in 0.08–0.62 s wall time with 84–286 MiB peak RSS
+  (Python + pdfust, including interpreter start).
 
 Higher RSS was the Census InDesign file at 286 MiB and the 1040 Tax Table at
 204 MiB. These are local CPU measurements on dev04, one process at a time.

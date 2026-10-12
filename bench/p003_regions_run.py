@@ -244,7 +244,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     """Acquire source, retain every gate, then transcribe disjoint accepted crops."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     output = guard_path(output)
     began, cpu = time.perf_counter(), time.process_time()
@@ -307,7 +307,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Frozen source PDF hash changed")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             viewport = list(page.rect)
             source_viewport = [0, 0, *source["page_size"]] if len(source["page_size"]) == 2 else source["page_size"]

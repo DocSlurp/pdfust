@@ -1,8 +1,8 @@
 # Release CI: build wheels for every platform and publish on a v* tag.
 #
 # Publishing requires a Trusted Publisher configured on PyPI:
-#   PyPI → project pylopdf → Publishing → GitHub
-#   owner: yhay81 / repository: pylopdf / workflow: release.yml / environment: pypi
+#   PyPI → project pdfust → Publishing → GitHub
+#   owner: yhay81 / repository: pdfust / workflow: release.yml / environment: pypi
 name: Release
 
 on:
@@ -257,7 +257,7 @@ jobs:
       - name: Resolve and launch the published Cloudflare Workers wheel
         run: >-
           python tools/smoke_cloudflare.py
-          --requirement "pylopdf==${GITHUB_REF_NAME#v}"
+          --requirement "pdfust==${GITHUB_REF_NAME#v}"
           --attempts 20
           --retry-delay 15
 

@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The project is renamed **pdfust**: distribution `pdfust`, import `pdfust`, native
+  extension `pdfust.pdfust_core`, and data packages `pdfust-fonts-*` and
+  `pdfust-ocr-models`. `jev_pdf` and `pylopdf` remain as compatibility imports with
+  identical public objects; `pylopdf.PylopdfWarning` aliases `pdfust.PdfustWarning`.
+  `compress_images` writes `/PdfustQuality` and still honors the earlier
+  `/PylopdfQuality` marker. Environment variables use the `PDFUST_` prefix. See
+  `docs/PACKAGE_NAME.md`.
+
 ### Added
 - `Page.get_layout()` captures an owned spatial snapshot without rasterization,
   sharing one cold interpretation between text and table caches. Rectangle and

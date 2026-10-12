@@ -1,19 +1,19 @@
 ---
 title: API一覧
-description: pylopdfのDocument、Page、Pixmap、Rect、権限、警告、例外を俯瞰するAPIマップ。
+description: pdfustのDocument、Page、Pixmap、Rect、権限、警告、例外を俯瞰するAPIマップ。
 ---
 
 # API 一覧
 
-詳細な docstring はパッケージ内にあります（`help(pylopdf.Document)`）。この
+詳細な docstring はパッケージ内にあります（`help(pdfust.Document)`）。この
 ページは地図です。ページ番号は `get_toc` / `set_toc`（pymupdf 互換の 1 始まり）を
 除きすべて 0 始まり。座標はすべて左上原点の表示空間です。
 [API安定性ポリシー](stability.md)で公開範囲と非推奨化の手順を定義しています。
 
 ## Document { #document }
 
-`pylopdf.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
-`pylopdf.open()` は別名コンストラクタ。with 文に対応。
+`pdfust.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
+`pdfust.open()` は別名コンストラクタ。with 文に対応。
 password inputはUTF-8 127 byteが上限です。
 
 | メンバ | 用途 |
@@ -92,7 +92,7 @@ text、image、annotationは返しませんが、optional-contentの表示状態
 8,192 pathsまたは131,072 commandsを超える結果は切り詰めず拒否します。
 
 埋め込みフォントを使う`insert_text`では、すべての字形を含む単一フォントが必要です。
-`pylopdf[ar]`、`[he]`、`[hi]`、`[jp]`、`[ko]`、`[th]`、`[zh-cn]`、
+`pdfust[ar]`、`[he]`、`[hi]`、`[jp]`、`[ko]`、`[th]`、`[zh-cn]`、
 `[zh-tw]`はNoto Sans／Serif生成fontを提供します。Kana、Hangul、Bopomofo、
 Arabic、Hebrew、Devanagari、Thaiは導入済みproviderを自動選択します。漢字だけの
 inputは互換性のためJP優先で、地域字形が重要なら`font_language="zh-CN"`、
@@ -105,7 +105,7 @@ RTL textに両側を挟まれたLatinまたは数字tokenが1つだけある行�
 
 複雑な字形処理では、論理textとglyphが1対1に対応しない箇所をPDFの
 `/ActualText`で保持することがあります。生成PDFは外部viewer向けにこれを保持しますが、
-現行pylopdf extractorはまだ`/ActualText`を読みません。そのため、特に長い
+現行pdfust extractorはまだ`/ActualText`を読みません。そのため、特に長い
 Devanagari runなど、並べ替えやcontext依存のclusterは再open後の抽出が近似になる
 場合があります。
 
@@ -151,7 +151,7 @@ Unicode graphemeを各位置の中央に配置して、長すぎる値を文書�
 | `TableFinder` / `Table` / `TableDiagnostics` | 所有権を持つ表の座標、セル文字列（結合継続位置は`None`）、strategy、confidence根拠。`Table.to_markdown(max_size=64 MiB)`はescape後のUTF-8出力を事前検査 |
 | `PdfError` / `LimitError` / `PasswordError` / `OcrError` / `DocumentClosedError` / `EncryptedDocumentError` / `StalePageError` | 例外階層。上限違反は安定した`.code`を公開（ValueError互換の基底） |
 | `Pixmap` | 不変のRGBA8画素: `samples` / `width` / `height` / `stride` / `n` / `tobytes(max_size=64 MiB)` / streamingし、失敗時も既存fileを保持するPNG専用`save(path)`。cp314tではread-only・zero-copyの`memoryview()`にも対応 |
-| `PylopdfWarning` | 復旧可能な解釈警告（xref修復・フォント未解決・画像デコード失敗） |
+| `PdfustWarning` | 復旧可能な解釈警告（xref修復・フォント未解決・画像デコード失敗） |
 
 `TypedDict`は静的型付けだけに作用し、値は従来どおり通常のpymupdf形式の辞書です。
 `LinkInfo`では`kind`と`from`が必須で、遷移先ごとのキーは任意です。

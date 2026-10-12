@@ -1,12 +1,12 @@
 # WebAssembly互換性
 
-pylopdfは、Pyodide 0.28.3とCloudflare Python Workersが使うPython 3.13 ABI向けに、
+pdfustは、Pyodide 0.28.3とCloudflare Python Workersが使うPython 3.13 ABI向けに、
 static PyEmscripten wheelをbuildします。native wheelと同じRust製PDF engineを含み、
 JavaScript製PDF実装やwasm-bindgen shimには置き換えていません。
 
 !!! note "リリース状況"
 
-    WebAssembly wheelはpylopdf 0.11から配布済みです。v0.10.0はnative wheelのみです。
+    WebAssembly wheelはpdfust 0.11から配布済みです。v0.10.0はnative wheelのみです。
 
 ## 検証済み環境
 
@@ -41,7 +41,7 @@ repositoryには
 
 ```bash
 git clone https://github.com/yhay81/pylopdf.git
-cd pylopdf/examples/cloudflare-worker
+cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
 ```
@@ -58,16 +58,16 @@ curl --request POST \
 ```
 
 選択したCloudflare planの上限とcompatibility dateを確認してから
-`uv run pywrangler deploy`を使います。CIはこのexample自体をcopyし、公開版pylopdfの
+`uv run pywrangler deploy`を使います。CIはこのexample自体をcopyし、公開版pdfustの
 requirementだけを直前にbuildしたwheelへ差し替え、`workers-py`で解決して
 `wrangler deploy --dry-run`を実行した後、local `workerd`を起動して`/health`を
-requestします。そのためmodule-scopeの`import pylopdf`は、startup時に使えない
+requestします。そのためmodule-scopeの`import pdfust`は、startup時に使えない
 entropyやrequest固有のruntime stateに依存せず完了しなければなりません。
 
 exampleは入力を4 MiB、rendering／extraction用の完全なPDF snapshotを16 MiB、
 累積位置付きtextを16,384 glyph recordに制限し、structureと展開後dataにも
 `DocumentLimits.web()`より厳しいbudgetを設定します。
-pylopdfの入力はpathまたは完全なbytesなので、request bodyは全体をbufferします。
+pdfustの入力はpathまたは完全なbytesなので、request bodyは全体をbufferします。
 Cloudflareの128 MiB isolate budgetにはPython、JavaScript、WebAssembly linear
 memory、request bufferも含まれるため、周辺処理がmemoryを使う場合はfileと
 interpretation／textのbudgetをさらに下げてください。
@@ -83,7 +83,7 @@ await pyodide.loadPackage("micropip");
 await pyodide.runPythonAsync(`
 import micropip
 await micropip.install(
-    "https://example.invalid/pylopdf-0.13.0-"
+    "https://example.invalid/pdfust-0.13.0-"
     "cp310-abi3-pyodide_2025_0_wasm32.whl"
 )
 `);
@@ -104,10 +104,10 @@ runtimeは`sys.platform == "emscripten"`で判定できます。pathはbrowser f
 
 ```python
 import sys
-import pylopdf
+import pdfust
 
 assert sys.platform == "emscripten"
-with pylopdf.Document(stream=pdf_bytes, limits=pylopdf.DocumentLimits.web()) as doc:
+with pdfust.Document(stream=pdf_bytes, limits=pdfust.DocumentLimits.web()) as doc:
     text = doc.get_page_text(0) if doc.page_count else ""
     output = doc.tobytes()
 ```
@@ -161,7 +161,7 @@ capability判定を決定的にするため`OcrEngine()`自体は存在します
 固定CI artifactは3.772 MiBのwheelと9.910 MiBの展開後Wasm extensionです。検証した
 Worker bundleは圧縮後3.817 MiB、展開後10.383 MiBでした。そのためCloudflare Workers
 Freeの圧縮後3 MB上限は超えますが、paid planの圧縮後10 MBと共通の展開後64 MB上限には
-収まります。pylopdfはpaid planへのdeploy経路をsupportし、機能を減らした別distributionは
+収まります。pdfustはpaid planへのdeploy経路をsupportし、機能を減らした別distributionは
 配布しません。fat LTOと1 codegen unitはPyEmscripten artifactだけに適用し、nativeの
 release profileは変更しません。
 
@@ -193,7 +193,7 @@ Atheris fuzzingはさらに大きな生成hostile corpusを加えます。CPU de
 
 ## Supportとrelease policy
 
-Wasm wheelを配布する各pylopdf releaseは、次をすべて通します。
+Wasm wheelを配布する各pdfust releaseは、次をすべて通します。
 
 1. 再現可能buildとwheel metadata/import verifier
 2. native/Pyodide共有の論理互換suite
@@ -204,7 +204,7 @@ Wasm wheelを配布する各pylopdf releaseは、次をすべて通します。
 6. GitHub Release確定前のPyPI artifactからの同じ解決、bundle、runtime health gate
 
 runtime更新は互換と仮定せず、新しい検証matrixとして扱います。固定versionは対応する
-pylopdf minor releaseでsupportし、新しいPyodide、PyEmscripten、Emscripten、
+pdfust minor releaseでsupportし、新しいPyodide、PyEmscripten、Emscripten、
 `workers-py`、Wranglerは完全なgateを通ってから対応範囲へ入れます。測定値とregressionは
 [`bench/results/wasm-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/wasm-latest.md)
 へ併記します。

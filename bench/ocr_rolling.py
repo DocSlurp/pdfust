@@ -90,7 +90,7 @@ def immutable(path: Path, value: object) -> None:
 
 def prepare(output: Path) -> None:
     """Render pixels only, and freeze an explicitly separate native-vector arm."""
-    import pylopdf  # noqa: PLC0415 - native CPU preparation environment
+    import pdfust  # noqa: PLC0415 - native CPU preparation environment
     from bench.silver_structure import observed_table  # noqa: PLC0415
 
     start = time.perf_counter()
@@ -105,7 +105,7 @@ def prepare(output: Path) -> None:
         if sha(path) != case["pdf_sha256"]:
             message = "Source PDF hash mismatch"
             raise ValueError(message)
-        with pylopdf.Document(path) as doc:
+        with pdfust.Document(path) as doc:
             if doc.page_count != 1:
                 message = "Companion inputs must remain single-page"
                 raise ValueError(message)
@@ -148,7 +148,7 @@ def prepare(output: Path) -> None:
 
 def worker(identifier: str, edge: int, output: Path) -> None:
     """Observe only frozen page pixels and preserve complete OCR chunks."""
-    import pylopdf  # noqa: PLC0415 - no GPU or model-server imports
+    import pdfust  # noqa: PLC0415 - no GPU or model-server imports
 
     inputs = json.loads((output / "inputs.json").read_text())["pages"]
     row = next(row for row in inputs if row["id"] == identifier and row["edge"] == edge)
@@ -160,14 +160,14 @@ def worker(identifier: str, edge: int, output: Path) -> None:
     model_paths = [MODELS / name for name in ("PP-OCRv6_det_small.rten", "PP-OCRv6_rec_small.rten", "ppocrv6_dict.txt")]
     start = time.perf_counter()
     before = resource.getrusage(resource.RUSAGE_SELF)
-    engine = pylopdf.OcrEngine(*model_paths, threads=2, max_concurrent=1)
+    engine = pdfust.OcrEngine(*model_paths, threads=2, max_concurrent=1)
     after = resource.getrusage(resource.RUSAGE_SELF)
     initialization = {
         "wall_seconds": time.perf_counter() - start,
         "cpu_seconds": after.ru_utime + after.ru_stime - before.ru_utime - before.ru_stime,
         "peak_rss_kib": after.ru_maxrss,
     }
-    with pylopdf.Document() as doc:
+    with pdfust.Document() as doc:
         page = doc.new_page(width=row["page_size"][0], height=row["page_size"][1])
         page.insert_image((0, 0, *row["page_size"]), filename=image_path)
         start = time.perf_counter()
@@ -200,7 +200,7 @@ def worker(identifier: str, edge: int, output: Path) -> None:
             "image_sha256": row["image_sha256"],
             "input_kind": "frozen_raster_carrier",
             "models": {path.name: sha(path) for path in model_paths},
-            "pylopdf_version": pylopdf.__version__,
+            "pdfust_version": pdfust.__version__,
             "threads": 2,
             "max_concurrent": 1,
             "tile_size": 1408,

@@ -7,7 +7,7 @@ import pytest
 from bench.color_regions import build_executable, extract_regions, pixmap_rgb, vector_regions
 from bench.feature_cases import page_pdf, text_op
 
-import pylopdf
+import pdfust
 
 
 @pytest.fixture(scope="module")
@@ -111,7 +111,7 @@ def test_native_fill_grouping_and_raster_text_holes(binary: Path) -> None:
     data = page_pdf(
         "0.5 0.7 0.9 rg 40 650 100 40 re f 140 650 100 40 re f\n" + "0 0 0 rg " + text_op("Header text", 50, 665)
     )
-    with pylopdf.Document(stream=data) as document:
+    with pdfust.Document(stream=data) as document:
         groups = vector_regions(document[0])
         assert len(groups) == 1
         assert groups[0]["paint_count"] == 2
@@ -124,5 +124,5 @@ def test_native_fill_grouping_and_raster_text_holes(binary: Path) -> None:
 def test_native_vector_cap_rejects_all() -> None:
 
     data = page_pdf("0.5 0.7 0.9 rg 40 650 100 40 re f 200 650 100 40 re f")
-    with pylopdf.Document(stream=data) as document, pytest.raises(ValueError, match="vector candidate limit"):
+    with pdfust.Document(stream=data) as document, pytest.raises(ValueError, match="vector candidate limit"):
         vector_regions(document[0], max_candidates=1)

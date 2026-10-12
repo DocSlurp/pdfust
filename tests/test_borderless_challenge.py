@@ -8,7 +8,7 @@ from typing import Any
 from bench.borderless_challenge import generate_cases, score
 from bench.silver import sha
 
-import pylopdf
+import pdfust
 
 
 def test_fixed_companion_cohort_and_clean_wrap_intervention() -> None:
@@ -30,7 +30,7 @@ def test_fixed_companion_cohort_and_clean_wrap_intervention() -> None:
 
 def test_visible_text_has_no_fixture_class_or_scoring_labels() -> None:
     for case in generate_cases():
-        with pylopdf.open(stream=case["pdf"]) as document:
+        with pdfust.open(stream=case["pdf"]) as document:
             text = document[0].get_text().lower()
         assert "quarterly observations" in text
         assert not any(label in text for label in ("borderless", "prose", "control", "target", "case-"))

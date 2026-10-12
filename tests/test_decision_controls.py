@@ -13,7 +13,7 @@ from bench.decision_assembly import assemble_case
 from bench.decision_cases import model_payload
 from bench.decision_controls import build_controls, write_controls
 
-import pylopdf
+import pdfust
 
 
 @pytest.fixture(scope="module")
@@ -47,7 +47,7 @@ def test_original_source_words_and_page_clips(controls: list[dict[str, Any]]) ->
         provenance = case["provenance"]
         original = Path(provenance["pdf"]).read_bytes()
         assert hashlib.sha256(original).hexdigest() == provenance["pdf_sha256"]
-        with pylopdf.open(stream=original) as document:
+        with pdfust.open(stream=original) as document:
             snapshot = document[provenance["page_zero_based"]].get_layout(table_strategy=None)
         selected = snapshot.select(provenance["clip_display"])
         assert [word.id for word in selected] == provenance["source_ids"]
@@ -94,7 +94,7 @@ def test_preserved_original_inputs(tmp_path: Path, controls: list[dict[str, Any]
     for case in controls:
         provenance = case["provenance"]
         data = (tmp_path / Path(provenance["pdf"]).name).read_bytes()
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             selected = (
                 document[provenance["page_zero_based"]]
                 .get_layout(table_strategy=None)

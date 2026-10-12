@@ -32,7 +32,7 @@ uv sync --group bench --group bench-vision
 ```
 
 `bench` supplies pypdf for metadata inspection; `bench-vision` supplies Pillow
-for the gallery. Extraction uses the local pylopdf extension. No model inference,
+for the gallery. Extraction uses the local pdfust extension. No model inference,
 network requests, credentials, or GPU workload is needed. The runner supports
 1–4 workers; record the chosen concurrency when comparing runs.
 
@@ -128,7 +128,7 @@ fixture tool is not a hostile-input sandbox.
 
 Cold and reused extraction measurements cover all-page plain text and Markdown.
 Metadata collection occurs first and can initialize library state, so “cold”
-means a newly opened extraction Document, not the first pylopdf operation in
+means a newly opened extraction Document, not the first pdfust operation in
 the worker. Warm output hashes/equality check reproducibility, not correctness.
 Worker resource measurements use `time.process_time`, `os.times`, and OS
 `resource.getrusage(RUSAGE_SELF).ru_maxrss`: cumulative CPU counters and a process

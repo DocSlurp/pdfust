@@ -12,7 +12,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench import pipeline_native_orientation as orientation
 from bench.generalization_scoring import score_dataset
 from bench.silver import guard_path, sha, write_json
@@ -56,7 +56,7 @@ def replay(root: Path, run_name: str) -> dict[str, Any]:
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Original frozen PDF identity changed")
         inputs[str(path)] = sha(data)
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             evidence = orientation.evidence(document[record["page_number"]], previous["native_boxes"])
         vision = load(run / "vision" / f"{record['id']}-structure.json")
         composed = orientation.compose(previous["source"], previous["native_state"], vision, evidence)

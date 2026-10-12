@@ -20,7 +20,7 @@ from bench.pipeline_vision_transcription import _canonical
 from bench.silver import sha
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 class CapturingDetector:
@@ -67,7 +67,7 @@ def test_multiscale_later_page_rotation_crop_and_global_transcription(  # noqa: 
     pixels.paste("green", (0, 100, 60, 200))
     stream = io.BytesIO()
     pixels.save(stream, format="PNG")
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page(width=70, height=70)  # Different first page catches page-index mistakes.
         page = document.new_page(width=120, height=200)
         page.insert_image((0, 0, 120, 200), stream=stream.getvalue())
@@ -116,7 +116,7 @@ def test_multiscale_later_page_rotation_crop_and_global_transcription(  # noqa: 
     assert result["rotation_normalized"] is False
     assert pdf.read_bytes() == data
     assert len(detector.images) == 5
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[1]
         assert result["viewport"] == list(page.rect)
         source_bytes = page.render(scale=3071 / max(page.rect.width, page.rect.height), background=(255, 255, 255))
@@ -199,7 +199,7 @@ def test_hybrid_affine_display_geometry_preserves_ownership_and_touching_edges(r
 def test_multiscale_abnormal_finish_preserves_charge_and_raw_detection_atomically(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, finish: str
 ) -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page(width=120, height=100)
         data = document.tobytes()
     pdf = tmp_path / "source.pdf"

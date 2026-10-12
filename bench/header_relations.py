@@ -18,12 +18,12 @@ from itertools import pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import ROOT, page_pdf, text_op
-from pylopdf import pylopdf_core
+from pdfust import pdfust_core
 
 if TYPE_CHECKING:
-    from pylopdf._spatial import SpatialTable
+    from pdfust._spatial import SpatialTable
 
 # Long report prose stays in a single string for reproducible Markdown.
 # ruff: noqa: E501
@@ -123,7 +123,7 @@ def first_row(table: SpatialTable) -> Decision:
     """Use the first row whenever it does not cut a merged cell."""
     try:
         table.records(header_rows=1)
-    except pylopdf.PdfError:
+    except pdfust.PdfError:
         return Decision(None, 0, "first row cuts merged cell")
     return Decision(1, 0, "first-row baseline")
 
@@ -313,7 +313,7 @@ def _encoding_audit() -> list[dict[str, Any]]:
                 data = fixture_pdf(three_level, scale, rotation, coalesce=coalesce)
                 path = ARTIFACTS / f"encoding-three-level-{scale}-{rotation}-{coalesce}.pdf"
                 path.write_bytes(data)
-                with pylopdf.open(stream=data) as doc:
+                with pdfust.open(stream=data) as doc:
                     layout = doc[0].get_layout()
                     pixels = doc[0].get_pixmap().samples
                 forms.append(
@@ -341,7 +341,7 @@ def run() -> None:  # noqa: C901 - experiment orchestration and report aggregati
                 data = fixture_pdf(fixture, scale, rotation)
                 (ARTIFACTS / f"{name}.pdf").write_bytes(data)
                 start = time.perf_counter_ns()
-                with pylopdf.open(stream=data) as doc:
+                with pdfust.open(stream=data) as doc:
                     layout = doc[0].get_layout()
                 extraction_ms = (time.perf_counter_ns() - start) / 1e6
                 gold = gold_edges(fixture)
@@ -399,7 +399,7 @@ def run() -> None:  # noqa: C901 - experiment orchestration and report aggregati
                 results.append(row)
     corpus: list[dict[str, Any]] = []
     for name in ("senate-expenditures.pdf", "nics-background-checks-2015-11.pdf", "f1040.pdf"):
-        with pylopdf.open(ROOT / "tests/assets/real_world" / name) as doc:
+        with pdfust.open(ROOT / "tests/assets/real_world" / name) as doc:
             layout = doc[0].get_layout()
         corpus.append(
             {
@@ -422,8 +422,8 @@ def run() -> None:  # noqa: C901 - experiment orchestration and report aggregati
                 "environment": {
                     "python": platform.python_version(),
                     "platform": platform.platform(),
-                    "pylopdf": pylopdf.__version__,
-                    "native_sha256": hashlib.sha256(Path(pylopdf_core.__file__).read_bytes()).hexdigest(),
+                    "pdfust": pdfust.__version__,
+                    "native_sha256": hashlib.sha256(Path(pdfust_core.__file__).read_bytes()).hexdigest(),
                     "extract_source_sha256": hashlib.sha256((ROOT / "rust/src/extract.rs").read_bytes()).hexdigest(),
                 },
                 "synthetic": results,
@@ -439,7 +439,7 @@ def run() -> None:  # noqa: C901 - experiment orchestration and report aggregati
         "",
         "Reproduce: `.venv/bin/python -m bench.header_relations`.",
         "",
-        f"Loaded native extension SHA-256: `{hashlib.sha256(Path(pylopdf_core.__file__).read_bytes()).hexdigest()}`. Full Python/platform/library and Rust source provenance is retained in decisions.json.",
+        f"Loaded native extension SHA-256: `{hashlib.sha256(Path(pdfust_core.__file__).read_bytes()).hexdigest()}`. Full Python/platform/library and Rust source provenance is retained in decisions.json.",
         "",
         "112 generated PDFs: 14 structural/semantic families × two scales × four right-angle rotations. No training, GPU, network, or inference service. Gold bands and edges are fixture declarations; text and spans are checked independently. Variants share templates and are not independent documents or held-out production accuracy.",
         "",

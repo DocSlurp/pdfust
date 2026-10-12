@@ -276,7 +276,7 @@ def generate_cases() -> list[dict[str, Any]]:
 
 def freeze(directory: Path) -> Path:
     """Freeze inputs and references, then source evidence; never run a semantic scorer."""
-    import pylopdf
+    import pdfust
 
     directory = guard_path(directory)
     started, cpu = time.perf_counter(), time.process_time()
@@ -320,7 +320,7 @@ def freeze(directory: Path) -> Path:
     # Every input, reference, and generator byte above exists before interpretation.
     sources, observations = [], []
     for case in cases:
-        with pylopdf.open(stream=case["pdf"]) as document:
+        with pdfust.open(stream=case["pdf"]) as document:
             page = document[0]
             words: list[dict[str, Any]] = [
                 {"id": f"w{index}", "text": word[4], "bbox": list(word[:4])}

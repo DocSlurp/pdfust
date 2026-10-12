@@ -11,7 +11,7 @@ from bench import p003_random_values_corpus as corpus
 from bench.generalization_report import load_corpus
 from bench.silver import sha
 
-import pylopdf
+import pdfust
 
 
 def test_seeded_plans_variety_and_values_not_identity_derived() -> None:
@@ -65,8 +65,8 @@ def test_actual_textbox_wrap_right_alignment_and_source_roundtrip() -> None:
     plan = next(p for p in corpus.plans() if p["family"] == "wrapped")
     data, targets, receipt = corpus.authored(plan)
     assert any(c["unused_vertical_space"] < 8 for c in receipt["construction_cells"] if c["literal"])
-    assert any(c["align"] == pylopdf.TEXT_ALIGN_RIGHT for c in receipt["construction_cells"])
-    with pylopdf.Document(stream=data) as document:
+    assert any(c["align"] == pdfust.TEXT_ALIGN_RIGHT for c in receipt["construction_cells"])
+    with pdfust.Document(stream=data) as document:
         words = [
             {"id": f"w{i}", "bbox": list(w[:4]), "text": w[4]} for i, w in enumerate(document[0].get_text("words"))
         ]

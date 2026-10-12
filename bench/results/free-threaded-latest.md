@@ -1,8 +1,8 @@
-# pylopdf free-threaded benchmark
+# pdfust free-threaded benchmark
 
 - Run at: 2026-07-26 10:28 UTC
 - Environment: Windows-11-10.0.26200-SP0 / Python 3.14.6 free-threaded
-- pylopdf: 0.11.1
+- pdfust: 0.11.1
 - Input: `tests/assets/real_world/bill-hr815.pdf`
 - Workload: 2 independent documents, all-page text extraction
 - Repetitions: one warmup + median of 7 paired, alternating-order runs

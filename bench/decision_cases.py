@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import page_pdf, text_op
 
 SCHEMA_VERSION = 1
@@ -145,7 +145,7 @@ def _materialize(spec: dict[str, Any], task: str) -> tuple[dict[str, Any], bytes
     """Extract actual words; snippet membership uses original display baselines."""
     snippets = spec["snippets"]
     data = page_pdf("\n".join(text_op(text, x, y, font=font) for text, x, y, font in snippets))
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         layout = document[0].get_layout(table_strategy=None)
     words: list[dict[str, Any]] = [
         {"id": word.id, "text": word.text, "bbox": [round(c, 2) for c in word.bbox], "line": word.line}

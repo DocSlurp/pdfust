@@ -1,4 +1,4 @@
-"""Detect unreviewed changes to pylopdf's documented public API surface."""
+"""Detect unreviewed changes to pdfust's documented public API surface."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, ForwardRef, TypeAlias, cast, get_args, get_origin, is_typeddict
 
-import pylopdf
+import pdfust
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -29,8 +29,8 @@ JsonObject: TypeAlias = dict[str, JsonValue]
 
 def _public_type_name(value: type[object]) -> str:
     """Return a stable public spelling for one runtime type."""
-    if value.__module__.startswith("pylopdf"):
-        return f"pylopdf.{value.__name__}"
+    if value.__module__.startswith("pdfust"):
+        return f"pdfust.{value.__name__}"
     if value.__module__ == "builtins":
         return value.__qualname__
     return f"{value.__module__}.{value.__qualname__}"
@@ -226,8 +226,8 @@ def _class_contract(value: type[object]) -> JsonObject:
 
 
 def _export_contract(name: str, value: object) -> JsonObject:
-    """Describe one name exported through pylopdf.__all__."""
-    annotation = pylopdf.__annotations__.get(name)
+    """Describe one name exported through pdfust.__all__."""
+    annotation = pdfust.__annotations__.get(name)
     if annotation == "TypeAlias" or annotation is TypeAlias:
         return {
             "kind": "type-alias",
@@ -247,16 +247,16 @@ def _export_contract(name: str, value: object) -> JsonObject:
 
 
 def collect_public_api() -> JsonObject:
-    """Collect the review baseline for pylopdf's documented public API."""
-    exports = sorted(pylopdf.__all__)
+    """Collect the review baseline for pdfust's documented public API."""
+    exports = sorted(pdfust.__all__)
     export_values: list[JsonValue] = []
     export_values.extend(exports)
-    version_parts = pylopdf.__version__.split(".")
+    version_parts = pdfust.__version__.split(".")
     return {
         "api_line": ".".join(version_parts[:2]),
         "exports": export_values,
         "schema": 1,
-        "symbols": {name: _export_contract(name, getattr(pylopdf, name)) for name in exports},
+        "symbols": {name: _export_contract(name, getattr(pdfust, name)) for name in exports},
     }
 
 
@@ -281,7 +281,7 @@ def snapshot_diff(expected: JsonObject, actual: JsonObject) -> str:
             _serialized(expected).splitlines(keepends=True),
             _serialized(actual).splitlines(keepends=True),
             fromfile=str(SNAPSHOT_PATH),
-            tofile="current pylopdf runtime",
+            tofile="current pdfust runtime",
         )
     )
 

@@ -19,7 +19,7 @@ from importlib import metadata
 from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import ROOT
 from bench.structure_cases import RECORD_REFERENCES, build_structure_cases
 from bench.structure_core import (
@@ -76,7 +76,7 @@ def prepare_highres(bundles: list[dict[str, Any]]) -> None:
         if digest != bundle["sha256"]:
             msg = f"refusing high-resolution preparation of changed PDF: {bundle['name']}"
             raise ValueError(msg)
-        with pylopdf.open(source) as document:
+        with pdfust.open(source) as document:
             page = document[0]
             dpi = 72 * 2048 / max(page.rect.width, page.rect.height)
             pixmap = page.get_pixmap(dpi=dpi, background=(255, 255, 255))
@@ -90,8 +90,8 @@ def prepare_highres(bundles: list[dict[str, Any]]) -> None:
                     "width": pixmap.width,
                     "height": pixmap.height,
                     "dpi": dpi,
-                    "renderer": "pylopdf CPU; original PDF rerender, not screenshot upsampling",
-                    "renderer_version": pylopdf.__version__,
+                    "renderer": "pdfust CPU; original PDF rerender, not screenshot upsampling",
+                    "renderer_version": pdfust.__version__,
                     "preparation_code_sha256": hashlib.sha256((ROOT / "bench/structure.py").read_bytes()).hexdigest(),
                 },
             )
@@ -105,7 +105,7 @@ def prepare() -> list[dict[str, Any]]:
         directory = ARTIFACTS / case.feature.name
         directory.mkdir(exist_ok=True)
         (directory / "input.pdf").write_bytes(case.feature.data)
-        with pylopdf.open(stream=case.feature.data) as document:
+        with pdfust.open(stream=case.feature.data) as document:
             page = document[0]
             rect = page.rect
             dpi = 72 * 1288 / max(rect.width, rect.height)
@@ -174,8 +174,8 @@ class Engines:
             self.hosted = HostedVision(ROOT, router="jev" in adapter)
             self.model_path = "typesafe/jev-1.13" if adapter.startswith("jev-text") else self.hosted.model
         elif adapter.startswith(("ocr", "hybrid")):
-            model_root = ROOT / "models/pylopdf-ocr-models/src/pylopdf_ocr_models"
-            self.ocr = pylopdf.OcrEngine(
+            model_root = ROOT / "models/pdfust-ocr-models/src/pdfust_ocr_models"
+            self.ocr = pdfust.OcrEngine(
                 model_root / "PP-OCRv6_det_small.rten",
                 model_root / "PP-OCRv6_rec_small.rten",
                 model_root / "ppocrv6_dict.txt",
@@ -328,7 +328,7 @@ def run_adapter(bundle: dict[str, Any], engine: Engines, limit: int) -> dict[str
             "retained_run": original["additional_runs"][prior["run_index"]],
         }
     if name.startswith("ocr"):
-        with pylopdf.open(directory / "input.pdf") as document:
+        with pdfust.open(directory / "input.pdf") as document:
             recognized = document[0].apply_ocr(dpi=150, engine=engine.ocr)
             collected = document[0].get_text("words")
             ocr_words: list[dict[str, Any]] = [
@@ -351,11 +351,11 @@ def run_adapter(bundle: dict[str, Any], engine: Engines, limit: int) -> dict[str
             "recognized_words": len(recognized),
             "ocr_policy": "150 dpi, skip_existing=True, four threads; retained text uses dominant orientation",
         }
-    if name in {"pylopdf", "pylopdf-text"}:
-        text = bundle["baseline" if name == "pylopdf" else "text_tables"]
+    if name in {"pdfust", "pdfust-text"}:
+        text = bundle["baseline" if name == "pdfust" else "text_tables"]
         return {"markdown": text, "tables": markdown_tables(text)}
     if name.startswith("native"):
-        with pylopdf.open(directory / "input.pdf") as document:
+        with pdfust.open(directory / "input.pdf") as document:
             page = document[0]
             matrices = header_guided_records(page, words) if "header" in name else []
             guided = bool(matrices)
@@ -767,7 +767,7 @@ def rescore(report: dict[str, Any]) -> None:
             msg = f"refusing to rescore changed output: {result['case']} / {result['adapter']}"
             raise ValueError(msg)
         visible = visible_text(text)
-        if result["adapter"].startswith(("olmocr", "qwen", "pylopdf")):
+        if result["adapter"].startswith(("olmocr", "qwen", "pdfust")):
             result["output"]["tables"] = markdown_tables(text)
         result["score"] = score_tables(result["output"]["tables"], bundle["expected_tables"])
         result["literal_checks"] = {value: value in visible for value in bundle["expected_text"]}
@@ -791,8 +791,8 @@ def main() -> None:  # noqa: C901, PLR0912
         "--adapter",
         action="append",
         choices=[
-            "pylopdf",
-            "pylopdf-text",
+            "pdfust",
+            "pdfust-text",
             "geometry",
             "geometry-bullets",
             "geometry-wrapped",

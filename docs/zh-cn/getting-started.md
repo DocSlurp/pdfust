@@ -1,6 +1,6 @@
 ---
 title: 快速开始
-description: 安装pylopdf，并学习编辑、渲染、提取和写入PDF的核心工作流。
+description: 安装pdfust，并学习编辑、渲染、提取和写入PDF的核心工作流。
 ---
 
 # 快速开始
@@ -8,17 +8,17 @@ description: 安装pylopdf，并学习编辑、渲染、提取和写入PDF的核
 ## 安装 { #installation }
 
 ```bash
-pip install pylopdf
+pip install pdfust
 ```
 
 只需安装工作负载所需的语言或地区font：
 
 ```bash
-pip install "pylopdf[jp]"     # 日语fallback与生成
-pip install "pylopdf[ko]"     # 韩语
-pip install "pylopdf[zh-cn]"  # 简体中文
-pip install "pylopdf[zh-tw]"  # 繁体中文
-pip install "pylopdf[ar]"     # 阿拉伯语生成（另有he、hi、th）
+pip install "pdfust[jp]"     # 日语fallback与生成
+pip install "pdfust[ko]"     # 韩语
+pip install "pdfust[zh-cn]"  # 简体中文
+pip install "pdfust[zh-tw]"  # 繁体中文
+pip install "pdfust[ar]"     # 阿拉伯语生成（另有he、hi、th）
 ```
 
 四个CJK地区extra同时支持未嵌入Adobe CJK font的渲染fallback与subset嵌入生成。
@@ -33,9 +33,9 @@ environment-specific gate。
 ## 打开、检查、保存 { #open-inspect-save }
 
 ```python
-import pylopdf
+import pdfust
 
-doc = pylopdf.open("input.pdf")           # 也可使用 pylopdf.open(stream=pdf_bytes)
+doc = pdfust.open("input.pdf")           # 也可使用 pdfust.open(stream=pdf_bytes)
 print(doc.page_count)                     # 也支持 len(doc)
 print(doc.metadata["title"])
 doc.set_metadata({"title": "报告", "author": "Alice"})
@@ -43,15 +43,15 @@ doc.set_metadata({"title": "报告", "author": "Alice"})
 doc.save("out.pdf")
 data = doc.tobytes()
 doc.save("small.pdf", garbage=True, deflate=True, object_streams=True)
-doc.save("locked.pdf", user_pw="secret", permissions=pylopdf.Permissions.PRINT)
+doc.save("locked.pdf", user_pw="secret", permissions=pdfust.Permissions.PRINT)
 ```
 
 使用`password=`打开加密PDF，也可稍后调用`doc.authenticate()`。
-通常，`pylopdf.peek_metadata(path)`无需完整解析PDF文档即可读取元数据和页数，适合扫描
+通常，`pdfust.peek_metadata(path)`无需完整解析PDF文档即可读取元数据和页数，适合扫描
 大型文件集。`max_file_size=`可在解析前按大小拒绝path或byte input；为了向后兼容，
 默认不设上限。若受限修复了最终classic `startxref`，`repaired`与
-`doc.is_repaired`为`True`，并发出`PylopdfWarning`；保存会规范化xref数据。
-处理不受信任的文件时，请传入`limits=pylopdf.DocumentLimits.web()`，以限制文件、
+`doc.is_repaired`为`True`，并发出`PdfustWarning`；保存会规范化xref数据。
+处理不受信任的文件时，请传入`limits=pdfust.DocumentLimits.web()`，以限制文件、
 结构、解压、rendering／extraction用PDF snapshot和已解释文本。重型处理前可检查
 `doc.complexity`，受控拒绝会抛出
 `LimitError`。各项预算请参阅[安全](security.md#untrusted-pdfs)。
@@ -88,9 +88,9 @@ doc.delete_pages([1, 2])
 doc.select([2, 0])                                   # 保留/重排（重复即复制）
 doc.new_page(); doc.copy_page(0, to=1)
 
-merged = pylopdf.Document()
-merged.insert_pdf(pylopdf.open("a.pdf"))
-merged.insert_pdf(pylopdf.open("b.pdf"), from_page=0, to_page=2, start_at=0)
+merged = pdfust.Document()
+merged.insert_pdf(pdfust.open("a.pdf"))
+merged.insert_pdf(pdfust.open("b.pdf"), from_page=0, to_page=2, start_at=0)
 
 doc.set_toc([[1, "第1章", 1], [2, "1.1节", 2]])
 page.set_rotation(90)

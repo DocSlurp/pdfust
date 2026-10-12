@@ -7,7 +7,7 @@ import warnings
 import pytest
 from bench.silver_math import ENCODINGS, FORMULAS, MathCase, generate_cases
 
-import pylopdf
+import pdfust
 
 CASES = generate_cases()
 
@@ -34,8 +34,8 @@ def test_math_cases_load_and_extract_visible_anchor(case: MathCase) -> None:
     # Unmapped Type3 warnings are deliberate; checking an anchor is not a claim
     # that a formula's mathematical structure survived extraction.
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", pylopdf.PylopdfWarning)
-        with pylopdf.open(stream=case["pdf"]) as document:
+        warnings.simplefilter("ignore", pdfust.PdfustWarning)
+        with pdfust.open(stream=case["pdf"]) as document:
             assert len(document) == 1
             text = document[0].get_text()
             assert case["expected_text"][0] in text
@@ -45,7 +45,7 @@ def test_math_cases_load_and_extract_visible_anchor(case: MathCase) -> None:
 @pytest.mark.parametrize("encoding", ENCODINGS)
 def test_each_math_encoding_has_a_nonblank_formula(encoding: str) -> None:
     case = next(case for case in CASES if case["id"] == f"math-quadratic-{encoding}")
-    with pylopdf.open(stream=case["pdf"]) as document:
+    with pdfust.open(stream=case["pdf"]) as document:
         # This display-coordinate region excludes both digital headings.
         pixmap = document[0].get_pixmap(dpi=72, clip=(35, 145, 550, 290))
         assert pixmap.n == 4
@@ -60,8 +60,8 @@ def _case(encoding: str) -> MathCase:
 def test_outline_and_raster_formulas_have_no_formula_text_layer() -> None:
     for encoding in ("vector-outlines", "raster-image", "type3-unmapped"):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", pylopdf.PylopdfWarning)
-            with pylopdf.open(stream=_case(encoding)["pdf"]) as document:
+            warnings.simplefilter("ignore", pdfust.PdfustWarning)
+            with pdfust.open(stream=_case(encoding)["pdf"]) as document:
                 text = document[0].get_text()
                 assert "SQRT" not in text
                 if encoding == "raster-image":
@@ -71,6 +71,6 @@ def test_outline_and_raster_formulas_have_no_formula_text_layer() -> None:
     assert b"/Subtype /Image" in _case("raster-image")["pdf"]
     assert b"/Subtype /Image" not in _case("vector-outlines")["pdf"]
     assert b"3 Tr" in _case("raster-invisible-text")["pdf"]
-    with pylopdf.open(stream=_case("raster-invisible-text")["pdf"]) as document:
+    with pdfust.open(stream=_case("raster-invisible-text")["pdf"]) as document:
         assert "SQRT" in document[0].get_text()
         assert len(document[0].get_images()) == 1

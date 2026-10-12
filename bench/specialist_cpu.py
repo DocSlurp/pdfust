@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.structure_cases import RECORD_REFERENCES, StructureCase, build_structure_cases
 from bench.structure_core import geometry_tables, markdown_tables, score_records, score_tables, source_agreement
 
@@ -102,7 +102,7 @@ def merge_regions(regions: list[list[float]]) -> list[list[float]]:
     return sorted(output, key=lambda box: (box[1], box[0]))
 
 
-def proposals(page: pylopdf.Page, words: list[dict[str, Any]]) -> list[list[float]]:
+def proposals(page: pdfust.Page, words: list[dict[str, Any]]) -> list[list[float]]:
     """Combine existing native grids and source-geometry table proposals; no gold boxes."""
     boxes = [list(table.bbox) for table in page.find_tables()]
     lookup = {word["id"]: word for word in words}
@@ -239,7 +239,7 @@ def initialize() -> tuple[Any, dict[str, Any]]:
         message = f"Unexpected model digest: {observed}"
         raise RuntimeError(message)
     options = session.get_session_options()
-    extension_path = importlib.import_module("pylopdf.pylopdf_core").__file__
+    extension_path = importlib.import_module("pdfust.pdfust_core").__file__
     if extension_path is None:
         message = "Native extension path unavailable"
         raise RuntimeError(message)
@@ -249,7 +249,7 @@ def initialize() -> tuple[Any, dict[str, Any]]:
         for path in [
             ROOT / "rust/src/extract.rs",
             ROOT / "rust/src/document.rs",
-            ROOT / "src/pylopdf/__init__.py",
+            ROOT / "src/pdfust/__init__.py",
             Path(__file__),
         ]
     }
@@ -281,7 +281,7 @@ def run_case(case: StructureCase, engine: Any, dpi: int) -> dict[str, Any]:
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "input.pdf").write_bytes(case.feature.data)
     start = time.perf_counter()
-    with pylopdf.open(stream=case.feature.data) as document:
+    with pdfust.open(stream=case.feature.data) as document:
         page = document[0]
         load_ms = (time.perf_counter() - start) * 1000
         start = time.perf_counter()

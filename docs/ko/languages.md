@@ -1,6 +1,6 @@
 ---
 title: 언어 정책
-description: pylopdf 문서의 중요 언어, 번역 우선순위, 유지보수 규칙입니다.
+description: pdfust 문서의 중요 언어, 번역 우선순위, 유지보수 규칙입니다.
 ---
 
 # 언어 정책

@@ -37,7 +37,7 @@ RUNTIME_SHA = "da48f3a34238fe11f1a57827628b3208e7e2ce9b28893393a5c226a311e7b956"
 
 def build(root: Path, output: Path) -> Path:
     """Replay strict selected pages and display actual pixels, matrices and witnesses."""
-    import pylopdf
+    import pdfust
 
     started, cpu = time.monotonic(), time.process_time()
     receipts: dict[str, str] = {}
@@ -135,7 +135,7 @@ def build(root: Path, output: Path) -> Path:
         key = identifier + "-T" + str(pair["target"])
         folder = batch / key
         folder.mkdir()
-        with pylopdf.Document(record["pdf_path"]) as document:
+        with pdfust.Document(record["pdf_path"]) as document:
             page = document[record["page_number"]]
             scale = 2400 / page.rect.width
             pixmap = page.get_pixmap(scale=scale, background=(255, 255, 255))

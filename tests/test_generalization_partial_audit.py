@@ -8,7 +8,7 @@ import pytest
 from bench.generalization_partial_audit import CONTROLS, audit, gallery
 from bench.pipeline_vision_partial import salvage
 
-import pylopdf
+import pdfust
 
 
 def write(path: Path, value: dict) -> bytes:
@@ -70,7 +70,7 @@ def test_audit_rejects_missing_or_changed_identity_and_incomplete_coverage(tmp_p
 
 
 def test_gallery_uses_source_pdf_and_escapes_transcription_status_and_diagnostics(tmp_path: Path) -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page(width=80, height=120)
         data = document.tobytes()
     pdf = tmp_path / "source.pdf"

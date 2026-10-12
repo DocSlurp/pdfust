@@ -35,13 +35,13 @@ def test_wasm_section_metrics_rejects_invalid_input(data: bytes) -> None:
 
 
 def test_collect_metrics_groups_wheel_payload(tmp_path: Path) -> None:
-    wheel = tmp_path / "pylopdf-test.whl"
+    wheel = tmp_path / "pdfust-test.whl"
     with zipfile.ZipFile(wheel, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("pylopdf/pylopdf_core.abi3.so", _EMPTY_WASM + b"\x0a\x01\x00")
-        archive.writestr("pylopdf/__init__.py", "VERSION = 'test'\n")
-        archive.writestr("pylopdf-0.dist-info/METADATA", "Name: pylopdf\n")
-        archive.writestr("pylopdf-0.dist-info/licenses/LICENSE", "MIT\n")
-        archive.writestr("pylopdf-0.dist-info/sboms/core.json", "{}\n")
+        archive.writestr("pdfust/pdfust_core.abi3.so", _EMPTY_WASM + b"\x0a\x01\x00")
+        archive.writestr("pdfust/__init__.py", "VERSION = 'test'\n")
+        archive.writestr("pdfust-0.dist-info/METADATA", "Name: pdfust\n")
+        archive.writestr("pdfust-0.dist-info/licenses/LICENSE", "MIT\n")
+        archive.writestr("pdfust-0.dist-info/sboms/core.json", "{}\n")
 
     metrics = collect_metrics(wheel)
 

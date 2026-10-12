@@ -17,7 +17,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench.decision_context_prompts import observed_history
 from bench.decision_hosted import ARTIFACTS
 from bench.lowlevel_cases import cases, history_cases
@@ -94,7 +94,7 @@ def snapshot(pdf_bytes: bytes, selector: dict[str, Any]) -> dict[str, Any]:
     """Read PDF source and a neutral region selector; no scoring metadata accepted."""
     stages: dict[str, Any] = {}
     started, cpu = time.perf_counter(), time.process_time()
-    with pylopdf.Document(stream=pdf_bytes) as document:
+    with pdfust.Document(stream=pdf_bytes) as document:
         document._ensure_fallback_fonts()  # noqa: SLF001 - private opt-in experiment hook.
         width, height, raw, skipped = document._doc.extract_glyph_snapshot(1, max_glyphs=4096, max_text_bytes=65536)  # noqa: SLF001
         document._emit_warnings()  # noqa: SLF001

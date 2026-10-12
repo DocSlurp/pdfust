@@ -80,7 +80,7 @@ def audit_source(source: dict[str, Any]) -> dict[str, Any]:
 
 def freeze(source_path: Path, pdf_directory: Path, output: Path) -> dict[str, Any]:
     """Freeze PDFs, source evidence and provenance before any external scoring."""
-    import pylopdf
+    import pdfust
 
     source_path, pdf_directory, output = (guard_path(p) for p in (source_path, pdf_directory, output))
     source_raw = source_path.read_bytes()
@@ -117,7 +117,7 @@ def freeze(source_path: Path, pdf_directory: Path, output: Path) -> dict[str, An
     began, cpu = time.perf_counter(), time.process_time()
     sources = []
     for identifier, original, changed, _ in authored:
-        with pylopdf.open(stream=original) as before, pylopdf.open(stream=changed) as after:
+        with pdfust.open(stream=original) as before, pdfust.open(stream=changed) as after:
             old_words = before[0].get_text("words")
             page = after[0]
             words = page.get_text("words")

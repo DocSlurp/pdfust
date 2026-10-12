@@ -1,4 +1,4 @@
-"""Record reproducible size facts for one pylopdf PyEmscripten wheel."""
+"""Record reproducible size facts for one pdfust PyEmscripten wheel."""
 
 from __future__ import annotations
 

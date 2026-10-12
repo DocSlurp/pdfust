@@ -12,7 +12,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench import generalization_vision_regions as regions
 from bench import p003_candidate_run as baseline
 from bench import p003_header_packets as packets
@@ -82,7 +82,7 @@ def authenticate(
         pdf = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(pdf) != record["pdf_sha256"]:
             raise ValueError("Original PDF bytes changed")
-        with pylopdf.open(stream=pdf) as doc:
+        with pdfust.open(stream=pdf) as doc:
             source = doc[record["page_number"]]
             if list(source.rect) != page["viewport"] or source.rotation != page["original_rotation"]:
                 raise ValueError("Original PDF display geometry changed")

@@ -25,7 +25,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-import jev_pdf
+import pdfust
 from bench.silver import guard_path, write_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -223,7 +223,7 @@ def audit_pdf(path: Path, truth: dict[str, Any], password: str | None = None) ->
     start = _measure()
     record: dict[str, Any] = {"path": str(path)}
     try:
-        doc = jev_pdf.open(str(guard_path(path)), password=password) if password else jev_pdf.open(
+        doc = pdfust.open(str(guard_path(path)), password=password) if password else pdfust.open(
             str(guard_path(path))
         )
     except Exception as error:
@@ -388,14 +388,14 @@ OCR_LEVELS = ("L3_outlined", "L4_raster", "L6_phone_scan", "L7_photocopy", "L8_m
 
 
 def ocr_fallback(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict[str, Any]:
-    """Write `{level}+ocr.pdf` variants with pylopdf's native OCR on textless pages.
+    """Write `{level}+ocr.pdf` variants with pdfust's native OCR on textless pages.
 
     Pages that already have extractable text are skipped by `apply_ocr`'s
     default, so mixed documents keep their native layer. CPU only.
     """
     directory = guard_path(directory)
     start = _measure()
-    engine = jev_pdf.OcrEngine(threads=threads)
+    engine = pdfust.OcrEngine(threads=threads)
     report: dict[str, Any] = {"dpi": dpi, "threads": threads, "documents": {}}
     for variant_dir in sorted((directory / "variants").iterdir()):
         for level in OCR_LEVELS:
@@ -405,7 +405,7 @@ def ocr_fallback(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict
                 continue
             page_start = _measure()
             words = 0
-            with jev_pdf.open(str(source)) as doc:
+            with pdfust.open(str(source)) as doc:
                 for page in doc:
                     words += len(page.apply_ocr(dpi=dpi, engine=engine))
                 doc.save(str(target))
@@ -420,7 +420,7 @@ MIN_NATIVE_CHARS = 20
 MIN_IMAGE_AREA = 0.02
 
 
-def _page_needs_full_ocr(page: jev_pdf.Page) -> bool:
+def _page_needs_full_ocr(page: pdfust.Page) -> bool:
     """Full-page OCR when native text is nearly absent or glyphs lacked Unicode."""
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
@@ -438,7 +438,7 @@ def adaptive_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict
     """
     directory = guard_path(directory)
     start = _measure()
-    engine = jev_pdf.OcrEngine(threads=threads)
+    engine = pdfust.OcrEngine(threads=threads)
     report: dict[str, Any] = {"dpi": dpi, "threads": threads, "documents": {}}
     for variant_dir in sorted((directory / "variants").iterdir()):
         for level in ADAPTIVE_OCR_LEVELS:
@@ -448,7 +448,7 @@ def adaptive_ocr(directory: Path, *, dpi: float = 200, threads: int = 4) -> dict
                 continue
             item_start = _measure()
             counts = {"full_pages": 0, "regions": 0, "words": 0}
-            with jev_pdf.open(str(source)) as doc:
+            with pdfust.open(str(source)) as doc:
                 for page in doc:
                     if _page_needs_full_ocr(page):
                         counts["full_pages"] += 1
@@ -492,7 +492,7 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4, reverse: bo
     """
     directory = guard_path(directory)
     start = _measure()
-    engine = jev_pdf.OcrEngine(threads=threads)
+    engine = pdfust.OcrEngine(threads=threads)
     report: dict[str, Any] = {"dpi": dpi, "threads": threads, "min_confidence": FILL_MIN_CONFIDENCE,
                               "documents": {}}
     # A second worker can walk the documents in reverse; saves are atomic and
@@ -506,7 +506,7 @@ def fill_ocr(directory: Path, *, dpi: float = 200, threads: int = 4, reverse: bo
                 continue
             item_start = _measure()
             counts = {"recognized": 0, "inserted": 0}
-            with jev_pdf.open(str(source)) as doc:
+            with pdfust.open(str(source)) as doc:
                 for page in doc:
                     with warnings.catch_warnings(record=True) as caught:
                         warnings.simplefilter("always")

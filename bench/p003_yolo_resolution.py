@@ -112,7 +112,7 @@ def prepare(baseline: Path, trusted_code: Path, output: Path) -> dict[str, Any]:
     """Authenticate all16 ordinal sources and finish code/model/input freezing before CPU inference."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
     from bench.p003_gate_run import authenticate
     from bench.silver import guard_path
 
@@ -145,7 +145,7 @@ def prepare(baseline: Path, trusted_code: Path, output: Path) -> dict[str, Any]:
             raw = guard_path(Path(record["pdf_path"])).read_bytes()
             if hashlib.sha256(raw).hexdigest() != record["pdf_sha256"]:
                 raise ValueError("Source PDF bytes differ from authenticated original")
-            with pylopdf.open(stream=raw) as document:
+            with pdfust.open(stream=raw) as document:
                 page = document[record["page_number"]]
                 viewport = list(page.rect)
                 if (

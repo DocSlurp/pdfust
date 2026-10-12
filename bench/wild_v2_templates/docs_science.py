@@ -1434,7 +1434,7 @@ def slides_ja() -> dict[str, Any]:
 
 
 def slides_fr() -> dict[str, Any]:
-    """French municipal school-retrofit review deck (pylopdf, 16:9)."""
+    """French municipal school-retrofit review deck (pdfust, 16:9)."""
     schools = [("École Jules-Verne (Rezé)", "Isolation des combles, menuiseries", 41_850_000, "Terminé"),
                ("Groupe scolaire Ange-Guépin", "Pompe à chaleur, ventilation double flux", 68_320_000, "Terminé"),
                ("École maternelle Les Tilleuls", "Isolation par l’extérieur", 37_490_000, "Réception en novembre"),
@@ -2185,7 +2185,7 @@ def manual_de() -> dict[str, Any]:
 
 
 def manual_zhcn() -> dict[str, Any]:
-    """Chinese data-logger user manual (pylopdf, 7 pages)."""
+    """Chinese data-logger user manual (pdfust, 7 pages)."""
     spec_rows = [["温度测量范围", "−40 ℃ ～ +85 ℃"], ["温度测量精度", "±0.2 ℃（0 ℃～50 ℃），其余 ±0.4 ℃"], ["温度分辨率", "0.01 ℃"],
                  ["湿度测量范围", "0 ～ 100 %RH（无凝露）"], ["湿度测量精度", "±1.5 %RH（10 %～90 %RH，25 ℃）"], ["湿度分辨率", "0.01 %RH"],
                  ["记录间隔", "10 秒 ～ 24 小时，可设置"], ["存储容量", "500,000 组数据（循环或满停）"], ["显示", "2.9 英寸电子墨水屏"],

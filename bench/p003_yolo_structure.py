@@ -102,7 +102,7 @@ def prepare(
     """Authenticate both authorities and finish all80 crop/source/model/code receipts before inference."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
     from bench.generalization_vision_regions import _crop
     from bench.p003_gate_run import authenticate
     from bench.silver import guard_path
@@ -185,7 +185,7 @@ def prepare(
         pdf = guard_path(Path(record["pdf_path"])).read_bytes()
         if geometry.digest(pdf) != record["pdf_sha256"]:
             raise ValueError("Original PDF bytes changed")
-        with pylopdf.open(stream=pdf) as document:
+        with pdfust.open(stream=pdf) as document:
             pdfpage = document[record["page_number"]]
             if (
                 list(pdfpage.rect) != source["page_size"]

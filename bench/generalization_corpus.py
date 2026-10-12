@@ -253,7 +253,7 @@ def authored_cases() -> list[dict[str, Any]]:
 
 def native_pages(count: int = 56) -> list[dict[str, Any]]:
     """Select native diagnostics round-robin by source; licenses come from bundled attribution."""
-    import pylopdf
+    import pdfust
 
     base = ROOT / "tests/assets/real_world"
     readme = (base / "README.md").read_text()
@@ -264,7 +264,7 @@ def native_pages(count: int = 56) -> list[dict[str, Any]]:
             continue
         name, source, license_text, coverage = match.groups()
         path = base / name
-        with pylopdf.Document(path) as document:
+        with pdfust.Document(path) as document:
             pages = len(document)
         candidates.append(
             {
@@ -288,7 +288,7 @@ def native_pages(count: int = 56) -> list[dict[str, Any]]:
 
 def build(directory: Path, omni_rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Freeze sources, private targets, attribution and identity before any extraction run."""
-    import pylopdf
+    import pdfust
     from bench.generalization_scoring import parse_annotation_html
 
     directory = guard_path(directory)
@@ -342,7 +342,7 @@ def build(directory: Path, omni_rows: list[dict[str, Any]]) -> dict[str, Any]:
         data = case["pdf"]
         kind = "authored_native_pdf"
         if case["family"] == "ocr-carrier":
-            with pylopdf.Document(stream=data) as document:
+            with pdfust.Document(stream=data) as document:
                 png = document[0].render(dpi=120)
             image = directory / (case["name"] + ".png")
             image.write_bytes(png)

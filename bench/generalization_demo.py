@@ -70,7 +70,7 @@ def build(
     manifest_path: Path, run: Path, output: Path, *, evaluation_path: Path | None = None, image_edge: int = 1024
 ) -> dict[str, Any]:
     """Verify a predefined complete screen and emit an ignored local gallery without inference."""
-    import pylopdf
+    import pdfust
 
     if image_edge not in (512, 1024):
         raise ValueError("Demo image edge must be 512 or 1024")
@@ -124,7 +124,7 @@ def build(
         if operational:
             markdown = _read(run / f"{ident}.md").decode()
             state = json.loads(_read(run / f"{ident}-structure.json"))
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             original_rotation = page.rotation
             if prediction is not None and processor not in {"vision", "vision_regions", "vision_multiscale", "hybrid"}:

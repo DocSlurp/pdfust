@@ -29,25 +29,25 @@ jobs:
         id: fuzz
         continue-on-error: true
         run: |
-          mkdir -p "${RUNNER_TEMP}/pylopdf-fuzz-corpus"
-          mkdir -p "${RUNNER_TEMP}/pylopdf-fuzz-artifacts"
+          mkdir -p "${RUNNER_TEMP}/pdfust-fuzz-corpus"
+          mkdir -p "${RUNNER_TEMP}/pdfust-fuzz-artifacts"
           uv run --no-sync python fuzz/generate_corpus.py \
-            --output "${RUNNER_TEMP}/pylopdf-fuzz-corpus"
+            --output "${RUNNER_TEMP}/pdfust-fuzz-corpus"
           uv run --no-sync python fuzz/fuzz_api.py \
             -max_total_time=600 \
             -timeout=60 \
             -rss_limit_mb=2048 \
             -max_len=1048576 \
-            -artifact_prefix="${RUNNER_TEMP}/pylopdf-fuzz-artifacts/" \
-            "${RUNNER_TEMP}/pylopdf-fuzz-corpus" \
+            -artifact_prefix="${RUNNER_TEMP}/pdfust-fuzz-artifacts/" \
+            "${RUNNER_TEMP}/pdfust-fuzz-corpus" \
             tests/assets/real_world \
             tests/assets/encrypted
       - name: Upload failure reproducer
         if: steps.fuzz.outcome == 'failure'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: pylopdf-fuzz-reproducer
-          path: ${{ runner.temp }}/pylopdf-fuzz-artifacts
+          name: pdfust-fuzz-reproducer
+          path: ${{ runner.temp }}/pdfust-fuzz-artifacts
           if-no-files-found: error
       - name: Fail after preserving reproducer
         if: steps.fuzz.outcome == 'failure'

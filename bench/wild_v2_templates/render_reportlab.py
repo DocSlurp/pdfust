@@ -7,7 +7,7 @@ Chinese and Korean documents use ReportLab's non-embedded Adobe CID fonts.
 ReportLab does not shape complex scripts, so Arabic, Hebrew, Devanagari and
 Thai documents are not routed here. Charts are native ReportLab vector
 drawings. ``form`` blocks become real AcroForm widgets that are filled later
-by pylopdf.
+by pdfust.
 """
 
 # ruff: noqa: ANN401, C901, E501, PLR0912, PLC0415, PLR0911, PLR2004, RUF059, FBT001, ARG002, ARG001

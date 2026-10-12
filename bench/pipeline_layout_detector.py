@@ -478,7 +478,7 @@ def baseline(
     manifest_path: Path, output: Path, *, sources_directory: Path | None = None, image_size: int = 640
 ) -> dict[str, Any]:
     """Render an explicit DEV manifest and retain detector statistics without gold."""
-    import pylopdf
+    import pdfust
     from bench.pipeline_run import source
     from bench.silver import guard_path, sha, write_json
 
@@ -498,7 +498,7 @@ def baseline(
                 data = guard_path(Path(record["pdf_path"])).read_bytes()
                 if sha(data) != record["pdf_sha256"]:
                     raise ValueError("Frozen detector source PDF changed")
-                with pylopdf.open(stream=data) as document:
+                with pdfust.open(stream=data) as document:
                     page = document[record["page_number"]]
                     if page.rotation:
                         page.set_rotation(0)

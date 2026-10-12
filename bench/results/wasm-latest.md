@@ -1,4 +1,4 @@
-# pylopdf PyEmscripten size and startup report
+# pdfust PyEmscripten size and startup report
 
 - Updated at: 2026-07-26 10:45 UTC
 - Whole-program LTO comparison:
@@ -38,7 +38,7 @@ The full native/Pyodide compatibility hashes remained exact. Wheel metadata,
 the publication tag, runtime resource checks, and the module-scope import under
 local `workerd` all passed. The repeated Form 1040 open-and-extract median was
 effectively unchanged at 28.618 ms before and 28.506 ms after. The first
-open-and-extract measurement moved from 124.101 to 117.634 ms and pylopdf import
+open-and-extract measurement moved from 124.101 to 117.634 ms and pdfust import
 from 103.150 to 95.205 ms; these one-process observations are treated as trend
 noise rather than claimed latency improvements.
 
@@ -53,7 +53,7 @@ The remaining controlled comparison preserves the original RTen-removal
 measurement that established the supported Emscripten capability boundary.
 
 The change under test omits RTen and its tensor runtime from Emscripten. Native
-builds retain the complete `pylopdf[ocr]` implementation. The Emscripten module
+builds retain the complete `pdfust[ocr]` implementation. The Emscripten module
 keeps an API-compatible `OcrEngine` boundary that raises `OcrError` and directs
 applications to external OCR plus `Page.insert_ocr_text_layer()`.
 
@@ -72,7 +72,7 @@ same pinned Pyodide builder and inspected with
 | Wasm data section | 2,550,490 bytes (2.432 MiB) | 2,465,418 bytes (2.351 MiB) | -85,072 bytes (-3.34%) |
 
 The resulting wheel contains 13 files and expands to 11,276,055 bytes. The
-installed pylopdf package reported by the runtime is 11,052,286 bytes across
+installed pdfust package reported by the runtime is 11,052,286 bytes across
 five package files. The wheel SHA-256 is
 `a046cb9cbe0820d281d94c0483b1dc994cdb85f03dab28b55c8fef5e63f25098`.
 
@@ -108,7 +108,7 @@ presented as dependency costs.
 
 Wrangler dry-ran the repository's exact
 `examples/cloudflare-worker` source. `tools/smoke_cloudflare.py` replaced only
-its public pylopdf requirement with the local wheel, synchronized dependencies
+its public pdfust requirement with the local wheel, synchronized dependencies
 through workers-py, verified the vendored PyEmscripten tag, and recorded
 Wrangler's upload report.
 
@@ -141,7 +141,7 @@ results are a median of five complete open-and-extract operations.
 | Initialize Pyodide runtime | 1,735.314 ms |
 | Load micropip | 237.679 ms |
 | Install local wheel | 554.440 ms |
-| Import pylopdf | 68.011 ms |
+| Import pdfust | 68.011 ms |
 | First document open and extraction | 116.267 ms |
 | Repeated document open and extraction, median | 26.893 ms |
 
@@ -163,7 +163,7 @@ startup and request metrics.
 |---|---:|
 | Runtime initialized | 20,971,520 bytes (20.000 MiB) |
 | Wheel installed | 42,336,256 bytes (40.375 MiB) |
-| pylopdf imported | 42,336,256 bytes (40.375 MiB) |
+| pdfust imported | 42,336,256 bytes (40.375 MiB) |
 | First document complete | 42,336,256 bytes (40.375 MiB) |
 | Five repeated documents complete | 42,336,256 bytes (40.375 MiB) |
 | Full compatibility suite complete | 74,055,680 bytes (70.625 MiB) |
@@ -193,7 +193,7 @@ text/Markdown extraction surface used by the planned FolioMCP integration.
 
 FolioMCP and its API repository are private at the time of this report, so the
 public guide intentionally does not link them or copy private fixtures. Add the
-consumer link only after its repository is public; the redistributable pylopdf
+consumer link only after its repository is public; the redistributable pdfust
 compatibility corpus remains the release gate.
 
 ## Distribution decision
@@ -228,6 +228,6 @@ python tools/smoke_cloudflare.py \
 ```
 
 `tools/build_pyodide.sh` calls `tools/smoke_pyodide.mjs` and writes
-`runtime-metrics.json` when `PYLOPDF_PYODIDE_METRICS_OUTPUT` is set. Quote this
+`runtime-metrics.json` when `PDFUST_PYODIDE_METRICS_OUTPUT` is set. Quote this
 report together with its pinned versions, CI environment, corpus, and stated
 limits.

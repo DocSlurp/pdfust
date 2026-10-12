@@ -7,7 +7,7 @@ import zlib
 
 import pytest
 
-import pylopdf
+import pdfust
 
 pytest.importorskip("pypdf")
 
@@ -166,11 +166,11 @@ def test_failed_parser_returns_null_and_structured_error() -> None:
 
 
 def test_failed_image_measurement_keeps_coverage_and_placement_bins_null(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fail_images(_page: pylopdf.Page) -> list[pylopdf.ImageInfo]:
+    def fail_images(_page: pdfust.Page) -> list[pdfust.ImageInfo]:
         msg = "controlled image measurement failure"
         raise RuntimeError(msg)
 
-    monkeypatch.setattr(pylopdf.Page, "get_images", fail_images)
+    monkeypatch.setattr(pdfust.Page, "get_images", fail_images)
     result = analyze_pdf(page_pdf(""))
     page = result["pages"][0]
     assert page["images"] is None

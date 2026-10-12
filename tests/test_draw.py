@@ -13,14 +13,14 @@ from pathlib import Path
 import pytest
 from conftest import build_pdf, build_raw_pdf
 
-import pylopdf
+import pdfust
 
 ASSETS = Path(__file__).parent / "assets" / "real_world"
 FONT_ROOT = Path(__file__).parents[1] / "fonts"
-NOTO_SANS_JP = FONT_ROOT / "pylopdf-fonts-jp" / "src" / "pylopdf_fonts_jp" / "NotoSansJP-Regular.otf"
-NOTO_SANS_KO = FONT_ROOT / "pylopdf-fonts-ko" / "src" / "pylopdf_fonts_ko" / "NotoSansKR-Regular.otf"
-NOTO_SANS_ZH_CN = FONT_ROOT / "pylopdf-fonts-zh-cn" / "src" / "pylopdf_fonts_zh_cn" / "NotoSansSC-Regular.otf"
-NOTO_SANS_ZH_TW = FONT_ROOT / "pylopdf-fonts-zh-tw" / "src" / "pylopdf_fonts_zh_tw" / "NotoSansTC-Regular.otf"
+NOTO_SANS_JP = FONT_ROOT / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp" / "NotoSansJP-Regular.otf"
+NOTO_SANS_KO = FONT_ROOT / "pdfust-fonts-ko" / "src" / "pdfust_fonts_ko" / "NotoSansKR-Regular.otf"
+NOTO_SANS_ZH_CN = FONT_ROOT / "pdfust-fonts-zh-cn" / "src" / "pdfust_fonts_zh_cn" / "NotoSansSC-Regular.otf"
+NOTO_SANS_ZH_TW = FONT_ROOT / "pdfust-fonts-zh-tw" / "src" / "pdfust_fonts_zh_tw" / "NotoSansTC-Regular.otf"
 
 RED = (255, 0, 0)
 GREEN = (0, 128, 0)
@@ -53,7 +53,7 @@ def _png_header(width: int, height: int) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + struct.pack(">I", len(ihdr)) + body + struct.pack(">I", zlib.crc32(body))
 
 
-def _pixel(page: pylopdf.Page, x: int, y: int) -> tuple[int, int, int]:
+def _pixel(page: pdfust.Page, x: int, y: int) -> tuple[int, int, int]:
     """Return RGB at display point ``(x, y)`` after rendering on white."""
     pix = page.get_pixmap(background=WHITE)
     offset = y * pix.stride + x * 4
@@ -61,13 +61,13 @@ def _pixel(page: pylopdf.Page, x: int, y: int) -> tuple[int, int, int]:
     return (r, g, b)
 
 
-def _new_page_doc(width: float = 200, height: float = 100) -> pylopdf.Document:
-    doc = pylopdf.Document()
+def _new_page_doc(width: float = 200, height: float = 100) -> pdfust.Document:
+    doc = pdfust.Document()
     doc.new_page(width=width, height=height)
     return doc
 
 
-def _many_contents_doc(count: int) -> pylopdf.Document:
+def _many_contents_doc(count: int) -> pdfust.Document:
     refs = " ".join(["5 0 R"] * count)
     pdf = build_raw_pdf(
         {
@@ -78,10 +78,10 @@ def _many_contents_doc(count: int) -> pylopdf.Document:
             5: "<< /Length 0 >>\nstream\n\nendstream",
         }
     )
-    return pylopdf.open(stream=pdf)
+    return pdfust.open(stream=pdf)
 
 
-def _contents_reference_doc(depth: int, *, cycle: bool = False) -> pylopdf.Document:
+def _contents_reference_doc(depth: int, *, cycle: bool = False) -> pdfust.Document:
     objects: dict[int, bytes | str] = {
         1: "<< /Type /Catalog /Pages 2 0 R >>",
         2: "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 200 100] >>",
@@ -93,10 +93,10 @@ def _contents_reference_doc(depth: int, *, cycle: bool = False) -> pylopdf.Docum
         for offset in range(depth):
             objects[4 + offset] = f"{5 + offset} 0 R"
         objects[4 + depth] = "<< /Length 0 >>\nstream\n\nendstream"
-    return pylopdf.open(stream=build_raw_pdf(objects))
+    return pdfust.open(stream=build_raw_pdf(objects))
 
 
-def _content_shape_doc(shape: str, *, shared: bool) -> pylopdf.Document:
+def _content_shape_doc(shape: str, *, shared: bool) -> pdfust.Document:
     contents = {
         "stream": "6 0 R",
         "direct_array": "[6 0 R]",
@@ -111,10 +111,10 @@ def _content_shape_doc(shape: str, *, shared: bool) -> pylopdf.Document:
         5: "[6 0 R]" if shape == "indirect_array" else "null",
         6: "<< /Length 29 >>\nstream\nq 1 0 0 rg 0 0 200 100 re f Q\nendstream",
     }
-    return pylopdf.open(stream=build_raw_pdf(objects))
+    return pdfust.open(stream=build_raw_pdf(objects))
 
 
-def _resource_shape_doc(resources: str, target: str | None = None) -> pylopdf.Document:
+def _resource_shape_doc(resources: str, target: str | None = None) -> pdfust.Document:
     objects: dict[int, bytes | str] = {
         1: "<< /Type /Catalog /Pages 2 0 R >>",
         2: "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 200 100] >>",
@@ -122,11 +122,11 @@ def _resource_shape_doc(resources: str, target: str | None = None) -> pylopdf.Do
     }
     if target is not None:
         objects[4] = target
-    return pylopdf.open(stream=build_raw_pdf(objects))
+    return pdfust.open(stream=build_raw_pdf(objects))
 
 
-def _shared_resource_doc() -> pylopdf.Document:
-    return pylopdf.open(
+def _shared_resource_doc() -> pdfust.Document:
+    return pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R >>",
@@ -140,7 +140,7 @@ def _shared_resource_doc() -> pylopdf.Document:
     )
 
 
-def _page_parent_chain_doc(depth: int, *, cycle: bool = False) -> pylopdf.Document:
+def _page_parent_chain_doc(depth: int, *, cycle: bool = False) -> pdfust.Document:
     objects: dict[int, bytes | str] = {
         1: "<< /Type /Catalog /Pages 2 0 R >>",
         2: "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 200 100] >>",
@@ -153,10 +153,10 @@ def _page_parent_chain_doc(depth: int, *, cycle: bool = False) -> pylopdf.Docume
             object_number = 4 + offset
             parent_number = object_number + 1 if offset + 1 < depth else 2
             objects[object_number] = f"<< /Type /Pages /Parent {parent_number} 0 R >>"
-    return pylopdf.open(stream=build_raw_pdf(objects))
+    return pdfust.open(stream=build_raw_pdf(objects))
 
 
-def _compressed_content_doc(decompressed_size: int) -> pylopdf.Document:
+def _compressed_content_doc(decompressed_size: int) -> pdfust.Document:
     compressor = zlib.compressobj()
     chunk = b"q" * (1024 * 1024)
     parts = [
@@ -166,7 +166,7 @@ def _compressed_content_doc(decompressed_size: int) -> pylopdf.Document:
     parts.append(compressor.flush())
     compressed = b"".join(parts)
     stream = f"<< /Length {len(compressed)} /Filter /FlateDecode >>\nstream\n".encode() + compressed + b"\nendstream"
-    return pylopdf.open(
+    return pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R >>",
@@ -183,13 +183,13 @@ def _filtered_content_doc(
     payload: bytes,
     *,
     decode_params: str = "",
-) -> pylopdf.Document:
+) -> pdfust.Document:
     stream = (
         (f"<< /Length {len(payload)} /Filter /{filter_name} {decode_params}>>\nstream\n").encode()
         + payload
         + b"\nendstream"
     )
-    return pylopdf.open(
+    return pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R >>",
@@ -201,10 +201,10 @@ def _filtered_content_doc(
     )
 
 
-def _filter_chain_content_doc(count: int) -> pylopdf.Document:
+def _filter_chain_content_doc(count: int) -> pdfust.Document:
     filters = " ".join(["/FlateDecode"] * count)
     stream = f"<< /Length 0 /Filter [{filters}] >>\nstream\n\nendstream"
-    return pylopdf.open(
+    return pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R >>",
@@ -216,7 +216,7 @@ def _filter_chain_content_doc(count: int) -> pylopdf.Document:
     )
 
 
-def _split_pixmap() -> pylopdf.Pixmap:
+def _split_pixmap() -> pdfust.Pixmap:
     """Render a wide image with red on the left and green on the right."""
     source = _new_page_doc(20, 10)
     source[0].insert_image((0, 0, 10, 10), stream=_solid_png(2, 2, RED), keep_proportion=False)
@@ -242,7 +242,7 @@ def test_drawing_allows_exact_final_contents_boundary() -> None:
     page.insert_text((10, 20), "Exact boundary")
     after_first = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="4096-stream page Contents"):
+    with pytest.raises(pdfust.PdfError, match="4096-stream page Contents"):
         page.insert_text((10, 40), "One too many")
     assert doc.tobytes() == after_first
 
@@ -273,7 +273,7 @@ def test_drawing_rejects_raw_contents_array_before_input_decode() -> None:
     doc = _many_contents_doc(4097)
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="4096-entry"):
+    with pytest.raises(pdfust.PdfError, match="4096-entry"):
         doc[0].insert_image((0, 0, 10, 10), stream=b"not an image")
     assert doc.tobytes() == before
 
@@ -308,7 +308,7 @@ def test_drawing_rejects_raw_contents_array_before_input_decode() -> None:
     ],
 )
 def test_drawing_preflights_resource_shape_before_mutation(
-    doc: pylopdf.Document,
+    doc: pdfust.Document,
     operation: str,
     message: str,
 ) -> None:
@@ -320,7 +320,7 @@ def test_drawing_preflights_resource_shape_before_mutation(
         else:
             doc[0].insert_text((10, 20), "Text")
 
-    with pytest.raises(pylopdf.PdfError, match=message):
+    with pytest.raises(pdfust.PdfError, match=message):
         run_operation()
     assert doc.tobytes() == before
 
@@ -330,7 +330,7 @@ def test_drawing_rejects_full_resource_category_before_mutation() -> None:
     doc = _resource_shape_doc("4 0 R", f"<< /XObject << {entries} >> >>")
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="4096-entry safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-entry safety limit"):
         doc[0].insert_image((0, 0, 10, 10), stream=b"not an image")
     assert doc.tobytes() == before
 
@@ -348,7 +348,7 @@ def test_drawing_detaches_shared_resources_from_other_pages() -> None:
     doc.delete_page(0)
     compacted = doc.tobytes(garbage=True)
     assert b"/PyloX" not in compacted
-    assert _pixel(pylopdf.open(stream=compacted)[0], 100, 50) == RED
+    assert _pixel(pdfust.open(stream=compacted)[0], 100, 50) == RED
 
 
 def test_drawing_accepts_exact_page_inheritance_depth_boundary() -> None:
@@ -373,12 +373,12 @@ def test_drawing_accepts_exact_page_inheritance_depth_boundary() -> None:
     ],
 )
 def test_drawing_rejects_page_inheritance_amplification(
-    doc: pylopdf.Document,
+    doc: pdfust.Document,
     message: str,
 ) -> None:
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match=message):
+    with pytest.raises(pdfust.PdfError, match=message):
         doc[0].insert_text((10, 20), "Text")
     assert doc.tobytes() == before
 
@@ -387,7 +387,7 @@ def test_show_pdf_page_rejects_source_inheritance_before_target_mutation() -> No
     target = _resource_shape_doc("<< >>")
     before = target.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="64-level safety limit"):
+    with pytest.raises(pdfust.PdfError, match="64-level safety limit"):
         target[0].show_pdf_page((0, 0, 100, 100), _page_parent_chain_doc(63))
     assert target.tobytes() == before
 
@@ -397,7 +397,7 @@ def test_show_pdf_page_bounds_decompressed_source_content_before_target_mutation
     before = target.tobytes()
     source = _compressed_content_doc(64 * 1024 * 1024)
 
-    with pytest.raises(pylopdf.LimitError, match=r"Form source page content.*limit") as caught:
+    with pytest.raises(pdfust.LimitError, match=r"Form source page content.*limit") as caught:
         target[0].show_pdf_page((0, 0, 100, 100), source)
     assert caught.value.code == "form_content_size"
     assert target.tobytes() == before
@@ -424,7 +424,7 @@ def test_show_pdf_page_rejects_undecodable_source_content_before_target_mutation
     before = target.tobytes()
     source = _filtered_content_doc(filter_name, payload, decode_params=decode_params)
 
-    with pytest.raises(pylopdf.PdfError, match="failed to decode Form source page content"):
+    with pytest.raises(pdfust.PdfError, match="failed to decode Form source page content"):
         target[0].show_pdf_page((0, 0, 100, 100), source)
     assert target.tobytes() == before
 
@@ -442,7 +442,7 @@ def test_show_pdf_page_rejects_excessive_source_filter_chain_before_target_mutat
     target = _resource_shape_doc("<< >>")
     before = target.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         target[0].show_pdf_page((0, 0, 100, 100), _filter_chain_content_doc(17))
     assert caught.value.code == "stream_filter_count"
     assert target.tobytes() == before
@@ -456,12 +456,12 @@ def test_show_pdf_page_rejects_excessive_source_filter_chain_before_target_mutat
     ],
 )
 def test_drawing_rejects_contents_reference_amplification(
-    doc: pylopdf.Document,
+    doc: pdfust.Document,
     message: str,
 ) -> None:
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match=message):
+    with pytest.raises(pdfust.PdfError, match=message):
         doc[0].insert_text((10, 20), "Text")
     assert doc.tobytes() == before
 
@@ -484,7 +484,7 @@ def test_drawing_preflights_contents_before_mutation(operation: str) -> None:
         else:
             page.insert_textbox((10, 10, 100, 50), "Text")
 
-    with pytest.raises(pylopdf.PdfError, match="4096-stream page Contents"):
+    with pytest.raises(pdfust.PdfError, match="4096-stream page Contents"):
         run_operation()
     assert doc.tobytes() == before
 
@@ -532,7 +532,7 @@ def test_insert_pixmap_directly_preserves_alpha() -> None:
     target[0].insert_image((0, 0, 40, 20), pixmap=pixmap, keep_proportion=False)
     assert _pixel(target[0], 10, 10) == RED
     assert _pixel(target[0], 30, 10) == WHITE
-    reopened = pylopdf.open(stream=target.tobytes())
+    reopened = pdfust.open(stream=target.tobytes())
     assert _pixel(reopened[0], 10, 10) == RED
     assert _pixel(reopened[0], 30, 10) == WHITE
 
@@ -551,7 +551,7 @@ def test_insert_pixmap_on_rotated_page_uses_display_coordinates() -> None:
     source = _new_page_doc(2, 2)
     pixmap = source[0].get_pixmap(background=RED)
 
-    target = pylopdf.Document()
+    target = pdfust.Document()
     target.new_page(width=100, height=200)
     target[0].set_rotation(90)
     target[0].insert_image((150, 25, 190, 75), pixmap=pixmap)
@@ -605,7 +605,7 @@ def test_insert_image_rotation_preserves_rotated_aspect() -> None:
 
 
 def test_insert_image_rotation_composes_with_page_rotation() -> None:
-    target = pylopdf.Document()
+    target = pdfust.Document()
     target.new_page(width=100, height=200)
     target[0].set_rotation(90)
     target[0].insert_image(
@@ -638,7 +638,7 @@ def test_insert_image_fills_rect_without_keep_proportion() -> None:
 
 
 def test_insert_image_on_rotated_page_uses_display_coordinates() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=100, height=200)  # Portrait page.
     page = doc[0]
     page.set_rotation(90)  # Display is 200×100 landscape.
@@ -650,7 +650,7 @@ def test_insert_image_on_rotated_page_uses_display_coordinates() -> None:
 
 
 def test_insert_jpeg_roundtrips_bytes_exactly() -> None:
-    src = pylopdf.open(ASSETS / "wdl6812-manuscript.pdf")
+    src = pdfust.open(ASSETS / "wdl6812-manuscript.pdf")
     jpegs = [i for i in src[0].get_images() if i["ext"] == "jpeg"]
     assert jpegs
     original = jpegs[0]["image"]
@@ -667,7 +667,7 @@ def test_insert_jpeg_roundtrips_bytes_exactly() -> None:
 def test_insert_image_survives_save_roundtrip() -> None:
     doc = _new_page_doc()
     doc[0].insert_image((20, 30, 60, 70), stream=_solid_png(4, 4, RED))
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert _pixel(reopened[0], 40, 50) == RED
 
 
@@ -693,10 +693,10 @@ def test_insert_image_rejects_bad_input() -> None:
     assert page.get_images() == []
     with pytest.raises(ValueError, match="rect"):
         page.insert_image((50, 50, 10, 10), stream=_solid_png(1, 1, RED))
-    with pytest.raises(pylopdf.PdfError, match="image format"):
+    with pytest.raises(pdfust.PdfError, match="image format"):
         page.insert_image((0, 0, 10, 10), stream=b"not an image")
     truncated_jpeg = bytes([0xFF, 0xD8, 0xFF, 0xC0, 0, 8, 8, 0, 1, 0, 1])
-    with pytest.raises(pylopdf.PdfError, match="JPEG"):
+    with pytest.raises(pdfust.PdfError, match="JPEG"):
         page.insert_image((0, 0, 10, 10), stream=truncated_jpeg)
 
 
@@ -715,7 +715,7 @@ def test_insert_image_bounds_encoded_stream_before_core_copy() -> None:
     rejected = _new_page_doc()
     before = rejected.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         rejected[0].insert_image((0, 0, 10, 10), stream=png, max_size=len(png) - 1)
 
     assert caught.value.code == "image_input_size"
@@ -734,7 +734,7 @@ def test_insert_image_reads_filename_through_bounded_core_path(tmp_path: Path) -
     doc = _new_page_doc()
     before = doc.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_image((0, 0, 10, 10), filename=path, max_size=len(png) - 1)
 
     assert caught.value.code == "image_input_size"
@@ -750,7 +750,7 @@ def test_insert_image_bounds_png_pixels_before_decode() -> None:
     rejected = _new_page_doc()
     before = rejected.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         rejected[0].insert_image((0, 0, 10, 10), stream=oversized)
 
     assert caught.value.code == "image_pixel_count"
@@ -758,7 +758,7 @@ def test_insert_image_bounds_png_pixels_before_decode() -> None:
     assert rejected[0].get_images() == []
 
     png = _solid_png(2, 2, RED)
-    with pytest.raises(pylopdf.LimitError) as exact_rejection:
+    with pytest.raises(pdfust.LimitError) as exact_rejection:
         rejected[0].insert_image((0, 0, 10, 10), stream=png, max_pixels=3)
     assert exact_rejection.value.code == "image_pixel_count"
 
@@ -777,8 +777,8 @@ def test_insert_image_budgets_do_not_apply_to_pixmap() -> None:
 
 
 def test_show_pdf_page_overlays_vector_text() -> None:
-    stamp = pylopdf.open(stream=build_pdf(["STAMPTEXT"]))
-    doc = pylopdf.Document()
+    stamp = pdfust.open(stream=build_pdf(["STAMPTEXT"]))
+    doc = pdfust.Document()
     doc.new_page()  # A4-sized default page.
     page = doc[0]
     page.show_pdf_page((50, 50, 550, 700), stamp)
@@ -840,10 +840,10 @@ def test_show_pdf_page_imports_target_page_from_pre_edit_snapshot() -> None:
 def test_show_pdf_page_does_not_keep_unreachable_source_data() -> None:
     """Do not leak attachments unreachable from the imported Form."""
     secret = b"SECRET-UNREFERENCED-STAMP-ATTACHMENT-91af"
-    source = pylopdf.Document()
+    source = pdfust.Document()
     source.new_page(width=100, height=100)
     source.embfile_add("secret.txt", secret)
-    target = pylopdf.Document()
+    target = pdfust.Document()
     page = target.new_page(width=100, height=100)
 
     page.show_pdf_page((0, 0, 100, 100), source)
@@ -853,8 +853,8 @@ def test_show_pdf_page_does_not_keep_unreachable_source_data() -> None:
 
 
 def test_show_pdf_page_accepts_negative_pno() -> None:
-    stamp = pylopdf.open(stream=build_pdf(["FIRST", "LAST"]))
-    doc = pylopdf.Document()
+    stamp = pdfust.open(stream=build_pdf(["FIRST", "LAST"]))
+    doc = pdfust.Document()
     doc.new_page()
     page = doc[0]
     page.show_pdf_page((50, 50, 550, 700), stamp, pno=-1)
@@ -875,7 +875,7 @@ def test_show_pdf_page_underlay_draws_below() -> None:
 
 
 def test_insert_text_is_extractable_at_position() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()  # A4-like page also verifies drawing without Resources.
     page = doc[0]
     page.insert_text((50, 100), "Confidential", fontsize=12)
@@ -887,7 +887,7 @@ def test_insert_text_is_extractable_at_position() -> None:
 
 
 def test_insert_text_multiline_stacks_downward() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     page = doc[0]
     page.insert_text((50, 100), "First\nSecond", fontsize=10)
@@ -896,7 +896,7 @@ def test_insert_text_multiline_stacks_downward() -> None:
 
 
 def test_insert_text_on_rotated_page_reads_upright() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=100, height=200)
     page = doc[0]
     page.set_rotation(90)
@@ -927,13 +927,13 @@ def test_insert_text_subset_embeds_unicode_font() -> None:
     # The 4.5 MB source is subset to the glyphs used by this one-page Form.
     saved = doc.tobytes()
     assert len(saved) < 50_000
-    reopened = pylopdf.open(stream=saved)
+    reopened = pdfust.open(stream=saved)
     assert reopened[0].get_text().strip() == "日本語テキスト"
     assert reopened[0].search_for("テキスト")
 
 
 def test_insert_text_auto_embeds_optional_jp_font() -> None:
-    pytest.importorskip("pylopdf_fonts_jp")
+    pytest.importorskip("pdfust_fonts_jp")
     doc = _new_page_doc(300, 150)
     page = doc[0]
 
@@ -961,7 +961,7 @@ def test_insert_text_auto_embeds_optional_jp_font() -> None:
     ],
 )
 def test_insert_text_optional_font_conformance(
-    font_language: pylopdf.FontLanguage,
+    font_language: pdfust.FontLanguage,
     text: str,
     font_prefix: str,
 ) -> None:
@@ -971,7 +971,7 @@ def test_insert_text_optional_font_conformance(
 
     saved = doc.tobytes()
     assert len(saved) < 100_000
-    reopened = pylopdf.open(stream=saved)
+    reopened = pdfust.open(stream=saved)
     assert reopened[0].get_text().strip() == text
     assert reopened[0].search_for(text)
     span = reopened[0].get_text("dict")["blocks"][0]["lines"][0]["spans"][0]
@@ -998,8 +998,8 @@ def test_insert_text_detects_unambiguous_script_provider(text: str, font_prefix:
 
 
 def test_insert_text_disambiguates_han_provider() -> None:
-    pytest.importorskip("pylopdf_fonts_ko")
-    pytest.importorskip("pylopdf_fonts_zh_cn")
+    pytest.importorskip("pdfust_fonts_ko")
+    pytest.importorskip("pdfust_fonts_zh_cn")
     doc = _new_page_doc(300, 180)
 
     doc[0].insert_text((20, 50), "한국어", fontsize=20)
@@ -1021,7 +1021,7 @@ def test_insert_text_validates_font_language_contract() -> None:
 
 
 def test_insert_text_embedded_fontbuffer_multiline_and_rotation() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=150, height=300)
     page = doc[0]
     page.set_rotation(90)
@@ -1089,7 +1089,7 @@ def test_insert_textbox_wraps_aligns_and_reports_spare_height() -> None:
     page = doc[0]
     rect = (10, 10, 110, 90)
 
-    spare = page.insert_textbox(rect, "one two three four five six", fontsize=10, align=pylopdf.TEXT_ALIGN_RIGHT)
+    spare = page.insert_textbox(rect, "one two three four five six", fontsize=10, align=pdfust.TEXT_ALIGN_RIGHT)
 
     assert spare > 0
     lines = page.get_text("dict")["blocks"][0]["lines"]
@@ -1106,7 +1106,7 @@ def test_insert_textbox_justifies_only_soft_wrapped_lines() -> None:
     page = doc[0]
     rect = (10, 10, 110, 90)
 
-    page.insert_textbox(rect, "one two three four five six", fontsize=10, align=pylopdf.TEXT_ALIGN_JUSTIFY)
+    page.insert_textbox(rect, "one two three four five six", fontsize=10, align=pdfust.TEXT_ALIGN_JUSTIFY)
 
     lines = page.get_text("dict")["blocks"][0]["lines"]
     assert lines[0]["bbox"][0] == pytest.approx(rect[0], abs=0.1)
@@ -1130,8 +1130,8 @@ def test_insert_textbox_overflow_is_non_drawing_and_empty_text_is_free() -> None
 
 
 def test_insert_textbox_auto_embeds_optional_jp_font_and_survives_rotation() -> None:
-    pytest.importorskip("pylopdf_fonts_jp")
-    doc = pylopdf.Document()
+    pytest.importorskip("pdfust_fonts_jp")
+    doc = pdfust.Document()
     doc.new_page(width=120, height=200)
     page = doc[0]
     page.set_rotation(90)
@@ -1141,7 +1141,7 @@ def test_insert_textbox_auto_embeds_optional_jp_font_and_survives_rotation() -> 
         rect,
         "日本語の文章を空白なしで折り返します。",
         fontsize=12,
-        align=pylopdf.TEXT_ALIGN_CENTER,
+        align=pdfust.TEXT_ALIGN_CENTER,
     )
 
     assert spare > 0
@@ -1150,7 +1150,7 @@ def test_insert_textbox_auto_embeds_optional_jp_font_and_survives_rotation() -> 
     assert "".join(span["text"] for line in lines for span in line["spans"]) == "日本語の文章を空白なしで折り返します。"
     assert all(rect[0] <= line["bbox"][0] < line["bbox"][2] <= rect[2] + 0.1 for line in lines)
     assert all(rect[1] <= line["bbox"][1] < line["bbox"][3] <= rect[3] for line in lines)
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert reopened[0].get_text().replace("\n", "") == "日本語の文章を空白なしで折り返します。"
 
 
@@ -1168,10 +1168,10 @@ def test_insert_textbox_tabs_custom_leading_and_bad_arguments(monkeypatch: pytes
     with pytest.raises(ValueError, match="lineheight"):
         page.insert_textbox((10, 10, 100, 80), "x", lineheight=0)
     with monkeypatch.context() as context:
-        context.setattr("pylopdf._bundled_font_providers", lambda: ())
+        context.setattr("pdfust._bundled_font_providers", lambda: ())
         with pytest.raises(ValueError, match=r"optional font extra.*fontfile or fontbuffer"):
             page.insert_textbox((10, 10, 100, 80), "日本語")
-    with pytest.raises(pylopdf.PdfError, match="does not contain all glyphs"):
+    with pytest.raises(pdfust.PdfError, match="does not contain all glyphs"):
         page.insert_textbox((10, 10, 100, 80), "🦀", fontfile=NOTO_SANS_JP)
 
 
@@ -1195,7 +1195,7 @@ def test_insert_textbox_underlay_stays_below_existing_content(fontfile: Path | N
 
 
 def test_get_images_bbox_on_rotated_page_is_display_space() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=100, height=200)
     page = doc[0]
     page.set_rotation(90)
@@ -1208,15 +1208,15 @@ def test_get_images_bbox_on_rotated_page_is_display_space() -> None:
 
 
 def test_insert_text_survives_save_roundtrip() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc[0].insert_text((72, 72), "Persistent")
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert "Persistent" in reopened[0].get_text()
 
 
 def test_insert_text_standard14_escapes_binary_and_delimiters() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
 
     doc[0].insert_text((10, 20), "\x01(A)\\€")
@@ -1225,10 +1225,10 @@ def test_insert_text_standard14_escapes_binary_and_delimiters() -> None:
 
 
 def test_insert_text_rejects_unicode_without_optional_or_explicit_font(monkeypatch: pytest.MonkeyPatch) -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     with monkeypatch.context() as context:
-        context.setattr("pylopdf._bundled_font_providers", lambda: ())
+        context.setattr("pdfust._bundled_font_providers", lambda: ())
         with pytest.raises(ValueError, match=r"optional font extra.*fontfile or fontbuffer"):
             doc[0].insert_text((50, 50), "社外秘")
         with pytest.raises(ValueError, match=r"font_language='ko'.*fontfile/fontbuffer"):
@@ -1236,7 +1236,7 @@ def test_insert_text_rejects_unicode_without_optional_or_explicit_font(monkeypat
 
 
 def test_insert_text_rejects_unknown_font_and_bad_args() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     page = doc[0]
     with pytest.raises(ValueError, match="fontname"):
@@ -1251,9 +1251,9 @@ def test_insert_text_rejects_unknown_font_and_bad_args() -> None:
         page.insert_text((50, 50), "x", fontindex=1)
     with pytest.raises(ValueError, match="fontindex"):
         page.insert_text((50, 50), "x", fontbuffer=NOTO_SANS_JP.read_bytes(), fontindex=True)
-    with pytest.raises(pylopdf.PdfError, match="font data"):
+    with pytest.raises(pdfust.PdfError, match="font data"):
         page.insert_text((50, 50), "x", fontbuffer=b"not a font")
-    with pytest.raises(pylopdf.PdfError, match="does not contain all glyphs"):
+    with pytest.raises(pdfust.PdfError, match="does not contain all glyphs"):
         page.insert_text((50, 50), "🦀", fontfile=NOTO_SANS_JP)
 
 
@@ -1269,7 +1269,7 @@ def test_insert_text_bounds_fontbuffer_before_core_copy() -> None:
     doc = _new_page_doc()
     before = doc.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_text((10, 20), "x", fontbuffer=b"too large", max_font_size=1)
 
     assert caught.value.code == "font_input_size"
@@ -1282,7 +1282,7 @@ def test_insert_text_reads_fontfile_through_bounded_core_path() -> None:
     doc = _new_page_doc()
     before = doc.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_text((10, 20), "A", fontfile=NOTO_SANS_JP, max_font_size=font_size - 1)
 
     assert caught.value.code == "font_input_size"
@@ -1293,11 +1293,11 @@ def test_insert_text_reads_fontfile_through_bounded_core_path() -> None:
 
 
 def test_insert_text_bounds_auto_selected_cjk_font() -> None:
-    pytest.importorskip("pylopdf_fonts_jp")
+    pytest.importorskip("pdfust_fonts_jp")
     doc = _new_page_doc()
     before = doc.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_text((10, 20), "日本語", max_font_size=1)
 
     assert caught.value.code == "font_input_size"
@@ -1308,7 +1308,7 @@ def test_insert_textbox_repeats_fontbuffer_boundary() -> None:
     doc = _new_page_doc()
     before = doc.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_textbox((10, 10, 100, 80), "x", fontbuffer=b"too large", max_font_size=1)
 
     assert caught.value.code == "font_input_size"
@@ -1334,7 +1334,7 @@ def test_insert_text_bounds_utf8_input_atomically() -> None:
     doc = _new_page_doc()
     before = doc.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_text((10, 20), "é", max_text_size=1)
 
     assert caught.value.code == "text_input_size"
@@ -1358,7 +1358,7 @@ def test_generated_text_bounds_physical_lines_atomically(method: str) -> None:
         else:
             doc[0].insert_textbox((10, 10, 100, 80), text, max_text_size=len(text))
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         call()
 
     assert caught.value.code == "text_line_count"
@@ -1383,7 +1383,7 @@ def test_insert_textbox_bounds_soft_wrapped_lines_atomically() -> None:
     before = doc.complexity
     text = "a" * 4097
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].insert_textbox((10, 10, 16, 80), text, fontsize=10, max_text_size=len(text))
 
     assert caught.value.code == "text_line_count"
@@ -1395,13 +1395,13 @@ def test_insert_textbox_bounds_expanded_tabs_before_allocation() -> None:
     rejected = _new_page_doc()
     before = rejected.complexity
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         rejected[0].insert_textbox((10, 10, 150, 80), "a\tb", expandtabs=4, max_text_size=4)
 
     assert caught.value.code == "text_input_size"
     assert rejected.complexity == before
 
-    with pytest.raises(pylopdf.LimitError) as huge_tab:
+    with pytest.raises(pdfust.LimitError) as huge_tab:
         rejected[0].insert_textbox(
             (10, 10, 150, 80),
             "\t",
@@ -1445,7 +1445,7 @@ def test_insert_textbox_dense_break_indexes_preserve_content() -> None:
 
 
 def test_replace_text_replaces_and_counts() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     page = doc[0]
     assert page.replace_text("PDF", "Cat") == 1
     text = page.get_text()
@@ -1454,7 +1454,7 @@ def test_replace_text_replaces_and_counts() -> None:
 
 
 def test_replace_text_returns_zero_when_absent() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     page = doc[0]
     assert "Hello PDF" in page.get_text()
     before = doc.tobytes()
@@ -1465,13 +1465,13 @@ def test_replace_text_returns_zero_when_absent() -> None:
 
 
 def test_replace_text_requires_needle() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     with pytest.raises(ValueError, match="search"):
         doc[0].replace_text("", "abc")
 
 
 def test_replace_text_detaches_shared_page_contents() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     doc.copy_page(0)
 
     assert doc[0].replace_text("PDF", "Cat") == 1
@@ -1480,13 +1480,13 @@ def test_replace_text_detaches_shared_page_contents() -> None:
 
 
 def test_replace_text_validates_input_without_mutation() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     page = doc[0]
     before = doc.tobytes()
 
     with pytest.raises(ValueError, match="exactly one character"):
         page.replace_text("PDF", "Cat", default_char="??")
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         page.replace_text("PDF", "x" * 4094)
     assert caught.value.code == "replacement_input_size"
     assert doc.tobytes() == before
@@ -1501,11 +1501,11 @@ def test_replace_text_rejects_without_encoding_complete_input() -> None:
             msg = "replace_text must count UTF-8 without encoding the complete input"
             raise AssertionError(msg)
 
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     before = doc.tobytes()
     replacement = EncodeMustNotRun("x" * 4097)
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].replace_text("PDF", replacement)
     assert caught.value.code == "replacement_input_size"
     assert doc.tobytes() == before
@@ -1520,44 +1520,44 @@ def test_replace_text_rejects_without_encoding_complete_input() -> None:
     ],
 )
 def test_replace_text_rejects_non_string_inputs(argument: str, value: object) -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     kwargs: dict[str, object] = {"search": "PDF", "replacement": "Cat", argument: value}
     with pytest.raises(TypeError, match=argument):
         doc[0].replace_text(**kwargs)  # type: ignore[arg-type]
 
 
 def test_replace_text_allows_exact_input_boundary_and_linear_fallback() -> None:
-    boundary = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    boundary = pdfust.open(stream=build_pdf(["Hello PDF"]))
     assert boundary[0].replace_text("PDF", "x" * 4093) == 1
 
-    fallback = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    fallback = pdfust.open(stream=build_pdf(["Hello PDF"]))
     assert fallback[0].replace_text("PDF", "🦀", default_char="!") == 1
     assert "Hello !" in fallback[0].get_text()
 
 
 @pytest.mark.parametrize("max_size", [0, -1, True, 1.5])
 def test_replace_text_validates_output_budget(max_size: object) -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     with pytest.raises((TypeError, ValueError), match="max_size"):
         doc[0].replace_text("PDF", "Cat", max_size=max_size)  # type: ignore[arg-type]
 
 
 def test_replace_text_bounds_content_and_preserves_document() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello PDF"]))
+    doc = pdfust.open(stream=build_pdf(["Hello PDF"]))
     page = doc[0]
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         page.replace_text("PDF", "Cat", max_size=16)
     assert caught.value.code == "replacement_output_size"
     assert doc.tobytes() == before
 
 
 def test_replace_text_bounds_replacement_growth_before_mutation() -> None:
-    doc = pylopdf.open(stream=build_pdf(["A" * 100]))
+    doc = pdfust.open(stream=build_pdf(["A" * 100]))
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].replace_text("A", "BBBBBBBB", max_size=256)
     assert caught.value.code == "replacement_output_size"
     assert doc.tobytes() == before
@@ -1567,7 +1567,7 @@ def test_replace_text_rejects_oversized_contents_shape_before_mutation() -> None
     doc = _many_contents_doc(4097)
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="4096-entry"):
+    with pytest.raises(pdfust.PdfError, match="4096-entry"):
         doc[0].replace_text("x", "y")
     assert doc.tobytes() == before
 
@@ -1576,7 +1576,7 @@ def test_replace_text_rejects_excessive_filter_chain_before_mutation() -> None:
     doc = _filter_chain_content_doc(17)
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc[0].replace_text("x", "y")
     assert caught.value.code == "stream_filter_count"
     assert doc.tobytes() == before
@@ -1584,7 +1584,7 @@ def test_replace_text_rejects_excessive_filter_chain_before_mutation() -> None:
 
 def test_replace_text_error_is_atomic() -> None:
     stream = b"Tf (Hello) Tj"
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R >>",
@@ -1596,6 +1596,6 @@ def test_replace_text_error_is_atomic() -> None:
     )
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.PdfError, match="text replacement failed"):
+    with pytest.raises(pdfust.PdfError, match="text replacement failed"):
         doc[0].replace_text("Hello", "Goodbye")
     assert doc.tobytes() == before

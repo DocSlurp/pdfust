@@ -12,7 +12,7 @@ import json
 from copy import deepcopy
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import page_pdf, text_op
 
 FAMILIES = ("financial", "invoice", "scientific")
@@ -138,7 +138,7 @@ def _case(family: str, variant: int) -> dict[str, Any]:
         note_y = 720 if variant == 8 else 540
         ops.extend(text_op(part, 50, note_y - 18 * index, size=10) for index, part in enumerate(parts))
     data = page_pdf("\n".join(ops))
-    with pylopdf.Document(stream=data) as doc:
+    with pdfust.Document(stream=data) as doc:
         extracted = doc[0].get_text("words")
         source_words: list[dict[str, Any]] = [
             {"id": index, "text": word[4], "bbox": list(word[:4])} for index, word in enumerate(extracted)

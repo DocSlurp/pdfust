@@ -3,7 +3,7 @@
 - Run at: 2026-10-08 00:51 UTC
 - Source commit: 615465ec20959cd4c4715cbf5ae639e7bad95578
 - Environment: Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44 / Python 3.14.7
-- Versions: pylopdf 0.13.0, pymupdf 1.28.2, pymupdf4llm 1.28.2, pymupdf-layout 1.28.2, pypdf 6.15.0, pdfplumber 0.11.10, markdown-it-py 4.2.0, mdit-py-plugins 0.6.1, pylopdf-fonts-ar not installed, pylopdf-fonts-he not installed, pylopdf-fonts-hi not installed, pylopdf-fonts-jp not installed, pylopdf-fonts-ko not installed, pylopdf-fonts-th not installed, pylopdf-fonts-zh-cn not installed, pylopdf-fonts-zh-tw not installed
+- Versions: pdfust 0.13.0, pymupdf 1.28.2, pymupdf4llm 1.28.2, pymupdf-layout 1.28.2, pypdf 6.15.0, pdfplumber 0.11.10, markdown-it-py 4.2.0, mdit-py-plugins 0.6.1, pdfust-fonts-ar not installed, pdfust-fonts-he not installed, pdfust-fonts-hi not installed, pdfust-fonts-jp not installed, pdfust-fonts-ko not installed, pdfust-fonts-th not installed, pdfust-fonts-zh-cn not installed, pdfust-fonts-zh-tw not installed
 - Repetitions: 3
 - OCR: disabled
 - Additional model runs: See additional_runs and per-result run_index in JSON
@@ -76,8 +76,8 @@ Local input after running: `feature-outputs/text-structure-and-literals.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 1.385 | 3/4 | 1/0/1/0/2/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 1.419 | 3/4 | 1/0/1/0/2/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 1.385 | 3/4 | 1/0/1/0/2/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 1.419 | 3/4 | 1/0/1/0/2/0/0/0/0/0 | repeatable |
 | pymupdf | text | 2.045 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.925 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 14.408 | 3/4 | 1/1/2/1/2/0/0/0/0/0 | repeatable |
@@ -101,8 +101,8 @@ Local input after running: `feature-outputs/positioned-math.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.512 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.466 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.512 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.466 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.967 | 1/1 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.683 | 1/1 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 4.428 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -126,8 +126,8 @@ Local input after running: `feature-outputs/math-actualtext.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.495 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.482 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.495 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.482 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.968 | 1/1 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.644 | 1/1 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 3.475 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -151,8 +151,8 @@ Local input after running: `feature-outputs/accessible-actualtext.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.299 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.415 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.299 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.415 | 0/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 1.298 | 1/1 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.653 | 1/1 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 3.013 | 1/1 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -176,8 +176,8 @@ Local input after running: `feature-outputs/two-column-order.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 5.924 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 6.425 | 0/0 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust | markdown | 5.924 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 6.425 | 0/0 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
 | pymupdf | text | 1.195 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.026 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 18.857 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -201,8 +201,8 @@ Local input after running: `feature-outputs/unicode-cmap-and-emoji.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.569 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.545 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.569 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.545 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 1.070 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.068 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 4.232 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -226,8 +226,8 @@ Local input after running: `feature-outputs/table-bordered.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.926 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.878 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.926 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.878 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
 | pymupdf | text | 2.624 | 5/5 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 2.202 | 5/5 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 8.691 | 3/5 | 1/0/1/0/0/1/0/0/0/0 | repeatable |
@@ -251,8 +251,8 @@ Local input after running: `feature-outputs/table-borderless.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.560 | 5/5 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.574 | 5/5 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.560 | 5/5 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.574 | 5/5 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 1.858 | 5/5 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.568 | 5/5 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 5.323 | 5/5 | 1/3/1/0/0/0/0/0/0/0 | repeatable |
@@ -276,8 +276,8 @@ Local input after running: `feature-outputs/table-merged.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.725 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.956 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.725 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.956 | 5/5 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
 | pymupdf | text | 1.946 | 5/5 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.868 | 5/5 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 9.337 | 3/5 | 1/0/1/0/0/1/0/0/0/0 | repeatable |
@@ -301,8 +301,8 @@ Local input after running: `feature-outputs/links-and-outline.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.801 | 4/4 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.815 | 4/4 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.801 | 4/4 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.815 | 4/4 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 1.043 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.032 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 6.385 | 4/4 | 1/0/0/0/0/0/0/0/0/1 | repeatable |
@@ -326,8 +326,8 @@ Local input after running: `feature-outputs/images-and-vectors.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.683 | 2/2 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.649 | 2/2 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.683 | 2/2 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.649 | 2/2 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.824 | 2/2 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.699 | 2/2 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 6.692 | 2/2 | 0/0/0/0/0/0/1/0/0/0 | repeatable |
@@ -351,8 +351,8 @@ Local input after running: `feature-outputs/image-only.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.225 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.219 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.225 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.219 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.252 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.240 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 5.479 | 0/0 | 0/0/0/0/0/0/1/0/0/0 | repeatable |
@@ -376,8 +376,8 @@ Local input after running: `feature-outputs/table-borderless-aligned.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.633 | 6/6 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.720 | 6/6 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.633 | 6/6 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.720 | 6/6 | 0/0/0/0/0/1/0/0/0/0 | repeatable |
 | pymupdf | text | 0.899 | 6/6 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.891 | 6/6 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 6.087 | 6/6 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -401,8 +401,8 @@ Local input after running: `feature-outputs/rotated-columns.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 4.607 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 4.636 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 4.607 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 4.636 | 0/0 | 1/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.903 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.912 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 18.027 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -426,8 +426,8 @@ Local input after running: `feature-outputs/footnotes-and-page-furniture.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.740 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.783 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.740 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.783 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.754 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.693 | 4/4 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 5.417 | 4/4 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -451,8 +451,8 @@ Local input after running: `feature-outputs/rtl-visual-glyph-order.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.660 | 3/3 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.583 | 3/3 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.660 | 3/3 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.583 | 3/3 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.880 | 2/3 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.914 | 2/3 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 3.779 | 2/3 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -476,8 +476,8 @@ Local input after running: `feature-outputs/tagged-reading-order.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.858 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.656 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.858 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.656 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 1.123 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.135 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 6.485 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -501,8 +501,8 @@ Local input after running: `feature-outputs/corpus-usrguide.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 11.724 | 0/0 | 0/0/1/0/3/0/0/1/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 11.543 | 0/0 | 0/0/1/0/3/0/0/1/0/0 | repeatable |
+| pdfust | markdown | 11.724 | 0/0 | 0/0/1/0/3/0/0/1/0/0 | repeatable |
+| pdfust-text-tables | markdown | 11.543 | 0/0 | 0/0/1/0/3/0/0/1/0/0 | repeatable |
 | pymupdf | text | 6.586 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 7.349 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 78.934 | 0/0 | 0/0/17/36/0/0/0/0/0/0 | repeatable |
@@ -526,8 +526,8 @@ Local input after running: `feature-outputs/corpus-senate-expenditures.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 10.555 | 0/0 | 1/0/0/0/0/1/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 11.567 | 0/0 | 1/0/0/0/0/2/0/0/0/0 | repeatable |
+| pdfust | markdown | 10.555 | 0/0 | 1/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 11.567 | 0/0 | 1/0/0/0/0/2/0/0/0/0 | repeatable |
 | pymupdf | text | 5.350 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 5.027 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 899.848 | 0/0 | 0/8/0/0/0/1/0/0/0/0 | repeatable |
@@ -551,8 +551,8 @@ Local input after running: `feature-outputs/corpus-nics-background-checks-2015-1
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 44.912 | 0/0 | 0/2/0/0/0/1/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 50.564 | 0/0 | 0/2/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust | markdown | 44.912 | 0/0 | 0/2/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 50.564 | 0/0 | 0/2/0/0/0/1/0/0/0/0 | repeatable |
 | pymupdf | text | 6.094 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 5.699 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 2484.910 | 0/0 | 0/27/0/0/0/1/0/0/0/0 | repeatable |
@@ -568,7 +568,7 @@ Local input after running: `feature-outputs/corpus-nics-background-checks-2015-1
 
 Type 3 fonts, missing Unicode mapping
 
-Glyph programs have no ToUnicode; pylopdf has a documented upstream-linked extraction gap.
+Glyph programs have no ToUnicode; pdfust has a documented upstream-linked extraction gap.
 
 Source: tests/assets/real_world/pdfium-type3.pdf; source and license in that directory's README
 
@@ -576,8 +576,8 @@ Local input after running: `feature-outputs/corpus-pdfium-type3.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 0.253 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 0.229 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 0.253 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 0.229 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 0.276 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 0.268 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 2.422 | 0/0 | 0/0/0/0/0/0/0/0/0/0 | repeatable |
@@ -601,8 +601,8 @@ Local input after running: `feature-outputs/corpus-f1040.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 19.051 | 0/0 | 1/0/0/0/0/1/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 19.625 | 0/0 | 1/0/0/0/0/3/0/0/0/0 | repeatable |
+| pdfust | markdown | 19.051 | 0/0 | 1/0/0/0/0/1/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 19.625 | 0/0 | 1/0/0/0/0/3/0/0/0/0 | repeatable |
 | pymupdf | text | 23.140 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 27.572 | 0/0 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 1878.959 | 0/0 | 0/1565/0/0/0/3/0/0/0/0 | repeatable |
@@ -626,8 +626,8 @@ Local input after running: `feature-outputs/omml-equations.pdf`
 
 | Adapter | Kind | Median ms | Text probes | H/B/I/code/list/table/image/math/HTML/link | Result |
 |---|---|---:|---:|---|---|
-| pylopdf | markdown | 1.761 | 7/8 | 1/1/4/0/0/0/0/0/0/0 | repeatable |
-| pylopdf-text-tables | markdown | 1.767 | 7/8 | 1/1/4/0/0/0/0/0/0/0 | repeatable |
+| pdfust | markdown | 1.761 | 7/8 | 1/1/4/0/0/0/0/0/0/0 | repeatable |
+| pdfust-text-tables | markdown | 1.767 | 7/8 | 1/1/4/0/0/0/0/0/0/0 | repeatable |
 | pymupdf | text | 1.240 | 8/8 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf-actualtext | text | 1.222 | 8/8 | -/-/-/-/-/-/-/-/-/- | repeatable |
 | pymupdf4llm-legacy | markdown | 9.067 | 8/8 | 1/2/4/0/0/0/0/0/0/0 | repeatable |

@@ -15,7 +15,7 @@ from bench import generalization_corpus as corpus
 from bench.generalization_corpus import FAMILIES, authored_cases, image_pdf, parent_group, select_rows
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def _rows() -> list[dict]:
@@ -64,7 +64,7 @@ def test_authored_designs_are_new_and_complete() -> None:
     assert len({case["pdf"] for case in cases}) == len(cases)
     assert Counter(case["family"] for case in cases) == dict.fromkeys(FAMILIES, 12)
     for case in cases:
-        with pylopdf.Document(stream=case["pdf"]) as document:
+        with pdfust.Document(stream=case["pdf"]) as document:
             assert len(document) == 1
             assert document[0].rotation == case["diversity"]["rotation"]
         for table in case["tables"]:
@@ -82,7 +82,7 @@ def test_image_carrier_has_no_injected_reference_text(tmp_path: Path) -> None:
     Image.new("RGB", (24, 32), "white").save(image)
     data = image_pdf(image, 72, 96)
     assert data == image_pdf(image, 72, 96)
-    with pylopdf.Document(stream=data) as document:
+    with pdfust.Document(stream=data) as document:
         assert document[0].rect.width == 72
         assert document[0].rect.height == 96
         assert document[0].get_text() == ""
@@ -152,7 +152,7 @@ def test_transparent_carrier_composites_onto_white(tmp_path: Path) -> None:
     rgba = Image.new("RGBA", (24, 32), (0, 0, 0, 0))
     rgba.putpixel((5, 5), (0, 0, 0, 255))
     rgba.save(image)
-    with pylopdf.Document(stream=image_pdf(image, 72, 96)) as document:
+    with pdfust.Document(stream=image_pdf(image, 72, 96)) as document:
         retained = Image.open(io.BytesIO(document[0].get_images()[0]["image"])).convert("RGB")
         assert retained.getpixel((0, 0)) == (255, 255, 255)
         assert retained.getpixel((5, 5)) == (0, 0, 0)

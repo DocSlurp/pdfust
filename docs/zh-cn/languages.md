@@ -1,6 +1,6 @@
 ---
 title: 语言政策
-description: pylopdf文档的重要语言、翻译优先级与维护规则。
+description: pdfust文档的重要语言、翻译优先级与维护规则。
 ---
 
 # 语言政策

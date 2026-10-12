@@ -17,7 +17,7 @@ from typing import Any
 ROOT = Path("/home/dan/code/oss/pylopdf")
 ARTIFACTS = ROOT / "bench/results/pdf-master-artifacts/omnidoc-dev"
 OUTPUT = ARTIFACTS / "ocr-admission"
-MODELS = ROOT / "models/pylopdf-ocr-models/src/pylopdf_ocr_models"
+MODELS = ROOT / "models/pdfust-ocr-models/src/pdfust_ocr_models"
 SELECTED = (1, 2, 5, 9)
 SCALES = (640, 1200)
 RSS_LIMIT = 1024**3
@@ -88,7 +88,7 @@ def score_blocks(annotation: dict[str, Any], words: list[dict[str, Any]]) -> dic
 
 def worker(sample: int, edge: int, output: Path) -> None:
     """Observe pixels only; never read annotations or scoring labels."""
-    import pylopdf  # noqa: PLC0415 - CPU extension used only by isolated workers
+    import pdfust  # noqa: PLC0415 - CPU extension used only by isolated workers
 
     registry = json.loads((Path(__file__).parent / "omnidoc-dev/registry.json").read_text())
     row = registry["rows"][sample - 1]
@@ -99,7 +99,7 @@ def worker(sample: int, edge: int, output: Path) -> None:
     model_paths = [MODELS / name for name in ("PP-OCRv6_det_small.rten", "PP-OCRv6_rec_small.rten", "ppocrv6_dict.txt")]
     before = resource.getrusage(resource.RUSAGE_SELF)
     init_start = time.perf_counter()
-    engine = pylopdf.OcrEngine(*model_paths, threads=2, max_concurrent=1)
+    engine = pdfust.OcrEngine(*model_paths, threads=2, max_concurrent=1)
     init_after = resource.getrusage(resource.RUSAGE_SELF)
     initialization = {
         "wall_seconds": time.perf_counter() - init_start,
@@ -107,7 +107,7 @@ def worker(sample: int, edge: int, output: Path) -> None:
         "peak_rss_kib": init_after.ru_maxrss,
     }
     prep_start = time.perf_counter()
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=row["width"] * 0.36, height=row["height"] * 0.36)
         page.insert_image((0, 0, page.rect.width, page.rect.height), filename=path)
         preparation_seconds = time.perf_counter() - prep_start
@@ -149,7 +149,7 @@ def worker(sample: int, edge: int, output: Path) -> None:
             "tile_size": 1408,
             "overlap": 192,
             "min_confidence": 0.5,
-            "pylopdf_version": pylopdf.__version__,
+            "pdfust_version": pdfust.__version__,
             "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "models": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in model_paths},
         }

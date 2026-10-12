@@ -3,7 +3,7 @@
 Every level is deterministic for a given source PDF, seed and tool versions.
 External tools (Ghostscript, Poppler, Tesseract, qpdf) run as subprocesses
 whose CPU time and peak RSS are collected individually through ``os.wait4``;
-in-process Pillow/NumPy/pypdf/pylopdf work is measured with ``RUSAGE_SELF``
+in-process Pillow/NumPy/pypdf/pdfust work is measured with ``RUSAGE_SELF``
 deltas and a per-level reset of the Linux ``VmHWM`` high-water mark.
 See ``bench/WILD_CORPUS.md`` for the level contract.
 """
@@ -102,13 +102,13 @@ def _rng(seed: str, *parts: object) -> np.random.Generator:
 
 
 def _pdf_module() -> Any:
-    """Prefer the ``jev_pdf`` import, falling back to the ``pylopdf`` compatibility name."""
+    """Prefer the ``pdfust`` import, falling back to the ``pdfust`` compatibility name."""
     import importlib
 
     try:
-        return importlib.import_module("jev_pdf")
+        return importlib.import_module("pdfust")
     except ImportError:  # pragma: no cover - compatibility import
-        return importlib.import_module("pylopdf")
+        return importlib.import_module("pdfust")
 
 
 def _open_pdf(path: Path) -> Any:
@@ -769,7 +769,7 @@ def _visible_chars(text: str) -> Counter[str]:
 
 
 def measure(path: Path, reference: str | None = None) -> dict[str, Any]:
-    """Measure the text layer with pylopdf and structure presence with pypdf."""
+    """Measure the text layer with pdfust and structure presence with pypdf."""
     import pypdf
     from pypdf.generic import DictionaryObject
 
@@ -843,12 +843,12 @@ def measure(path: Path, reference: str | None = None) -> dict[str, Any]:
 
 
 def text_survival(before: Path, after: Path) -> dict[str, Any]:
-    """Compare extracted text before and after ToUnicode removal with pylopdf and pypdf."""
+    """Compare extracted text before and after ToUnicode removal with pdfust and pypdf."""
     import pypdf
 
     result: dict[str, Any] = {}
     for name, extract in (
-        ("pylopdf", lambda path: "\n".join(page.get_text() for page in _open_pdf(path))),
+        ("pdfust", lambda path: "\n".join(page.get_text() for page in _open_pdf(path))),
         ("pypdf", lambda path: "\n".join(page.extract_text() or "" for page in pypdf.PdfReader(path).pages)),
     ):
         with warnings.catch_warnings():
@@ -1178,7 +1178,7 @@ class Flattener:
         region = (left, top, right, bottom)
         screenshot = _screenshot_png(page.get_pixmap(dpi=dpi, background=(255, 255, 255), clip=region))
         recorder.steps.append(
-            f"region from {region_source}; rendered at {dpi} dpi with pylopdf get_pixmap, 1 px grey border"
+            f"region from {region_source}; rendered at {dpi} dpi with pdfust get_pixmap, 1 px grey border"
         )
 
         reader = pypdf.PdfReader(guard_path(l1))
@@ -1208,7 +1208,7 @@ class Flattener:
         composed = _open_pdf(filtered)
         composed[0].insert_image(region, stream=screenshot, keep_proportion=False)
         composed.save(out, garbage=True, deflate=True)
-        recorder.steps.append("pylopdf insert_image placed the opaque screenshot over the region")
+        recorder.steps.append("pdfust insert_image placed the opaque screenshot over the region")
 
         def in_region(word: Sequence[Any]) -> bool:
             return left <= (word[0] + word[2]) / 2 <= right and top <= (word[1] + word[3]) / 2 <= bottom
@@ -1297,7 +1297,7 @@ def flatten(source_pdf: Path, out_dir: Path, levels: Sequence[str] | None = None
         "source": {"path": source.name, "sha256": sha256_file(source), "languages": languages},
         "tools": tool_versions(),
         "measurement": {
-            "text": "jev_pdf/pylopdf Page.get_text(); non-whitespace characters per page; "
+            "text": "pdfust Page.get_text(); non-whitespace characters per page; "
             f"a page has text at >= {PAGE_TEXT_MIN_CHARS} chars; reference = L0 text, raw and NFKC char-multiset",
             "structure": "pypdf catalog/trailer inspection",
             "resources": "wall: perf_counter; self CPU: RUSAGE_SELF delta (all threads); child CPU and peak "

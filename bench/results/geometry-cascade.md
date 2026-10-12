@@ -2,7 +2,7 @@
 
 Run `.venv/bin/python -m bench.geometry_cascade --repeats 3`.
 
-Python 3.14.7; pylopdf 0.13.0; 3 fresh-document repeats.
+Python 3.14.7; pdfust 0.13.0; 3 fresh-document repeats.
 
 Native extension SHA-256: `dbc4c1c26cea0f34b00881c51942056259e383cddf46865fe9eaaf9d1293bfa6`. Repository base revision: `7008b627bb01fcec4c12f80308967b511e4e2422`; the extension hash identifies the actual loaded build, including local rebuilds.
 

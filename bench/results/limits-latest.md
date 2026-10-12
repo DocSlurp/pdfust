@@ -1,4 +1,4 @@
-# pylopdf untrusted-input limit baseline
+# pdfust untrusted-input limit baseline
 
 - Run at: 2026-07-25 21:51 UTC
 - CI run: [GitHub Actions 30176435435](https://github.com/yhay81/pylopdf/actions/runs/30176435435)

@@ -1,4 +1,4 @@
-"""Verify a pylopdf wheel built for the Pyodide Emscripten ABI."""
+"""Verify a pdfust wheel built for the Pyodide Emscripten ABI."""
 
 from __future__ import annotations
 
@@ -107,7 +107,7 @@ def verify_wheel(wheel: Path, *, version: str, platform: str) -> None:
     """Verify wheel tags and the Emscripten extension contract."""
     expected_tag = f"cp310-abi3-{platform}"
     expected_suffix = f"-{expected_tag}.whl"
-    if not wheel.name.startswith(f"pylopdf-{version}-") or not wheel.name.endswith(expected_suffix):
+    if not wheel.name.startswith(f"pdfust-{version}-") or not wheel.name.endswith(expected_suffix):
         msg = f"unexpected wheel filename: {wheel.name}; expected *{expected_suffix}"
         raise RuntimeError(msg)
 

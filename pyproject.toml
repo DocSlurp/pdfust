@@ -1,5 +1,5 @@
 [project]
-name = "jev-pdf"
+name = "pdfust"
 version = "0.13.0"
 description = "PDF editing, rendering, extraction, and generation for Python, powered by Rust. MIT, no mandatory Python dependencies, lightweight wheels."
 authors = [{ "name" = "Yusuke Hayashi", "email" = "yusuke8h@gmail.com" }]
@@ -34,16 +34,16 @@ Source = "https://github.com/justsml/jev-pdf"
 
 [project.optional-dependencies]
 # Script and locale-specific fonts for automatic generation.
-ar = ["pylopdf-fonts-ar>=0.1.0,<0.2"]
-he = ["pylopdf-fonts-he>=0.1.0,<0.2"]
-hi = ["pylopdf-fonts-hi>=0.1.0,<0.2"]
-jp = ["pylopdf-fonts-jp>=0.1.0,<0.2"]
-ko = ["pylopdf-fonts-ko>=0.1.0,<0.2"]
-th = ["pylopdf-fonts-th>=0.1.0,<0.2"]
-zh-cn = ["pylopdf-fonts-zh-cn>=0.1.0,<0.2"]
-zh-tw = ["pylopdf-fonts-zh-tw>=0.1.0,<0.2"]
+ar = ["pdfust-fonts-ar>=0.1.0,<0.2"]
+he = ["pdfust-fonts-he>=0.1.0,<0.2"]
+hi = ["pdfust-fonts-hi>=0.1.0,<0.2"]
+jp = ["pdfust-fonts-jp>=0.1.0,<0.2"]
+ko = ["pdfust-fonts-ko>=0.1.0,<0.2"]
+th = ["pdfust-fonts-th>=0.1.0,<0.2"]
+zh-cn = ["pdfust-fonts-zh-cn>=0.1.0,<0.2"]
+zh-tw = ["pdfust-fonts-zh-tw>=0.1.0,<0.2"]
 # PP-OCRv6 small detector, recognizer, and multilingual dictionary.
-ocr = ["pylopdf-ocr-models>=0.1.0,<0.2"]
+ocr = ["pdfust-ocr-models>=0.1.0,<0.2"]
 
 [build-system]
 requires = ["maturin>=1.14,<2.0"]
@@ -52,8 +52,8 @@ build-backend = "maturin"
 [tool.maturin]
 manifest-path = "rust/Cargo.toml"
 python-source = "src"
-python-packages = ["jev_pdf", "pylopdf"]
-module-name = "pylopdf.pylopdf_core"
+python-packages = ["pdfust", "jev_pdf", "pylopdf"]
+module-name = "pdfust.pdfust_core"
 features = ["pyo3/extension-module"]
 
 [dependency-groups]
@@ -106,28 +106,28 @@ cache-keys = [
 
 [tool.uv.workspace]
 members = [
-    "fonts/pylopdf-fonts-ar",
-    "fonts/pylopdf-fonts-he",
-    "fonts/pylopdf-fonts-hi",
-    "fonts/pylopdf-fonts-jp",
-    "fonts/pylopdf-fonts-ko",
-    "fonts/pylopdf-fonts-th",
-    "fonts/pylopdf-fonts-zh-cn",
-    "fonts/pylopdf-fonts-zh-tw",
-    "models/pylopdf-ocr-models",
+    "fonts/pdfust-fonts-ar",
+    "fonts/pdfust-fonts-he",
+    "fonts/pdfust-fonts-hi",
+    "fonts/pdfust-fonts-jp",
+    "fonts/pdfust-fonts-ko",
+    "fonts/pdfust-fonts-th",
+    "fonts/pdfust-fonts-zh-cn",
+    "fonts/pdfust-fonts-zh-tw",
+    "models/pdfust-ocr-models",
 ]
 
 [tool.uv.sources]
 # Resolve data-only extras to their workspace packages during local development.
-pylopdf-fonts-ar = { workspace = true }
-pylopdf-fonts-he = { workspace = true }
-pylopdf-fonts-hi = { workspace = true }
-pylopdf-fonts-jp = { workspace = true }
-pylopdf-fonts-ko = { workspace = true }
-pylopdf-fonts-th = { workspace = true }
-pylopdf-fonts-zh-cn = { workspace = true }
-pylopdf-fonts-zh-tw = { workspace = true }
-pylopdf-ocr-models = { workspace = true }
+pdfust-fonts-ar = { workspace = true }
+pdfust-fonts-he = { workspace = true }
+pdfust-fonts-hi = { workspace = true }
+pdfust-fonts-jp = { workspace = true }
+pdfust-fonts-ko = { workspace = true }
+pdfust-fonts-th = { workspace = true }
+pdfust-fonts-zh-cn = { workspace = true }
+pdfust-fonts-zh-tw = { workspace = true }
+pdfust-ocr-models = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -141,20 +141,20 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 # Allow type checking without locale-specific font extras installed.
 module = [
-    "pylopdf_fonts_ar",
-    "pylopdf_fonts_he",
-    "pylopdf_fonts_hi",
-    "pylopdf_fonts_jp",
-    "pylopdf_fonts_ko",
-    "pylopdf_fonts_th",
-    "pylopdf_fonts_zh_cn",
-    "pylopdf_fonts_zh_tw",
+    "pdfust_fonts_ar",
+    "pdfust_fonts_he",
+    "pdfust_fonts_hi",
+    "pdfust_fonts_jp",
+    "pdfust_fonts_ko",
+    "pdfust_fonts_th",
+    "pdfust_fonts_zh_cn",
+    "pdfust_fonts_zh_tw",
 ]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 # Allow type checking without the OCR model extra installed.
-module = "pylopdf_ocr_models"
+module = "pdfust_ocr_models"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -191,7 +191,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Page and Document are cooperating classes that intentionally share internal state.
-"src/pylopdf/__init__.py" = ["SLF001"]
+"src/pdfust/__init__.py" = ["SLF001"]
 # S106: fixed test-fixture passwords are not secrets.
 # FBT003: set_form_field intentionally accepts bool checkbox values, like pymupdf.
 "tests/**" = ["INP001", "S101", "D103", "PLR2004", "TC003", "S106", "FBT003"]

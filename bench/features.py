@@ -25,7 +25,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-import pylopdf
+import pdfust
 from bench.feature_cases import ROOT, FeatureCase, build_cases
 
 if TYPE_CHECKING:
@@ -42,8 +42,8 @@ class Adapter:
     call: Callable[[bytes], str]
 
 
-def _pylopdf(data: bytes, *, text_tables: bool = False) -> str:
-    with pylopdf.open(stream=data) as doc:
+def _pdfust(data: bytes, *, text_tables: bool = False) -> str:
+    with pdfust.open(stream=data) as doc:
         return doc.to_markdown(table_strategy="text" if text_tables else "lines")
 
 
@@ -81,12 +81,12 @@ def _pdfplumber(data: bytes) -> str:
 
 
 ADAPTERS = (
-    Adapter("pylopdf", "markdown", "to_markdown(); bordered tables", _pylopdf),
+    Adapter("pdfust", "markdown", "to_markdown(); bordered tables", _pdfust),
     Adapter(
-        "pylopdf-text-tables",
+        "pdfust-text-tables",
         "markdown",
         "to_markdown(table_strategy='text')",
-        lambda data: _pylopdf(data, text_tables=True),
+        lambda data: _pdfust(data, text_tables=True),
     ),
     Adapter("pymupdf", "text", "Page.get_text(); default producer order", _pymupdf),
     Adapter(
@@ -211,8 +211,8 @@ def inspect_output(output: str, kind: str, case: FeatureCase) -> dict[str, Any]:
 
 
 def source_inventory(case: FeatureCase) -> dict[str, Any]:
-    """Record recoverable source objects through pylopdf's separate APIs."""
-    with warnings.catch_warnings(record=True) as captured, pylopdf.open(stream=case.data) as doc:
+    """Record recoverable source objects through pdfust's separate APIs."""
+    with warnings.catch_warnings(record=True) as captured, pdfust.open(stream=case.data) as doc:
         inventory: dict[str, Any] = {
             "pages": doc.page_count,
             "metadata": doc.metadata,
@@ -413,7 +413,7 @@ def main() -> None:
         parser.error("use positive --repetitions and a .json --output path")
     versions = {}
     for package in (
-        "pylopdf",
+        "pdfust",
         "pymupdf",
         "pymupdf4llm",
         "pymupdf-layout",
@@ -421,14 +421,14 @@ def main() -> None:
         "pdfplumber",
         "markdown-it-py",
         "mdit-py-plugins",
-        "pylopdf-fonts-ar",
-        "pylopdf-fonts-he",
-        "pylopdf-fonts-hi",
-        "pylopdf-fonts-jp",
-        "pylopdf-fonts-ko",
-        "pylopdf-fonts-th",
-        "pylopdf-fonts-zh-cn",
-        "pylopdf-fonts-zh-tw",
+        "pdfust-fonts-ar",
+        "pdfust-fonts-he",
+        "pdfust-fonts-hi",
+        "pdfust-fonts-jp",
+        "pdfust-fonts-ko",
+        "pdfust-fonts-th",
+        "pdfust-fonts-zh-cn",
+        "pdfust-fonts-zh-tw",
     ):
         try:
             versions[package] = metadata.version(package)

@@ -1,1 +1,1 @@
-"""Coverage-guided fuzz targets for pylopdf."""
+"""Coverage-guided fuzz targets for pdfust."""

@@ -19,14 +19,14 @@ from bench.pipeline_assembly import native_state, propose
 from bench.silver import canonical, sha, write_json
 from test_pipeline_run import record
 
-import pylopdf
+import pdfust
 
 
 def baseline(tmp_path: Path) -> tuple[Path, Path, dict[str, Any], dict[str, Any]]:
     rec = record(tmp_path)
     directory = tmp_path / "ordinal"
     directory.mkdir()
-    with pylopdf.open(rec["pdf_path"]) as document:
+    with pdfust.open(rec["pdf_path"]) as document:
         source = pipeline.source(document[0])
     generated = native_state(source)
     source["vector_candidates"] = []

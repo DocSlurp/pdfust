@@ -9,7 +9,7 @@ import pytest
 from bench.corpus_routes import RULES, compact_numeric, overlaps, paint_support, route_tables, totals
 from bench.silver_structure import authored_table
 
-import pylopdf
+import pdfust
 
 
 def candidate() -> dict[str, Any]:
@@ -22,7 +22,7 @@ def candidate() -> dict[str, Any]:
 
 
 def stroke(y: float, length: float = 100) -> dict[str, Any]:
-    return {"type": "s", "items": [("l", pylopdf.Point(0, y), pylopdf.Point(length, y))]}
+    return {"type": "s", "items": [("l", pdfust.Point(0, y), pdfust.Point(length, y))]}
 
 
 def test_vector_priority_preserves_merged_cells_and_ownership() -> None:

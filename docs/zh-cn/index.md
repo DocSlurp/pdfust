@@ -1,5 +1,5 @@
 ---
-title: pylopdf
+title: pdfust
 description: 以符合Python使用习惯的API和紧凑的Rust核心编辑、渲染与提取PDF。
 hide:
   - navigation
@@ -22,11 +22,11 @@ hide:
 
       <div class="living-install" aria-label="安装命令">
         <span class="living-install__prompt" aria-hidden="true">$</span>
-        <code tabindex="0">pip install pylopdf</code>
+        <code tabindex="0">pip install pdfust</code>
         <button
           class="living-install__copy"
           type="button"
-          data-copy-command="pip install pylopdf"
+          data-copy-command="pip install pdfust"
           data-copied-label="已复制"
           aria-label="复制安装命令"
         ><span data-copy-label>复制</span></button>
@@ -55,7 +55,7 @@ hide:
           <div class="living-line living-line--medium"></div>
           <div class="living-line living-line--cobalt"></div>
           <div class="living-line living-line--short"></div>
-          <div class="living-code-sample">doc = pylopdf.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("合计")</div>
+          <div class="living-code-sample">doc = pdfust.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("合计")</div>
         </div>
         <span class="living-markup-circle"></span>
       </div>
@@ -98,7 +98,7 @@ hide:
       <p class="living-eyebrow">Useful constraints, visible evidence</p>
       <h2 id="living-evidence-title">足够轻，便于部署；足够完整，胜任真实工作流。</h2>
       <p>
-        pylopdf使用lopdf进行编辑、hayro进行渲染与提取，并通过krilla和
+        pdfust使用lopdf进行编辑、hayro进行渲染与提取，并通过krilla和
         HarfRust生成文本与表单外观，将这些能力组合成一个紧凑的Python包。
       </p>
     </div>
@@ -133,7 +133,7 @@ hide:
     </div>
     <div class="living-scope">
       <div class="living-scope__column">
-        <h3>pylopdf负责</h3>
+        <h3>pdfust负责</h3>
         <ul>
           <li>页面管理、元数据、书签与加密</li>
           <li>带坐标的文本提取、搜索与Markdown转换</li>

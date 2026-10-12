@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench import wild_vision
 from bench.silver import guard_path, write_json
 
@@ -98,7 +98,7 @@ def run_arm(  # noqa: PLR0913 - one served arm and its inputs.
         for level in levels:
             pdf = wild_vision.WILD / "variants" / doc_id / f"{level}.pdf"
             if pdf.exists():
-                with pylopdf.open(str(pdf)) as doc:
+                with pdfust.open(str(pdf)) as doc:
                     jobs.extend((doc_id, level, index) for index in range(len(doc)))
     lock = threading.Lock()
     rows: list[dict[str, Any]] = []

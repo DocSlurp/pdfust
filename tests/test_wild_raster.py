@@ -17,7 +17,7 @@ import pypdf
 from bench import wild_raster
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 pytestmark = pytest.mark.skipif(shutil.which("pdftoppm") is None, reason="Poppler pdftoppm is required")
 
@@ -31,7 +31,7 @@ def _requires(*tools: str) -> None:
 @pytest.fixture(scope="module")
 def source(tmp_path_factory: pytest.TempPathFactory) -> Path:
     directory = tmp_path_factory.mktemp("raster-source")
-    document = pylopdf.open()
+    document = pdfust.open()
     page = document.new_page(width=216, height=144)
     page.insert_text((14, 36), "Invoice 2026-0042", fontsize=16)
     page.insert_text((14, 64), "Total due: 1,234.56 EUR", fontsize=12)
@@ -74,7 +74,7 @@ def test_jpx_variant_uses_jpxdecode_and_renders(source: Path, tmp_path: Path) ->
     (image,) = _image_streams(tmp_path / "R09_jpx.pdf")
     assert image["/Filter"] == "/JPXDecode"
     checks = record["measured"]["render_check"]
-    assert checks["pylopdf"]["ok"]
+    assert checks["pdfust"]["ok"]
     # Rendered text is visible ink, not a blank page.
     assert checks["pdftoppm"]["dark_fraction"] > 0.001
 
@@ -89,13 +89,13 @@ def test_rotated_scan_content_orientation(source: Path, tmp_path: Path) -> None:
     assert int(image["/Width"]) < int(image["/Height"])
     assert pypdf.PdfReader(tmp_path / "R13_rotated_90_scan.pdf").pages[0].get("/Rotate", 0) == 0
 
-    def gray(document: pylopdf.Document) -> Image.Image:
+    def gray(document: pdfust.Document) -> Image.Image:
         pixmap = document[0].get_pixmap(dpi=72)
         array = np.frombuffer(pixmap.samples, np.uint8).reshape(pixmap.height, pixmap.width, 4)[..., :3]
         return Image.fromarray(array).convert("L")
 
-    original = np.asarray(gray(pylopdf.open(source)), np.float32)
-    turned = gray(pylopdf.open(tmp_path / "R13_rotated_90_scan.pdf"))
+    original = np.asarray(gray(pdfust.open(source)), np.float32)
+    turned = gray(pdfust.open(tmp_path / "R13_rotated_90_scan.pdf"))
     back = {90: Image.Transpose.ROTATE_90, 270: Image.Transpose.ROTATE_270}  # undo clockwise turn
     errors = {}
     for degrees, transpose in back.items():
@@ -110,7 +110,7 @@ def test_strip_tiled_has_multiple_images_and_reassembles(source: Path, tmp_path:
     assert record["images_per_page"][0] > 1
     assert len(_image_streams(tmp_path / "R22_strip_tiled.pdf")) == record["images_per_page"][0]
     assert record["verification"]["strips_reassemble_exactly"]
-    assert record["verification"]["pylopdf_200dpi"]["max_abs_diff"] <= 2
+    assert record["verification"]["pdfust_200dpi"]["max_abs_diff"] <= 2
 
 
 def test_misaligned_ocr_layer_records_offset(source: Path, tmp_path: Path) -> None:

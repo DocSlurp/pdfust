@@ -22,7 +22,7 @@ from importlib import metadata as package_metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-import pylopdf
+import pdfust
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -79,7 +79,7 @@ class Measurement:
 
 def _synthetic_pdf(page_count: int, *, unicode_text: bool) -> bytes:
     """Build deterministic prose and a 4x3 grid without optional font packages."""
-    with pylopdf.Document() as doc, pylopdf.open(stream=_grid_pdf()) as grid:
+    with pdfust.Document() as doc, pdfust.open(stream=_grid_pdf()) as grid:
         for index in range(page_count):
             page = doc.new_page(width=612, height=792)
             page.insert_text((40, 45), f"Benchmark section {index + 1}", fontsize=18)
@@ -115,7 +115,7 @@ def _samples(*, synthetic_only: bool) -> dict[str, bytes]:
     return samples
 
 
-def _extract(doc: pylopdf.Document, task: Task) -> object:
+def _extract(doc: pdfust.Document, task: Task) -> object:
     """Return the complete public result, retaining all structured pages."""
     if task == "markdown":
         return doc.to_markdown()
@@ -126,7 +126,7 @@ def _extract(doc: pylopdf.Document, task: Task) -> object:
 
 def _fresh_extract(data: bytes, task: Task) -> object:
     """Include document opening, public extraction, and closing in the timing."""
-    with pylopdf.open(stream=data) as doc:
+    with pdfust.open(stream=data) as doc:
         return _extract(doc, task)
 
 
@@ -159,7 +159,7 @@ def _measure(call: Callable[[], object], repetitions: int) -> tuple[float, str, 
 def measure_sample(name: str, data: bytes, repetitions: int) -> list[Measurement]:
     """Measure each task independently, with fresh and reused Documents."""
     input_hash = hashlib.sha256(data).hexdigest()
-    with pylopdf.open(stream=data) as doc:
+    with pdfust.open(stream=data) as doc:
         pages = doc.page_count
     results: list[Measurement] = []
     for task in TASKS:
@@ -167,7 +167,7 @@ def measure_sample(name: str, data: bytes, repetitions: int) -> list[Measurement
             if mode == "fresh":
                 elapsed, output_hash, size = _measure(partial(_fresh_extract, data, task), repetitions)
             else:
-                with pylopdf.open(stream=data) as doc:
+                with pdfust.open(stream=data) as doc:
                     elapsed, output_hash, size = _measure(partial(_extract, doc, task), repetitions)
             results.append(Measurement(name, task, mode, pages, input_hash, output_hash, size, elapsed))
         if results[-1].output_sha256 != results[-2].output_sha256:
@@ -259,7 +259,7 @@ def main() -> None:
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True))  # noqa: S607
     font_extras = []
     for locale in ("ar", "he", "hi", "jp", "ko", "th", "zh-cn", "zh-tw"):
-        package = f"pylopdf-fonts-{locale}"
+        package = f"pdfust-fonts-{locale}"
         try:
             font_extras.append(f"{package} {package_metadata.version(package)}")
         except package_metadata.PackageNotFoundError:
@@ -270,7 +270,7 @@ def main() -> None:
             f"{platform.platform()} / Python {platform.python_version()} / {platform.processor() or platform.machine()}"
         ),
         "Machine": f"{platform.machine()} / {os.cpu_count()} logical CPUs",
-        "pylopdf": pylopdf.__version__,
+        "pdfust": pdfust.__version__,
         "Font extras": ", ".join(font_extras) or "none",
         "Source commit": commit + (" (dirty)" if dirty else ""),
         "Repetitions": args.repetitions,

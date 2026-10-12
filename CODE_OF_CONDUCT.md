@@ -2,7 +2,7 @@
 
 ## Our commitment
 
-We are committed to making participation in pylopdf a respectful,
+We are committed to making participation in pdfust a respectful,
 harassment-free experience for everyone, regardless of background, identity,
 experience level, or personal characteristics.
 

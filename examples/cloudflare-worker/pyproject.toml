@@ -1,8 +1,8 @@
 [project]
-name = "pylopdf-cloudflare-worker"
+name = "pdfust-cloudflare-worker"
 version = "0.1.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["pylopdf>=0.11,<0.12"]
+dependencies = ["pdfust>=0.11,<0.12"]
 
 [dependency-groups]
 dev = [

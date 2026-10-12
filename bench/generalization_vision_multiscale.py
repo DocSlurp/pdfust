@@ -175,7 +175,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     """Retain all proposals and strict crop costs, rejecting partial output atomically."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     began, cpu = time.perf_counter(), time.process_time()
     output.mkdir(parents=True, exist_ok=True)
@@ -212,7 +212,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Frozen PDF changed")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             viewport = list(page.rect)
             scale = 3071 / max(page.rect.width, page.rect.height)

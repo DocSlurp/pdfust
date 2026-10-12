@@ -83,7 +83,7 @@ def freeze_proposals(
 
     from PIL import Image
 
-    import pylopdf
+    import pdfust
     from bench import p003_region_candidates as helper
     from bench.generalization_report import verify_output
 
@@ -126,7 +126,7 @@ def freeze_proposals(
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Source PDF changed")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             pixels = page.render(scale=1536 / max(page.rect.width, page.rect.height), background=(255, 255, 255))
         with Image.open(io.BytesIO(pixels)) as rendered:

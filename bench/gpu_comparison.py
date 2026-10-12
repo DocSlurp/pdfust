@@ -97,7 +97,7 @@ def compare_predictions(left: list[dict[str, Any]], right: list[dict[str, Any]])
 
 def prepare(output: Path) -> None:
     """Render only current DEV inputs and put scoring labels in a separate file."""
-    import pylopdf  # noqa: PLC0415 - preparation uses the native extension environment
+    import pdfust  # noqa: PLC0415 - preparation uses the native extension environment
     from bench.silver import dataset_path, load_manifest, verify_input  # noqa: PLC0415
 
     started = time.perf_counter()
@@ -108,7 +108,7 @@ def prepare(output: Path) -> None:
     labels = []
     for case in manifest["cases"]:
         verify_input(silver, case)
-        with pylopdf.Document(dataset_path(silver, case["pdf_path"])) as doc:
+        with pdfust.Document(dataset_path(silver, case["pdf_path"])) as doc:
             for number, page in enumerate(doc):
                 identifier = f"{case['id']}/page-{number}"
                 path = output / "images" / (identifier.replace("/", "__") + ".png")

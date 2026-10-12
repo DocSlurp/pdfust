@@ -10,7 +10,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench import p003_yolo_resolution as detector
 from bench.generalization_report import load_corpus
 from bench.generalization_scoring import _iou
@@ -123,7 +123,7 @@ def verify(
             or sha((baseline / f"{frame['id']}-result.json").read_bytes()) != frame["baseline_result_sha256"]
         ):
             raise ValueError("YOLO source/PDF identity changed")
-        with pylopdf.open(stream=raw) as doc:
+        with pdfust.open(stream=raw) as doc:
             page = doc[record["page_number"]]
             viewport = list(page.rect)
             if (

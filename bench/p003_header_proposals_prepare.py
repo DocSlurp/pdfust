@@ -10,7 +10,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench import generalization_vision_regions as regions
 from bench import p003_candidate_run as baseline
 from bench import p003_header_proposals as headers
@@ -50,7 +50,7 @@ def prepare(directory: Path, trusted_code: Path, output: Path) -> dict[str, Any]
             raw = guard_path(Path(record["pdf_path"])).read_bytes()
             if sha(raw) != record["pdf_sha256"]:
                 raise ValueError("Original PDF identity changed")
-            with pylopdf.open(stream=raw) as document:
+            with pdfust.open(stream=raw) as document:
                 source = document[record["page_number"]]
                 if list(source.rect) != page["viewport"] or source.rotation != page["original_rotation"]:
                     raise ValueError("Original source geometry changed")

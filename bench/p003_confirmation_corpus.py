@@ -301,7 +301,7 @@ def build(output: Path) -> dict[str, Any]:
     """Acquire at most four public images concurrently, then freeze all source bytes."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     output = guard_path(output)
     if (output / "manifest.json").exists():
@@ -331,7 +331,7 @@ def build(output: Path) -> dict[str, Any]:
         identifier = "p" + sha(canonical([SEED, name]))[:20]
         if identifier in selection["exclusions"]["opaque_page_ids"]:
             raise ValueError("New page identity duplicates a known page")
-        with pylopdf.Document(stream=data) as doc:
+        with pdfust.Document(stream=data) as doc:
             size = list(doc[0].rect)
             preview = doc[0].render(dpi=72)
         (output / "previews").mkdir(exist_ok=True)

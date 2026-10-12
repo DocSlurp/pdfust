@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def _pdf(content: str, rotation: int = 0) -> bytes:
@@ -67,7 +67,7 @@ def _three_level(*, fragmented: bool, gap: float = 0, rotation: int = 0) -> byte
     return _pdf("\n".join(rules), rotation)
 
 
-def _assert_three_level(table: pylopdf.SpatialTable) -> None:
+def _assert_three_level(table: pdfust.SpatialTable) -> None:
     """Check independently declared cells and source header ancestry."""
     expected = {
         (0, 0, 3, 1, "Name"),
@@ -101,7 +101,7 @@ def test_fragmented_and_coalesced_rules_have_same_pixels_and_cells(rotation: int
     snapshots = []
     pixels = []
     for fragmented in (False, True):
-        with pylopdf.open(stream=_three_level(fragmented=fragmented, rotation=rotation)) as doc:
+        with pdfust.open(stream=_three_level(fragmented=fragmented, rotation=rotation)) as doc:
             pixels.append(doc[0].get_pixmap().samples)
             snapshots.append(doc[0].get_layout())
             native = doc[0].find_tables()
@@ -115,7 +115,7 @@ def test_fragmented_and_coalesced_rules_have_same_pixels_and_cells(rotation: int
 @pytest.mark.parametrize("gap", [-0.5, 0.0, 0.5])
 def test_overlap_and_small_gap_retain_complete_grid(gap: float) -> None:
     """Joining respects the existing one-point snapping tolerance."""
-    with pylopdf.open(stream=_three_level(fragmented=True, gap=gap)) as doc:
+    with pdfust.open(stream=_three_level(fragmented=True, gap=gap)) as doc:
         tables = doc[0].get_layout().tables
     assert len(tables) == 1
     _assert_three_level(tables[0])
@@ -124,7 +124,7 @@ def test_overlap_and_small_gap_retain_complete_grid(gap: float) -> None:
 @pytest.mark.parametrize("gap", [1.1, 2.5, 10.0])
 def test_join_does_not_extend_missing_outer_boundary(gap: float) -> None:
     """A real gap above snapping tolerance cannot become a complete table."""
-    with pylopdf.open(stream=_three_level(fragmented=True, gap=gap)) as doc:
+    with pdfust.open(stream=_three_level(fragmented=True, gap=gap)) as doc:
         assert doc[0].get_layout().tables == ()
 
 
@@ -135,7 +135,7 @@ def test_nearby_independent_grids_remain_separate(*, vertical: bool) -> None:
     for origin_x, origin_y in ((40, 100), (40, 182.5) if vertical else (142.5, 100)):
         ops.extend(f"{origin_x} {y} m {origin_x + 100} {y} l S" for y in (origin_y, origin_y + 40, origin_y + 80))
         ops.extend(f"{x} {origin_y} m {x} {origin_y + 80} l S" for x in (origin_x, origin_x + 50, origin_x + 100))
-    with pylopdf.open(stream=_pdf("\n".join(ops))) as doc:
+    with pdfust.open(stream=_pdf("\n".join(ops))) as doc:
         tables = doc[0].get_layout().tables
     assert len(tables) == 2
     assert all((table.row_count, table.col_count) == (2, 2) for table in tables)
@@ -154,7 +154,7 @@ def test_many_rule_fragments_preserve_small_grid(*, overlap: bool) -> None:
             ops += [f"{40 + (index % 100) * 3} {y} m {40 + (index % 100 + 1) * 3} {y} l S" for index in range(500)]
     for x in (40, 190, 340):
         ops += [f"{x} {100 + (index % 20) * 4} m {x} {100 + (index % 20 + 1) * 4} l S" for index in range(100)]
-    with pylopdf.open(stream=_pdf("\n".join(ops))) as doc:
+    with pdfust.open(stream=_pdf("\n".join(ops))) as doc:
         tables = doc[0].get_layout().tables
     assert len(tables) == 1
     assert (tables[0].row_count, tables[0].col_count) == (2, 2)
@@ -176,7 +176,7 @@ def test_parallel_decorations_preserve_an_already_recognized_grid() -> None:
     decorations = ["39.2 110 m 39.2 130 l S", "50 139.2 m 70 139.2 l S"]
     snapshots = []
     for ops in (grid, grid + decorations):
-        with pylopdf.open(stream=_pdf("\n".join(ops))) as doc:
+        with pdfust.open(stream=_pdf("\n".join(ops))) as doc:
             snapshots.append(doc[0].get_layout())
     assert len(snapshots[0].tables) == 1
     assert snapshots[0].tables == snapshots[1].tables

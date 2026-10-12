@@ -17,9 +17,9 @@ uv run python bench/layout.py --baseline /tmp/layout-baseline.json
 uv run python -m bench.features
 ```
 
-The initial feature study compares pylopdf, PyMuPDF, PyMuPDF4LLM, pypdf, and
+The initial feature study compares pdfust, PyMuPDF, PyMuPDF4LLM, pypdf, and
 pdfplumber; the combined model study adds Docling and Marker.
-It includes pylopdf's opt-in text tables, PyMuPDF's explicit ActualText flag,
+It includes pdfust's opt-in text tables, PyMuPDF's explicit ActualText flag,
 PyMuPDF4LLM's legacy and model-backed layout paths, and HTML table output.
 Options and installed versions are recorded. PyMuPDF, pypdf, and pdfplumber are
 plain-text baselines here, not Markdown converters. These modes are not an
@@ -79,8 +79,8 @@ Start with [the feature summary](results/features-latest.md), then run the study
 to generate the ignored local input PDFs and corresponding raw `.out` results.
 Only summaries and the compact timing/hash baseline are committed. The local JSON sidecar includes the
 literal values behind text probes, reference reading order, link destinations,
-HTML spans/superscripts, output hashes, and pylopdf's source-object inventory.
-That inventory is an observation through pylopdf's APIs, not an independent
+HTML spans/superscripts, output hashes, and pdfust's source-object inventory.
+That inventory is an observation through pdfust's APIs, not an independent
 ground-truth parser. The synthetic fixture definitions and original source
 documents establish their known content.
 

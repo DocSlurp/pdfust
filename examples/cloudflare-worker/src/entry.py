@@ -2,11 +2,11 @@
 
 from workers import Request, Response, WorkerEntrypoint
 
-import pylopdf
+import pdfust
 
 _MIB = 1024 * 1024
 _MAX_INPUT_BYTES = 4 * _MIB
-_LIMITS = pylopdf.DocumentLimits(
+_LIMITS = pdfust.DocumentLimits(
     max_file_size=_MAX_INPUT_BYTES,
     max_pages=100,
     max_objects=50_000,
@@ -26,7 +26,7 @@ class Default(WorkerEntrypoint):
     async def fetch(self, request: Request) -> Response:
         """Return page count and first-page text as JSON."""
         if request.method == "GET" and request.url.split("?", 1)[0].endswith("/health"):
-            return Response.from_json({"status": "ok", "pylopdf": pylopdf.__version__})
+            return Response.from_json({"status": "ok", "pdfust": pdfust.__version__})
 
         declared_size = request.headers.get("content-length")
         if declared_size is not None:
@@ -45,7 +45,7 @@ class Default(WorkerEntrypoint):
 
         data = await request.bytes()
         try:
-            with pylopdf.Document(stream=data, limits=_LIMITS) as document:
+            with pdfust.Document(stream=data, limits=_LIMITS) as document:
                 first_page = document.get_page_text(0) if document.page_count else ""
                 return Response.from_json(
                     {
@@ -53,12 +53,12 @@ class Default(WorkerEntrypoint):
                         "first_page_text": first_page,
                     }
                 )
-        except pylopdf.LimitError as error:
+        except pdfust.LimitError as error:
             return Response.from_json(
                 {"error": error.code, "message": str(error)},
                 status=413,
             )
-        except pylopdf.PdfError as error:
+        except pdfust.PdfError as error:
             return Response.from_json(
                 {"error": "invalid_pdf", "message": str(error)},
                 status=422,

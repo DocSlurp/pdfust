@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-import pylopdf
+import pdfust
 
 _BENCHMARK = run_path(str(Path(__file__).parents[1] / "bench" / "layout.py"))
 Measurement = cast("type[Any]", _BENCHMARK["Measurement"])
@@ -40,7 +40,7 @@ def test_measurement_rejects_nondeterministic_outputs() -> None:
 def test_synthetic_samples_are_repeatable_and_exercise_tables_and_text(*, unicode_text: bool) -> None:
     data = synthetic_pdf(2, unicode_text=unicode_text)
     assert data == synthetic_pdf(2, unicode_text=unicode_text)
-    with pylopdf.open(stream=data) as doc:
+    with pdfust.open(stream=data) as doc:
         assert doc.page_count == 2
         for page in doc:
             tables = page.find_tables()

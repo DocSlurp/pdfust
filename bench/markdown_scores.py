@@ -4,7 +4,7 @@ Usage (inputs, raw outputs, and JSON stay in an ignored artifact directory)::
 
     uv sync --group bench-rich
     uv run python -m bench.markdown_scores --build
-    uv run python -m bench.markdown_scores --run pylopdf pymupdf4llm-layout ...
+    uv run python -m bench.markdown_scores --run pdfust pymupdf4llm-layout ...
     /path/to/isolated/python bench/markdown_score_run.py markitdown INPUTS OUTPUTS
     uv run python -m bench.markdown_scores --score   # also syncs to Langfuse when .env configures it
 
@@ -50,8 +50,8 @@ IMAGE = "<image>"
 ARTIFACTS = ROOT / "bench" / "results" / "pdf-master-artifacts" / "markdown-scores"
 SUMMARY = ROOT / "bench" / "results" / "markdown-scores.md"
 LOCAL_TOOLS = (
-    "pylopdf",
-    "pylopdf-text-tables",
+    "pdfust",
+    "pdfust-text-tables",
     "pymupdf4llm-layout",
     "pymupdf4llm-legacy",
     "pymupdf",
@@ -623,7 +623,7 @@ def format_summary(report: dict[str, Any]) -> str:
     """Render the score matrix, per-case detail, and resource measurements."""
     tools = sorted(report["tools"].items(), key=lambda item: -item[1]["overall"])
     checks = {c: max(t["categories"][c]["checks"] for _, t in tools) for c in CATEGORIES}
-    dirty = " with uncommitted `rust/` or `src/` changes in the pylopdf build" if report["dirty"] else ""
+    dirty = " with uncommitted `rust/` or `src/` changes in the pdfust build" if report["dirty"] else ""
     lines = [
         "# PDF-to-Markdown element score matrix",
         "",

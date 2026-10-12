@@ -1,4 +1,4 @@
-"""System Noto font files used by the ReportLab and pylopdf producers."""
+"""System Noto font files used by the ReportLab and pdfust producers."""
 
 # ruff: noqa: E501
 from __future__ import annotations
@@ -15,15 +15,15 @@ LATIN = {"regular": (NOTO / "NotoSans-Regular.ttf", 0), "bold": (NOTO / "NotoSan
          "serif_bold": (NOTO / "NotoSerif-Bold.ttf", 0), "mono": (NOTO / "NotoSansMono-Regular.ttf", 0),
          "math": (NOTO / "NotoSansMath-Regular.ttf", 0), "symbols": (NOTO / "NotoSansSymbols-Regular.ttf", 0),
          "symbols2": (NOTO / "NotoSansSymbols2-Regular.ttf", 0)}
-# The repository's own pylopdf script font packages ship current Noto builds that also cover Latin,
+# The repository's own pdfust script font packages ship current Noto builds that also cover Latin,
 # digits and punctuation (the distribution's static script fonts lack them), so mixed text fits one box.
 PACKAGES = Path(__file__).resolve().parents[2] / "fonts"
 SCRIPT = {
-    "ar": ((PACKAGES / "pylopdf-fonts-ar/src/pylopdf_fonts_ar/NotoNaskhArabic-Variable.ttf", 0),) * 2,
+    "ar": ((PACKAGES / "pdfust-fonts-ar/src/pdfust_fonts_ar/NotoNaskhArabic-Variable.ttf", 0),) * 2,
     # The Hebrew variable font's default instance is Thin; static Liberation Sans covers Hebrew, Latin and digits.
     "he": ((Path("/usr/share/fonts/liberation/LiberationSans-Regular.ttf"), 0), (Path("/usr/share/fonts/liberation/LiberationSans-Bold.ttf"), 0)),
-    "hi": ((PACKAGES / "pylopdf-fonts-hi/src/pylopdf_fonts_hi/NotoSansDevanagari-Variable.ttf", 0),) * 2,
-    "th": ((PACKAGES / "pylopdf-fonts-th/src/pylopdf_fonts_th/NotoSansThai-Variable.ttf", 0),) * 2,
+    "hi": ((PACKAGES / "pdfust-fonts-hi/src/pdfust_fonts_hi/NotoSansDevanagari-Variable.ttf", 0),) * 2,
+    "th": ((PACKAGES / "pdfust-fonts-th/src/pdfust_fonts_th/NotoSansThai-Variable.ttf", 0),) * 2,
 }
 
 

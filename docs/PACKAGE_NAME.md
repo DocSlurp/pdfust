@@ -1,9 +1,30 @@
 # Distribution and import names
 
-The private continuation is named **jev-pdf**. Its Python distribution metadata uses `jev-pdf`; new code imports `jev_pdf`. The existing public API is re-exported with identical object identities, including `Document`, `Page`, exceptions, constants, `open` and version. The same wheel includes `pylopdf`, so existing imports and qualified class identities remain compatible.
+The project is named **pdfust**. Its Python distribution is `pdfust` and new code
+imports `pdfust`. Two earlier names remain as compatibility imports in the same
+wheel and re-export the complete public API with identical object identities:
 
-The Rust extension remains `pylopdf.pylopdf_core`; this packaging change does not move it or change extraction behavior. Both Python packages include typing markers, and `jev_pdf` includes a re-export stub. Original author attribution, MIT license and bundled dependency notices remain unchanged. Optional `pylopdf-fonts-*` and `pylopdf-ocr-models` distributions retain their names. Experimental artifact paths remain unchanged to preserve recorded provenance.
+| Name | Role |
+|---|---|
+| `pdfust` | Canonical distribution and import; owns the implementation and the native extension `pdfust.pdfust_core` |
+| `jev_pdf` | Compatibility import for the former `jev-pdf` distribution name |
+| `pylopdf` | Compatibility import for the upstream `pylopdf` name; `pylopdf.PylopdfWarning` is `pdfust.PdfustWarning` |
 
-Install from the authorized private repository or a local checkout. No `jev-pdf` package has been published. Use a fresh environment or uninstall the separately installed `pylopdf` distribution before migration, because two installed distributions would own overlapping `pylopdf` module files. The `jev-pdf` wheel supplies both imports without depending on the old distribution. Existing consumers that declare a dependency specifically on the `pylopdf` distribution need to update that dependency; preserving the import alone does not satisfy another distribution's requirement.
+Optional data packages follow the new name: `pdfust-fonts-{ar,he,hi,jp,ko,th,zh-cn,zh-tw}`
+and `pdfust-ocr-models`. No `pdfust` distribution has been published; the earlier
+`pylopdf-*` PyPI projects are upstream's or previously published history and are
+not renamed in place. Publishing the renamed data packages requires registering new
+PyPI projects and Trusted Publishers first.
 
-Validated locally on CPython 3.14.7 / Linux x86-64: release wheel containing both packages and the original native extension, isolated offline wheel installation, every public object's identity across imports, PDF creation through `jev_pdf` and extraction through `pylopdf`, distribution metadata and license/NOTICE contents, typing re-exports, and offline lock consistency. The generated wheel has the local `linux_x86_64` tag, not a validated manylinux release tag. Other platform and Python wheel lanes were not rebuilt by this rename task. No package was published and no active benchmark environment was modified.
+Files compressed by earlier versions carry the private `/PylopdfQuality` marker;
+`compress_images` still honors it and writes `/PdfustQuality` going forward.
+
+Use a fresh environment, or uninstall any separately installed `jev-pdf` or
+`pylopdf` distribution, before installing: two distributions would own
+overlapping `jev_pdf` and `pylopdf` module files. Consumers that declare a
+dependency on `jev-pdf` or `pylopdf` by name need to depend on `pdfust` instead;
+preserving the import alone does not satisfy another distribution's requirement.
+
+Experimental artifact paths (`bench/results/pdf-master-artifacts/`) keep their
+historical name to preserve recorded provenance and frozen hashes. Original
+author attribution, the MIT license and bundled dependency notices are unchanged.

@@ -1,11 +1,11 @@
 ---
 title: API稳定性
-description: pylopdf的公共API边界、语义化版本保证、弃用生命周期与兼容性审查流程。
+description: pdfust的公共API边界、语义化版本保证、弃用生命周期与兼容性审查流程。
 ---
 
 # API稳定性
 
-pylopdf遵循[Semantic Versioning 2.0.0](https://semver.org/)。本页说明这对一个结果还
+pdfust遵循[Semantic Versioning 2.0.0](https://semver.org/)。本页说明这对一个结果还
 依赖PDF生成器、字体、renderer和受支持runtime的Python library意味着什么。
 
 ## 当前状态 { #current-status }
@@ -21,16 +21,16 @@ pylopdf遵循[Semantic Versioning 2.0.0](https://semver.org/)。本页说明这�
 
 受支持的公共API包括：
 
-- `pylopdf.__all__`导出的名称，以及`pylopdf.__version__`；
+- `pdfust.__all__`导出的名称，以及`pdfust.__version__`；
 - 这些class中有文档的public member；
 - callable parameter的名称、类型、default和有文档的return contract；
 - 有文档的常量和enum值；
 - TypedDict的必需/可选key、NamedTuple field和public type alias；
 - 有文档的异常层次，以及`LimitError.code`等机器可读属性。
 
-以下内容属于private：以`_`开头的名称、`pylopdf.pylopdf_core`、Rust实现细节、
+以下内容属于private：以`_`开头的名称、`pdfust.pdfust_core`、Rust实现细节、
 object的`repr`、异常message的精确文本、warning顺序和未记录属性。从实现module
-import一个public object并不会使该module path成为公共API；请从`pylopdf` import。
+import一个public object并不会使该module path成为公共API；请从`pdfust` import。
 
 `save()`生成的PDF byte以及PNG/SVG的精确serialization不是逐byte稳定格式。contract是
 有文档的视觉、结构和提取语义。
@@ -61,7 +61,7 @@ v1.0之后，计划删除的public API通常会：
 3. 保留至少两个minor release并且至少六个月；
 4. 只在major release中删除。
 
-`DeprecationWarning`用于开发者迁移。`PylopdfWarning`继续用于PDF解释过程中的运行
+`DeprecationWarning`用于开发者迁移。`PdfustWarning`继续用于PDF解释过程中的运行
 warning，不作为弃用channel。
 
 security、legal或upstream runtime紧急问题可能需要缩短流程。此类例外会在changelog
@@ -78,7 +78,7 @@ resource limit可能拒绝早期版本曾尝试处理的攻击性或异常昂贵
 
 支持范围由每个release记录的Python version、platform、ABI和WebAssembly runtime
 matrix定义。runtime在upstream EOL后，或继续支持会阻碍security/correctness修复时，
-可以在minor release中移除；项目会公布原因和迁移窗口。Pyodide兼容性按pylopdf minor
+可以在minor release中移除；项目会公布原因和迁移窗口。Pyodide兼容性按pdfust minor
 line固定并测试，不会跨runtime升级作推测。
 
 ## 兼容性审查 { #compatibility-review }

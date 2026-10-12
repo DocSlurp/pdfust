@@ -154,12 +154,12 @@ def _rerender(
     """Render exact global crop geometry at an independently declared image edge."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     data = guard_path(Path(record["pdf_path"])).read_bytes()
     if sha(data) != record["pdf_sha256"]:
         raise ValueError("Frozen selector source PDF hash changed")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[record["page_number"]]
         if list(page.rect) != page_result["viewport"] or page.rotation != page_result["original_rotation"]:
             raise ValueError("Selector rerender geometry differs from frozen generation source")

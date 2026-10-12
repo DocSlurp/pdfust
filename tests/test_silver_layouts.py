@@ -7,7 +7,7 @@ import struct
 import pytest
 from bench.silver_layouts import generate_cases
 
-import pylopdf
+import pdfust
 
 CASES = generate_cases()
 
@@ -24,7 +24,7 @@ def test_layout_source_integrity() -> None:
 
 @pytest.mark.parametrize("case", CASES, ids=[case["id"] for case in CASES])
 def test_layout_visible_sources(case: dict) -> None:
-    with pylopdf.open(stream=case["pdf"]) as document:
+    with pdfust.open(stream=case["pdf"]) as document:
         assert document.page_count == case["page_count"]
         text = document.get_text()
         # Overprints and geometry can legitimately change ordering or spacing.
@@ -50,7 +50,7 @@ def test_layout_visible_sources(case: dict) -> None:
 )
 def test_layout_bounded_render(family: str) -> None:
     case = next(case for case in CASES if case["family"] == family and case["id"].endswith("v3"))
-    with pylopdf.open(stream=case["pdf"]) as document:
+    with pdfust.open(stream=case["pdf"]) as document:
         png = document.render_page(0, scale=0.2, max_size=256 * 1024)
         assert png.startswith(b"\x89PNG\r\n\x1a\n")
         width, height = struct.unpack(">II", png[16:24])

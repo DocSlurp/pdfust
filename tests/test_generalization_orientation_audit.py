@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from bench.generalization_orientation_audit import construction_references, source_cases
 
-import pylopdf
+import pdfust
 
 
 def test_compensated_sources_have_upright_display_despite_page_rotation() -> None:
     cases = {case["id"]: case for case in source_cases()}
     rendered = []
     for identifier in ("upright-control", "compensated-90", "compensated-180", "compensated-270"):
-        with pylopdf.Document(stream=cases[identifier]["pdf"]) as document:
+        with pdfust.Document(stream=cases[identifier]["pdf"]) as document:
             page = document[0]
             clip = page.get_images()[0]["bbox"]
             rendered.append(page.get_pixmap(clip=clip).samples)
@@ -20,7 +20,7 @@ def test_compensated_sources_have_upright_display_despite_page_rotation() -> Non
 
 def test_physical_sideways_scan_keeps_zero_page_rotation_and_native_header() -> None:
     cases = {case["id"]: case for case in source_cases()}
-    with pylopdf.Document(stream=cases["mixed-physical-90"]["pdf"]) as document:
+    with pdfust.Document(stream=cases["mixed-physical-90"]["pdf"]) as document:
         assert document[0].rotation == 0
         assert "Native header" in document[0].get_text()
         box = document[0].get_images()[0]["bbox"]

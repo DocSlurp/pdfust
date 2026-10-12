@@ -164,7 +164,7 @@ def totals(rows: list[dict[str, Any]], targets: dict[str, Any]) -> dict[str, Any
 
 def run(directory: Path, summary_path: Path = ROOT / "bench/results/corpus-routes.md") -> dict[str, Any]:
     """Freeze route configuration before targets, then retain complete observed evidence."""
-    import pylopdf
+    import pdfust
 
     directory = guard_path(directory)
     runs = directory / "corpus-route-runs"
@@ -181,7 +181,7 @@ def run(directory: Path, summary_path: Path = ROOT / "bench/results/corpus-route
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         for record in manifest["cases"]:
-            with pylopdf.open(verify_input(directory, record)) as document:
+            with pdfust.open(verify_input(directory, record)) as document:
                 for number, page in enumerate(document):
                     began, began_cpu = time.perf_counter(), time.process_time()
                     try:

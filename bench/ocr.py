@@ -23,9 +23,9 @@ from importlib import metadata
 from pathlib import Path
 from typing import NamedTuple
 
-import pylopdf_ocr_models
+import pdfust_ocr_models
 
-import pylopdf
+import pdfust
 
 ROOT = Path(__file__).resolve().parent.parent
 RESULT = Path(__file__).resolve().parent / "results" / "ocr-latest.md"
@@ -146,7 +146,7 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _expected_text(case: OcrCase, document: pylopdf.Document) -> str:
+def _expected_text(case: OcrCase, document: pdfust.Document) -> str:
     """Read manual ground truth or retain embedded text independently."""
     if case.ground_truth is not None:
         return case.ground_truth.read_text(encoding="utf-8")
@@ -155,11 +155,11 @@ def _expected_text(case: OcrCase, document: pylopdf.Document) -> str:
 
 def _recognize_case(
     case: OcrCase,
-    engine: pylopdf.OcrEngine,
+    engine: pdfust.OcrEngine,
     controls: OcrControls,
 ) -> tuple[int, str]:
     """Recognize one distinct document and return its word count and text."""
-    with pylopdf.open(case.fixture) as document:
+    with pdfust.open(case.fixture) as document:
         page_results = [
             page.get_text_ocr(
                 dpi=controls.dpi,
@@ -179,12 +179,12 @@ def main() -> None:
     args = _parse_args()
     selected_names = set(args.case or ())
     cases = tuple(case for case in CASES if not selected_names or case.name in selected_names)
-    engine = pylopdf.OcrEngine(threads=args.threads, max_concurrent=args.max_concurrent)
+    engine = pdfust.OcrEngine(threads=args.threads, max_concurrent=args.max_concurrent)
     rows: list[OcrBenchmarkResult] = []
     recognized_text: dict[tuple[str, int], str] = {}
 
     for case in cases:
-        with pylopdf.open(case.fixture) as document:
+        with pdfust.open(case.fixture) as document:
             expected = _expected_text(case, document)
         for dpi in args.dpi:
             controls = OcrControls(
@@ -232,7 +232,7 @@ def main() -> None:
     if args.concurrency and not concurrency_limits:
         print("skipping concurrency field check: select at least two cases")
     for max_concurrent in concurrency_limits:
-        concurrent_engine = pylopdf.OcrEngine(
+        concurrent_engine = pdfust.OcrEngine(
             threads=args.threads,
             max_concurrent=max_concurrent,
         )
@@ -267,14 +267,14 @@ def main() -> None:
             f"matches_reference={matches_reference} elapsed={elapsed:.2f}s"
         )
 
-    model_root = pylopdf_ocr_models.model_paths().detector.parent
+    model_root = pdfust_ocr_models.model_paths().detector.parent
     checksums = (model_root / "SHA256SUMS").read_text(encoding="ascii").splitlines()
     lines = [
-        "# pylopdf native OCR results",
+        "# pdfust native OCR results",
         "",
         f"- Run at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         f"- Environment: {platform.platform()} / Python {platform.python_version()} / CPU {platform.processor()}",
-        f"- Versions: pylopdf {metadata.version('pylopdf')}, pylopdf-ocr-models {pylopdf_ocr_models.__version__}",
+        f"- Versions: pdfust {metadata.version('pdfust')}, pdfust-ocr-models {pdfust_ocr_models.__version__}",
         "- Fixtures (sources and licenses in `tests/assets/real_world/README.md`):",
     ]
     lines.extend(

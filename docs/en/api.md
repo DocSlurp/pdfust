@@ -1,11 +1,11 @@
 ---
 title: API overview
-description: A compact map of pylopdf Document, Page, Pixmap, Rect, permissions, warnings and exceptions.
+description: A compact map of pdfust Document, Page, Pixmap, Rect, permissions, warnings and exceptions.
 ---
 
 # API overview
 
-Full docstrings live in the package (`help(pylopdf.Document)`); this page is a
+Full docstrings live in the package (`help(pdfust.Document)`); this page is a
 map. All page numbers are 0-based except `get_toc` / `set_toc` (1-based,
 pymupdf-compatible). All coordinates are top-left-origin display space.
 The [API stability policy](stability.md) defines the public boundary and
@@ -13,8 +13,8 @@ deprecation lifecycle.
 
 ## Document { #document }
 
-`pylopdf.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
-`pylopdf.open()` is an alias constructor. Context-manager support included.
+`pdfust.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
+`pdfust.open()` is an alias constructor. Context-manager support included.
 Password input stops at 127 UTF-8 bytes.
 
 | Member | Purpose |
@@ -99,7 +99,7 @@ are not returned; optional-content visibility is still applied. The result is
 rejected rather than truncated above 8,192 paths or 131,072 commands.
 
 Embedded-font `insert_text` requires one font containing every glyph.
-`pylopdf[ar]`, `[he]`, `[hi]`, `[jp]`, `[ko]`, `[th]`, `[zh-cn]`, and
+`pdfust[ar]`, `[he]`, `[hi]`, `[jp]`, `[ko]`, `[th]`, `[zh-cn]`, and
 `[zh-tw]` provide Noto Sans/Serif generation fonts. Kana, Hangul, Bopomofo,
 Arabic, Hebrew, Devanagari, and Thai select an installed provider automatically.
 Pure Han keeps the JP-first compatibility default; pass
@@ -113,7 +113,7 @@ producer visual order.
 
 Complex shaping can require PDF `/ActualText` to preserve a logical string that
 does not map one-to-one to glyphs. Generated PDFs include that data for external
-viewers, but pylopdf's current extractor does not yet consume `/ActualText`;
+viewers, but pdfust's current extractor does not yet consume `/ActualText`;
 some reordered or context-dependent clusters, especially in longer
 Devanagari runs, can therefore extract approximately after reopening.
 
@@ -154,15 +154,15 @@ Normal text extraction still skips table-rule collection. With
 `table_strategy=None`, spatial extraction also skips table detection.
 
 ```python
-with pylopdf.open("invoice.pdf") as document:
+with pdfust.open("invoice.pdf") as document:
     layout = document[0].get_layout(table_strategy=None)
 
 # Rectangles are top-left display coordinates, with rotation already applied.
 # Selection uses word centers and half-open bounds, not pixel visibility.
 words = layout.select((300, 80, 550, 110))
 results = layout.extract_fields([
-    pylopdf.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
-    pylopdf.FieldSpec("total", region=(300, 600, 550, 630)),
+    pdfust.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
+    pdfust.FieldSpec("total", region=(300, 600, 550, 630)),
 ])
 for result in results:
     print(result.name, result.status, result.value)
@@ -193,7 +193,7 @@ comes from `layout.tables`; native grids are normalized to their dominant
 right-angle text orientation while every cell retains its display-space box.
 
 ```python
-with pylopdf.open("report.pdf") as document:
+with pdfust.open("report.pdf") as document:
     layout = document[0].get_layout()
 table = layout.tables[0]
 for record in table.records(header_rows=2, row_header_columns=1):
@@ -231,9 +231,9 @@ import json
 from pathlib import Path
 
 state = json.loads(Path("bench/results/spatial-artifacts/placement-model.json").read_text())
-model = pylopdf.PlacementModel(**state["model"])
+model = pdfust.PlacementModel(**state["model"])
 results = layout.extract_fields([
-    pylopdf.FieldSpec("account", anchor="Account", value_type="number"),
+    pdfust.FieldSpec("account", anchor="Account", value_type="number"),
 ], model=model)
 ```
 
@@ -271,7 +271,7 @@ implicitly.
 | `TableFinder` / `Table` / `TableDiagnostics` | owned table geometry, cell text (`None` for merged continuations), strategy and confidence evidence; `Table.to_markdown(max_size=64 MiB)` preflights escaped UTF-8 output |
 | `PdfError` / `LimitError` / `PasswordError` / `OcrError` / `DocumentClosedError` / `EncryptedDocumentError` / `StalePageError` | exception hierarchy; limit failures expose a stable `.code` (ValueError-compatible base) |
 | `Pixmap` | Immutable RGBA8 pixels: `samples` / `width` / `height` / `stride` / `n` / `tobytes(max_size=64 MiB)` / streaming, failure-atomic PNG-only `save(path)`; cp314t also supports read-only zero-copy `memoryview()` |
-| `PylopdfWarning` | recoverable interpretation warnings (xref repair, font resolution, image decode) |
+| `PdfustWarning` | recoverable interpretation warnings (xref repair, font resolution, image decode) |
 
 The `TypedDict` contracts affect static typing only; values remain ordinary
 pymupdf-style dictionaries. `LinkInfo` requires `kind` and `from`, with

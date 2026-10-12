@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import pylopdf
+import pdfust
 from bench import p003_extension_cases as cases
 from bench import p003_extension_score as scoring
 from bench.silver import canonical, guard_path, sha, write_json
@@ -73,7 +73,7 @@ def _assign(tables: list[dict[str, Any]], page_texts: list[str]) -> dict[int, li
 
 @contextmanager
 def _single_page(path: Path, index: int) -> Iterator[bytes]:
-    with pylopdf.Document(str(path)) as document:
+    with pdfust.Document(str(path)) as document:
         document.select([index])
         yield document.tobytes()
 
@@ -95,7 +95,7 @@ def build(output: Path) -> dict[str, Any]:
             continue
         for level in LEVELS:
             variant = guard_path(WILD / "variants" / truth["doc_id"] / f"{level}.pdf")
-            with pylopdf.Document(str(variant)) as document:
+            with pdfust.Document(str(variant)) as document:
                 page_texts = [page.get_text() for page in document]
             for index, page_tables in sorted(_assign(tables, page_texts).items()):
                 ident = "x" + sha(f"wild-v1-repair/{truth['doc_id']}/{level}/{index}".encode())[:24]
@@ -103,7 +103,7 @@ def build(output: Path) -> dict[str, Any]:
                     pdf_path = output / "pdfs" / f"{ident}.pdf"
                     pdf_path.write_bytes(data)
                     source, rules, states = cases.extract_source(data, ident)
-                    with pylopdf.Document(stream=data) as single:
+                    with pdfust.Document(stream=data) as single:
                         (output / "images" / f"{ident}.png").write_bytes(single[0].render(scale=768 / 792))
                 write_json(output / "sources" / f"{ident}.json", {"id": ident, "source": source, "rules": rules})
                 menu = cases.candidate_menu(source, states, ident)

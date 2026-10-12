@@ -114,7 +114,7 @@ ID/PDF path/page number and retained source page_size/words entered generation;
 no model output, reference table, cell, box or quality label was used. Retained
 OCR geometry comes from the explicit P002
 `natural16-yolo-ocr300-indices-haiku-512-columns/*-result.json` directory.
-Original PDFs were independently rendered with jev_pdf to a fixed 1,536-pixel
+Original PDFs were independently rendered with pdfust to a fixed 1,536-pixel
 maximum edge on white. OCR was not rerun. Source payload and implementation
 hashes are in retained reports.
 

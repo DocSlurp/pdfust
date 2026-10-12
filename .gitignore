@@ -5,8 +5,8 @@
 .vscode
 /rust/src/lopdf
 /rust/target
-/src/pylopdf/*.so
-/src/pylopdf/*.pyd
+/src/pdfust/*.so
+/src/pdfust/*.pyd
 /target
 /dist
 /.tmp/

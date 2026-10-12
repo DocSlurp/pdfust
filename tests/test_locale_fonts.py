@@ -11,29 +11,29 @@ from pathlib import Path
 import pytest
 from conftest import build_nonembedded_cjk_pdf, build_nonembedded_locale_cjk_pdf
 
-import pylopdf
+import pdfust
 
-FONTS_DIR = Path(__file__).parents[1] / "fonts" / "pylopdf-fonts-jp" / "src" / "pylopdf_fonts_jp"
+FONTS_DIR = Path(__file__).parents[1] / "fonts" / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp"
 SANS = FONTS_DIR / "NotoSansJP-Regular.otf"
 SERIF = FONTS_DIR / "NotoSerifJP-Regular.otf"
 FONT_ROOT = Path(__file__).parents[1] / "fonts"
 LOCALE_SANS = {
     "ja": SANS,
-    "ko": FONT_ROOT / "pylopdf-fonts-ko" / "src" / "pylopdf_fonts_ko" / "NotoSansKR-Regular.otf",
-    "zh-CN": (FONT_ROOT / "pylopdf-fonts-zh-cn" / "src" / "pylopdf_fonts_zh_cn" / "NotoSansSC-Regular.otf"),
-    "zh-TW": (FONT_ROOT / "pylopdf-fonts-zh-tw" / "src" / "pylopdf_fonts_zh_tw" / "NotoSansTC-Regular.otf"),
+    "ko": FONT_ROOT / "pdfust-fonts-ko" / "src" / "pdfust_fonts_ko" / "NotoSansKR-Regular.otf",
+    "zh-CN": (FONT_ROOT / "pdfust-fonts-zh-cn" / "src" / "pdfust_fonts_zh_cn" / "NotoSansSC-Regular.otf"),
+    "zh-TW": (FONT_ROOT / "pdfust-fonts-zh-tw" / "src" / "pdfust_fonts_zh_tw" / "NotoSansTC-Regular.otf"),
 }
 
 
 def render_blank_baseline() -> bytes:
     """Render the blank baseline with fallback and auto-discovery disabled."""
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(None)
     return doc.render_page(0, 1.0)
 
 
 def test_fallback_font_from_path_renders_text() -> None:
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(SANS)
     png = doc.render_page(0, 1.0)
     assert png.startswith(b"\x89PNG\r\n\x1a\n")
@@ -43,24 +43,24 @@ def test_fallback_font_from_path_renders_text() -> None:
 
 
 def test_fallback_font_from_bytes_renders_text() -> None:
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(SANS.read_bytes())
     assert doc.render_page(0, 1.0) != render_blank_baseline()
 
 
 def test_serif_slot_used_for_mincho() -> None:
     """Use the serif slot for PDFs whose BaseFont is MS-Mincho."""
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(SERIF, kind="serif")
     assert doc.render_page(0, 1.0) != render_blank_baseline()
 
 
 def test_svg_rendering_includes_glyphs() -> None:
-    blank_doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    blank_doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     blank_doc.set_fallback_font(None)
     blank_svg = blank_doc.render_page_svg(0)
 
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(SANS)
     svg = doc.render_page_svg(0)
     assert svg.startswith("<svg")
@@ -68,17 +68,17 @@ def test_svg_rendering_includes_glyphs() -> None:
 
 
 def test_invalid_kind_raises() -> None:
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     with pytest.raises(ValueError, match="kind"):
         doc.set_fallback_font(SANS, kind="bold")
 
 
 def test_fallback_font_boundary_preserves_previous_font_and_cache() -> None:
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(SANS)
     baseline = doc.render_page(0, 1.0)
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.set_fallback_font(SERIF, max_font_size=SERIF.stat().st_size - 1)
 
     assert caught.value.code == "font_input_size"
@@ -87,19 +87,19 @@ def test_fallback_font_boundary_preserves_previous_font_and_cache() -> None:
 
 def test_latin_rendering_unaffected_by_fallback(one_page_pdf: bytes) -> None:
     """Keep Latin rendering unchanged when a fallback font is configured."""
-    plain = pylopdf.open(stream=one_page_pdf)
+    plain = pdfust.open(stream=one_page_pdf)
     plain.set_fallback_font(None)
     baseline = plain.render_page(0, 1.0)
 
-    with_font = pylopdf.open(stream=one_page_pdf)
+    with_font = pdfust.open(stream=one_page_pdf)
     with_font.set_fallback_font(SANS)
     assert with_font.render_page(0, 1.0) == baseline
 
 
 def test_auto_discovery_via_extra() -> None:
-    """Auto-render Japanese text when pylopdf[jp] is installed."""
-    pytest.importorskip("pylopdf_fonts_jp")
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    """Auto-render Japanese text when pdfust[jp] is installed."""
+    pytest.importorskip("pdfust_fonts_jp")
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     png = doc.render_page(0, 1.0)
     assert png != render_blank_baseline()
 
@@ -109,16 +109,16 @@ def test_auto_discovery_via_extra() -> None:
     [("ko", "한국어"), ("zh-CN", "简体中文"), ("zh-TW", "繁體中文")],
 )
 def test_locale_fallback_matches_adobe_character_collection(
-    font_language: pylopdf.CjkFontLanguage,
+    font_language: pdfust.CjkFontLanguage,
     text: str,
 ) -> None:
     """Render each predefined Adobe collection through its matching locale slot."""
     pdf = build_nonembedded_locale_cjk_pdf(text, font_language)
-    blank = pylopdf.open(stream=pdf)
+    blank = pdfust.open(stream=pdf)
     blank.set_fallback_font(None)
     blank_png = blank.render_page(0)
 
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     doc.set_fallback_font(LOCALE_SANS[font_language], font_language=font_language)
 
     assert doc.render_page(0) != blank_png
@@ -127,15 +127,15 @@ def test_locale_fallback_matches_adobe_character_collection(
 
 @pytest.mark.parametrize("wrong_language", ["ja", "ko", "zh-TW"])
 def test_wrong_locale_does_not_override_matching_collection(
-    wrong_language: pylopdf.CjkFontLanguage,
+    wrong_language: pdfust.CjkFontLanguage,
 ) -> None:
     """Do not send any configured non-SC font into an Adobe-GB1 request."""
     pdf = build_nonembedded_locale_cjk_pdf("简体中文", "zh-CN")
-    blank = pylopdf.open(stream=pdf)
+    blank = pdfust.open(stream=pdf)
     blank.set_fallback_font(None)
     blank_png = blank.render_page(0)
 
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     doc.set_fallback_font(LOCALE_SANS[wrong_language], font_language=wrong_language)
 
     assert doc.render_page(0) == blank_png
@@ -147,7 +147,7 @@ def test_nonembedded_cjk_extract_text() -> None:
     Hayro resolves the predefined CMap, and Unicode comes from that map, so
     extraction does not require a fallback font.
     """
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(None)
     assert "こんにちは日本語" in doc.get_page_text(0)
 
@@ -155,11 +155,11 @@ def test_nonembedded_cjk_extract_text() -> None:
 @pytest.mark.parametrize("operation", ["batch", "text", "dict", "search", "tables"])
 def test_extraction_first_discovers_fallback_fonts(operation: str, monkeypatch: pytest.MonkeyPatch) -> None:
     """Configure the same locale slots before extraction as before rendering."""
-    providers = tuple(provider for provider in pylopdf._bundled_font_providers() if provider.language == "ja")  # noqa: SLF001
+    providers = tuple(provider for provider in pdfust._bundled_font_providers() if provider.language == "ja")  # noqa: SLF001
     if not providers:
         pytest.skip("Japanese locale extra is not installed")
-    monkeypatch.setattr(pylopdf, "_bundled_font_providers", lambda: providers)
-    doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
+    monkeypatch.setattr(pdfust, "_bundled_font_providers", lambda: providers)
+    doc = pdfust.open(stream=build_nonembedded_cjk_pdf())
     page = doc[0]
     if operation == "batch":
         assert "こんにちは日本語" in doc.get_text()

@@ -1,7 +1,7 @@
-# Private PDF-master: breadth-first findings
+# Private pdfust: breadth-first findings
 
 Local campaign, 2026-10-08. Nothing from this campaign was pushed. The private
-`justsml/pdf-master` repository is empty; only local code, tests and experiment
+`justsml/pdfust` repository is empty; only local code, tests and experiment
 artifacts exist. Public remotes were removed, default pushing disabled, and a
 local pre-push hook blocks publication. Earlier public history is unchanged.
 GitHub Actions are disabled on the private repository during this hold.

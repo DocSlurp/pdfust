@@ -24,7 +24,7 @@ def onto_white(image: Image.Image) -> Image.Image:
 
 def run(corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: C901
     """Read source paths/families only; never load targets or modify frozen sources."""
-    import pylopdf
+    import pdfust
 
     started, cpu = time.monotonic(), time.process_time()
     receipts: dict[str, str] = {}
@@ -49,7 +49,7 @@ def run(corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: C9
         "pdf_width": 1800,
         "background": "opaque white (255,255,255)",
         "scope": "source-only diagnostic; no model output, gold or quality verdicts",
-        "native_pdf_render": "pylopdf get_pixmap RGBA, explicit Pillow alpha composite",
+        "native_pdf_render": "pdfust get_pixmap RGBA, explicit Pillow alpha composite",
         "source_png_copy": "exact original RGBA over white; no resizing",
     }
     identity = digest(
@@ -75,7 +75,7 @@ def run(corpus: Path, output: Path, identifiers: list[str]) -> Path:  # noqa: C9
                 "corner_rgba": rgba.getpixel((0, 0)),
             }
             onto_white(original).save(directory / "frozen-png-over-white.png")
-        with pylopdf.Document(record["pdf_path"]) as document:
+        with pdfust.Document(record["pdf_path"]) as document:
             page = document[record["page_number"]]
             pixmap = page.get_pixmap(scale=1800 / page.rect.width)
             raw = Image.frombytes("RGBA", (pixmap.width, pixmap.height), pixmap.samples)

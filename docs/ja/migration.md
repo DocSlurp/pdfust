@@ -1,11 +1,11 @@
 ---
 title: pymupdfからの移行
-description: pymupdfの処理をpylopdfへ移し、型・挙動・スコープの意図的な違いを理解します。
+description: pymupdfの処理をpdfustへ移し、型・挙動・スコープの意図的な違いを理解します。
 ---
 
 # pymupdf からの移行
 
-pylopdf は pymupdf「風」であって、ドロップイン互換ではありません。ただし移行
+pdfust は pymupdf「風」であって、ドロップイン互換ではありません。ただし移行
 コストを決めるデータ形状 — `"words"` タプルの並び・`"dict"` の構造・
 `search_for → list[Rect]`・TOC の 1 始まりページ番号 — は pymupdf に合わせて
 いるため、抽出やページ操作のコードは小さな修正で移植できます。このページでは
@@ -13,21 +13,21 @@ pylopdf は pymupdf「風」であって、ドロップイン互換ではあり�
 まとめます。
 
 !!! note
-    pylopdf が扱うのは **PDF のみ**です。pymupdf の XPS / EPUB / 画像を開く
+    pdfust が扱うのは **PDF のみ**です。pymupdf の XPS / EPUB / 画像を開く
     機能は対象外です。
 
 ## 対応表 { #mapping }
 
-| pymupdf | pylopdf | 備考 |
+| pymupdf | pdfust | 備考 |
 |---|---|---|
-| `import pymupdf`（`fitz` は旧名） | `import pylopdf` | |
-| `pymupdf.open(path)` / `open(stream=…)` | `pylopdf.open(path)` / `open(stream=…)` | `password=`も同じ。UTF-8 127 byte上限 |
+| `import pymupdf`（`fitz` は旧名） | `import pdfust` | |
+| `pymupdf.open(path)` / `open(stream=…)` | `pdfust.open(path)` / `open(stream=…)` | `password=`も同じ。UTF-8 127 byte上限 |
 | `doc[i]`・`len(doc)`・イテレーション | 同じ | 0 始まり・負数可 |
 | `doc.metadata` / `set_metadata` | 同じ | キー名も同じ |
 | `page.get_text()` | 同じ | オプションは `text` / `words` / `blocks` / `dict` |
 | `page.search_for(t)` | 同じ。加えて`max_hits=4096` | 上限付き`list[Rect]`。検索語は4,096 byte、`max_hits=None`で解除、`quads=`は無い |
 | `page.get_pixmap(matrix=pymupdf.Matrix(2, 2))` | `page.get_pixmap(scale=2)` | `dpi=144` でも。Matrix クラスは無い |
-| `pix.samples / width / height / stride / save()` | 同じ | 常にストレートアルファ RGBA8。pylopdfの上限付き`tobytes(max_size=64 MiB)`とstreaming `save(path)`はPNGを生成し、`save`には`.png`が必要 |
+| `pix.samples / width / height / stride / save()` | 同じ | 常にストレートアルファ RGBA8。pdfustの上限付き`tobytes(max_size=64 MiB)`とstreaming `save(path)`はPNGを生成し、`save`には`.png`が必要 |
 | `page.get_images()` | `page.get_images()` | 描画位置 bbox 付き。JPEG はパススルー |
 | `page.get_drawings()` | 同じ | 型付きpath辞書。line/cubicと主要paint/stroke属性。`extended=`のclip/group階層は非対応 |
 | `doc.rewrite_images(dpi_target=, quality=)` | `doc.compress_images(dpi=, quality=)` | maskのない安全なDeviceGray/DeviceRGB DCT/Flate rasterをJPEGへ変換。`dpi`は最大配置を直接制限し、lossless変換は非対応 |
@@ -46,12 +46,12 @@ pylopdf は pymupdf「風」であって、ドロップイン互換ではあり�
 | `doc.embfile_add / names / get / del` | 同じ | |
 | `doc.get_page_labels / set_page_labels`・`page.get_label` | 同じ | |
 | `page.widgets()` / Widget オブジェクト | `doc.get_form_fields()` / `doc.set_form_field(name, value, fontfile=)` | ドキュメント単位。テキスト／選択／checkbox／radioのネイティブ外観 |
-| `page.get_textpage_ocr(...)` | `page.get_text_ocr(...)` / `page.apply_ocr(...)` | `pylopdf[ocr]`によるオフライン純Rust PP-OCR。任意の位置付き結果には`insert_ocr_text_layer`も利用可能 |
+| `page.get_textpage_ocr(...)` | `page.get_text_ocr(...)` / `page.apply_ocr(...)` | `pdfust[ocr]`によるオフライン純Rust PP-OCR。任意の位置付き結果には`insert_ocr_text_layer`も利用可能 |
 | `pymupdf4llm.to_markdown(doc)` | `doc.to_markdown()` | 内蔵・MIT |
 
 ## 挙動の違い { #behavioral-differences }
 
-- **座標系**はどちらも左上原点の表示空間。pylopdf では回転ページでも
+- **座標系**はどちらも左上原点の表示空間。pdfust では回転ページでも
   抽出・検索・描き込み・レンダリングが一貫して同じ座標になります。
 - **型**: `Rect` は不変の `NamedTuple`（`x0, y0, x1, y1` + `width` / `height`）。
   `Point` / `Matrix` / `Quad` クラスは無く、API は素のタプルと `scale=` / `dpi=`
@@ -82,7 +82,7 @@ pylopdf は pymupdf「風」であって、ドロップイン互換ではあり�
 - **`to_markdown()`** は完全な罫線表を読み順に挿入し、周囲の本文からセル文字を
   除外します。`table_strategy="text"` で保守的な罫線なし候補を追加でき、
   `None` で表変換を無効にできます。
-- **フォーム記入**は値とネイティブ外観を書き込み、pylopdfと外部ビューアの両方で
+- **フォーム記入**は値とネイティブ外観を書き込み、pdfustと外部ビューアの両方で
   描画されます。WinAnsiはHelveticaで自動縮小され、UnicodeはOpenTypeフォントを
   指定するかscript／locale font extraを導入します。地域別の漢字字形は
   `font_language=`で指定します。combテキスト欄は継承された`MaxLen`と
@@ -92,7 +92,7 @@ pylopdf は pymupdf「風」であって、ドロップイン互換ではあり�
 
 ## あえて実装しないもの — エコシステムで解決 { #deliberate-scope }
 
-| pymupdf の機能 | pylopdf での答え |
+| pymupdf の機能 | pdfust での答え |
 |---|---|
 | Story API / `insert_htmlbox`（組版） | typst（typst-py 経由）— [レシピ](ecosystem.md) |
 | 電子署名 | pyHanko（MIT）— [レシピ](ecosystem.md) |
@@ -114,9 +114,9 @@ doc.save("out.pdf", garbage=4, deflate=True)
 ```
 
 ```python
-# pylopdf
-import pylopdf
-doc = pylopdf.open("in.pdf")
+# pdfust
+import pdfust
+doc = pdfust.open("in.pdf")
 page = doc[0]
 page.add_highlight_annot(page.search_for("合計"))   # リストごと渡せる
 page.get_pixmap(scale=2).save("page.png")

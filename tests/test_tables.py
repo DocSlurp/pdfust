@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from conftest import build_pdf, build_raw_pdf, build_visual_rtl_pdf
 
-import pylopdf
+import pdfust
 
 
 def _bordered_table_pdf() -> bytes:
@@ -165,19 +165,19 @@ def _multiline_merged_header_pdf() -> bytes:
 
 
 def test_find_bordered_table() -> None:
-    page = pylopdf.open(stream=_bordered_table_pdf())[0]
+    page = pdfust.open(stream=_bordered_table_pdf())[0]
 
     finder = page.find_tables()
 
-    assert isinstance(finder, pylopdf.TableFinder)
+    assert isinstance(finder, pdfust.TableFinder)
     assert finder.page is page
     assert len(finder) == 1
     assert list(finder) == finder.tables
     assert finder[:] == finder.tables
     table = finder[0]
-    assert isinstance(table, pylopdf.Table)
+    assert isinstance(table, pdfust.Table)
     assert table.page is page
-    assert table.bbox == pytest.approx(pylopdf.Rect(40, 40, 300, 120))
+    assert table.bbox == pytest.approx(pdfust.Rect(40, 40, 300, 120))
     assert table.row_count == 2
     assert table.col_count == 2
     assert len(table.cells) == 4
@@ -186,7 +186,7 @@ def test_find_bordered_table() -> None:
     assert finder.clip is None
     assert table.strategy == "lines"
     assert table.confidence == 1.0
-    assert table.diagnostics == pylopdf.TableDiagnostics("lines", 1.0, None, None, None)
+    assert table.diagnostics == pdfust.TableDiagnostics("lines", 1.0, None, None, None)
     assert table.extract() == [["Name", "Value"], ["Alpha", "42"]]
     assert table.to_markdown() == "| Name | Value |\n| --- | --- |\n| Alpha | 42 |"
 
@@ -214,7 +214,7 @@ def test_bordered_table_restores_rtl_cell_text(hebrew_visual: str, expected: str
         f"BT /F1 8 Tf 50 195 Td <{hebrew_visual}> Tj ET\n"
         "BT /F2 12 Tf 180 195 Td (42) Tj ET"
     )
-    page = pylopdf.open(stream=build_visual_rtl_pdf(stream))[0]
+    page = pdfust.open(stream=build_visual_rtl_pdf(stream))[0]
     table = page.find_tables()[0]
 
     assert table.extract() == [["Name", "Value"], [expected, "42"]]
@@ -238,7 +238,7 @@ def test_borderless_table_restores_rtl_cell_text(hebrew_visual: str, expected: s
         )
         for row in range(3)
     )
-    page = pylopdf.open(stream=build_visual_rtl_pdf(rows))[0]
+    page = pdfust.open(stream=build_visual_rtl_pdf(rows))[0]
     table = page.find_tables(strategy="text")[0]
 
     assert table.extract() == [
@@ -249,10 +249,10 @@ def test_borderless_table_restores_rtl_cell_text(hebrew_visual: str, expected: s
 
 
 def test_table_markdown_preflights_escaped_utf8_output() -> None:
-    source = pylopdf.open(stream=_bordered_table_pdf())[0].find_tables()[0]
+    source = pdfust.open(stream=_bordered_table_pdf())[0].find_tables()[0]
     values = ["\\|\n日本", "Value", "Alpha", "42"]
-    cells: list[tuple[pylopdf.Rect, str] | None] = [(pylopdf.Rect(0, 0, 1, 1), value) for value in values]
-    table = pylopdf.Table(
+    cells: list[tuple[pdfust.Rect, str] | None] = [(pdfust.Rect(0, 0, 1, 1), value) for value in values]
+    table = pdfust.Table(
         source.page,
         source.bbox,
         2,
@@ -265,38 +265,38 @@ def test_table_markdown_preflights_escaped_utf8_output() -> None:
     exact_size = len(expected.encode())
 
     assert table.to_markdown(max_size=exact_size) == expected
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         table.to_markdown(max_size=exact_size - 1)
     assert caught.value.code == "markdown_output_size"
 
 
 @pytest.mark.parametrize("max_size", [0, -1, True, 1.5])
 def test_table_markdown_validates_output_limit(max_size: object) -> None:
-    table = pylopdf.open(stream=_bordered_table_pdf())[0].find_tables()[0]
+    table = pdfust.open(stream=_bordered_table_pdf())[0].find_tables()[0]
 
     with pytest.raises((TypeError, ValueError), match="max_size"):
         table.to_markdown(max_size=max_size)  # type: ignore[arg-type]
 
 
 def test_document_preflights_table_before_page_markdown(monkeypatch: pytest.MonkeyPatch) -> None:
-    document = pylopdf.open(stream=_bordered_table_pdf())
+    document = pdfust.open(stream=_bordered_table_pdf())
 
     def fail_page_render(*_args: object, **_kwargs: object) -> str:
         raise AssertionError
 
-    monkeypatch.setattr("pylopdf._markdown.page_to_markdown", fail_page_render)
-    with pytest.raises(pylopdf.LimitError) as caught:
+    monkeypatch.setattr("pdfust._markdown.page_to_markdown", fail_page_render)
+    with pytest.raises(pdfust.LimitError) as caught:
         document.to_markdown(max_size=16)
     assert caught.value.code == "markdown_output_size"
 
 
 def test_find_tables_clip_is_conservative_and_uses_display_coordinates() -> None:
     """Return complete tables inside a region without synthesizing partial grids."""
-    document = pylopdf.open(stream=_bordered_table_pdf())
+    document = pdfust.open(stream=_bordered_table_pdf())
     page = document[0]
     page.set_rotation(90)
 
-    table_bbox = pylopdf.Rect(180, 40, 260, 300)
+    table_bbox = pdfust.Rect(180, 40, 260, 300)
     finder = page.find_tables(clip=table_bbox)
 
     assert finder.clip == table_bbox
@@ -315,13 +315,13 @@ def test_find_tables_clip_is_conservative_and_uses_display_coordinates() -> None
     ],
 )
 def test_find_tables_rejects_invalid_clip(clip: tuple[float, ...]) -> None:
-    page = pylopdf.open(stream=_bordered_table_pdf())[0]
+    page = pdfust.open(stream=_bordered_table_pdf())[0]
     with pytest.raises(ValueError, match="clip"):
         page.find_tables(clip=clip)
 
 
 def test_find_tables_returns_empty_for_plain_text() -> None:
-    page = pylopdf.open(stream=build_pdf(["Not a table"]))[0]
+    page = pdfust.open(stream=build_pdf(["Not a table"]))[0]
     finder = page.find_tables()
     assert len(finder) == 0
     assert finder.tables == []
@@ -329,10 +329,10 @@ def test_find_tables_returns_empty_for_plain_text() -> None:
 
 
 def test_table_cache_is_invalidated_after_page_insertion() -> None:
-    doc = pylopdf.open(stream=_bordered_table_pdf())
+    doc = pdfust.open(stream=_bordered_table_pdf())
     assert len(doc[0].find_tables()) == 1
 
-    doc.insert_pdf(pylopdf.open(stream=build_pdf(["Not a table"])), start_at=0)
+    doc.insert_pdf(pdfust.open(stream=build_pdf(["Not a table"])), start_at=0)
 
     assert doc[0].find_tables().tables == []
     assert len(doc[1].find_tables()) == 1
@@ -341,47 +341,47 @@ def test_table_cache_is_invalidated_after_page_insertion() -> None:
 def test_rectangular_merged_cell_is_reconstructed() -> None:
     """Represent a missing internal divider as a merged header cell."""
     pdf = _bordered_table_pdf().replace(b"170 180 m 170 260 l", b"170 180 m 170 220 l")
-    table = pylopdf.open(stream=pdf)[0].find_tables()[0]
+    table = pdfust.open(stream=pdf)[0].find_tables()[0]
 
-    assert table.cells[0] == pytest.approx(pylopdf.Rect(40, 40, 300, 80))
+    assert table.cells[0] == pytest.approx(pdfust.Rect(40, 40, 300, 80))
     assert table.cells[1] is None
     assert table.extract() == [["Name Value", None], ["Alpha", "42"]]
     assert table.to_markdown() == ("| Name Value | Name Value |\n| --- | --- |\n| Alpha | 42 |")
     assert table.to_markdown(fill_empty=False) == ("| Name Value |  |\n| --- | --- |\n| Alpha | 42 |")
     filled = table.to_markdown(max_size=None)
     assert table.to_markdown(max_size=len(filled.encode())) == filled
-    with pytest.raises(pylopdf.LimitError, match="Markdown output exceeds"):
+    with pytest.raises(pdfust.LimitError, match="Markdown output exceeds"):
         table.to_markdown(max_size=len(filled.encode()) - 1)
 
 
 def test_broken_outer_grid_is_not_reported_as_a_table() -> None:
     """Reject a missing exterior border instead of inventing a table."""
     pdf = _bordered_table_pdf().replace(b"40 180 m 40 260 l", b"40 180 m 40 220 l")
-    assert pylopdf.open(stream=pdf)[0].find_tables().tables == []
+    assert pdfust.open(stream=pdf)[0].find_tables().tables == []
 
 
 def test_row_spanning_cell_is_reconstructed() -> None:
     """Represent a missing internal horizontal divider as a row span."""
     pdf = _bordered_table_pdf().replace(b"40 220 m 300 220 l", b"80 220 m 300 220 l")
-    table = pylopdf.open(stream=pdf)[0].find_tables()[0]
+    table = pdfust.open(stream=pdf)[0].find_tables()[0]
 
-    assert table.cells[0] == pytest.approx(pylopdf.Rect(40, 40, 170, 120))
+    assert table.cells[0] == pytest.approx(pdfust.Rect(40, 40, 170, 120))
     assert table.cells[2] is None
     assert table.extract() == [["Name\nAlpha", "Value"], [None, "42"]]
 
 
 def test_find_table_with_filled_rectangle_rules() -> None:
     """Recognize generators that paint narrow rectangles instead of strokes."""
-    table = pylopdf.open(stream=_filled_rule_table_pdf())[0].find_tables()[0]
+    table = pdfust.open(stream=_filled_rule_table_pdf())[0].find_tables()[0]
 
-    assert table.bbox == pytest.approx(pylopdf.Rect(40, 40, 300, 120))
+    assert table.bbox == pytest.approx(pdfust.Rect(40, 40, 300, 120))
     assert table.extract() == [["Name", "Value"], ["Alpha", "42"]]
 
 
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
 def test_sparse_row_grid_infers_repeated_records(rotation: int) -> None:
     """Refine coarse row spans while preserving logical Markdown orientation."""
-    document = pylopdf.open(stream=_sparse_row_grid_pdf())
+    document = pdfust.open(stream=_sparse_row_grid_pdf())
     document[0].set_rotation(rotation)
 
     table = document[0].find_tables()[0]
@@ -398,7 +398,7 @@ def test_sparse_row_grid_infers_repeated_records(rotation: int) -> None:
 
 def test_sparse_row_inference_preserves_multiline_merged_header() -> None:
     """Reject dense multiline text when adjacent slot signatures disagree."""
-    table = pylopdf.open(stream=_multiline_merged_header_pdf())[0].find_tables()[0]
+    table = pdfust.open(stream=_multiline_merged_header_pdf())[0].find_tables()[0]
 
     assert (table.row_count, table.col_count) == (3, 3)
     assert table.confidence == 1.0
@@ -420,12 +420,12 @@ def test_compact_filled_decorations_are_not_table_rules() -> None:
             4: f"<< /Length {len(stream)} >>\nstream\n{stream}\nendstream",
         }
     )
-    assert pylopdf.open(stream=pdf)[0].find_tables().tables == []
+    assert pdfust.open(stream=pdf)[0].find_tables().tables == []
 
 
 def test_opt_in_text_strategy_finds_borderless_table() -> None:
     """Require explicit text strategy for sustained aligned rows."""
-    page = pylopdf.open(stream=_borderless_table_pdf())[0]
+    page = pdfust.open(stream=_borderless_table_pdf())[0]
 
     assert page.find_tables().tables == []
     table = page.find_tables(strategy="text")[0]
@@ -447,7 +447,7 @@ def test_opt_in_text_strategy_finds_borderless_table() -> None:
 
 def test_text_strategy_requires_three_rows() -> None:
     """Reject short aligned pairs that are likely ordinary page layout."""
-    page = pylopdf.open(stream=_borderless_table_pdf(rows=2))[0]
+    page = pdfust.open(stream=_borderless_table_pdf(rows=2))[0]
     assert page.find_tables(strategy="text").tables == []
 
 
@@ -456,8 +456,8 @@ def test_text_table_confidence_tracks_alignment_evidence() -> None:
     perfect_pdf = _borderless_table_pdf()
     shifted_pdf = perfect_pdf.replace(b"40 180 Td (Beta)", b"50 180 Td (Beta)")
 
-    perfect = pylopdf.open(stream=perfect_pdf)[0].find_tables(strategy="text")[0]
-    shifted = pylopdf.open(stream=shifted_pdf)[0].find_tables(strategy="text")[0]
+    perfect = pdfust.open(stream=perfect_pdf)[0].find_tables(strategy="text")[0]
+    shifted = pdfust.open(stream=shifted_pdf)[0].find_tables(strategy="text")[0]
 
     assert shifted.diagnostics.alignment_error_em is not None
     assert perfect.diagnostics.alignment_error_em is not None
@@ -466,6 +466,6 @@ def test_text_table_confidence_tracks_alignment_evidence() -> None:
 
 
 def test_find_tables_rejects_unknown_strategy() -> None:
-    page = pylopdf.open(stream=_borderless_table_pdf())[0]
+    page = pdfust.open(stream=_borderless_table_pdf())[0]
     with pytest.raises(ValueError, match="strategy"):
         page.find_tables(strategy="guess")  # type: ignore[arg-type]

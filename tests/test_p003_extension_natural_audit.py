@@ -9,11 +9,11 @@ from bench import p003_extension_natural_audit as audit
 from bench.p003_extension_score import prediction, score_predictions
 from bench.silver import sha
 
-import pylopdf
+import pdfust
 
 
 def test_extracts_declared_nonzero_page_and_retains_exact_pdf_hash(tmp_path: Path) -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page().insert_text((30, 50), "Firstpage")
         document.new_page().insert_text((30, 50), "Secondpage")
         raw = document.tobytes()
@@ -30,7 +30,7 @@ def test_extracts_declared_nonzero_page_and_retains_exact_pdf_hash(tmp_path: Pat
 
 
 def test_no_text_pages_are_not_applicable_and_stay_in_complete_denominator(tmp_path: Path) -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page()
         raw = document.tobytes()
     path = tmp_path / "no-text.pdf"

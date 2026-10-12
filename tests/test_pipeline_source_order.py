@@ -72,10 +72,10 @@ def test_render_projection_refuses_changed_partition_evidence(mutation: str) -> 
 def test_native_table_and_prose_remain_owned_once(tmp_path: Path) -> None:
     from test_pipeline_run import record  # noqa: PLC0415 - generated PDF grid fixture.
 
-    import pylopdf  # noqa: PLC0415 - local native extraction only.
+    import pdfust  # noqa: PLC0415 - local native extraction only.
 
     item = record(tmp_path)
-    with pylopdf.open(item["pdf_path"]) as document:
+    with pdfust.open(item["pdf_path"]) as document:
         document[0].insert_text((40, 50), "Outside table prose")
         source = baseline.source(document[0])
     plan = split(source)

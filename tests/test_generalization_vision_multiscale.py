@@ -13,7 +13,7 @@ from bench.generalization_vision_regions import compose
 from bench.silver import sha
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def raster(size: tuple[int, int] = (100, 100)) -> bytes:
@@ -113,7 +113,7 @@ def test_partial_detector_failure_retains_previous_raw_results() -> None:
 
 
 def record(tmp_path: Path) -> dict:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page(width=100, height=100)
         data = document.tobytes()
     path = tmp_path / "source.pdf"

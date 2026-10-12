@@ -5,7 +5,7 @@ description: Document、Page、Pixmap、并行渲染与CPython 3.14t所支持的
 
 # 并发与free-threaded Python
 
-从v0.10开始，pylopdf既为带GIL的CPython 3.10–3.14发布每个平台一个`abi3` wheel，
+从v0.10开始，pdfust既为带GIL的CPython 3.10–3.14发布每个平台一个`abi3` wheel，
 也为free-threaded CPython 3.14发布专用的`cp314-cp314t` wheel。导入后者不会重新启用GIL。
 
 ## 支持约定 { #support-contract }
@@ -29,11 +29,11 @@ description: Document、Page、Pixmap、并行渲染与CPython 3.14t所支持的
 ```python
 from concurrent.futures import ThreadPoolExecutor
 
-import pylopdf
+import pdfust
 
 
 def extract(path: str) -> str:
-    with pylopdf.open(path) as document:
+    with pdfust.open(path) as document:
         return document.to_markdown()
 
 

@@ -17,7 +17,7 @@ from bench.silver import sha
 from PIL import Image
 from test_generalization_vision_regions import _record
 
-import pylopdf
+import pdfust
 
 
 def rgb(edge: int = 128) -> tuple[str, dict[str, Any]]:
@@ -83,7 +83,7 @@ def test_frozen_source_replay_checks_actual_body_and_payload_metadata(tmp_path: 
     record = _record(tmp_path)
     config = {"gate_image_mode": mode, "gate_image_edge": 128, "image_edge": 512, "rotation_mode": "preserve"}
     bbox: list[float] = [10, 20, 100, 150]
-    with pylopdf.open(record["pdf_path"]) as document:
+    with pdfust.open(record["pdf_path"]) as document:
         source_url, source_metadata = run.region_image(document[0], bbox, 128)
     url, metadata = gate.transform(source_url, source_metadata, mode)
     prediction = {

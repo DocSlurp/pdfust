@@ -228,11 +228,11 @@ def normalized_literal(text: str) -> str:
 
 def literal_baseline(cases: Mapping[str, Any]) -> dict[str, Any]:
     """Run native extraction only for the independently labeled literal baseline."""
-    import pylopdf  # noqa: PLC0415 - only baseline extraction loads the extension.
+    import pdfust  # noqa: PLC0415 - only baseline extraction loads the extension.
 
     texts = {}
     for doc in cases["documents"]:
-        with pylopdf.Document(stream=doc["pdf_bytes"]) as document:
+        with pdfust.Document(stream=doc["pdf_bytes"]) as document:
             texts[doc["id"]] = normalized_literal(document.get_text())
     scores = {
         query["id"]: {doc_id: float(normalized_literal(query["text"]) in text) for doc_id, text in texts.items()}

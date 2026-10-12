@@ -111,7 +111,7 @@ def equation(equation_id: str, mathml: str, text: str, starmath: str, *, number:
     """Display equation: MathML body (without the ``<math>`` element), linear Unicode text and StarMath source.
 
     Chromium renders the MathML, LibreOffice embeds a Math object, and
-    ReportLab/pylopdf typeset ``text`` as a centred line.
+    ReportLab/pdfust typeset ``text`` as a centred line.
     """
     return {"kind": "equation", "id": equation_id, "mathml": mathml, "text": text, "starmath": starmath, "number": number}
 

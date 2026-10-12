@@ -7,7 +7,7 @@ import pytest
 from bench import ambiguity_pixels as pixels
 from PIL import Image, ImageDraw
 
-import pylopdf
+import pdfust
 
 BOXES = [[10, 10, 190, 30], [10, 70, 190, 90]]
 BBOX = [0, 0, 200, 100]
@@ -106,7 +106,7 @@ def test_inline_character_candidate_uses_vertical_scan():
 
 def test_fresh_pdf_crop_keeps_exact_display_coverage(tmp_path):
     path = tmp_path / "source.pdf"
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=200, height=100)
         page.insert_text((20, 25), "Upper")
         page.insert_text((20, 85), "Lower")

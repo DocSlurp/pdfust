@@ -21,7 +21,7 @@ The protocol and reproduction commands are in
 
 | Path | Positive grids | Negative controls | Corpus cells |
 | --- | --- | --- | --- |
-| Existing pylopdf Markdown | 2/9 | 6/6 | 12/35 |
+| Existing pdfust Markdown | 2/9 | 6/6 | 12/35 |
 | Wrapped geometry | 7/9 | 4/6 | 29/35 |
 | Normalized YOLO26m-DocLayNet plus wrapped geometry | 7/9 | 6/6 | 29/35 |
 | Native header-guided record bullets | 1/9 | 6/6 | 35/35 |

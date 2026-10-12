@@ -15,11 +15,11 @@ initial response within a week.
 
 ## Handling untrusted PDFs
 
-pylopdf is written in Rust (lopdf, hayro, krilla, and HarfRust) and has no
+pdfust is written in Rust (lopdf, hayro, krilla, and HarfRust) and has no
 mandatory Python dependencies, but parsing hostile PDF input is inherently
 risky. When processing untrusted files:
 
-- Pass `limits=pylopdf.DocumentLimits.web()` to `pylopdf.open()`. The profile
+- Pass `limits=pdfust.DocumentLimits.web()` to `pdfust.open()`. The profile
   bounds input bytes, pages, indirect objects, direct object nesting, individual
   and cumulative decompression, page-content decompression, and interpreted
   Unicode text. It also caps the complete PDF snapshot passed to rendering and
@@ -108,7 +108,7 @@ risky. When processing untrusted files:
   text too. Writes preflight 1 MiB aggregate source/encoded text before PyO3
   copying with `metadata_input_size` and apply the complete update atomically.
 - Prefer running batch processing of untrusted documents in a sandboxed or
-  containerized environment, and enforce CPU deadlines in the host. pylopdf
+  containerized environment, and enforce CPU deadlines in the host. pdfust
   resource budgets do not provide in-process time cancellation.
 
 ## Enforcement phases and service boundaries
@@ -144,7 +144,7 @@ For upload services, use disposable workers with host-enforced deadlines and
 bounded memory. A timeout while waiting on a Python future does not cancel an
 in-progress native operation; the host must be able to terminate the worker.
 Recycle workers according to measured memory behavior and catch `PdfError` at
-the job boundary. Review `PylopdfWarning` when incomplete extraction/rendering
+the job boundary. Review `PdfustWarning` when incomplete extraction/rendering
 would be unacceptable.
 
 Opening, editing, or saving does not sanitize a PDF. Unsupported JavaScript is

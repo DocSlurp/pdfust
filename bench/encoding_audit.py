@@ -11,7 +11,7 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
-import pylopdf
+import pdfust
 from bench.feature_cases import raw_pdf, stream_object
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -125,17 +125,17 @@ def cases() -> list[EncodingCase]:
         )
     )
     for rotation in (90, 180, 270):
-        with pylopdf.open(stream=encoded_pdf()) as doc:
+        with pdfust.open(stream=encoded_pdf()) as doc:
             doc[0].set_rotation(rotation)
             result.append(EncodingCase(f"rotation-{rotation}", doc.tobytes()))
     result.extend(
         EncodingCase(mode, encoded_pdf(mode), "visibility", "Text-layer content is not proof of visible content.")
         for mode in ("clip-empty", "white-cover", "invisible-text", "duplicate-paint")
     )
-    with pylopdf.open(stream=encoded_pdf()) as source:
+    with pdfust.open(stream=encoded_pdf()) as source:
         pixmap = source[0].get_pixmap(dpi=96)
         for mixed in (False, True):
-            with pylopdf.open() as doc:
+            with pdfust.open() as doc:
                 page = doc.new_page(width=650, height=820)
                 page.insert_image(page.rect, pixmap=pixmap)
                 if mixed:
@@ -149,10 +149,10 @@ def cases() -> list[EncodingCase]:
             stream_object("0.3 0.5 0.7 rg 0 0 650 820 re f 0.8 0.6 0.2 rg 80 80 450 620 re f"),
         ]
     )
-    with pylopdf.open(stream=illustration) as source:
+    with pdfust.open(stream=illustration) as source:
         pixmap = source[0].get_pixmap(dpi=72)
         for name, box in (("logo", (20, 20, 70, 70)), ("raster-illustration", (0, 0, 650, 820))):
-            with pylopdf.open() as doc:
+            with pdfust.open() as doc:
                 page = doc.new_page(width=650, height=820)
                 page.insert_image(box, pixmap=pixmap)
                 page.insert_text((40, 35), "A page with no table")
@@ -160,7 +160,7 @@ def cases() -> list[EncodingCase]:
     return result
 
 
-def matrix(table: pylopdf.SpatialTable) -> tuple[tuple[str, ...], ...]:
+def matrix(table: pdfust.SpatialTable) -> tuple[tuple[str, ...], ...]:
     """Expand slots by stable cell identity, preserving empty cells."""
     cells = {cell.id: cell.text for cell in table.cells}
     return tuple(
@@ -175,11 +175,11 @@ def evaluate(case: EncodingCase, *, repetitions: int = 5) -> dict[str, object]:
     matrices: list[tuple[tuple[str, ...], ...]] = []
     for _ in range(repetitions):
         start = time.perf_counter_ns()
-        with pylopdf.open(stream=case.data) as doc:
+        with pdfust.open(stream=case.data) as doc:
             layout = doc[0].get_layout()
             matrices = [matrix(table) for table in layout.tables]
         elapsed.append((time.perf_counter_ns() - start) / 1e6)
-    with pylopdf.open(stream=case.data) as doc:
+    with pdfust.open(stream=case.data) as doc:
         page = doc[0]
         layout = page.get_layout()
         image_start = time.perf_counter_ns()

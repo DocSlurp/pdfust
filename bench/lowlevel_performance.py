@@ -23,16 +23,16 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.lowlevel_cases import cases
 from bench.silver import guard_path, load_manifest, verify_input, write_json
-from pylopdf import pylopdf_core
+from pdfust import pdfust_core
 
 MODES = ("text", "snapshot_text")
 ORIGINAL_COUNT = 104
 DEFAULT_REPEATS = 5
 CONTROL_COUNT = 72
-FONT_DISTRIBUTIONS = ("pylopdf-fonts-jp", "pylopdf-fonts-ko", "pylopdf-fonts-zh-cn", "pylopdf-fonts-zh-tw")
+FONT_DISTRIBUTIONS = ("pdfust-fonts-jp", "pdfust-fonts-ko", "pdfust-fonts-zh-cn", "pdfust-fonts-zh-tw")
 
 
 def _hash(data: bytes) -> str:
@@ -66,7 +66,7 @@ def extract(data: bytes, mode: str) -> dict[str, Any]:
         raise ValueError(message)
     mapped: Counter[str] = Counter()
     glyph_count = skipped = 0
-    with pylopdf.Document(stream=data) as document:
+    with pdfust.Document(stream=data) as document:
         pages = len(document)
         if mode == "snapshot_text":
             document._ensure_fallback_fonts()  # noqa: SLF001 - match public locale-provider initialization.
@@ -103,8 +103,8 @@ def _peak_rss() -> int:
 
 def _environment() -> dict[str, Any]:
     source = Path(__file__).resolve()
-    core = Path(pylopdf_core.__file__).resolve()
-    package = Path(pylopdf.__file__).resolve()
+    core = Path(pdfust_core.__file__).resolve()
+    package = Path(pdfust.__file__).resolve()
     font_versions: dict[str, str | None] = {}
     for distribution in FONT_DISTRIBUTIONS:
         try:
@@ -126,7 +126,7 @@ def _environment() -> dict[str, Any]:
         "cpu_affinity": sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None,
         "load_average": list(os.getloadavg()) if hasattr(os, "getloadavg") else None,
         "rayon_num_threads": os.environ.get("RAYON_NUM_THREADS"),
-        "library_version": pylopdf.__version__,
+        "library_version": pdfust.__version__,
         "optional_cjk_font_provider_versions": font_versions,
         "font_configuration": "public automatic fallback configuration included for every fresh Document",
         "benchmark_repository_revision": revision.stdout.strip() if revision.returncode == 0 else None,

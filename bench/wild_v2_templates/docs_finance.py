@@ -314,7 +314,7 @@ def bank_pl() -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------- w2-bank-ar-08 (pylopdf, ar)
+# ---------------------------------------------------------------- w2-bank-ar-08 (pdfust, ar)
 
 _AR_DIGITS = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
 
@@ -326,7 +326,7 @@ def _aed(cents: int) -> str:
 
 
 def bank_ar() -> dict[str, Any]:
-    """Arabic (UAE) account statement; Arabic-only and Latin-only text boxes for pylopdf."""
+    """Arabic (UAE) account statement; Arabic-only and Latin-only text boxes for pdfust."""
     events = ledger("bank-ar", date(2026, 3, 1), date(2026, 3, 31), [
         (1, "تحويل راتب من شركة الخليج للهندسة", 1845000),
         (2, "إيجار سكني (دفعة شيك)", -650000),
@@ -734,7 +734,7 @@ def quarterly_de() -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------- w2-quarterly-ja-03 (pylopdf, ja)
+# ---------------------------------------------------------------- w2-quarterly-ja-03 (pdfust, ja)
 
 
 def quarterly_ja() -> dict[str, Any]:

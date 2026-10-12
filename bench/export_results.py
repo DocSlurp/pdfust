@@ -31,7 +31,7 @@ REPORTS = (
     "bench/results/wild-v1-latest.md", "bench/results/wild-v1-models.md", "bench/DATASET_REALISM_REVIEW.md",
     "bench/P003_RESEARCH_EXTENSION.md", "bench/REAL_WORLD_V2.md", "bench/WILD_CORPUS.md",
 )
-GPU_STATE = Path.home() / ".local/state/jev-pdf/vast"
+GPU_STATE = Path.home() / ".local/state/pdfust/vast"
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> int:
@@ -226,7 +226,7 @@ def main() -> None:
         "| File | Rows / items |", "|---|---:|",
         *(f"| `{name}` | {count} |" for name, count in counts.items()), "",
         "- `vision/`: hosted and open-model page transcription; `raw/` holds every per-page record.",
-        "- `audit/`: pylopdf native extraction and OCR policies per level, document and quirk case.",
+        "- `audit/`: pdfust native extraction and OCR policies per level, document and quirk case.",
         "- `decisions/`: decision-model local repair arms (synthetic Layer 3 and wild-v1 transfer).",
         "- `costs/`: ledger rows for `P003/extension-v1-*` requests and GPU rental logs.",
         "- `datasets/`: truth and manifests; source PDFs stay under `bench/results/pdf-master-artifacts/`.",

@@ -12,7 +12,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench import generalization_vision_regions as regions
 from bench import p003_candidate_choice as choice
 from bench import p003_candidate_run as candidate
@@ -49,7 +49,7 @@ def freeze_page(
         return value
 
     expected = source_metadata(first)
-    with pylopdf.open(stream=raw) as document:
+    with pdfust.open(stream=raw) as document:
         page = document[record["page_number"]]
         if list(page.rect) != expected["viewport"] or page.rotation != expected["original_rotation"]:
             raise ValueError("Actual source PDF page geometry differs from generation metadata")

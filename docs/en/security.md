@@ -1,6 +1,6 @@
 ---
 title: Security
-description: Supported versions, private vulnerability reporting and guidance for handling untrusted PDFs with pylopdf.
+description: Supported versions, private vulnerability reporting and guidance for handling untrusted PDFs with pdfust.
 ---
 
 # Security
@@ -16,25 +16,25 @@ week.
 
 ## Handle untrusted PDFs { #untrusted-pdfs }
 
-pylopdf is written in Rust and has no mandatory Python dependencies, but
+pdfust is written in Rust and has no mandatory Python dependencies, but
 hostile PDF input remains inherently risky.
 
 !!! warning "Use a complete resource policy"
-    Pass `limits=pylopdf.DocumentLimits.web()` to `pylopdf.open()`. The
+    Pass `limits=pdfust.DocumentLimits.web()` to `pdfust.open()`. The
     preset is a conservative starting point for user uploads in memory-bounded
     web and queue workers.
 
 ```python
-import pylopdf
+import pdfust
 
 try:
-    with pylopdf.open(
+    with pdfust.open(
         "upload.pdf",
-        limits=pylopdf.DocumentLimits.web(),
+        limits=pdfust.DocumentLimits.web(),
     ) as doc:
         facts = doc.complexity
         preview = doc[0].get_pixmap(dpi=144)
-except pylopdf.LimitError as error:
+except pdfust.LimitError as error:
     reject_upload(error.code)
 ```
 
@@ -82,7 +82,7 @@ indexes pages.
 `decompression_unverifiable`.
 The same code is also
 `error.args[0]`. A filter chain that cannot be bounded safely is rejected
-instead of being decoded optimistically. Pylopdf-owned bounded lopdf decode
+instead of being decoded optimistically. Pdfust-owned bounded lopdf decode
 paths also reject more than 16 sequential `/Filter` layers before materializing
 the filter list.
 
@@ -95,7 +95,7 @@ validation and complexity inspection grow their iterative traversal stack
 fallibly, so allocation refusal raises `PdfError` without partial facts.
 
 `max_interpretation_size` applies when hayro first consumes retained input and
-whenever pylopdf must serialize current state after editing, decryption, or
+whenever pdfust must serialize current state after editing, decryption, or
 AcroForm state selection. The bounded writer refuses the crossing write and
 does not install a partial renderer/extractor cache. Its default is `None` for
 compatibility; `DocumentLimits.web()` sets 64 MiB.
@@ -117,7 +117,7 @@ Lenient opening performs one bounded repair: it may replace an incorrect final
 `startxref` only when an intact classic xref table exists in the same final
 revision and a complete parse succeeds under the original limits. It does not
 scan object headers, repair xref streams, or roll back to an earlier revision.
-The event emits `PylopdfWarning`, sets `doc.is_repaired` (and the metadata
+The event emits `PdfustWarning`, sets `doc.is_repaired` (and the metadata
 probe's `repaired` key), and saving rewrites normalized xref data.
 
 - Rendering is capped at 64 megapixels per page.
@@ -159,7 +159,7 @@ probe's `repaired` key), and saving rewrites normalized xref data.
   `text_line_count`. AcroForm text and choice appearances retain the fixed
   4,096-line layout cap. UAX #14 and grapheme indexes, line collections, and
   retained line text grow fallibly, so allocation refusal exposes neither a
-  partial layout nor a document edit. Pylopdf-owned normalization, grapheme
+  partial layout nor a document edit. Pdfust-owned normalization, grapheme
   references, shaped-line/glyph collections, WinAnsi output, and
   input-derived text-operator growth are fallible; Standard 14 width checks do
   not allocate an encoded text copy. Allocation refusal returns `PdfError`;
@@ -176,7 +176,7 @@ probe's `repaired` key), and saving rewrites normalized xref data.
 - `render_page_svg()` and `Page.render_svg()` default to a 64 MiB UTF-8 output
   limit and reject over-limit output before PyO3 creates the Python string;
   `max_size=None` explicitly opts out. hayro-svg 0.7 materializes one internal
-  Rust string before pylopdf can enforce this boundary.
+  Rust string before pdfust can enforce this boundary.
 - Drawing insertions preflight raw page `/Contents` arrays and reference chains
   before cache invalidation, input decoding, or dependent object creation. Raw
   arrays stop at 4,096 entries, chains at 32 levels, and the final array at
@@ -307,7 +307,7 @@ For upload services, use disposable workers with host-enforced deadlines and
 bounded memory. A timeout while waiting on a Python future does not cancel an
 in-progress native operation; the host must be able to terminate the worker.
 Recycle workers according to measured memory behavior and catch `PdfError` at
-the job boundary. Review `PylopdfWarning` when incomplete extraction/rendering
+the job boundary. Review `PdfustWarning` when incomplete extraction/rendering
 would be unacceptable.
 
 Opening, editing, or saving does not sanitize a PDF. Unsupported JavaScript is

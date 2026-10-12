@@ -3,7 +3,7 @@
 # Tags are fonts-{locale}-v{version}. Supported locale/script codes are
 # ar, he, hi, jp, ko, th, zh-cn, and zh-tw.
 # Each PyPI project needs the same Trusted Publisher configuration:
-#   owner: yhay81 / repository: pylopdf / workflow: release-fonts.yml / environment: pypi
+#   owner: yhay81 / repository: pdfust / workflow: release-fonts.yml / environment: pypi
 name: Release locale fonts
 
 on:
@@ -66,7 +66,7 @@ jobs:
             ar|he|hi|jp|ko|th|zh-cn|zh-tw) ;;
             *) echo "unsupported font locale: $locale" >&2; exit 1 ;;
           esac
-          package="pylopdf-fonts-${locale}"
+          package="pdfust-fonts-${locale}"
           path="fonts/${package}"
           version="$(python -c 'import sys, tomllib; print(tomllib.load(open(sys.argv[1], "rb"))["project"]["version"])' "$path/pyproject.toml")"
           if [[ "$REF_TYPE" == "tag" && "$REF_NAME" != "fonts-${locale}-v${version}" ]]; then

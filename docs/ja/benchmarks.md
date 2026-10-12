@@ -5,30 +5,30 @@ description: 抽出・結合・レンダリングの再現可能なベンチマ�
 
 # ベンチマーク
 
-pylopdfは**速い結果も遅い結果も同時に公開**します。以下は、ひとつの環境と
+pdfustは**速い結果も遅い結果も同時に公開**します。以下は、ひとつの環境と
 コーパスで得たスナップショットです。普遍的な順位ではなく、自分のワークロードで
 何を測るべきか判断する材料として使ってください。
 
 !!! info "最新の実行"
     **2026-07-26 08:18 UTC** · Windows 11 · Python 3.14.6 · AMD64<br>
-    pylopdf 0.11.0 · pymupdf 1.28.0 · pypdf 6.14.2 · pdfplumber 0.11.10<br>
+    pdfust 0.11.0 · pymupdf 1.28.0 · pypdf 6.14.2 · pdfplumber 0.11.10<br>
     ウォームアップ1回 + 計測5回。表は中央値（ミリ秒）です。
 
 ## 概要 { #overview }
 
 | ワークロード | 最新コーパスで分かったこと |
 |---|---|
-| 実世界PDF 10件を結合 | pylopdf **36.6 ms**、pymupdf 131.8 ms、pypdf 426.3 ms |
-| 先頭ページを2倍で描画 | 10ファイルすべてでpylopdfが高速 |
+| 実世界PDF 10件を結合 | pdfust **36.6 ms**、pymupdf 131.8 ms、pypdf 426.3 ms |
+| 先頭ページを2倍で描画 | 10ファイルすべてでpdfustが高速 |
 | 12ページを2倍で描画 | `render_pages()`は317.4 ms（1 worker）から81.5 ms（8 workers）へ短縮し、**3.89倍高速化** |
-| 全ページのテキスト抽出 | 4ファイルでpylopdf、6ファイルでpymupdfが高速 |
+| 全ページのテキスト抽出 | 4ファイルでpdfust、6ファイルでpymupdfが高速 |
 | 抽出精度の代理指標 | 読み順の流儀により類似度0.121〜1.000 |
 
 ## テキスト抽出 { #text-extraction }
 
 全ページ、単位ms。小さいほど高速です。
 
-| ファイル | pylopdf | pymupdf | pypdf | pdfplumber |
+| ファイル | pdfust | pymupdf | pypdf | pdfplumber |
 |---|---:|---:|---:|---:|
 | bill-hr815.pdf | 191.6 | **183.2** | 689.7 | 9997.1 |
 | bunka-kokugo-series-019-p4.pdf | 1.9 | **0.5** | 1.0 | 1.8 |
@@ -47,7 +47,7 @@ pylopdfは**速い結果も遅い結果も同時に公開**します。以下は
 フォームやOCR層で類似度が低くても、文字数がほぼ同じなら読み順・空白の方針だけが
 違う場合があります。
 
-| ファイル | pylopdf文字数 | pymupdf文字数 | 類似度 |
+| ファイル | pdfust文字数 | pymupdf文字数 | 類似度 |
 |---|---:|---:|---:|
 | bill-hr815.pdf | 300559 | 300559 | 1.000 |
 | bunka-kokugo-series-019-p4.pdf | 0 | 0 | 1.000 |
@@ -62,7 +62,7 @@ pylopdfは**速い結果も遅い結果も同時に公開**します。以下は
 
 ## 結合 { #merge }
 
-| タスク | pylopdf | pymupdf | pypdf |
+| タスク | pdfust | pymupdf | pypdf |
 |---|---:|---:|---:|
 | コーパス10件をすべて結合 | **36.6** | 131.8 | 426.3 |
 
@@ -70,7 +70,7 @@ pylopdfは**速い結果も遅い結果も同時に公開**します。以下は
 
 先頭ページを2倍PNGへ描画。単位ms、小さいほど高速です。
 
-| ファイル | pylopdf | pymupdf |
+| ファイル | pdfust | pymupdf |
 |---|---:|---:|
 | bill-hr815.pdf | **41.1** | 88.9 |
 | bunka-kokugo-series-019-p4.pdf | **48.2** | 110.5 |

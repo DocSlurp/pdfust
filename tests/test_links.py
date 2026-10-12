@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 from conftest import build_pdf, build_raw_pdf
 
-import pylopdf
+import pdfust
 
 ASSETS = Path(__file__).parent / "assets" / "real_world"
 
@@ -54,15 +54,15 @@ def _build_named_dest_tree_fixture(tree_objects: dict[int, str | bytes]) -> byte
 
 def test_direct_dest_array() -> None:
     """Resolve a direct /Dest array to a page number and target point."""
-    doc = pylopdf.open(stream=_build_direct_dest_fixture())
+    doc = pdfust.open(stream=_build_direct_dest_fixture())
     links = doc[0].get_links()
     assert len(links) == 1
     link = links[0]
-    assert link["kind"] == pylopdf.LINK_GOTO
+    assert link["kind"] == pdfust.LINK_GOTO
     assert link["page"] == 1
     # Display coordinates for crop [0,0,200,200] without rotation: (x, 200-y).
-    assert link["from"] == pylopdf.Rect(10.0, 170.0, 100.0, 190.0)
-    assert link["to"] == pylopdf.Point(5.0, 5.0)
+    assert link["from"] == pdfust.Rect(10.0, 170.0, 100.0, 190.0)
+    assert link["to"] == pdfust.Point(5.0, 5.0)
     assert "zoom" not in link  # A null value means no zoom.
     assert "nameddest" not in link
     assert doc[1].get_links() == []
@@ -71,14 +71,14 @@ def test_direct_dest_array() -> None:
 
 def test_uri_link_roundtrip() -> None:
     """Read back a URI link created with add_link_annot."""
-    doc = pylopdf.open(stream=build_pdf(["Hello link"]))
+    doc = pdfust.open(stream=build_pdf(["Hello link"]))
     page = doc[0]
     rect = (10.0, 20.0, 110.0, 40.0)
     page.add_link_annot(rect, "https://example.com/")
     links = page.get_links()
     assert len(links) == 1
     link = links[0]
-    assert link["kind"] == pylopdf.LINK_URI
+    assert link["kind"] == pdfust.LINK_URI
     assert link["uri"] == "https://example.com/"
     got = link["from"]
     assert (got.x0, got.y0, got.x1, got.y1) == rect
@@ -87,21 +87,21 @@ def test_uri_link_roundtrip() -> None:
 
 def test_usrguide_named_destinations() -> None:
     """Resolve every named destination in a pdfTeX/hyperref PDF."""
-    doc = pylopdf.open(ASSETS / "usrguide.pdf")
+    doc = pdfust.open(ASSETS / "usrguide.pdf")
     goto = []
     uri = []
     for page_number in range(doc.page_count):
         for link in doc[page_number].get_links():
-            if link["kind"] == pylopdf.LINK_GOTO:
+            if link["kind"] == pdfust.LINK_GOTO:
                 goto.append(link)
-            elif link["kind"] == pylopdf.LINK_URI:
+            elif link["kind"] == pdfust.LINK_URI:
                 uri.append(link)
     assert len(goto) == 40
     assert len(uri) == 2
     # Resolve all entries through the two-level /Names tree.
     assert all(link["page"] >= 0 for link in goto)
     assert all(link["nameddest"] for link in goto)
-    assert all(isinstance(link.get("to"), pylopdf.Point) for link in goto)
+    assert all(isinstance(link.get("to"), pdfust.Point) for link in goto)
     first = goto[0]
     assert first["nameddest"] == "section.1"
     assert first["page"] == 1
@@ -110,7 +110,7 @@ def test_usrguide_named_destinations() -> None:
 
 
 def test_named_destination_reference_cycle_is_visited_once() -> None:
-    doc = pylopdf.open(stream=_build_named_dest_tree_fixture({6: "<< /Kids [6 0 R] >>"}))
+    doc = pdfust.open(stream=_build_named_dest_tree_fixture({6: "<< /Kids [6 0 R] >>"}))
     links = doc[0].get_links()
     assert len(links) == 1
     assert links[0]["page"] == -1
@@ -118,7 +118,7 @@ def test_named_destination_reference_cycle_is_visited_once() -> None:
 
 
 def test_multiple_named_links_share_one_destination_tree() -> None:
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=build_raw_pdf(
             {
                 1: "<< /Type /Catalog /Pages 2 0 R /Names << /Dests 7 0 R >> >>",
@@ -142,15 +142,15 @@ def test_named_destination_tree_rejects_excessive_depth() -> None:
         objects[object_id] = f"<< /Kids [{object_id + 1} 0 R] >>"
     objects[38] = "<< /Names [(target) [3 0 R /Fit]] >>"
 
-    doc = pylopdf.open(stream=_build_named_dest_tree_fixture(objects))
-    with pytest.raises(pylopdf.PdfError, match="32-level safety limit"):
+    doc = pdfust.open(stream=_build_named_dest_tree_fixture(objects))
+    with pytest.raises(pdfust.PdfError, match="32-level safety limit"):
         doc[0].get_links()
 
 
 def test_named_destination_tree_rejects_excessive_entries() -> None:
     pairs = " ".join(f"(key{index}) [3 0 R /Fit]" for index in range(4097))
-    doc = pylopdf.open(stream=_build_named_dest_tree_fixture({6: f"<< /Names [{pairs}] >>"}))
-    with pytest.raises(pylopdf.PdfError, match="4096-entry safety limit"):
+    doc = pdfust.open(stream=_build_named_dest_tree_fixture({6: f"<< /Names [{pairs}] >>"}))
+    with pytest.raises(pdfust.PdfError, match="4096-entry safety limit"):
         doc[0].get_links()
 
 
@@ -161,14 +161,14 @@ def test_named_destination_tree_rejects_excessive_nodes() -> None:
     for object_id in child_ids:
         objects[object_id] = "<< >>"
 
-    doc = pylopdf.open(stream=_build_named_dest_tree_fixture(objects))
-    with pytest.raises(pylopdf.PdfError, match="4096-node safety limit"):
+    doc = pdfust.open(stream=_build_named_dest_tree_fixture(objects))
+    with pytest.raises(pdfust.PdfError, match="4096-node safety limit"):
         doc[0].get_links()
 
 
 def test_named_destination_tree_rejects_excessive_edges() -> None:
     kids = "7 0 R " * 8193
-    doc = pylopdf.open(
+    doc = pdfust.open(
         stream=_build_named_dest_tree_fixture(
             {
                 6: f"<< /Kids [{kids}] >>",
@@ -176,13 +176,13 @@ def test_named_destination_tree_rejects_excessive_edges() -> None:
             }
         )
     )
-    with pytest.raises(pylopdf.PdfError, match="8192-edge safety limit"):
+    with pytest.raises(pdfust.PdfError, match="8192-edge safety limit"):
         doc[0].get_links()
 
 
 def test_named_destination_tree_rejects_excessive_key_bytes() -> None:
     key = "x" * 1024
     pairs = f"({key}) [3 0 R /Fit] " * 1025
-    doc = pylopdf.open(stream=_build_named_dest_tree_fixture({6: f"<< /Names [{pairs}] >>"}))
-    with pytest.raises(pylopdf.PdfError, match="1048576-byte safety limit"):
+    doc = pdfust.open(stream=_build_named_dest_tree_fixture({6: f"<< /Names [{pairs}] >>"}))
+    with pytest.raises(pdfust.PdfError, match="1048576-byte safety limit"):
         doc[0].get_links()

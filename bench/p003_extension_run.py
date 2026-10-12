@@ -44,9 +44,9 @@ def image_evidence(pdf: bytes, edge: int, encoding: str) -> tuple[str | None, di
         raise ValueError("Unregistered image encoding")
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
-    with pylopdf.Document(stream=pdf) as document:
+    with pdfust.Document(stream=pdf) as document:
         page = document[0]
         raw = page.render(scale=edge / max(page.rect.width, page.rect.height), background=(255, 255, 255))
     with Image.open(io.BytesIO(raw)) as original:

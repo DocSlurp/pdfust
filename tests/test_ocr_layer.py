@@ -12,11 +12,11 @@ from collections.abc import Iterator
 import pytest
 from conftest import build_pdf
 
-import pylopdf
+import pdfust
 
 
-def _blank_page_doc() -> pylopdf.Document:
-    doc = pylopdf.Document()
+def _blank_page_doc() -> pdfust.Document:
+    doc = pdfust.Document()
     doc.new_page(width=300, height=200)
     return doc
 
@@ -80,7 +80,7 @@ def test_ocr_layer_does_not_need_fallback_fonts() -> None:
 def test_ocr_layer_survives_save_roundtrip() -> None:
     doc = _blank_page_doc()
     doc[0].insert_ocr_text_layer([(50, 50, 150, 70, "Persistent"), (50, 80, 150, 100, "残存")])
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     text = reopened[0].get_text()
     assert "Persistent" in text
     assert "残存" in text
@@ -96,14 +96,14 @@ def test_ocr_layer_unicode_map_crosses_blocks_and_preserves_surrogates() -> None
     assert b"100 beginbfchar" in data
     assert b"6 beginbfchar" in data
     assert b"<D83DDE00>" in data
-    reopened = pylopdf.open(stream=data)
+    reopened = pdfust.open(stream=data)
     assert reopened[0].get_text().strip() == text
 
 
 def test_ocr_layer_accepts_get_text_words_shape() -> None:
     # Pass get_text("words") eight-item tuples directly; only the first five
     # items are used.
-    src = pylopdf.Document()
+    src = pdfust.Document()
     src.new_page()
     src[0].insert_text((72, 100), "Roundtrip works")
     words = src[0].get_text("words")
@@ -116,7 +116,7 @@ def test_ocr_layer_accepts_get_text_words_shape() -> None:
 
 
 def test_ocr_layer_on_rotated_page_uses_display_coordinates() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=100, height=200)
     page = doc[0]
     page.set_rotation(90)  # Display is 200 x 100.
@@ -127,7 +127,7 @@ def test_ocr_layer_on_rotated_page_uses_display_coordinates() -> None:
 
 
 @pytest.mark.parametrize("rotation", [90, 180, 270])
-def test_ocr_layer_orients_sideways_baselines(rotation: pylopdf.OcrRotation) -> None:
+def test_ocr_layer_orients_sideways_baselines(rotation: pdfust.OcrRotation) -> None:
     doc = _blank_page_doc()
     page = doc[0]
     page.insert_ocr_text_layer([(80, 30, 105, 150, "Vertical box")], rotation=rotation)
@@ -140,7 +140,7 @@ def test_ocr_layer_orients_sideways_baselines(rotation: pylopdf.OcrRotation) -> 
 
 
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
-def test_ocr_layer_orders_rotated_columns_logically(rotation: pylopdf.OcrRotation) -> None:
+def test_ocr_layer_orders_rotated_columns_logically(rotation: pdfust.OcrRotation) -> None:
     logical_width = 400.0
     logical_height = 300.0
     logical_words = [
@@ -164,7 +164,7 @@ def test_ocr_layer_orders_rotated_columns_logically(rotation: pylopdf.OcrRotatio
     page_width, page_height = (
         (logical_height, logical_width) if display_rotation in (90, 270) else (logical_width, logical_height)
     )
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=page_width, height=page_height)
     page = doc[0]
     # Geometry, not caller ordering, determines the logical reading sequence.
@@ -188,12 +188,12 @@ def test_ocr_layer_rejects_empty() -> None:
         doc[0].insert_ocr_text_layer([])
     with pytest.raises(ValueError, match="words"):
         doc[0].insert_ocr_text_layer([(10, 10, 50, 20, "")])
-    with pytest.raises(pylopdf.OcrError, match="rotation"):
+    with pytest.raises(pdfust.OcrError, match="rotation"):
         doc[0].insert_ocr_text_layer([(10, 10, 50, 20, "Text")], rotation=45)  # type: ignore[arg-type]
 
 
 def test_ocr_layer_bounds_generator_words_before_full_materialization() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     before = doc.tobytes()
     consumed = 0
 
@@ -210,7 +210,7 @@ def test_ocr_layer_bounds_generator_words_before_full_materialization() -> None:
 
 
 def test_ocr_layer_bounds_utf8_text_before_mutation() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     before = doc.tobytes()
 
     with pytest.raises(ValueError, match="1048576 UTF-8 bytes"):
@@ -219,11 +219,11 @@ def test_ocr_layer_bounds_utf8_text_before_mutation() -> None:
 
 
 def test_ocr_layer_bounds_distinct_cids_before_mutation() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     before = doc.tobytes()
     text = "".join(chr(codepoint) for codepoint in range(1, 0x11000) if not 0xD800 <= codepoint <= 0xDFFF)
     text = text[:65_535]
 
-    with pytest.raises(pylopdf.PdfError, match="65,534 per call"):
+    with pytest.raises(pdfust.PdfError, match="65,534 per call"):
         doc[0].insert_ocr_text_layer([(10, 10, 290, 20, text)])
     assert doc.tobytes() == before

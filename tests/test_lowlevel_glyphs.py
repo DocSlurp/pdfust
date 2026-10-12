@@ -5,10 +5,10 @@ from __future__ import annotations
 import pytest
 from conftest import build_pdf, build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
-def _snapshot(doc: pylopdf.Document, page: int = 1, **limits: int) -> tuple:
+def _snapshot(doc: pdfust.Document, page: int = 1, **limits: int) -> tuple:
     return doc._doc.extract_glyph_snapshot(page, **limits)  # noqa: SLF001 - private experiment API
 
 
@@ -28,7 +28,7 @@ def _raw_text(content: str, *, rotation: int = 0) -> bytes:
 
 
 def test_snapshot_preserves_callback_order_before_geometry() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     page = doc.new_page(width=300, height=200)
     page.insert_text((180, 80), "Right")
     page.insert_text((30, 80), "Left")
@@ -47,7 +47,7 @@ def test_snapshot_preserves_callback_order_before_geometry() -> None:
 
 def test_snapshot_preserves_overprint_and_invisible_mode() -> None:
     stream = "BT /F1 12 Tf 30 120 Td (AB) Tj ET BT /F1 12 Tf 3 Tr 30 120 Td (AB) Tj ET"
-    doc = pylopdf.open(stream=_raw_text(stream))
+    doc = pdfust.open(stream=_raw_text(stream))
     rows = _snapshot(doc)[2]
     assert "".join(row[1] for row in rows) == "ABAB"
     assert [row[9] for row in rows] == ["fill", "fill", "invisible", "invisible"]
@@ -57,7 +57,7 @@ def test_snapshot_preserves_overprint_and_invisible_mode() -> None:
 
 @pytest.mark.parametrize("rotation", [0, 90, 180, 270])
 def test_snapshot_rotation_matches_display_line_origin(rotation: int) -> None:
-    doc = pylopdf.open(stream=_raw_text("BT /F1 12 Tf 30 120 Td (AB) Tj ET", rotation=rotation))
+    doc = pdfust.open(stream=_raw_text("BT /F1 12 Tf 30 120 Td (AB) Tj ET", rotation=rotation))
     width, height, rows, _ = _snapshot(doc)
     assert (width, height) == ((300, 200) if rotation in {0, 180} else (200, 300))
     line = doc[0].get_text("dict")["blocks"][0]["lines"][0]
@@ -66,9 +66,9 @@ def test_snapshot_rotation_matches_display_line_origin(rotation: int) -> None:
 
 
 def test_snapshot_refusal_preserves_cache_and_does_not_admit_failed_page() -> None:
-    doc = pylopdf.open(stream=build_pdf(["AB", "CD"]), limits=pylopdf.DocumentLimits(max_text_glyphs=4))
+    doc = pdfust.open(stream=build_pdf(["AB", "CD"]), limits=pdfust.DocumentLimits(max_text_glyphs=4))
     cached = doc[0].get_text("dict")
-    with pytest.raises(pylopdf.LimitError) as exc:
+    with pytest.raises(pdfust.LimitError) as exc:
         _snapshot(doc, 2, max_glyphs=1)
     assert exc.value.code == "text_glyph_count"
     assert doc[0].get_text("dict") == cached
@@ -78,20 +78,20 @@ def test_snapshot_refusal_preserves_cache_and_does_not_admit_failed_page() -> No
 
 
 def test_snapshot_shares_cumulative_document_admission() -> None:
-    doc = pylopdf.open(stream=build_pdf(["AB", "CD"]), limits=pylopdf.DocumentLimits(max_text_glyphs=3))
+    doc = pdfust.open(stream=build_pdf(["AB", "CD"]), limits=pdfust.DocumentLimits(max_text_glyphs=3))
     _snapshot(doc)
     assert doc[0].get_text() == "AB\n"
-    with pytest.raises(pylopdf.LimitError) as exc:
+    with pytest.raises(pdfust.LimitError) as exc:
         _snapshot(doc, 2)
     assert exc.value.code == "text_glyph_count"
     assert doc[0].get_text() == "AB\n"
 
 
 def test_snapshot_text_budget_and_edit_invalidation() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     page = doc.new_page()
     page.insert_text((30, 80), "AB")
-    with pytest.raises(pylopdf.LimitError) as exc:
+    with pytest.raises(pdfust.LimitError) as exc:
         _snapshot(doc, max_text_bytes=1)
     assert exc.value.code == "text_size"
     old = _snapshot(doc)[2]
@@ -104,7 +104,7 @@ def test_snapshot_text_budget_and_edit_invalidation() -> None:
     "limits", [{"max_glyphs": 0}, {"max_glyphs": 65537}, {"max_text_bytes": 0}, {"max_text_bytes": 1048577}]
 )
 def test_snapshot_rejects_unbounded_or_invalid_limits(limits: dict[str, int]) -> None:
-    doc = pylopdf.open(stream=build_pdf(["AB"]))
+    doc = pdfust.open(stream=build_pdf(["AB"]))
     with pytest.raises(ValueError, match="max_glyphs must be"):
         _snapshot(doc, **limits)
     assert doc[0].get_text() == "AB\n"
@@ -112,7 +112,7 @@ def test_snapshot_rejects_unbounded_or_invalid_limits(limits: dict[str, int]) ->
 
 @pytest.mark.parametrize("page", [0, 2])
 def test_snapshot_invalid_page_restores_interpretation(page: int) -> None:
-    doc = pylopdf.open(stream=build_pdf(["AB"]))
-    with pytest.raises(pylopdf.PdfError):
+    doc = pdfust.open(stream=build_pdf(["AB"]))
+    with pytest.raises(pdfust.PdfError):
         _snapshot(doc, page)
     assert doc[0].get_text() == "AB\n"

@@ -86,7 +86,7 @@ Reproduce:
 | R16_low_contrast_faded | 0.940 | 0.936 | 0.939 | 0.930 | 0.928 | 0.936 | 0.899 | 0.903 | 0.885 | 0.886 |
 | R19_mobile_pdf_compression | 0.935 | 0.931 | 0.934 | 0.928 | 0.921 | 0.928 | 0.902 | 0.901 | 0.874 | 0.876 |
 
-### Native pylopdf extraction (no model)
+### Native pdfust extraction (no model)
 
 | Level | Documents | Text F1 | Exact tables | Cell recall |
 |---|---:|---:|---:|---:|
@@ -156,6 +156,6 @@ Reproduce:
   Every instance was registered with the systemd watchdog timer
   (`bench/vast_watchdog.py`) before use. Each was destroyed explicitly or by
   the idle rule, with zero live instances afterwards.
-- **Native OCR.** Native rows use pylopdf extraction with no model. The
+- **Native OCR.** Native rows use pdfust extraction with no model. The
   ten-level row uses the bundled PP-OCRv6 small engine on the same scan levels.
   It is a lower bound for a CPU-only path, not a tuned OCR configuration.

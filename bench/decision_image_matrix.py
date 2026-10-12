@@ -17,7 +17,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench.decision_context_cases import context_cases, evidence_modes
 from bench.decision_context_compact import make_request
 from bench.decision_images import MAX_PDF_BYTES, digest
@@ -48,8 +48,8 @@ class VariantCache:
         self.directory = directory
         directory.mkdir(parents=True, exist_ok=True)
         self.renderer = {
-            "native_sha256": hashlib.sha256(Path(pylopdf.pylopdf_core.__file__).read_bytes()).hexdigest(),
-            "python_sha256": hashlib.sha256(Path(pylopdf.__file__).read_bytes()).hexdigest(),
+            "native_sha256": hashlib.sha256(Path(pdfust.pdfust_core.__file__).read_bytes()).hexdigest(),
+            "python_sha256": hashlib.sha256(Path(pdfust.__file__).read_bytes()).hexdigest(),
             "pillow": Image.__version__,
         }
 
@@ -60,7 +60,7 @@ class VariantCache:
         if isinstance(page_index, bool) or not isinstance(page_index, int) or page_index < 0:
             message = "page_index must be a nonnegative integer"
             raise ValueError(message)
-        with pylopdf.open(stream=pdf) as document:
+        with pdfust.open(stream=pdf) as document:
             page = document[page_index]
             width, height = page.rect[2:]
             region = bbox if bbox is not None else [0, 0, width, height]

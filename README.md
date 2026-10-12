@@ -1,4 +1,4 @@
-# jev-pdf
+# pdfust
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/justsml/jev-pdf/blob/main/LICENSE)
 
@@ -6,13 +6,13 @@
 pymupdf-style API on a pure-Rust core, MIT licensed, with no mandatory Python
 dependencies.**
 
-[Documentation](https://pylopdf.haya.works/) ·
-[Getting started](https://pylopdf.haya.works/getting-started/) ·
-[API reference](https://pylopdf.haya.works/api/) ·
-[pymupdf migration guide](https://pylopdf.haya.works/migration/) ·
-[Benchmarks](https://pylopdf.haya.works/benchmarks/)
+[Documentation](docs/en/index.md) ·
+[Getting started](docs/en/getting-started.md) ·
+[API reference](docs/en/api.md) ·
+[pymupdf migration guide](docs/en/migration.md) ·
+[Benchmarks](docs/en/benchmarks.md)
 
-jev-pdf combines the 2026 Rust PDF ecosystem behind one Python API:
+pdfust combines the 2026 Rust PDF ecosystem behind one Python API:
 [lopdf](https://github.com/J-F-Liu/lopdf) for editing,
 [hayro](https://github.com/LaurenzV/hayro) (the pure-Rust PDF renderer adopted
 by Typst) for rendering and positioned extraction, and
@@ -20,9 +20,9 @@ by Typst) for rendering and positioned extraction, and
 [HarfRust](https://github.com/harfbuzz/harfrust) for shaped, subset-embedded
 text and form appearances.
 
-## Why jev-pdf?
+## Why pdfust?
 
-| | jev-pdf | pymupdf | pypdf | pypdfium2 | pdf_oxide | pikepdf |
+| | pdfust | pymupdf | pypdf | pypdfium2 | pdf_oxide | pikepdf |
 |---|---|---|---|---|---|---|
 | License | **MIT** | AGPL / commercial | BSD | Apache/BSD | MIT/Apache-2.0 | MPL-2.0 |
 | Wheel size (MiB) | **~5.0–5.8** | ~17.5–24.7 | small (pure Python) | ~2.7–5.0 | ~9.7–10.9 | ~1.9–4.6 |
@@ -33,7 +33,7 @@ text and form appearances.
 | Locale-aware multilingual fonts | ✅ (optional extras) | ✅ | — | manual | — | — |
 | Implementation | **pure Rust** | C/C++ | Python | C++ (PDFium) | Rust | C++ (qpdf) |
 
-Wheel sizes are the ranges of published files for pylopdf 0.10.0, pymupdf
+Wheel sizes are the ranges of published files for pdfust 0.10.0, pymupdf
 1.28.0, pypdfium2 5.12.1, pdf-oxide 0.3.75, and pikepdf 10.10.0 on 2026-07-25.
 
 - **AGPL-free**: covers the common pymupdf use cases under the MIT license
@@ -43,23 +43,23 @@ Wheel sizes are the ranges of published files for pylopdf 0.10.0, pymupdf
   `cp314t` wheel for free-threaded Python
 - **Familiar**: the API is modeled after
   [pymupdf](https://github.com/pymupdf/PyMuPDF), with a
-  [migration guide](https://pylopdf.haya.works/migration/)
+  [migration guide](docs/en/migration.md)
 
 ## Install
 
 ```bash
-pip install "jev-pdf @ git+https://github.com/justsml/jev-pdf.git"
+pip install "pdfust @ git+https://github.com/justsml/jev-pdf.git"
 ```
 
 Optional extras:
 
 ```bash
-pip install "jev-pdf[jp] @ git+https://github.com/justsml/jev-pdf.git"    # Japanese rendering fallback and text generation
-pip install "jev-pdf[ko] @ git+https://github.com/justsml/jev-pdf.git"    # Korean
-pip install "jev-pdf[zh-cn] @ git+https://github.com/justsml/jev-pdf.git" # Simplified Chinese
-pip install "jev-pdf[zh-tw] @ git+https://github.com/justsml/jev-pdf.git" # Traditional Chinese
-pip install "jev-pdf[ar] @ git+https://github.com/justsml/jev-pdf.git"    # Arabic generation (also: he, hi, th)
-pip install "jev-pdf[ocr] @ git+https://github.com/justsml/jev-pdf.git"   # offline PP-OCRv6 recognition, pure Rust,
+pip install "pdfust[jp] @ git+https://github.com/justsml/jev-pdf.git"    # Japanese rendering fallback and text generation
+pip install "pdfust[ko] @ git+https://github.com/justsml/jev-pdf.git"    # Korean
+pip install "pdfust[zh-cn] @ git+https://github.com/justsml/jev-pdf.git" # Simplified Chinese
+pip install "pdfust[zh-tw] @ git+https://github.com/justsml/jev-pdf.git" # Traditional Chinese
+pip install "pdfust[ar] @ git+https://github.com/justsml/jev-pdf.git"    # Arabic generation (also: he, hi, th)
+pip install "pdfust[ocr] @ git+https://github.com/justsml/jev-pdf.git"   # offline PP-OCRv6 recognition, pure Rust,
                              # no system executables or network at runtime
 ```
 
@@ -70,26 +70,24 @@ fonts for Arabic, Hebrew, Devanagari, and Thai. Choose `jp`, `ko`, `zh-cn`, or
 generic CJK font extra.
 
 The repository is private; source installation requires authorized GitHub access
-and a Rust toolchain. No `jev-pdf` package has been published. From a local
+and a Rust toolchain. No `pdfust` package has been published. From a local
 checkout, install with `uv sync` or `pip install .`; use `pip install ".[ocr]"`
 for the optional OCR data package.
 
-The public import is `jev_pdf`. The complete `pylopdf` import remains compatible
-in the same wheel, with identical public classes, functions and constants.
-Optional `pylopdf-fonts-*` and `pylopdf-ocr-models` data package names are unchanged.
-Use a fresh environment or uninstall the separately installed `pylopdf`
-distribution before migrating: both distributions provide the same `pylopdf`
-module files. The new wheel supplies compatibility without requiring the old
-distribution.
-Upstream pylopdf documentation remains linked above as API background; the
-private repository's README records this distribution and import migration.
+The public import is `pdfust`. The earlier names remain as compatibility
+imports in the same wheel, with identical public classes, functions and
+constants: `jev_pdf` (distribution `jev-pdf`) and `pylopdf` (original upstream
+name; `pylopdf.PylopdfWarning` aliases `pdfust.PdfustWarning`). Use a fresh
+environment, or uninstall any separately installed `jev-pdf` or `pylopdf`
+distribution first: they provide overlapping module files. See
+[docs/PACKAGE_NAME.md](docs/PACKAGE_NAME.md).
 
 ## Quickstart
 
 ```python
-import jev_pdf
+import pdfust
 
-doc = jev_pdf.open("input.pdf")              # or jev_pdf.open(stream=pdf_bytes)
+doc = pdfust.open("input.pdf")              # or pdfust.open(stream=pdf_bytes)
 
 # Extract: plain text, positioned words, search, tables, Markdown
 text = doc.get_page_text(0)
@@ -99,7 +97,7 @@ tables = doc[0].find_tables()                # bordered grids incl. merged cells
 markdown = doc.to_markdown()                 # RAG / LLM preprocessing
 layout = doc[0].get_layout()                 # owned CPU snapshot; no rasterization
 fields = layout.extract_fields([
-    jev_pdf.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
+    pdfust.FieldSpec("invoice_number", anchor="Invoice number", value_type="text"),
 ])                                          # ambiguous assignments abstain
 
 # Render: PNG / SVG / raw pixels
@@ -111,9 +109,9 @@ pix = doc[0].get_pixmap(dpi=144)             # immutable RGBA8 for NumPy / PIL
 # Edit: reorganize pages, merge documents
 doc.delete_pages([1, 2])
 doc.select([2, 0])                           # keep / reorder / duplicate
-merged = jev_pdf.Document()
-merged.insert_pdf(jev_pdf.open("a.pdf"))
-merged.insert_pdf(jev_pdf.open("b.pdf"), from_page=0, to_page=2)
+merged = pdfust.Document()
+merged.insert_pdf(pdfust.open("a.pdf"))
+merged.insert_pdf(pdfust.open("b.pdf"), from_page=0, to_page=2)
 
 # Generate: images, overlays, shaped subset-embedded multilingual text
 page = doc[0]
@@ -132,22 +130,22 @@ for i, p in enumerate(doc):
 doc.set_form_field("customer", "Taro Yamada")
 doc.set_form_field("agree", True)
 
-# OCR: add a searchable text layer offline (pip install "jev-pdf[ocr] @ git+https://github.com/justsml/jev-pdf.git")
-engine = jev_pdf.OcrEngine(threads=4)
+# OCR: add a searchable text layer offline (pip install "pdfust[ocr] @ git+https://github.com/justsml/jev-pdf.git")
+engine = pdfust.OcrEngine(threads=4)
 page.apply_ocr(engine=engine)                # skips pages with existing text
 
 # Save: optimized, or AES-256 encrypted
 doc.save("out.pdf", garbage=True, deflate=True, object_streams=True)
-doc.save("locked.pdf", user_pw="secret", permissions=jev_pdf.Permissions.PRINT)
+doc.save("locked.pdf", user_pw="secret", permissions=pdfust.Permissions.PRINT)
 
 # Encrypted input and fast probing
-doc = jev_pdf.open("locked.pdf", password="secret")
-info = jev_pdf.peek_metadata("input.pdf")    # page count / encryption, no full parse
+doc = pdfust.open("locked.pdf", password="secret")
+info = pdfust.peek_metadata("input.pdf")    # page count / encryption, no full parse
 ```
 
-The [getting started guide](https://pylopdf.haya.works/getting-started/)
+The [getting started guide](docs/en/getting-started.md)
 walks through each area; the
-[API reference](https://pylopdf.haya.works/api/) documents every method,
+[API reference](docs/en/api.md) documents every method,
 default, and resource boundary.
 
 ## Features
@@ -171,18 +169,18 @@ default, and resource boundary.
 - **Untrusted input policy** — `DocumentLimits.web()` bounds file size, pages,
   objects, decompression, glyph and output budgets in one opt-in profile;
   policy refusals raise typed `LimitError`; fixed implementation caps and
-  allocation failures can raise `PdfError` without partial results ([security model](https://pylopdf.haya.works/security/))
+  allocation failures can raise `PdfError` without partial results ([security model](docs/en/security.md))
 - **WebAssembly** — a static PyEmscripten wheel runs on Cloudflare Python
   Workers, verified end-to-end every release
-  ([guide](https://pylopdf.haya.works/wasm/))
+  ([guide](docs/en/wasm.md))
 - **Concurrency** — heavy operations release the GIL, distinct `Document`
   objects work in parallel, and a native `cp314t` wheel supports
   free-threaded Python 3.14
-  ([contract](https://pylopdf.haya.works/concurrency/))
+  ([contract](docs/en/concurrency.md))
 
 ## Limitations
 
-pylopdf documents its boundaries instead of guessing. Multicolumn reading
+pdfust documents its boundaries instead of guessing. Multicolumn reading
 order follows deterministic whitespace-gutter rules; borderless table
 detection is opt-in because aligned prose is geometrically ambiguous. CJK text
 generation selects one font per run (not per-glyph fallback). Pure RTL lines
@@ -192,14 +190,14 @@ bidirectional paragraph layout remain in producer visual order. Ruby, warichu,
 and mixed-orientation Japanese typography are not interpreted semantically.
 Typesetting, PDF/A output, and digital signatures are intentionally out of
 scope — see the ecosystem recipes below. The
-[API stability policy](https://pylopdf.haya.works/stability/) defines
+[API stability policy](docs/en/stability.md) defines
 what may change before and after v1.0.
 
 ## Ecosystem recipes
 
-pylopdf stays a lightweight core; adjacent concerns pair with established
+pdfust stays a lightweight core; adjacent concerns pair with established
 libraries. These recipes are covered by integration tests and detailed in the
-[ecosystem guide](https://pylopdf.haya.works/ecosystem/).
+[ecosystem guide](docs/en/ecosystem.md).
 
 **Typesetting and PDF/A output —
 [typst](https://typst.app/)** (via
@@ -207,16 +205,16 @@ libraries. These recipes are covered by integration tests and detailed in the
 
 ```python
 import typst
-import jev_pdf
+import pdfust
 
 pdf_bytes = typst.compile("report.typ")         # typesetting: typst
-doc = jev_pdf.open(stream=pdf_bytes)            # editing / extraction: jev_pdf
+doc = pdfust.open(stream=pdf_bytes)            # editing / extraction: pdfust
 pdf_a: bytes = typst.compile("report.typ", pdf_standards="a-2b")
 ```
 
 **Digital signatures (PAdES) —
 [pyHanko](https://pypi.org/project/pyHanko/)** (MIT), which signs with an
-incremental update so pylopdf's bytes remain untouched:
+incremental update so pdfust's bytes remain untouched:
 
 ```python
 import io
@@ -1160,7 +1158,7 @@ USD 6.05 in older unresolved reservations.
 ## Architecture
 
 ```
-jev_pdf.Document (Python, pymupdf-style API)
+pdfust.Document (Python, pymupdf-style API)
    └─ _Document (PyO3)
         ├─ lopdf 0.44   … editing: open → modify → save
         ├─ hayro 0.7    … rendering and positioned extraction
@@ -1170,7 +1168,7 @@ jev_pdf.Document (Python, pymupdf-style API)
 
 ```
 rust/          # PyO3 bindings
-src/pylopdf/   # Python high-level API
+src/pdfust/   # Python high-level API
 tests/         # pytest (Rust behavior is verified through Python tests)
 ```
 
@@ -1203,5 +1201,5 @@ dependencies keep their own permissive licenses (lopdf and HarfRust are MIT;
 hayro and krilla are MIT/Apache-2.0) — see
 [NOTICE.md](https://github.com/justsml/jev-pdf/blob/main/NOTICE.md).
 
-This private continuation derives from pylopdf by Yusuke Hayashi. Original
+This private continuation derives from [pylopdf](https://github.com/yhay81/pylopdf) by Yusuke Hayashi. Original
 author attribution, MIT license and bundled dependency notices are preserved.

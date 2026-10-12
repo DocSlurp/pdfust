@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.decision_cases import baseline
 from bench.feature_cases import ROOT, build_cases
 from bench.geometry_cascade import derivative
@@ -76,7 +76,7 @@ _PUBLIC_REGIONS = (
 
 def _observe(data: bytes, page: int, clip: tuple[int, int, int, int]) -> dict[str, Any]:
     """Select native word centers in an original-page display-coordinate region."""
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         layout = document[page].get_layout(table_strategy=None)
     selected = layout.select(clip)
     words = [

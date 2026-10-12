@@ -14,7 +14,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import page_pdf, text_op
 from bench.pipeline_corpus import _table
 from bench.silver import canonical, guard_path, sha, write_json
@@ -250,7 +250,7 @@ def authored(plan: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]], dict[st
     if kind == "decorative":
         ops += ["0.7 G 0.8 w 40 140 530 530 re S", "70 155 m 150 665 l S", "450 170 m 525 680 l S", "0 G"]
     ops.append(text_op("Figures pending review.", 42, 30, size=9))
-    with pylopdf.Document(stream=page_pdf("\n".join(ops))) as document:
+    with pdfust.Document(stream=page_pdf("\n".join(ops))) as document:
         page = document[0]
         for table_index, (table, target, xs, ys) in enumerate(specifications):
             for span in target["spans"]:
@@ -259,7 +259,7 @@ def authored(plan: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]], dict[st
                 if literal is None:
                     raise ValueError("Anchor cannot contain covered-slot null")
                 rect = [xs[column] + 3, ys[row] + 2.5, xs[column + cs] - 3, ys[row + rs] - 2.5]
-                align = pylopdf.TEXT_ALIGN_RIGHT if row and table["kinds"][column] == "usd" else pylopdf.TEXT_ALIGN_LEFT
+                align = pdfust.TEXT_ALIGN_RIGHT if row and table["kinds"][column] == "usd" else pdfust.TEXT_ALIGN_LEFT
                 remaining = page.insert_textbox(
                     rect, literal, fontsize=table["font_size"], fontname="helv", align=align, lineheight=1.1
                 )
@@ -329,7 +329,7 @@ def build(output: Path, *, seed: str = SEED) -> dict[str, Any]:
                 "confidence_scope": "No probabilistic confidence supplied; source extraction only",
             },
         )
-        with pylopdf.Document(stream=data) as document:
+        with pdfust.Document(stream=data) as document:
             image = document[0].render(scale=512 / 792)
         image_path = output / "images" / (identifier + ".png")
         image_path.write_bytes(image)

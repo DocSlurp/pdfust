@@ -8,7 +8,7 @@ import pytest
 from bench.generalization_native_audit import IDS, construction_references, run, source_cases
 from bench.pipeline_ocr_sources import extract
 
-import pylopdf
+import pdfust
 
 
 @pytest.fixture(scope="module")
@@ -34,14 +34,14 @@ def test_both_modes_preserve_each_source_and_global_word_ids(
     tokenization: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def recognized(_page: pylopdf.Page, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
+    def recognized(_page: pdfust.Page, **kwargs: Any) -> list[dict[str, Any]]:  # noqa: ANN401
         clip = kwargs.get("clip") or [100, 150, 500, 330]
         x, y = clip[:2]
-        return [{"text": "地域 12", "bbox": pylopdf.Rect(x + 10, y + 10, x + 110, y + 25), "confidence": 0.9}]
+        return [{"text": "地域 12", "bbox": pdfust.Rect(x + 10, y + 10, x + 110, y + 25), "confidence": 0.9}]
 
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", recognized)
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", recognized)
     case = cases[identifier]
-    with pylopdf.Document(stream=case["pdf"]) as document:
+    with pdfust.Document(stream=case["pdf"]) as document:
         page = document[case["page_number"]]
         before, native = document.tobytes(), page.get_text()
         for mode in ("empty", "uncovered_images"):

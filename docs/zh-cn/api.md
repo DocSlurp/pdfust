@@ -1,19 +1,19 @@
 ---
 title: API概览
-description: pylopdf的Document、Page、Pixmap、Rect、权限、警告与异常的紧凑索引。
+description: pdfust的Document、Page、Pixmap、Rect、权限、警告与异常的紧凑索引。
 ---
 
 # API概览
 
-完整docstring包含在包内，可运行`help(pylopdf.Document)`查看。本页提供API地图。
+完整docstring包含在包内，可运行`help(pdfust.Document)`查看。本页提供API地图。
 除`get_toc` / `set_toc`为兼容pymupdf而从1开始外，所有页码均从0开始。
 所有坐标均为左上角原点的显示空间。
 [API稳定性政策](stability.md)定义了公共边界和弃用流程。
 
 ## Document { #document }
 
-`pylopdf.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
-`pylopdf.open()`是别名构造函数，并支持上下文管理器。
+`pdfust.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
+`pdfust.open()`是别名构造函数，并支持上下文管理器。
 password input上限为127个UTF-8 byte。
 
 | 成员 | 用途 |
@@ -89,7 +89,7 @@ text、image或annotation，但仍会应用optional-content的可见性。结果
 或131,072 commands时会拒绝，而不是静默截断。
 
 使用嵌入字体的`insert_text`需要一个包含所有所需字形的字体。未传入source且安装
-`pylopdf[ar]`、`[he]`、`[hi]`、`[jp]`、`[ko]`、`[th]`、`[zh-cn]`和
+`pdfust[ar]`、`[he]`、`[hi]`、`[jp]`、`[ko]`、`[th]`、`[zh-cn]`和
 `[zh-tw]`提供Noto Sans／Serif生成font。Kana、Hangul、Bopomofo、Arabic、
 Hebrew、Devanagari和Thai会自动选择已安装provider。纯汉字为兼容旧行为仍优先JP；
 地区字形很重要时请指定`font_language="zh-CN"`、`"zh-TW"`、`"ko"`或`"ja"`。
@@ -136,7 +136,7 @@ hybrid grid为0.95；两者的文本专用指标均为`None`。
 | `TableFinder` / `Table` / `TableDiagnostics` | 自包含的表格几何、单元格文本（合并延续位置为`None`）、策略与置信依据；`Table.to_markdown(max_size=64 MiB)`预检转义后的UTF-8输出 |
 | `PdfError` / `LimitError` / `PasswordError` / `OcrError` / `DocumentClosedError` / `EncryptedDocumentError` / `StalePageError` | 异常层级；资源拒绝提供稳定`.code`（基类兼容ValueError） |
 | `Pixmap` | 不可变RGBA8像素：`samples` / `width` / `height` / `stride` / `n` / `tobytes(max_size=64 MiB)` / 流式写入且失败时保留现有file的PNG专用`save(path)`；cp314t还支持只读、零复制的`memoryview()` |
-| `PylopdfWarning` | 可恢复的解释警告（xref修复、字体解析、图像解码） |
+| `PdfustWarning` | 可恢复的解释警告（xref修复、字体解析、图像解码） |
 
 `TypedDict`契约仅影响静态类型；运行时值仍是普通的pymupdf风格字典。
 `LinkInfo`要求`kind`和`from`，而各类目标专用键为可选。

@@ -33,7 +33,7 @@ def selected_page(audit: dict[str, Any], identifier: str) -> dict[str, Any]:
 
 def build(root: Path, output: Path) -> Path:
     """Render two fixed DEV examples from independently verified 64-run evidence."""
-    import pylopdf
+    import pdfust
 
     root, output = guard_path(root.resolve()), guard_path(output.resolve())
     started, cpu = time.monotonic(), time.process_time()
@@ -101,7 +101,7 @@ def build(root: Path, output: Path) -> Path:
     destination.mkdir(parents=True, exist_ok=False)
     evidence = []
     for identifier, index, reference, record, pages, pairs in admitted:
-        with pylopdf.Document(record["pdf_path"]) as document:
+        with pdfust.Document(record["pdf_path"]) as document:
             page = document[record["page_number"]]
             scale = 2400 / page.rect.width
             pixmap = page.get_pixmap(scale=scale, background=(255, 255, 255))

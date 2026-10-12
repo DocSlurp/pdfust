@@ -14,7 +14,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench.generalization_vision_regions import _crop
 from bench.p003_region_candidates import _ocr_regions
 from bench.p003_structure_geometry import digest, encode
@@ -152,7 +152,7 @@ def prepare(acquisition: Path, output: Path) -> dict[str, Any]:
             pdf_bytes = Path(page["record"]["pdf_path"]).read_bytes()
             if digest(pdf_bytes) != page["record"]["pdf_sha256"]:
                 raise ValueError("Original source PDF changed")
-            with pylopdf.open(stream=pdf_bytes) as doc:
+            with pdfust.open(stream=pdf_bytes) as doc:
                 pdfpage = doc[page["record"]["page_number"]]
                 pdfpage.set_rotation(page["effective_rotation"])
                 raster = pdfpage.render(

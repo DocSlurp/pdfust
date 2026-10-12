@@ -11,7 +11,7 @@ from bench import rolling_robustness, silver_realism
 from bench.borderless_challenge import score
 from bench.silver import sha
 
-import pylopdf
+import pdfust
 
 
 def test_shared_furniture_and_opaque_ids_do_not_encode_admission() -> None:
@@ -22,7 +22,7 @@ def test_shared_furniture_and_opaque_ids_do_not_encode_admission() -> None:
         assert b"/EmbeddedFiles" not in case["pdf"]
         assert b"/ActualText" not in case["pdf"]
         assert b"/Info" not in case["pdf"]
-        with pylopdf.open(stream=case["pdf"]) as document:
+        with pdfust.open(stream=case["pdf"]) as document:
             text = document.get_text()
         assert "Read each" not in text
         assert "table" not in text.lower()
@@ -42,7 +42,7 @@ def test_prose_references_are_complete_sentences_and_fully_visible() -> None:
         paragraphs = [paragraph for column in target["authored_columns"] for paragraph in column]
         assert all(paragraph.endswith(".") and len(paragraph.split()) >= 35 for paragraph in paragraphs)
         expected = Counter(word for paragraph in paragraphs for word in paragraph.split())
-        with pylopdf.open(stream=case["pdf"]) as document:
+        with pdfust.open(stream=case["pdf"]) as document:
             words = document[0].get_text("words")
         body = [word for word in words if 115 < word[1] < 710]
         assert Counter(word[4] for word in body) == expected

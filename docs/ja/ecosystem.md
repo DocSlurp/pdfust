@@ -1,11 +1,11 @@
 ---
 title: エコシステム連携
-description: pylopdfをTypst、pyHanko、veraPDF、OCRエンジンとつなぐ統合テスト済みレシピ。
+description: pdfustをTypst、pyHanko、veraPDF、OCRエンジンとつなぐ統合テスト済みレシピ。
 ---
 
 # エコシステム連携
 
-pylopdf は組版・PDF/A 生成・電子署名を**あえて再実装しません**。それぞれ実績ある
+pdfust は組版・PDF/A 生成・電子署名を**あえて再実装しません**。それぞれ実績ある
 ライブラリとの連携で解決し、以下のレシピはすべて
 [`tests/test_interop.py`](https://github.com/yhay81/pylopdf/blob/main/tests/test_interop.py)
 の統合テストで保証しています。
@@ -13,14 +13,14 @@ pylopdf は組版・PDF/A 生成・電子署名を**あえて再実装しませ�
 ## 組版・新規文書の生成 = typst { #typesetting }
 
 レポートや帳票は [typst](https://typst.app/)（[typst-py](https://pypi.org/project/typst/)
-経由）で組版し、bytes をそのまま pylopdf へ:
+経由）で組版し、bytes をそのまま pdfust へ:
 
 ```python
 import typst
-import pylopdf
+import pdfust
 
 pdf_bytes = typst.compile("report.typ")   # 組版は typst
-doc = pylopdf.open(stream=pdf_bytes)      # 編集・抽出・結合は pylopdf
+doc = pdfust.open(stream=pdf_bytes)      # 編集・抽出・結合は pdfust
 ```
 
 ## 新規文書の PDF/A = typst { #new-pdfa }
@@ -30,7 +30,7 @@ typst の PDF バックエンド（krilla）は検証付きの PDF/A-1b〜4・PD
 
 ```python
 pdf_a: bytes = typst.compile("report.typ", pdf_standards="a-2b")
-pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
+pdfust.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 ```
 
 既存 PDF の PDF/A 変換・検証は別問題で、検証は [veraPDF](https://verapdf.org/)
@@ -39,19 +39,19 @@ pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 
 ## 組版した日本語の透かし・ヘッダ / フッタ = typst × show_pdf_page { #cjk-watermarks }
 
-pylopdfは`pylopdf[jp]`導入後、font pathなしの`insert_text()`で日本語・漢字を
+pdfustは`pdfust[jp]`導入後、font pathなしの`insert_text()`で日本語・漢字を
 直接描けます。より複雑な1ページ組版が必要な透かしはtypstで組み（フォントは
 サブセット埋め込みされる）、全ページへベクタのまま焼き込みます:
 
 ```python
-from pylopdf_fonts_jp import sans_path  # pip install pylopdf[jp]
+from pdfust_fonts_jp import sans_path  # pip install pdfust[jp]
 
 stamp_typ = """
 #set page(width: 595pt, height: 842pt, fill: none)
 #set text(font: "Noto Sans JP", size: 48pt, fill: rgb(255, 0, 0, 40%))
 #align(center + horizon)[社外秘]
 """
-stamp = pylopdf.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
+stamp = pdfust.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
 for page in doc:
     page.show_pdf_page((0, 0, page.rect.width, page.rect.height), stamp)
 ```
@@ -61,7 +61,7 @@ for page in doc:
 ## 電子署名（PAdES）= pyHanko { #signatures }
 
 [pyHanko](https://pypi.org/project/pyHanko/)（MIT）は増分更新で署名するため、
-pylopdf の出力バイト列は署名後も先頭に無加工で残ります（統合テストでバイト単位に
+pdfust の出力バイト列は署名後も先頭に無加工で残ります（統合テストでバイト単位に
 検証済み）:
 
 ```python
@@ -78,7 +78,7 @@ out = signers.sign_pdf(
 signed_pdf: bytes = out.getvalue()
 ```
 
-pylopdf 自身のフォーム API は署名フィールドへの記入を意図的に拒否し、ここへ
+pdfust 自身のフォーム API は署名フィールドへの記入を意図的に拒否し、ここへ
 誘導します。
 
 ## OCR = 好きなエンジンを持ち込む { #ocr }

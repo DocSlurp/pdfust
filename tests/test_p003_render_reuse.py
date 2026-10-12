@@ -9,18 +9,18 @@ from bench.p003_render_reuse import EDGES, PageRender
 from bench.silver import sha
 from conftest import build_pdf
 
-import pylopdf
+import pdfust
 
 
 def source(tmp_path: Path, rotation: int) -> tuple[dict, dict]:
     data = build_pdf(["Complete source text"])
     if rotation:
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             document[0].set_rotation(rotation)
             data = document.tobytes()
     path = tmp_path / "page.pdf"
     path.write_bytes(data)
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[0]
         result = {"viewport": list(page.rect), "original_rotation": page.rotation}
     return {"pdf_path": str(path), "pdf_sha256": sha(data), "page_number": 0}, result

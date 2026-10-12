@@ -1,6 +1,6 @@
 ---
 title: はじめる
-description: pylopdfをインストールし、編集・描画・抽出・書き込みの基本を学びます。
+description: pdfustをインストールし、編集・描画・抽出・書き込みの基本を学びます。
 ---
 
 # はじめる
@@ -8,7 +8,7 @@ description: pylopdfをインストールし、編集・描画・抽出・書き
 ## インストール { #installation }
 
 ```bash
-pip install pylopdf
+pip install pdfust
 ```
 
 フォント非埋め込みの日本語PDFを描画する場合、または日本語・漢字の`insert_text` /
@@ -17,11 +17,11 @@ pip install pylopdf
 必要な言語・地域のfontだけを導入できます。
 
 ```bash
-pip install "pylopdf[jp]"     # 日本語のfallbackと生成
-pip install "pylopdf[ko]"     # 韓国語
-pip install "pylopdf[zh-cn]"  # 簡体字中国語
-pip install "pylopdf[zh-tw]"  # 繁体字中国語
-pip install "pylopdf[ar]"     # アラビア語生成（he、hi、thも選択可）
+pip install "pdfust[jp]"     # 日本語のfallbackと生成
+pip install "pdfust[ko]"     # 韓国語
+pip install "pdfust[zh-cn]"  # 簡体字中国語
+pip install "pdfust[zh-tw]"  # 繁体字中国語
+pip install "pdfust[ar]"     # アラビア語生成（he、hi、thも選択可）
 ```
 
 CJKの4 extraは、非埋め込みAdobe CJK fontの描画fallbackとsubset埋め込み生成の
@@ -36,9 +36,9 @@ wheelにはそれぞれのenvironment専用gateがあります。
 ## 開く・調べる・保存する { #open-inspect-save }
 
 ```python
-import pylopdf
+import pdfust
 
-doc = pylopdf.open("input.pdf")           # pylopdf.open(stream=pdf_bytes) でも
+doc = pdfust.open("input.pdf")           # pdfust.open(stream=pdf_bytes) でも
 print(doc.page_count)                     # len(doc) でも同じ
 print(doc.metadata["title"])
 doc.set_metadata({"title": "月次レポート", "author": "山田 太郎"})
@@ -46,17 +46,17 @@ doc.set_metadata({"title": "月次レポート", "author": "山田 太郎"})
 doc.save("out.pdf")
 data = doc.tobytes()
 doc.save("small.pdf", garbage=True, deflate=True, object_streams=True)
-doc.save("locked.pdf", user_pw="secret", permissions=pylopdf.Permissions.PRINT)
+doc.save("locked.pdf", user_pw="secret", permissions=pdfust.Permissions.PRINT)
 ```
 
 暗号化 PDF は `password=`（または開いた後の `doc.authenticate()`）で復号します。
-`pylopdf.peek_metadata(path)` は通常、全体をパースせずメタデータとページ数だけを
+`pdfust.peek_metadata(path)` は通常、全体をパースせずメタデータとページ数だけを
 高速に読みます（大量走査向け）。`max_file_size=`を指定するとpathまたはbyte inputを
 parse前にサイズで拒否でき、互換性のため既定値は無制限です。最終classic
 `startxref`の誤りを限定的に修復した場合は`repaired`と`doc.is_repaired`が`True`に
-なり、`PylopdfWarning`も発生します。
+なり、`PdfustWarning`も発生します。
 保存するとxref dataは正規化されます。信頼できないファイルには
-`limits=pylopdf.DocumentLimits.web()`を指定してください。ファイル、構造、展開、
+`limits=pdfust.DocumentLimits.web()`を指定してください。ファイル、構造、展開、
 rendering／extraction用PDF snapshot、解釈済みテキストを制限し、重い処理の前に
 `doc.complexity`を確認できます。
 制御された拒否は`LimitError`です。各上限は[セキュリティ](security.md#untrusted-pdfs)
@@ -94,9 +94,9 @@ doc.delete_pages([1, 2])
 doc.select([2, 0])                                   # 抽出・並べ替え（重複指定は複製）
 doc.new_page(); doc.copy_page(0, to=1)
 
-merged = pylopdf.Document()
-merged.insert_pdf(pylopdf.open("a.pdf"))
-merged.insert_pdf(pylopdf.open("b.pdf"), from_page=0, to_page=2, start_at=0)
+merged = pdfust.Document()
+merged.insert_pdf(pdfust.open("a.pdf"))
+merged.insert_pdf(pdfust.open("b.pdf"), from_page=0, to_page=2, start_at=0)
 
 doc.set_toc([[1, "第 1 章", 1], [2, "1.1 節", 2]])
 page.set_rotation(90)
@@ -110,7 +110,7 @@ page.insert_image(page.search_for("承認印")[0], stream=hanko_png)
 page.insert_image((300, 72, 500, 200), pixmap=thumbnail, rotate=90)  # RGBAを直接、時計回りに回転
 page.show_pdf_page(page.rect, letterhead)                    # ベクタのまま重ねる。同じ文書も可
 page.insert_text((40, 40), "CONFIDENTIAL", fontsize=18, color=(1, 0, 0))
-page.insert_text((40, 70), "社外秘", fontsize=18)             # pylopdf[jp]から自動subset
+page.insert_text((40, 70), "社外秘", fontsize=18)             # pdfust[jp]から自動subset
 page.insert_text((40, 100), "简体中文", fontsize=18, font_language="zh-CN")
 page.add_highlight_annot(page.search_for("重要"))            # 検索してマーカー
 page.add_link_annot(page.search_for("Example")[0], "https://example.com/")
@@ -120,7 +120,7 @@ page.add_link_annot(page.search_for("Example")[0], "https://example.com/")
 
 ```python
 page.insert_ocr_text_layer(ocr_words)        # 外部 OCR の結果で searchable PDF 化
-doc.set_form_field("customer", "山田 太郎")  # pylopdf[jp]から自動subset
+doc.set_form_field("customer", "山田 太郎")  # pdfust[jp]から自動subset
 md = doc.to_markdown()                       # RAG 向け Markdown
 ```
 

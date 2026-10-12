@@ -1,19 +1,19 @@
 ---
 title: API 개요
-description: pylopdf의 Document, Page, Pixmap, Rect, 권한, 경고, 예외를 한눈에 보는 API 지도입니다.
+description: pdfust의 Document, Page, Pixmap, Rect, 권한, 경고, 예외를 한눈에 보는 API 지도입니다.
 ---
 
 # API 개요
 
-전체 docstring은 패키지 안에 있으며`help(pylopdf.Document)`로 볼 수 있습니다.
+전체 docstring은 패키지 안에 있으며`help(pdfust.Document)`로 볼 수 있습니다.
 이 페이지는 API 지도입니다.`get_toc` / `set_toc`만 pymupdf 호환을 위해 1부터 시작하고
 나머지 페이지 번호는 모두 0부터 시작합니다. 모든 좌표는 왼쪽 위가 원점인 표시 공간입니다.
 [API 안정성 정책](stability.md)은 공개 경계와 사용 중단 절차를 정의합니다.
 
 ## Document { #document }
 
-`pylopdf.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
-`pylopdf.open()`은 별칭 생성자이며 컨텍스트 관리자를 지원합니다.
+`pdfust.Document(filename=None, stream=None, password=None, max_decompressed_size=None, *, limits=None)` —
+`pdfust.open()`은 별칭 생성자이며 컨텍스트 관리자를 지원합니다.
 password input은UTF-8 127 byte로 제한됩니다.
 
 | 멤버 | 용도 |
@@ -92,7 +92,7 @@ layer 이름, text, image, annotation은 반환하지 않지만 optional-content
 적용합니다. 결과가8,192 paths 또는131,072 commands를 넘으면 잘라내지 않고 거부합니다.
 
 내장 글꼴을 사용하는 `insert_text`에는 필요한 모든 글리프를 포함한 단일 글꼴이
-필요합니다. `pylopdf[ar]`, `[he]`, `[hi]`, `[jp]`, `[ko]`, `[th]`,
+필요합니다. `pdfust[ar]`, `[he]`, `[hi]`, `[jp]`, `[ko]`, `[th]`,
 `[zh-cn]`, `[zh-tw]`는 Noto Sans／Serif 생성 font를 제공합니다. Kana, Hangul,
 Bopomofo, Arabic, Hebrew, Devanagari, Thai는 설치된 provider를 자동 선택합니다.
 순수 한자는 호환성을 위해 JP를 우선하며 지역 glyph가 중요하면
@@ -146,7 +146,7 @@ metric은 `None`입니다. `TableFinder.strategy`와
 | `TableFinder` / `Table` / `TableDiagnostics` | 독립 보관되는 표 좌표, 셀 텍스트(병합 연속 위치는`None`), strategy와 confidence 근거. `Table.to_markdown(max_size=64 MiB)`은 escape 후UTF-8 출력을 사전 검사 |
 | `PdfError` / `LimitError` / `PasswordError` / `OcrError` / `DocumentClosedError` / `EncryptedDocumentError` / `StalePageError` | 예외 계층. 리소스 거부는 안정적인`.code` 제공（ValueError 호환 기반） |
 | `Pixmap` | 불변 RGBA8 픽셀: `samples` / `width` / `height` / `stride` / `n` / `tobytes(max_size=64 MiB)` / 스트리밍하며 실패 시 기존file을 보존하는PNG 전용`save(path)`; cp314t에서는 읽기 전용 zero-copy `memoryview()`도 지원 |
-| `PylopdfWarning` | 복구 가능한 해석 경고（xref 복구, 글꼴 해석, 이미지 디코딩） |
+| `PdfustWarning` | 복구 가능한 해석 경고（xref 복구, 글꼴 해석, 이미지 디코딩） |
 
 `TypedDict` 계약은 정적 타입에만 영향을 주며 값은 기존과 같은 일반 pymupdf 형식의
 사전입니다. `LinkInfo`에는 `kind`와 `from`이 필수이고 대상별 키는 선택 사항입니다.

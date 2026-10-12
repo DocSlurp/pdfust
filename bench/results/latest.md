@@ -1,15 +1,15 @@
-# pylopdf benchmark results
+# pdfust benchmark results
 
 - Run at: 2026-07-30 17:30 UTC
 - Environment: Windows-11-10.0.26200-SP0 / Python 3.14.6 / CPU AMD64 Family 23 Model 113 Stepping 0, AuthenticAMD
-- Versions: pylopdf 0.13.0, pymupdf 1.28.0, pypdf 6.14.2, pdfplumber 0.11.10
+- Versions: pdfust 0.13.0, pymupdf 1.28.0, pypdf 6.14.2, pdfplumber 0.11.10
 - Repetitions: one warmup + median of 7 runs per task (ms; lower is faster)
 - Corpus: tests/assets/real_world (sources and licenses are documented in its README)
 - Reproduce: `uv sync --all-extras --group bench && uv run python bench/run.py`
 
 ## Text extraction (all pages, ms)
 
-| File | pylopdf | pymupdf | pypdf | pdfplumber |
+| File | pdfust | pymupdf | pypdf | pdfplumber |
 |---|---|---|---|---|
 | bill-hr815.pdf | 134.5 | 166.8 | 766.2 | 9004.7 |
 | bunka-kokugo-series-019-p4.pdf | 0.3 | 0.3 | 0.7 | 1.2 |
@@ -28,7 +28,7 @@
 
 ## Extracted-content comparison (quality proxy)
 
-| File | pylopdf characters | pymupdf characters | Similarity after whitespace normalization |
+| File | pdfust characters | pymupdf characters | Similarity after whitespace normalization |
 |---|---|---|---|
 | bill-hr815.pdf | 300559 | 300559 | 1.000 |
 | bunka-kokugo-series-019-p4.pdf | 0 | 0 | 1.000 |
@@ -46,21 +46,21 @@
 | wdl6812-manuscript.pdf | 0 | 0 | 1.000 |
 
 Similarity approaches 1.0 as output converges with PyMuPDF.
-Low scores can reflect the PyMuPDF reference convention rather than pylopdf quality:
+Low scores can reflect the PyMuPDF reference convention rather than pdfust quality:
 on rotated table reports PyMuPDF emits unsorted content order (its own sort=True
-scores lower still there), and on dense forms pylopdf matches PyMuPDF's sorted
+scores lower still there), and on dense forms pdfust matches PyMuPDF's sorted
 mode while the default reference stays in content order.
 A zero-character row is image-only with no text layer, so zero is correct for both.
 
 ## Merge (all corpus files into one document, ms)
 
-| Task | pylopdf | pymupdf | pypdf |
+| Task | pdfust | pymupdf | pypdf |
 |---|---|---|---|
 | merge x14 | 44.0 | 129.3 | 346.8 |
 
 ## Rendering (first page to 2x PNG, ms)
 
-| File | pylopdf | pymupdf |
+| File | pdfust | pymupdf |
 |---|---|---|
 | bill-hr815.pdf | 37.5 | 83.8 |
 | bunka-kokugo-series-019-p4.pdf | 39.3 | 107.1 |

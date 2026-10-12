@@ -1,5 +1,5 @@
 ---
-title: pylopdf
+title: pdfust
 description: Pythonらしい操作感とコンパクトなRustコアで、PDFを編集・描画・抽出。
 hide:
   - navigation
@@ -23,11 +23,11 @@ hide:
 
       <div class="living-install" aria-label="インストールコマンド">
         <span class="living-install__prompt" aria-hidden="true">$</span>
-        <code tabindex="0">pip install pylopdf</code>
+        <code tabindex="0">pip install pdfust</code>
         <button
           class="living-install__copy"
           type="button"
-          data-copy-command="pip install pylopdf"
+          data-copy-command="pip install pdfust"
           data-copied-label="コピー済み"
           aria-label="インストールコマンドをコピー"
         ><span data-copy-label>コピー</span></button>
@@ -56,7 +56,7 @@ hide:
           <div class="living-line living-line--medium"></div>
           <div class="living-line living-line--cobalt"></div>
           <div class="living-line living-line--short"></div>
-          <div class="living-code-sample">doc = pylopdf.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("合計")</div>
+          <div class="living-code-sample">doc = pdfust.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("合計")</div>
         </div>
         <span class="living-markup-circle"></span>
       </div>
@@ -134,7 +134,7 @@ hide:
     </div>
     <div class="living-scope">
       <div class="living-scope__column">
-        <h3>pylopdfの担当</h3>
+        <h3>pdfustの担当</h3>
         <ul>
           <li>ページ操作・メタデータ・しおり・暗号化</li>
           <li>位置付きテキスト抽出・検索・Markdown変換</li>

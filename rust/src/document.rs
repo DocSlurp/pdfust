@@ -1,7 +1,7 @@
 //! Python bindings for `lopdf::Document`.
 //!
 //! This is a thin type- and error-conversion layer. Python's
-//! `pylopdf.Document` provides the ergonomic API.
+//! `pdfust.Document` provides the ergonomic API.
 
 use std::borrow::Cow;
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
@@ -692,19 +692,19 @@ type FieldNode = (
 
 // Python-visible exceptions. PdfError subclasses ValueError for compatibility.
 pyo3::create_exception!(
-    pylopdf,
+    pdfust,
     PdfError,
     PyValueError,
-    "Base pylopdf exception compatible with ValueError."
+    "Base pdfust exception compatible with ValueError."
 );
 pyo3::create_exception!(
-    pylopdf,
+    pdfust,
     PasswordError,
     PdfError,
     "A password is required or incorrect."
 );
 pyo3::create_exception!(
-    pylopdf,
+    pdfust,
     LimitError,
     PdfError,
     "A configured resource limit was exceeded."
@@ -1562,7 +1562,7 @@ fn pdf_metadata_to_tuple(
         version,
         encrypted,
     } = meta;
-    // pylopdf exposes only the standard fields. Release upstream custom clones
+    // pdfust exposes only the standard fields. Release upstream custom clones
     // before materializing Python-facing strings.
     drop(custom);
     let mut map = HashMap::new();
@@ -4293,7 +4293,7 @@ fn validate_annotation_input<'a>(
 }
 
 /// Python class holding a `lopdf::Document`.
-#[pyclass(module = "pylopdf.pylopdf_core")]
+#[pyclass(module = "pdfust.pdfust_core")]
 pub struct _Document {
     /// Editable lopdf document.
     doc: Document,
@@ -8329,7 +8329,7 @@ impl _Document {
                 } else {
                     let pool = rayon::ThreadPoolBuilder::new()
                         .num_threads(worker_count)
-                        .thread_name(|index| format!("pylopdf-render-{index}"))
+                        .thread_name(|index| format!("pdfust-render-{index}"))
                         .build()
                         .map_err(|error| {
                             PdfError::new_err(format!(

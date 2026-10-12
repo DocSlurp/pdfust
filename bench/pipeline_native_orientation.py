@@ -25,7 +25,7 @@ SPEC = {
 
 def evidence(page: Any, boxes: list[list[float]]) -> dict[str, Any]:
     """Retain bounded native baseline evidence using the core Markdown direction rule."""
-    from pylopdf import _markdown
+    from pdfust import _markdown
 
     layout = page.get_text("dict")
     lines = [line for block in layout["blocks"] for line in block.get("lines", [])]

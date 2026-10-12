@@ -1,6 +1,6 @@
 ---
 title: 시작하기
-description: pylopdf를 설치하고 편집, 렌더링, 추출, 그리기의 핵심 작업 흐름을 배웁니다.
+description: pdfust를 설치하고 편집, 렌더링, 추출, 그리기의 핵심 작업 흐름을 배웁니다.
 ---
 
 # 시작하기
@@ -8,17 +8,17 @@ description: pylopdf를 설치하고 편집, 렌더링, 추출, 그리기의 핵
 ## 설치 { #installation }
 
 ```bash
-pip install pylopdf
+pip install pdfust
 ```
 
 필요한 언어 또는 지역 font만 설치할 수 있습니다.
 
 ```bash
-pip install "pylopdf[jp]"     # 일본어 fallback과 생성
-pip install "pylopdf[ko]"     # 한국어
-pip install "pylopdf[zh-cn]"  # 중국어 간체
-pip install "pylopdf[zh-tw]"  # 중국어 번체
-pip install "pylopdf[ar]"     # 아랍어 생성(he, hi, th도 제공)
+pip install "pdfust[jp]"     # 일본어 fallback과 생성
+pip install "pdfust[ko]"     # 한국어
+pip install "pdfust[zh-cn]"  # 중국어 간체
+pip install "pdfust[zh-tw]"  # 중국어 번체
+pip install "pdfust[ar]"     # 아랍어 생성(he, hi, th도 제공)
 ```
 
 네 CJK 지역 extra는 임베드되지 않은 Adobe CJK font의 렌더링 fallback과 subset
@@ -34,9 +34,9 @@ PyEmscripten wheel에는 각각 environment 전용 gate가 있습니다.
 ## 열기, 확인, 저장 { #open-inspect-save }
 
 ```python
-import pylopdf
+import pdfust
 
-doc = pylopdf.open("input.pdf")           # pylopdf.open(stream=pdf_bytes)도 가능
+doc = pdfust.open("input.pdf")           # pdfust.open(stream=pdf_bytes)도 가능
 print(doc.page_count)                     # len(doc)도 지원
 print(doc.metadata["title"])
 doc.set_metadata({"title": "보고서", "author": "Alice"})
@@ -44,17 +44,17 @@ doc.set_metadata({"title": "보고서", "author": "Alice"})
 doc.save("out.pdf")
 data = doc.tobytes()
 doc.save("small.pdf", garbage=True, deflate=True, object_streams=True)
-doc.save("locked.pdf", user_pw="secret", permissions=pylopdf.Permissions.PRINT)
+doc.save("locked.pdf", user_pw="secret", permissions=pdfust.Permissions.PRINT)
 ```
 
 암호화된 PDF는`password=`로 열거나 나중에`doc.authenticate()`를 호출합니다.
-일반적으로`pylopdf.peek_metadata(path)`는 PDF 문서 전체를 파싱하지 않고 메타데이터와
+일반적으로`pdfust.peek_metadata(path)`는 PDF 문서 전체를 파싱하지 않고 메타데이터와
 페이지 수를 읽으므로 대규모 파일 모음을 조사할 때 유용합니다. `max_file_size=`를
 지정하면 parsing 전에 path 또는 byte input을 크기로 거부할 수 있고, 호환성을 위해
 기본값은 무제한입니다. 마지막 classic `startxref`를 제한적으로 복구하면`repaired`와
-`doc.is_repaired`가`True`이고 `PylopdfWarning`이 발생하며, 저장 시 xref data가
+`doc.is_repaired`가`True`이고 `PdfustWarning`이 발생하며, 저장 시 xref data가
 정규화됩니다. 신뢰할 수 없는 파일에는
-`limits=pylopdf.DocumentLimits.web()`을 지정해 파일, 구조, 압축 해제,
+`limits=pdfust.DocumentLimits.web()`을 지정해 파일, 구조, 압축 해제,
 rendering／extraction용 PDF snapshot과 해석된 텍스트를 제한하세요. 무거운 작업 전에
 `doc.complexity`를 확인할 수 있으며 제어된
 거부는`LimitError`입니다. 각 예산은[보안](security.md#untrusted-pdfs)을 참조하세요.
@@ -91,9 +91,9 @@ doc.delete_pages([1, 2])
 doc.select([2, 0])                                   # 유지/재정렬（반복하면 복제）
 doc.new_page(); doc.copy_page(0, to=1)
 
-merged = pylopdf.Document()
-merged.insert_pdf(pylopdf.open("a.pdf"))
-merged.insert_pdf(pylopdf.open("b.pdf"), from_page=0, to_page=2, start_at=0)
+merged = pdfust.Document()
+merged.insert_pdf(pdfust.open("a.pdf"))
+merged.insert_pdf(pdfust.open("b.pdf"), from_page=0, to_page=2, start_at=0)
 
 doc.set_toc([[1, "1장", 1], [2, "1.1절", 2]])
 page.set_rotation(90)

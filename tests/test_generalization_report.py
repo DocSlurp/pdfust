@@ -38,7 +38,7 @@ from bench.pipeline_vision_transcription import parse as vision_parse
 from bench.silver import canonical, sha
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def write(path: Path, data: dict[str, Any]) -> None:
@@ -691,7 +691,7 @@ def test_fusion_configuration_requires_exact_trusted_selection_module(fixture: d
 def hybrid_prediction(
     directory: Path, monkeypatch: pytest.MonkeyPatch, *, model_table: bool = False, logical: bool = False
 ) -> dict[str, Any]:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=600, height=800)
         page.insert_text((20, 40), "Literal source prose")
         content = document.tobytes()
@@ -956,7 +956,7 @@ def multiscale_prediction(directory: Path) -> dict[str, Any]:
             size = list(image.size)
         return {"type": "result", "device": "cpu", "viewport": viewport, "image_size": size, "boxes": []}
 
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         document.new_page(width=100, height=100)
         data = document.tobytes()
     pdf = directory / "source.pdf"
@@ -1139,7 +1139,7 @@ def test_logical_hybrid_recomputes_original_pdf_evidence_and_exact_runtime(
 ) -> None:
     prediction = hybrid_prediction(tmp_path, monkeypatch, logical=True)
     modules = {}
-    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial", "pylopdf._markdown"):
+    for name in ("pdfust", "pdfust.pdfust_core", "pdfust._spatial", "pdfust._markdown"):
         imported = importlib.import_module(name)
         assert imported.__file__ is not None
         path = Path(imported.__file__)
@@ -1163,7 +1163,7 @@ def test_logical_hybrid_recomputes_original_pdf_evidence_and_exact_runtime(
     with pytest.raises(ValueError, match="exact original PDF replay"):
         verify_output(tmp_path, tampered, processor="hybrid")
     write(tmp_path / "negative-result.json", prediction)
-    del frozen["runtime"]["extraction_modules"]["pylopdf._markdown"]
+    del frozen["runtime"]["extraction_modules"]["pdfust._markdown"]
     write(tmp_path / "frozen.json", frozen)
     with pytest.raises(ValueError, match="runtime fingerprint mismatch"):
         verify_output(tmp_path, prediction, processor="hybrid")

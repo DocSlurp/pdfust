@@ -21,7 +21,7 @@ from bench.omnidoc_training import (
     synthetic_recipe,
 )
 
-import pylopdf
+import pdfust
 
 
 def row(identifier: str) -> dict[str, Any]:
@@ -105,7 +105,7 @@ def test_masked_region_is_white_in_render_and_has_no_source_words() -> None:
     recipe = realistic_recipe(contract, style, 0)
     assert recipe["blocks"][0]["paint"].startswith("suppressed")
     data = _realism_pdf(recipe, b"")
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         assert document.get_text() == ""
         render = image_module.open(io.BytesIO(document[0].render(dpi=72, background=(255, 255, 255))))
     assert render.getpixel((100, 200))[:3] == (255, 255, 255)
@@ -125,7 +125,7 @@ def test_vertical_cjk_authored_render_remains_inside_page() -> None:
     )
     recipe = realistic_recipe(contract, style, 0)
     assert recipe["blocks"][0]["vertical"]
-    with pylopdf.open(stream=_realism_pdf(recipe, CJK_FONT.read_bytes())) as document:
+    with pdfust.open(stream=_realism_pdf(recipe, CJK_FONT.read_bytes())) as document:
         assert document.get_text().strip()
         for word in document[0].get_text("words"):
             assert 0 <= word[0] <= word[2] <= 612
@@ -150,7 +150,7 @@ def test_narrow_latin_credit_is_rotated_without_off_page_words() -> None:
     )
     recipe = realistic_recipe(contract, style, 0)
     assert recipe["blocks"][0]["vertical_latin"]
-    with pylopdf.open(stream=_realism_pdf(recipe, b"")) as document:
+    with pdfust.open(stream=_realism_pdf(recipe, b"")) as document:
         words = document[0].get_text("words")
         assert len(words) == 3
         assert all(0 <= word[0] <= word[2] <= 612 for word in words)

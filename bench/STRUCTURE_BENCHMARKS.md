@@ -2,7 +2,7 @@
 
 This optional study tests table and record relationships, rather than treating
 the presence of Markdown table syntax as success. It is separate from the
-lightweight timings and CPU model study. It does not change pylopdf's public API
+lightweight timings and CPU model study. It does not change pdfust's public API
 or install models into the library's regular environment.
 
 The preserved inputs include all rich-feature cases plus independent derivatives:
@@ -39,7 +39,7 @@ uv pip install --python ~/.cache/pylopdf-structure-bench/bin/python \
 uv pip install --python ~/.cache/pylopdf-structure-bench/bin/python \
   olmocr==0.4.27 --no-deps
 uv run python -m bench.structure --prepare \
-  --adapter pylopdf --adapter pylopdf-text \
+  --adapter pdfust --adapter pdfust-text \
   --adapter geometry --adapter geometry-wrapped \
   --adapter geometry-bullets --adapter geometry-wrapped-bullets \
   --adapter native-bullets --adapter native-header-bullets --repetitions 3
@@ -124,7 +124,7 @@ fence is code, not a rendered table. Bullet variants are scored on their recover
 cell matrices; the experiment does not claim that repeated labels are a semantically
 verified header hierarchy. Source token agreement is not OCR ground truth.
 
-Preparation/render/extraction costs are outside adapter timings. Prepared pylopdf
+Preparation/render/extraction costs are outside adapter timings. Prepared pdfust
 baselines are replays and do not provide new conversion timings. GPU initialization
 is separate; first inference is included in measured repetitions. Process RSS is
 a cumulative high-water value, not a per-case peak. Generation truncation and
@@ -167,7 +167,7 @@ reported separately from the complete per-case Markdown report.
 
 All PDFs, PNGs, prompts, full responses, traces, model weights, and JSON details
 stay outside Git. Commit the protocol, code, tests, and Markdown findings only.
-Model licenses remain independent of pylopdf: [YOLO checkpoint](https://huggingface.co/hantian/yolo-doclaynet),
+Model licenses remain independent of pdfust: [YOLO checkpoint](https://huggingface.co/hantian/yolo-doclaynet),
 [olmOCR checkpoint](https://huggingface.co/allenai/olmOCR-2-7B-1025), and
 [Qwen checkpoint](https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct).
 The local study does not redistribute any model or trained adapter.
@@ -209,7 +209,7 @@ PyTorch 2.11.0/CUDA 12.8, and the same pinned model revisions and prepared input
 It tests the Senate, NICS, and Form 1040 pages with full/compact text prompts,
 plus a separate 16,384-token image-only output-budget control on Senate/NICS.
 Reports are `structure-remote48{,-long}.{json,md}`. Input preparation stays local:
-the worker's published pylopdf 0.13.0 wheel provides scaffolding, since the local
+the worker's published pdfust 0.13.0 wheel provides scaffolding, since the local
 extension requires a newer glibc than the rental host. Native extraction/rendering
 timings from that worker are not claimed. Model inference and prepared inputs
 remain matched. Preserve remote logs/results before destroying the instance.

@@ -1,5 +1,5 @@
 ---
-title: pylopdf
+title: pdfust
 description: Python다운 API와 간결한 Rust 코어로 PDF를 편집하고 렌더링하며 추출합니다.
 hide:
   - navigation
@@ -23,11 +23,11 @@ hide:
 
       <div class="living-install" aria-label="설치 명령">
         <span class="living-install__prompt" aria-hidden="true">$</span>
-        <code tabindex="0">pip install pylopdf</code>
+        <code tabindex="0">pip install pdfust</code>
         <button
           class="living-install__copy"
           type="button"
-          data-copy-command="pip install pylopdf"
+          data-copy-command="pip install pdfust"
           data-copied-label="복사됨"
           aria-label="설치 명령 복사"
         ><span data-copy-label>복사</span></button>
@@ -56,7 +56,7 @@ hide:
           <div class="living-line living-line--medium"></div>
           <div class="living-line living-line--cobalt"></div>
           <div class="living-line living-line--short"></div>
-          <div class="living-code-sample">doc = pylopdf.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("합계")</div>
+          <div class="living-code-sample">doc = pdfust.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("합계")</div>
         </div>
         <span class="living-markup-circle"></span>
       </div>
@@ -134,7 +134,7 @@ hide:
     </div>
     <div class="living-scope">
       <div class="living-scope__column">
-        <h3>pylopdf가 담당하는 것</h3>
+        <h3>pdfust가 담당하는 것</h3>
         <ul>
           <li>페이지 관리, 메타데이터, 목차, 암호화</li>
           <li>위치 정보가 있는 텍스트 추출, 검색, Markdown 변환</li>

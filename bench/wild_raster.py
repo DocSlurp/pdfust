@@ -354,7 +354,7 @@ def _pdfimages_ppi(path: Path) -> list[dict[str, Any]]:
 
 
 def _render_check(path: Path) -> dict[str, Any]:
-    """Confirm page 1 renders in Poppler and pylopdf (hayro) at a low resolution."""
+    """Confirm page 1 renders in Poppler and pdfust (hayro) at a low resolution."""
     import numpy as np
 
     result: dict[str, Any] = {}
@@ -384,19 +384,19 @@ def _render_check(path: Path) -> dict[str, Any]:
             warnings.simplefilter("always")
             pixmap = _open_pdf(path)[0].get_pixmap(dpi=30)
         samples = np.frombuffer(pixmap.samples, np.uint8).reshape(pixmap.height, pixmap.width, 4)[..., :3]
-        result["pylopdf"] = {
+        result["pdfust"] = {
             "ok": True,
             "size": [pixmap.width, pixmap.height],
             "dark_fraction": round(float((samples.mean(axis=2) < 128).mean()), 5),
             "warnings": sorted({str(w.message) for w in caught}),
         }
     except Exception as error:
-        result["pylopdf"] = {"ok": False, "error": f"{type(error).__name__}: {error}"}
+        result["pdfust"] = {"ok": False, "error": f"{type(error).__name__}: {error}"}
     return result
 
 
 def measure(path: Path) -> dict[str, Any]:
-    """Measure structure (pypdf), codecs, resolution, text layer (pylopdf) and renderability."""
+    """Measure structure (pypdf), codecs, resolution, text layer (pdfust) and renderability."""
     started = time.perf_counter()
     images = _image_records(path)
     with warnings.catch_warnings(record=True) as caught:
@@ -957,7 +957,7 @@ class Rasterizer:
         write_pdf(single, reference, self.identity(name + "-reference"))
         verification: dict[str, Any] = {
             "strips_reassemble_exactly": strips_reassemble(recorder, out, self.render(recorder, 200)[0], self.work),
-            "pylopdf_200dpi": compare_pylopdf(out, reference, 200),
+            "pdfust_200dpi": compare_pdfust(out, reference, 200),
         }
         for dpi in (100, 200):
             verification[f"pdftoppm_{dpi}dpi"] = compare_renders(
@@ -991,8 +991,8 @@ def strips_reassemble(recorder: Recorder, pdf: Path, expected_png: Path, work: P
     return stacked.shape == expected.shape and bool(np.array_equal(stacked, expected))
 
 
-def compare_pylopdf(first: Path, second: Path, dpi: int) -> dict[str, Any]:
-    """Render page 1 of two PDFs with pylopdf (hayro) and report pixel differences."""
+def compare_pdfust(first: Path, second: Path, dpi: int) -> dict[str, Any]:
+    """Render page 1 of two PDFs with pdfust (hayro) and report pixel differences."""
     import numpy as np
 
     def pixels(path: Path) -> np.ndarray:
@@ -1167,8 +1167,8 @@ def rasterize(
         "tools": {**tool_versions(), **extra_tool_versions()},
         "measurement": {
             "codecs": "pypdf image XObject /Filter, /ColorSpace, /BitsPerComponent; ppi from pdfimages -list",
-            "text": f"pylopdf Page.get_text(); a page has text at >= {PAGE_TEXT_MIN_CHARS} non-space chars",
-            "render_check": "page 1 at 30 dpi with pdftoppm and pylopdf get_pixmap",
+            "text": f"pdfust Page.get_text(); a page has text at >= {PAGE_TEXT_MIN_CHARS} non-space chars",
+            "render_check": "page 1 at 30 dpi with pdftoppm and pdfust get_pixmap",
             "resources": "wall: perf_counter; self CPU: RUSAGE_SELF delta; child CPU and peak RSS: os.wait4 per "
             "subprocess (plus RUSAGE_CHILDREN delta); self peak RSS: /proc/self VmHWM reset per variant; "
             "renders cached across variants are charged to the first variant that needs them; "

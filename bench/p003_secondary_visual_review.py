@@ -100,9 +100,9 @@ def build(audit_path: Path, output: Path) -> Path:
     if (batch / "provenance.json").exists():
         return batch
     batch.mkdir(parents=True, exist_ok=False)
-    import pylopdf
+    import pdfust
 
-    with pylopdf.Document(pdf) as document:
+    with pdfust.Document(pdf) as document:
         page = document[record["page_number"]]
         scale = 2400 / page.rect.width
         pixmap = page.get_pixmap(scale=scale, background=(255, 255, 255))

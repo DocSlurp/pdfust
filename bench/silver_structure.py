@@ -208,7 +208,7 @@ def score_page(target: dict[str, Any], observed: list[dict[str, Any]]) -> dict[s
 
 def run(directory: Path, *, summary_path: Path = ROOT / "bench/results/silver-structure.md") -> dict[str, Any]:
     """Measure all DEV pages on CPU and retain complete local targets and detections."""
-    import pylopdf
+    import pdfust
 
     directory = guard_path(directory)
     targets = prepare_targets(directory)
@@ -225,7 +225,7 @@ def run(directory: Path, *, summary_path: Path = ROOT / "bench/results/silver-st
         warnings.simplefilter("always")
         for record in manifest["cases"]:
             path = verify_input(directory, record)
-            with pylopdf.open(path) as document:
+            with pdfust.open(path) as document:
                 expected_pages = sum(target["id"] == record["id"] for target in targets["pages"])
                 if len(document) != expected_pages:
                     raise ValueError("PDF page count differs from authored targets")

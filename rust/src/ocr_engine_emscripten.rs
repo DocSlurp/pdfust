@@ -10,7 +10,7 @@ use crate::document::PdfError;
 use crate::pixmap::Pixmap;
 
 pyo3::create_exception!(
-    pylopdf,
+    pdfust,
     OcrError,
     PdfError,
     "OCR model loading or inference failed."
@@ -25,7 +25,7 @@ fn unavailable() -> PyErr {
 }
 
 /// API-compatible placeholder that reports the documented runtime boundary.
-#[pyclass(frozen, module = "pylopdf.pylopdf_core")]
+#[pyclass(frozen, module = "pdfust.pdfust_core")]
 pub struct _OcrEngine;
 
 #[pymethods]
@@ -55,6 +55,6 @@ impl _OcrEngine {
     }
 
     fn __repr__(&self) -> &'static str {
-        "<pylopdf.OcrEngine unavailable on Emscripten>"
+        "<pdfust.OcrEngine unavailable on Emscripten>"
     }
 }

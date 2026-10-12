@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from bench.lowlevel_cases import CHOICES, ENCODINGS, cases, history_cases
 
-import pylopdf
+import pdfust
 
 
 def test_balanced_crossed_encodings_and_evidence() -> None:
@@ -37,7 +37,7 @@ def test_identical_visible_pixels_across_operator_encodings(
     for variants in grouped.values():
         images = []
         for case in variants:
-            with pylopdf.Document(stream=case["pdf_bytes"]) as document:
+            with pdfust.Document(stream=case["pdf_bytes"]) as document:
                 pixmap = document[0].get_pixmap(dpi=dpi)
                 images.append((pixmap.width, pixmap.height, pixmap.samples))
         assert images[0] == images[1] == images[2]
@@ -55,8 +55,8 @@ def test_history_pairs_preserve_targets_and_distinguish_tentative_gold() -> None
         assert absent["recoverability"] == singleline["recoverability"] == "unresolved"
         assert identifier["recoverability"] == "visible_identifier"
         with (
-            pylopdf.Document(stream=present["pdf_bytes"]) as first,
-            pylopdf.Document(stream=absent["pdf_bytes"]) as second,
+            pdfust.Document(stream=present["pdf_bytes"]) as first,
+            pdfust.Document(stream=absent["pdf_bytes"]) as second,
         ):
             region = present["evidence"]["bbox"]
             assert first[0].get_pixmap(clip=region).samples == second[0].get_pixmap(clip=region).samples

@@ -11,7 +11,7 @@ whose exact visible text is stored in the manifest as ``expected_text``.
 ``quirks/manifest.json`` records, per case, the quirk, tool versions and exact
 commands, measured structure (header, producer, xref kind, object streams,
 encryption, stream filters, fonts/encodings/ToUnicode, pages, SHA-256) and a
-validation block with pypdf, pdftotext, PyMuPDF and pylopdf text extraction.
+validation block with pypdf, pdftotext, PyMuPDF and pdfust text extraction.
 Extraction failures are recorded as data. See ``bench/WILD_CORPUS.md``.
 
 Families: producer, structure, encryption, filter (re-produced L0 PDFs) and
@@ -628,7 +628,7 @@ def _visible_chars(text: str) -> int:
 
 
 def extract_all(path: Path, password: str) -> dict[str, dict[str, Any]]:
-    """Run pypdf, pdftotext, PyMuPDF and pylopdf text extraction; failures become data."""
+    """Run pypdf, pdftotext, PyMuPDF and pdfust text extraction; failures become data."""
     results: dict[str, dict[str, Any]] = {}
 
     def attempt(name: str, function: Callable[[], str]) -> None:
@@ -672,10 +672,10 @@ def extract_all(path: Path, password: str) -> dict[str, dict[str, Any]]:
                 raise RuntimeError("authentication failed")
             return "\n".join(page.get_text() for page in document)
 
-    def with_pylopdf() -> str:
-        import pylopdf
+    def with_pdfust() -> str:
+        import pdfust
 
-        document = pylopdf.open(str(path), password=password or None)
+        document = pdfust.open(str(path), password=password or None)
         try:
             return document.get_text()
         finally:
@@ -684,7 +684,7 @@ def extract_all(path: Path, password: str) -> dict[str, dict[str, Any]]:
     attempt("pypdf", with_pypdf)
     attempt("pdftotext", with_pdftotext)
     attempt("pymupdf", with_pymupdf)
-    attempt("pylopdf", with_pylopdf)
+    attempt("pdfust", with_pdfust)
     return results
 
 
@@ -791,7 +791,7 @@ def tool_versions() -> dict[str, str | None]:
     import pymupdf
     import pypdf
 
-    import pylopdf
+    import pdfust
 
     return {
         "ghostscript": first_line(["gs", "--version"]),
@@ -801,7 +801,7 @@ def tool_versions() -> dict[str, str | None]:
         "python": sys.version.split()[0],
         "pypdf": pypdf.__version__,
         "pymupdf": pymupdf.VersionBind,
-        "pylopdf": pylopdf.__version__,
+        "pdfust": pdfust.__version__,
         "pillow": PIL.__version__,
     }
 
@@ -812,7 +812,7 @@ def summarize(records: Sequence[dict[str, Any]]) -> dict[str, Any]:
     for family in FAMILIES:
         rows = [r for r in records if r["family"] == family]
         entry: dict[str, Any] = {"cases": len(rows), "build_errors": sum(1 for r in rows if "build_error" in r)}
-        for tool in ("pypdf", "pdftotext", "pymupdf", "pylopdf"):
+        for tool in ("pypdf", "pdftotext", "pymupdf", "pdfust"):
             results = [r["validation"][tool] for r in rows if "validation" in r]
             recalls = [x["token_recall"] for x in results if x["token_recall"] is not None]
             entry[tool] = {
@@ -830,7 +830,7 @@ MEASURED_KEYS = {
     "sha256", "header_version", "producer", "xref_kind", "object_streams", "encryption", "stream_filters",
     "fonts", "font_subtypes", "font_encodings", "tounicode", "page_count",
 }  # fmt: skip
-VALIDATION_TOOLS = ("pypdf", "pdftotext", "pymupdf", "pylopdf")
+VALIDATION_TOOLS = ("pypdf", "pdftotext", "pymupdf", "pdfust")
 
 
 def manifest_errors(manifest: dict[str, Any]) -> list[str]:

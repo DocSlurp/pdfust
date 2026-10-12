@@ -80,7 +80,7 @@ def balance_rows(opening: list[str], opening_balance: int, moves: list[tuple[lis
 
 
 def card_en() -> dict[str, Any]:
-    """US rewards Visa statement (pylopdf) with a running balance over 79 postings."""
+    """US rewards Visa statement (pdfust) with a running balance over 79 postings."""
     r = rng("w2-card-en-09")
     usd = lambda c: money(c, "en-US")  # noqa: E731
     start = date(2026, 4, 9)
@@ -991,7 +991,7 @@ def receipts_zhcn() -> dict[str, Any]:
 
 
 def receipts_th() -> dict[str, Any]:
-    """Thai trip expense summary with VAT-inclusive receipts (pylopdf, Thai-script text boxes)."""
+    """Thai trip expense summary with VAT-inclusive receipts (pdfust, Thai-script text boxes)."""
     thb = lambda c: number(c / 100, "th")  # noqa: E731
     head = ["รายการ", "จำนวน", "ราคา", "จำนวนเงิน"]
     checks: list[dict[str, Any]] = []
@@ -1510,7 +1510,7 @@ def utility_hi() -> dict[str, Any]:
 
 
 def utility_ru() -> dict[str, Any]:
-    """Russian housing and utilities single payment document (pylopdf, raster chart)."""
+    """Russian housing and utilities single payment document (pdfust, raster chart)."""
     rub = lambda c: money(c, "ru")  # noqa: E731
     val = lambda c: number(abs(c) / 100, "ru") if c >= 0 else "−" + number(-c / 100, "ru")  # noqa: E731
     services = [("Содержание жилого помещения", "м²", "54.6", 1, "32.15", 0), ("Текущий ремонт общего имущества", "м²", "54.6", 1, "6.84", 0),
@@ -1989,7 +1989,7 @@ def po_pl() -> dict[str, Any]:
 
 
 def po_es() -> dict[str, Any]:
-    """Mexican purchase order and packing list (pylopdf) for a bakery's packaging supplies."""
+    """Mexican purchase order and packing list (pdfust) for a bakery's packaging supplies."""
     mxn = lambda c: money(c, "en-US")  # noqa: E731
     catalog = [
         ("BOL-KR-01", "Bolsa kraft para bolillo, 18×35 cm", "millar", "12", "385.00"), ("BOL-KR-02", "Bolsa kraft con ventana para pan dulce", "millar", "8", "612.50"),

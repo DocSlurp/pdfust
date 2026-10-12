@@ -43,14 +43,14 @@ def _version(*names: str) -> dict[str, str]:
     return versions
 
 
-def _pylopdf(table_strategy: str) -> tuple[Any, str, dict[str, str]]:
-    pylopdf = importlib.import_module("pylopdf")
+def _pdfust(table_strategy: str) -> tuple[Any, str, dict[str, str]]:
+    pdfust = importlib.import_module("pdfust")
 
     def convert(path: Path, _assets: Path) -> str:
-        with pylopdf.open(path) as doc:
+        with pdfust.open(path) as doc:
             return str(doc.to_markdown(table_strategy=table_strategy))
 
-    return convert, f"Document.to_markdown(table_strategy={table_strategy!r})", {"pylopdf": pylopdf.__version__}
+    return convert, f"Document.to_markdown(table_strategy={table_strategy!r})", {"pdfust": pdfust.__version__}
 
 
 def _pymupdf4llm(*, layout: bool) -> tuple[Any, str, dict[str, str]]:
@@ -152,7 +152,7 @@ def _marker() -> tuple[Any, str, dict[str, str]]:
 
 
 def _source() -> dict[str, Any]:
-    """Record the checkout that produced these outputs (pylopdf builds depend on it)."""
+    """Record the checkout that produced these outputs (pdfust builds depend on it)."""
     root = Path(__file__).resolve().parents[1]
     try:
         commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()  # noqa: S607
@@ -163,8 +163,8 @@ def _source() -> dict[str, Any]:
 
 
 TOOLS = {
-    "pylopdf": lambda: _pylopdf("lines"),
-    "pylopdf-text-tables": lambda: _pylopdf("text"),
+    "pdfust": lambda: _pdfust("lines"),
+    "pdfust-text-tables": lambda: _pdfust("text"),
     "pymupdf4llm-layout": lambda: _pymupdf4llm(layout=True),
     "pymupdf4llm-legacy": lambda: _pymupdf4llm(layout=False),
     "pymupdf": lambda: _plain("pymupdf"),

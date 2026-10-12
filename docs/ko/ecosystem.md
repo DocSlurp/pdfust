@@ -1,11 +1,11 @@
 ---
 title: 생태계 연동
-description: Typst, pyHanko, veraPDF 및 OCR 엔진을 pylopdf와 연결하는 검증된 사용법.
+description: Typst, pyHanko, veraPDF 및 OCR 엔진을 pdfust와 연결하는 검증된 사용법.
 ---
 
 # 생태계 연동
 
-pylopdf는 조판, PDF/A 생성, 디지털 서명을 의도적으로 다시 구현하지 않습니다.
+pdfust는 조판, PDF/A 생성, 디지털 서명을 의도적으로 다시 구현하지 않습니다.
 각 기능은 검증된 라이브러리와 조합해 해결하며, 아래의 모든 사용법은
 [`tests/test_interop.py`](https://github.com/yhay81/pylopdf/blob/main/tests/test_interop.py)의
 통합 테스트로 보호됩니다.
@@ -14,14 +14,14 @@ pylopdf는 조판, PDF/A 생성, 디지털 서명을 의도적으로 다시 구�
 
 [typst](https://typst.app/)와
 [typst-py](https://pypi.org/project/typst/)로 보고서를 조판하고, 생성된 바이트를
-pylopdf에 바로 전달할 수 있습니다.
+pdfust에 바로 전달할 수 있습니다.
 
 ```python
 import typst
-import pylopdf
+import pdfust
 
 pdf_bytes = typst.compile("report.typ")   # 조판: typst
-doc = pylopdf.open(stream=pdf_bytes)      # 편집 / 추출 / 병합: pylopdf
+doc = pdfust.open(stream=pdf_bytes)      # 편집 / 추출 / 병합: pdfust
 ```
 
 ## 새 문서의 PDF/A — typst { #new-pdfa }
@@ -30,7 +30,7 @@ typst의 PDF 백엔드(krilla)는 검증된 PDF/A-1b…4 및 PDF/UA-1 출력을 
 
 ```python
 pdf_a: bytes = typst.compile("report.typ", pdf_standards="a-2b")
-pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
+pdfust.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 ```
 
 기존 PDF의 변환이나 검증은 다른 문제입니다.
@@ -39,20 +39,20 @@ pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 
 ## 조판된 CJK 워터마크와 헤더 — typst × show_pdf_page { #cjk-watermarks }
 
-pylopdf는 `pylopdf[ko]` 설치 후 `insert_text()`로 한국어를 직접 그릴 수
+pdfust는 `pdfust[ko]` 설치 후 `insert_text()`로 한국어를 직접 그릴 수
 있습니다. `[jp]`, `[zh-cn]`, `[zh-tw]`는 다른 CJK 지역 glyph를 제공합니다.
 스탬프에 더 복잡한 한 페이지 조판이 필요하면 typst로
 조판하고(글꼴은 부분 집합으로 포함됨), 각 페이지에 벡터로 합성합니다.
 
 ```python
-from pylopdf_fonts_ko import sans_path  # pip install pylopdf[ko]
+from pdfust_fonts_ko import sans_path  # pip install pdfust[ko]
 
 stamp_typ = """
 #set page(width: 595pt, height: 842pt, fill: none)
 #set text(font: "Noto Sans KR", size: 48pt, fill: rgb(255, 0, 0, 40%))
 #align(center + horizon)[대외비]
 """
-stamp = pylopdf.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
+stamp = pdfust.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
 for page in doc:
     page.show_pdf_page((0, 0, page.rect.width, page.rect.height), stamp)
 ```
@@ -63,7 +63,7 @@ for page in doc:
 ## 디지털 서명(PAdES) — pyHanko { #signatures }
 
 [pyHanko](https://pypi.org/project/pyHanko/)(MIT)는 증분 업데이트 방식으로
-서명합니다. 따라서 pylopdf가 생성한 바이트는 서명된 파일의 접두부로 그대로
+서명합니다. 따라서 pdfust가 생성한 바이트는 서명된 파일의 접두부로 그대로
 유지되며, 이 동작은 테스트에서 바이트 단위로 검증합니다.
 
 ```python
@@ -80,7 +80,7 @@ out = signers.sign_pdf(
 signed_pdf: bytes = out.getvalue()
 ```
 
-pylopdf 자체의 서명 필드 API는 서명 필드를 채우지 않으며, 대신 이 방법을
+pdfust 자체의 서명 필드 API는 서명 필드를 채우지 않으며, 대신 이 방법을
 안내하도록 설계되었습니다.
 
 ## OCR — 원하는 엔진 사용 { #ocr }

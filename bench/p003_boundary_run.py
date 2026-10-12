@@ -162,12 +162,12 @@ def process_retained(
                         url, image_metadata = image_factory(record, original, region, config["image_edge"])
                     else:
                         if page is None:
-                            import pylopdf
+                            import pdfust
 
                             data = guard_path(Path(record["pdf_path"])).read_bytes()
                             if sha(data) != record["pdf_sha256"]:
                                 raise ValueError("Frozen source PDF hash changed")
-                            document = stack.enter_context(pylopdf.open(stream=data))
+                            document = stack.enter_context(pdfust.open(stream=data))
                             page = document[record["page_number"]]
                             effective = original.get(
                                 "effective_rotation", original.get("original_rotation", page.rotation)

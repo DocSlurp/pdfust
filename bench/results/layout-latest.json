@@ -4,7 +4,7 @@
     "Run at": "2026-10-08 00:30 UTC",
     "Environment": "Linux-7.2.5-3-omarchy-x86_64-with-glibc2.44 / Python 3.14.7 / x86_64",
     "Machine": "x86_64 / 8 logical CPUs",
-    "pylopdf": "0.13.0",
+    "pdfust": "0.13.0",
     "Font extras": "none",
     "Source commit": "7213dec77a5504fc4cbb5de149c34c77252e27f6",
     "Repetitions": 5,

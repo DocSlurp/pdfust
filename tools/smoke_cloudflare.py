@@ -1,4 +1,4 @@
-"""Bundle and launch a pylopdf PyEmscripten Cloudflare Python Worker."""
+"""Bundle and launch a pdfust PyEmscripten Cloudflare Python Worker."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ _PYEMSCRIPTEN_TAG = "cp310-abi3-pyemscripten_2025_0_wasm32"
 _WORKERS_PY_VERSION = "1.15.0"
 _WRANGLER_VERSION = "4.114.0"
 _COMPATIBILITY_DATE = "2026-07-26"
-_EXAMPLE_REQUIREMENT = "pylopdf>=0.11,<0.12"
+_EXAMPLE_REQUIREMENT = "pdfust>=0.11,<0.12"
 _EXAMPLE_ROOT = Path(__file__).resolve().parents[1] / "examples" / "cloudflare-worker"
 _UPLOAD_RE = re.compile(r"Total Upload:\s+([0-9.]+)\s+KiB\s+/\s+gzip:\s+([0-9.]+)\s+KiB")
 _RUNTIME_TIMEOUT_SECONDS = 60.0
@@ -58,13 +58,13 @@ def _tree_size(root: Path) -> tuple[int, int]:
 
 
 def _verify_vendored_wheel(root: Path) -> Path:
-    extensions = list((root / "python_modules" / "pylopdf").glob("pylopdf_core*.so"))
+    extensions = list((root / "python_modules" / "pdfust").glob("pdfust_core*.so"))
     if len(extensions) != 1:
-        msg = f"expected one vendored pylopdf extension, found {extensions}"
+        msg = f"expected one vendored pdfust extension, found {extensions}"
         raise RuntimeError(msg)
-    wheel_metadata = list((root / "python_modules").glob("pylopdf-*.dist-info/WHEEL"))
+    wheel_metadata = list((root / "python_modules").glob("pdfust-*.dist-info/WHEEL"))
     if len(wheel_metadata) != 1:
-        msg = f"expected one vendored pylopdf WHEEL file, found {wheel_metadata}"
+        msg = f"expected one vendored pdfust WHEEL file, found {wheel_metadata}"
         raise RuntimeError(msg)
     metadata = wheel_metadata[0].read_text(encoding="utf-8")
     if f"Tag: {_PYEMSCRIPTEN_TAG}" not in metadata:
@@ -107,7 +107,7 @@ def _stop_process_group(process: subprocess.Popen[bytes]) -> None:
 
 
 def _runtime_smoke(root: Path) -> float:
-    """Start workerd and verify a module-scope pylopdf import through health."""
+    """Start workerd and verify a module-scope pdfust import through health."""
     port = _reserve_local_port()
     command = [
         _require_command("npx"),
@@ -159,8 +159,8 @@ def _runtime_smoke(root: Path) -> float:
                             last_error = f"health returned HTTP {response.status}"
                         elif not isinstance(payload, dict) or payload.get("status") != "ok":
                             last_error = f"health returned an unexpected payload: {payload!r}"
-                        elif not payload.get("pylopdf"):
-                            last_error = "health did not report the imported pylopdf version"
+                        elif not payload.get("pdfust"):
+                            last_error = "health did not report the imported pdfust version"
                         else:
                             return (time.monotonic() - started) * 1000
                 except (
@@ -254,7 +254,7 @@ def smoke_cloudflare(
     """Resolve, bundle, and runtime-smoke a package requirement."""
     last_error: subprocess.CalledProcessError | RuntimeError | None = None
     for attempt in range(1, attempts + 1):
-        with tempfile.TemporaryDirectory(prefix="pylopdf-cloudflare-") as directory:
+        with tempfile.TemporaryDirectory(prefix="pdfust-cloudflare-") as directory:
             try:
                 metrics = _run_attempt(Path(directory), requirement)
             except (subprocess.CalledProcessError, RuntimeError) as error:
@@ -298,7 +298,7 @@ def main() -> None:
             parser.error(f"wheel does not exist: {wheel}")
         if not wheel.name.endswith(f"-{_PYEMSCRIPTEN_TAG}.whl"):
             parser.error(f"wheel does not use the expected {_PYEMSCRIPTEN_TAG} tag: {wheel.name}")
-        requirement = f"pylopdf @ {wheel.as_uri()}"
+        requirement = f"pdfust @ {wheel.as_uri()}"
     else:
         if args.requirement is None:
             msg = "a wheel or requirement is required"

@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING, Any
 from bench.structure_core import markdown_tables
 
 if TYPE_CHECKING:
-    import pylopdf
+    import pdfust
 
 _MAX_HEADER_CHARS = 120
 _MAX_HEADER_ROWS = 3
 _MIN_RECORD_COLUMNS = 3
 
 
-def header_word_ids(table: pylopdf.Table, words: list[dict[str, Any]]) -> set[str]:
+def header_word_ids(table: pdfust.Table, words: list[dict[str, Any]]) -> set[str]:
     """Keep the original words when an unresolved first grid row gains neutral labels."""
     first = next((index for index, row in enumerate(table.extract()) if any(row)), 0)
     boxes = [cell for cell in table.cells[first * table.col_count : (first + 1) * table.col_count] if cell is not None]
@@ -30,7 +30,7 @@ def header_word_ids(table: pylopdf.Table, words: list[dict[str, Any]]) -> set[st
     }
 
 
-def unresolved_header_ids(page: pylopdf.Page, words: list[dict[str, Any]]) -> set[str]:
+def unresolved_header_ids(page: pdfust.Page, words: list[dict[str, Any]]) -> set[str]:
     """Identify displaced source text without deduplicating repeated header labels."""
     retained = set()
     for table in page.find_tables():
@@ -40,7 +40,7 @@ def unresolved_header_ids(page: pylopdf.Page, words: list[dict[str, Any]]) -> se
     return retained
 
 
-def native_records(page: pylopdf.Page) -> list[list[list[str]]]:
+def native_records(page: pdfust.Page) -> list[list[list[str]]]:
     """Keep detected data cells, using neutral labels for unresolved large headers."""
     matrices = []
     for table in page.find_tables():
@@ -55,7 +55,7 @@ def native_records(page: pylopdf.Page) -> list[list[list[str]]]:
 
 
 def header_guided_records(  # noqa: C901, PLR0912
-    page: pylopdf.Page,
+    page: pdfust.Page,
     words: list[dict[str, Any]],
 ) -> list[list[list[str]]]:
     """Extend a complete vector header into source-backed records below it."""

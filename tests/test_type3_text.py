@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from conftest import build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def _tounicode(mapping: dict[int, str]) -> str:
@@ -58,13 +58,13 @@ def build_type3_pdf(  # noqa: PLR0913 - keyword-only fixture options.
 
 def test_full_width_type3_glyphs_do_not_gain_inferred_spaces() -> None:
     mapping = {1: "株", 2: "式", 3: "会", 4: "社", 5: "。"}
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5])))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5])))
     assert doc.get_text().strip() == "株式会社。"
 
 
 def test_hangul_and_kana_type3_glyphs_stay_contiguous() -> None:
     mapping = {1: "한", 2: "국", 3: "あ", 4: "カ", 5: "１"}
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5])))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5])))
     assert doc.get_text().strip() == "한국あカ１"
 
 
@@ -72,7 +72,7 @@ def test_kangxi_and_supplement_radicals_map_to_unified_ideographs() -> None:
     # Skia's reverse cmap picks the lowest code point sharing a glyph, so a
     # ToUnicode entry can name U+2F47 KANGXI RADICAL SUN instead of U+65E5.
     mapping = {1: "⽇", 2: "⻘", 3: "⽉", 4: "本"}
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4])))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4])))
     assert doc.get_text().strip() == "日青月本"
 
 
@@ -90,7 +90,7 @@ def test_actual_text_replaces_nul_mapped_contextual_glyphs() -> None:
         f"/Span << /ActualText <{_utf16(text)}> >> BDC <{codes}> Tj EMC" for text, codes in reversed(spans)
     )
     content = f"BT /F1 12 Tf 72 700 Td /ReversedChars BMC {body} EMC ET"
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, b"", width=500, content=content))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, b"", width=500, content=content))
     text = doc.get_text().strip()
     assert "\0" not in text
     assert text == "\u0645\u0631\u062d\u064e"
@@ -98,7 +98,7 @@ def test_actual_text_replaces_nul_mapped_contextual_glyphs() -> None:
 
 def test_nul_mapping_outside_actual_text_is_dropped() -> None:
     mapping = {1: "\u0041", 2: "\0", 3: "\u0042"}
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 3, 2]), width=500))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, bytes([1, 3, 2]), width=500))
     assert doc.get_text().strip() == "AB"
 
 
@@ -108,7 +108,7 @@ def test_named_property_spans_keep_glyph_unicode() -> None:
         "BT /F1 12 Tf 72 700 Td /Span << /ActualText <FEFF0058> >> BDC <01> Tj EMC "
         "/Span /P0 BDC <02> Tj EMC ET"
     )
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, b"", width=500, content=content))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, b"", width=500, content=content))
     assert doc.get_text().strip() == "XB"
 
 
@@ -117,7 +117,7 @@ def test_proportional_type3_widths_do_not_gain_inferred_spaces() -> None:
     # half-em estimate made "NT$1,200" extract as "N T$1,200".
     mapping = {1: "N", 2: "T", 3: "$", 4: "1", 5: "m", 6: "L"}
     widths = {1: 722, 2: 611, 3: 556, 4: 556, 5: 833, 6: 556}
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5, 6]), per_code_widths=widths))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5, 6]), per_code_widths=widths))
     assert doc.get_text().strip() == "NT$1mL"
 
 
@@ -126,7 +126,7 @@ def test_presentation_form_ligatures_expand_to_letters() -> None:
     # it like PyMuPDF and pdftotext so "ﬁnal" reads and searches as "final".
     mapping = {1: "ﬁ", 2: "n", 3: "a", 4: "l", 5: "ﬄ"}
     widths = {1: 556, 2: 556, 3: 556, 4: 222, 5: 834}
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5]), per_code_widths=widths))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, bytes([1, 2, 3, 4, 5]), per_code_widths=widths))
     assert doc.get_text().strip() == "finalffl"
     assert doc[0].search_for("final")
 
@@ -140,7 +140,7 @@ def test_combining_mark_stays_with_its_base_when_its_origin_passes_the_next_lett
         "BT /F1 10 Tf 1 0 0 1 72 700 Tm <01> Tj "
         "1 0 0 1 77.8 700 Tm <02> Tj 1 0 0 1 77.56 700 Tm <03> Tj ET"
     )
-    doc = pylopdf.open(stream=build_type3_pdf(mapping, b"", content=content, per_code_widths=widths))
+    doc = pdfust.open(stream=build_type3_pdf(mapping, b"", content=content, per_code_widths=widths))
     assert doc.get_text().strip() == "ọc"
 
 
@@ -150,4 +150,4 @@ def test_type3_glyph_names_map_to_unicode_without_tounicode() -> None:
     mapping = {1: "\u00e9", 2: "\u0410", 3: "\u20ac", 4: "a"}
     names = {1: "eacute", 2: "afii10017", 3: "uni20AC", 4: "a"}
     pdf = build_type3_pdf(mapping, bytes([4, 1, 2, 3]), width=500, glyph_names=names, to_unicode=False)
-    assert pylopdf.open(stream=pdf).get_text().strip() == "a\u00e9\u0410\u20ac"
+    assert pdfust.open(stream=pdf).get_text().strip() == "a\u00e9\u0410\u20ac"

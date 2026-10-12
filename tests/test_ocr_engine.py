@@ -9,17 +9,17 @@ from threading import Barrier, Event, Lock
 
 import pytest
 
-import pylopdf
-from pylopdf.pylopdf_core import _OcrEngine
+import pdfust
+from pdfust.pdfust_core import _OcrEngine
 
-MODEL_ROOT = Path(__file__).parents[1] / "models" / "pylopdf-ocr-models" / "src" / "pylopdf_ocr_models"
-FONT_ROOT = Path(__file__).parents[1] / "fonts" / "pylopdf-fonts-jp" / "src" / "pylopdf_fonts_jp"
+MODEL_ROOT = Path(__file__).parents[1] / "models" / "pdfust-ocr-models" / "src" / "pdfust_ocr_models"
+FONT_ROOT = Path(__file__).parents[1] / "fonts" / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp"
 
 
 @pytest.fixture(scope="module")
-def ocr_engine() -> pylopdf.OcrEngine:
+def ocr_engine() -> pdfust.OcrEngine:
     """Load the bundled model set once for OCR integration tests."""
-    return pylopdf.OcrEngine(
+    return pdfust.OcrEngine(
         MODEL_ROOT / "PP-OCRv6_det_small.rten",
         MODEL_ROOT / "PP-OCRv6_rec_small.rten",
         MODEL_ROOT / "ppocrv6_dict.txt",
@@ -33,8 +33,8 @@ def test_ocr_model_artifact_hashes() -> None:
         assert hashlib.sha256((MODEL_ROOT / filename).read_bytes()).hexdigest() == expected
 
 
-def test_ocr_engine_recognizes_rendered_text(ocr_engine: pylopdf.OcrEngine) -> None:
-    doc = pylopdf.Document()
+def test_ocr_engine_recognizes_rendered_text(ocr_engine: pdfust.OcrEngine) -> None:
+    doc = pdfust.Document()
     doc.new_page(width=360, height=120)
     doc[0].insert_text((20, 75), "Invoice 123", fontsize=36)
 
@@ -46,8 +46,8 @@ def test_ocr_engine_recognizes_rendered_text(ocr_engine: pylopdf.OcrEngine) -> N
     assert words[0]["bbox"].y0 < 60 < words[0]["bbox"].y1
 
 
-def test_ocr_engine_recognizes_japanese(ocr_engine: pylopdf.OcrEngine) -> None:
-    doc = pylopdf.Document()
+def test_ocr_engine_recognizes_japanese(ocr_engine: pdfust.OcrEngine) -> None:
+    doc = pdfust.Document()
     doc.new_page(width=400, height=120)
     doc[0].insert_text(
         (20, 75),
@@ -62,8 +62,8 @@ def test_ocr_engine_recognizes_japanese(ocr_engine: pylopdf.OcrEngine) -> None:
     assert words[0]["confidence"] > 0.9
 
 
-def test_ocr_engine_orders_sustained_columns(ocr_engine: pylopdf.OcrEngine) -> None:
-    doc = pylopdf.Document()
+def test_ocr_engine_orders_sustained_columns(ocr_engine: pdfust.OcrEngine) -> None:
+    doc = pdfust.Document()
     doc.new_page(width=500, height=180)
     page = doc[0]
     page.insert_text((20, 60), "Left one", fontsize=24)
@@ -76,15 +76,15 @@ def test_ocr_engine_orders_sustained_columns(ocr_engine: pylopdf.OcrEngine) -> N
     assert [word["text"] for word in words] == ["Left one", "Left two", "Right one", "Right two"]
 
 
-def test_ocr_engine_is_reusable_across_concurrent_documents(ocr_engine: pylopdf.OcrEngine) -> None:
+def test_ocr_engine_is_reusable_across_concurrent_documents(ocr_engine: pdfust.OcrEngine) -> None:
     documents = []
     for text in ("Alpha 123", "Beta 456"):
-        document = pylopdf.Document()
+        document = pdfust.Document()
         document.new_page(width=280, height=100)
         document[0].insert_text((20, 65), text, fontsize=30)
         documents.append(document)
 
-    def recognize(document: pylopdf.Document) -> list[str]:
+    def recognize(document: pdfust.Document) -> list[str]:
         words = document[0].get_text_ocr(
             engine=ocr_engine,
             dpi=150,
@@ -125,7 +125,7 @@ def test_ocr_engine_bounds_complete_concurrent_calls(monkeypatch: pytest.MonkeyP
                 self.active -= 1
             return []
 
-    engine = pylopdf.OcrEngine(
+    engine = pdfust.OcrEngine(
         MODEL_ROOT / "PP-OCRv6_det_small.rten",
         MODEL_ROOT / "PP-OCRv6_rec_small.rten",
         MODEL_ROOT / "ppocrv6_dict.txt",
@@ -135,13 +135,13 @@ def test_ocr_engine_bounds_complete_concurrent_calls(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(engine, "_engine", probe)
     documents = []
     for _ in range(2):
-        document = pylopdf.Document()
+        document = pdfust.Document()
         document.new_page(width=100, height=100)
         documents.append(document)
 
     second_started = Event()
 
-    def second_call() -> list[pylopdf.OcrWord]:
+    def second_call() -> list[pdfust.OcrWord]:
         second_started.set()
         return engine.recognize(documents[1][0], dpi=72, tile_size=256, overlap=32)
 
@@ -177,7 +177,7 @@ def test_ocr_engine_can_raise_measured_concurrency(monkeypatch: pytest.MonkeyPat
                 self.active -= 1
             return []
 
-    engine = pylopdf.OcrEngine(
+    engine = pdfust.OcrEngine(
         MODEL_ROOT / "PP-OCRv6_det_small.rten",
         MODEL_ROOT / "PP-OCRv6_rec_small.rten",
         MODEL_ROOT / "ppocrv6_dict.txt",
@@ -188,7 +188,7 @@ def test_ocr_engine_can_raise_measured_concurrency(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(engine, "_engine", probe)
     documents = []
     for _ in range(2):
-        document = pylopdf.Document()
+        document = pdfust.Document()
         document.new_page(width=100, height=100)
         documents.append(document)
 
@@ -205,13 +205,13 @@ def test_ocr_engine_can_raise_measured_concurrency(monkeypatch: pytest.MonkeyPat
     assert engine.max_concurrent == 2
 
 
-def test_apply_ocr_adds_searchable_invisible_text(ocr_engine: pylopdf.OcrEngine) -> None:
-    source = pylopdf.Document()
+def test_apply_ocr_adds_searchable_invisible_text(ocr_engine: pdfust.OcrEngine) -> None:
+    source = pdfust.Document()
     source.new_page(width=360, height=120)
     source[0].insert_text((20, 75), "Search 456", fontsize=36)
     raster = source[0].get_pixmap(dpi=150, background=(255, 255, 255))
 
-    target = pylopdf.Document()
+    target = pdfust.Document()
     target.new_page(width=360, height=120)
     target[0].insert_image(target[0].rect, stream=raster.tobytes())
     before = target[0].get_pixmap(background=(255, 255, 255)).samples
@@ -221,18 +221,18 @@ def test_apply_ocr_adds_searchable_invisible_text(ocr_engine: pylopdf.OcrEngine)
     assert [word["text"] for word in words] == ["Search 456"]
     assert target[0].search_for("Search 456")
     assert target[0].get_pixmap(background=(255, 255, 255)).samples == before
-    reopened = pylopdf.open(stream=target.tobytes())
+    reopened = pdfust.open(stream=target.tobytes())
     assert reopened[0].search_for("Search 456")
     assert reopened[0].get_pixmap(background=(255, 255, 255)).samples == before
 
 
-def test_apply_ocr_clip_handles_mixed_content(ocr_engine: pylopdf.OcrEngine) -> None:
-    source = pylopdf.Document()
+def test_apply_ocr_clip_handles_mixed_content(ocr_engine: pdfust.OcrEngine) -> None:
+    source = pdfust.Document()
     source.new_page(width=360, height=120)
     source[0].insert_text((20, 75), "Region 789", fontsize=36)
     raster = source[0].get_pixmap(dpi=150, background=(255, 255, 255))
 
-    target = pylopdf.Document()
+    target = pdfust.Document()
     target.new_page(width=360, height=220)
     target[0].insert_text((20, 30), "Digital header", fontsize=14)
     target[0].insert_image((0, 80, 360, 200), stream=raster.tobytes())
@@ -257,17 +257,17 @@ def test_apply_ocr_clip_handles_mixed_content(ocr_engine: pylopdf.OcrEngine) -> 
     [(90, 270), (180, 180), (270, 90)],
 )
 def test_apply_ocr_corrects_rotated_scan_without_rotating_page(
-    ocr_engine: pylopdf.OcrEngine,
+    ocr_engine: pdfust.OcrEngine,
     page_rotation: int,
-    ocr_rotation: pylopdf.OcrRotation,
+    ocr_rotation: pdfust.OcrRotation,
 ) -> None:
-    source = pylopdf.Document()
+    source = pdfust.Document()
     source.new_page(width=360, height=200)
     source[0].insert_text((20, 65), "First line 111", fontsize=28)
     source[0].insert_text((20, 145), "Second line 222", fontsize=28)
     raster = source[0].get_pixmap(dpi=150, background=(255, 255, 255))
 
-    target = pylopdf.Document()
+    target = pdfust.Document()
     target.new_page(width=360, height=200)
     target[0].insert_image(target[0].rect, stream=raster.tobytes())
     target[0].set_rotation(page_rotation)
@@ -293,7 +293,7 @@ def test_apply_ocr_corrects_rotated_scan_without_rotating_page(
         assert tuple(hits[0]) == pytest.approx(tuple(word["bbox"]), abs=0.2)
     assert target[0].rotation == page_rotation
     assert target[0].get_pixmap(background=(255, 255, 255)).samples == before
-    reopened = pylopdf.open(stream=target.tobytes())
+    reopened = pdfust.open(stream=target.tobytes())
     assert reopened[0].get_text() == "First line 111\nSecond line 222\n"
     assert reopened[0].search_for("First line 111")
     assert reopened[0].search_for("Second line 222")
@@ -302,7 +302,7 @@ def test_apply_ocr_corrects_rotated_scan_without_rotating_page(
 
 
 def test_apply_ocr_skips_existing_text_by_default() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=200, height=100)
     doc[0].insert_text((20, 50), "Already searchable")
 
@@ -312,18 +312,18 @@ def test_apply_ocr_skips_existing_text_by_default() -> None:
 
 
 @pytest.mark.parametrize("dpi", [0, -1, float("inf"), float("nan"), "bad"])
-def test_ocr_engine_rejects_invalid_dpi(ocr_engine: pylopdf.OcrEngine, dpi: object) -> None:
-    doc = pylopdf.Document()
+def test_ocr_engine_rejects_invalid_dpi(ocr_engine: pdfust.OcrEngine, dpi: object) -> None:
+    doc = pdfust.Document()
     doc.new_page(width=100, height=100)
-    with pytest.raises(pylopdf.OcrError, match="dpi"):
+    with pytest.raises(pdfust.OcrError, match="dpi"):
         ocr_engine.recognize(doc[0], dpi=dpi)  # type: ignore[arg-type]
 
 
 def test_ocr_engine_rejects_incomplete_or_missing_model_paths(tmp_path: Path) -> None:
-    with pytest.raises(pylopdf.OcrError, match="provided together"):
-        pylopdf.OcrEngine(tmp_path / "det.onnx", None, tmp_path / "dict.txt")
-    with pytest.raises(pylopdf.OcrError, match="failed to load OCR detector"):
-        pylopdf.OcrEngine(tmp_path / "det.onnx", tmp_path / "rec.onnx", tmp_path / "dict.txt")
+    with pytest.raises(pdfust.OcrError, match="provided together"):
+        pdfust.OcrEngine(tmp_path / "det.onnx", None, tmp_path / "dict.txt")
+    with pytest.raises(pdfust.OcrError, match="failed to load OCR detector"):
+        pdfust.OcrEngine(tmp_path / "det.onnx", tmp_path / "rec.onnx", tmp_path / "dict.txt")
 
 
 def test_ocr_engine_bounds_cumulative_model_input(tmp_path: Path) -> None:
@@ -334,14 +334,14 @@ def test_ocr_engine_bounds_cumulative_model_input(tmp_path: Path) -> None:
     recognizer.write_bytes(b"rec!")
     dictionary.write_bytes(b"x\n")
 
-    with pytest.raises(pylopdf.LimitError) as caught:
-        pylopdf.OcrEngine(detector, recognizer, dictionary, max_model_size=9)
+    with pytest.raises(pdfust.LimitError) as caught:
+        pdfust.OcrEngine(detector, recognizer, dictionary, max_model_size=9)
     assert caught.value.code == "ocr_model_size"
 
-    with pytest.raises(pylopdf.OcrError, match="failed to load OCR detector"):
-        pylopdf.OcrEngine(detector, recognizer, dictionary, max_model_size=10)
-    with pytest.raises(pylopdf.OcrError, match="failed to load OCR detector"):
-        pylopdf.OcrEngine(detector, recognizer, dictionary, max_model_size=None)
+    with pytest.raises(pdfust.OcrError, match="failed to load OCR detector"):
+        pdfust.OcrEngine(detector, recognizer, dictionary, max_model_size=10)
+    with pytest.raises(pdfust.OcrError, match="failed to load OCR detector"):
+        pdfust.OcrEngine(detector, recognizer, dictionary, max_model_size=None)
 
 
 def test_ocr_core_repeats_cumulative_model_limit(tmp_path: Path) -> None:
@@ -352,7 +352,7 @@ def test_ocr_core_repeats_cumulative_model_limit(tmp_path: Path) -> None:
     recognizer.write_bytes(b"rec!")
     dictionary.write_bytes(b"x\n")
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         _OcrEngine(str(detector), str(recognizer), str(dictionary), 1, 9)
     assert caught.value.code == "ocr_model_size"
 
@@ -365,43 +365,43 @@ def test_ocr_engine_bounds_dictionary_entries(tmp_path: Path) -> None:
     recognizer.write_bytes(b"x")
     dictionary.write_text("x\n" * 65_537, encoding="utf-8")
 
-    with pytest.raises(pylopdf.LimitError) as caught:
-        pylopdf.OcrEngine(detector, recognizer, dictionary, max_model_size=None)
+    with pytest.raises(pdfust.LimitError) as caught:
+        pdfust.OcrEngine(detector, recognizer, dictionary, max_model_size=None)
     assert caught.value.code == "ocr_dictionary_entries"
 
 
 def test_ocr_engine_rejects_mismatched_dictionary(tmp_path: Path) -> None:
     dictionary = tmp_path / "mismatched.txt"
     dictionary.write_text("x\n", encoding="utf-8")
-    engine = pylopdf.OcrEngine(
+    engine = pdfust.OcrEngine(
         MODEL_ROOT / "PP-OCRv6_det_small.rten",
         MODEL_ROOT / "PP-OCRv6_rec_small.rten",
         dictionary,
     )
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=200, height=100)
     doc[0].insert_text((20, 60), "Text", fontsize=30)
 
-    with pytest.raises(pylopdf.OcrError, match="dictionary requires"):
+    with pytest.raises(pdfust.OcrError, match="dictionary requires"):
         engine.recognize(doc[0], dpi=150, tile_size=512, overlap=64)
 
 
 @pytest.mark.parametrize(
     ("threads", "error"),
-    [(0, pylopdf.OcrError), (17, pylopdf.OcrError), (True, TypeError), (1.5, TypeError)],
+    [(0, pdfust.OcrError), (17, pdfust.OcrError), (True, TypeError), (1.5, TypeError)],
 )
 def test_ocr_engine_validates_threads(threads: object, error: type[Exception]) -> None:
     with pytest.raises(error, match="threads"):
-        pylopdf.OcrEngine(threads=threads)  # type: ignore[arg-type]
+        pdfust.OcrEngine(threads=threads)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(
     ("max_concurrent", "error"),
-    [(0, pylopdf.OcrError), (17, pylopdf.OcrError), (True, TypeError), (1.5, TypeError)],
+    [(0, pdfust.OcrError), (17, pdfust.OcrError), (True, TypeError), (1.5, TypeError)],
 )
 def test_ocr_engine_validates_max_concurrent(max_concurrent: object, error: type[Exception]) -> None:
     with pytest.raises(error, match="max_concurrent"):
-        pylopdf.OcrEngine(max_concurrent=max_concurrent)  # type: ignore[arg-type]
+        pdfust.OcrEngine(max_concurrent=max_concurrent)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(
@@ -410,32 +410,32 @@ def test_ocr_engine_validates_max_concurrent(max_concurrent: object, error: type
 )
 def test_ocr_engine_validates_max_model_size(max_model_size: object, error: type[Exception]) -> None:
     with pytest.raises(error, match="max_model_size"):
-        pylopdf.OcrEngine(max_model_size=max_model_size)  # type: ignore[arg-type]
+        pdfust.OcrEngine(max_model_size=max_model_size)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize(
     ("rotation", "error"),
-    [(45, pylopdf.OcrError), (-90, pylopdf.OcrError), (360, pylopdf.OcrError), (True, TypeError), (1.5, TypeError)],
+    [(45, pdfust.OcrError), (-90, pdfust.OcrError), (360, pdfust.OcrError), (True, TypeError), (1.5, TypeError)],
 )
 def test_ocr_engine_validates_input_rotation(
-    ocr_engine: pylopdf.OcrEngine,
+    ocr_engine: pdfust.OcrEngine,
     rotation: object,
     error: type[Exception],
 ) -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page(width=100, height=100)
     with pytest.raises(error, match="rotation"):
         ocr_engine.recognize(doc[0], dpi=72, rotation=rotation)  # type: ignore[arg-type]
 
 
-def test_ocr_engine_validates_runtime_options(ocr_engine: pylopdf.OcrEngine) -> None:
-    doc = pylopdf.Document()
+def test_ocr_engine_validates_runtime_options(ocr_engine: pdfust.OcrEngine) -> None:
+    doc = pdfust.Document()
     doc.new_page(width=100, height=100)
-    with pytest.raises(pylopdf.OcrError, match="tile_size"):
+    with pytest.raises(pdfust.OcrError, match="tile_size"):
         ocr_engine.recognize(doc[0], dpi=72, tile_size=500)
-    with pytest.raises(pylopdf.OcrError, match="overlap"):
+    with pytest.raises(pdfust.OcrError, match="overlap"):
         ocr_engine.recognize(doc[0], dpi=72, tile_size=512, overlap=16)
-    with pytest.raises(pylopdf.OcrError, match="min_confidence"):
+    with pytest.raises(pdfust.OcrError, match="min_confidence"):
         ocr_engine.recognize(doc[0], dpi=72, tile_size=512, overlap=64, min_confidence=2)
     with pytest.raises(TypeError, match="tile_size"):
         ocr_engine.recognize(doc[0], dpi=72, tile_size=512.0)  # type: ignore[arg-type]
@@ -445,7 +445,7 @@ def test_ocr_engine_validates_runtime_options(ocr_engine: pylopdf.OcrEngine) -> 
         ocr_engine.recognize(doc[0], dpi=True)
     with pytest.raises(TypeError, match="min_confidence"):
         ocr_engine.recognize(doc[0], dpi=72, min_confidence=True)
-    with pytest.raises(pylopdf.PdfError, match="clip does not intersect"):
+    with pytest.raises(pdfust.PdfError, match="clip does not intersect"):
         ocr_engine.recognize(doc[0], dpi=72, clip=(200, 200, 300, 300))
 
 

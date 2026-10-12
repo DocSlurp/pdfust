@@ -511,7 +511,7 @@ pub fn text_markup_ap_ops(
     Ok(out)
 }
 
-/// Build drawing operators for a pylopdf-created Highlight appearance.
+/// Build drawing operators for a pdfust-created Highlight appearance.
 pub fn highlight_ap_ops(
     quads: &[[(f64, f64); 4]],
     color: (f64, f64, f64),

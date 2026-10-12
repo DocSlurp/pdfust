@@ -1,5 +1,5 @@
 ---
-title: pylopdf
+title: pdfust
 description: Edit, render and extract PDFs with Python ergonomics and a compact Rust core.
 hide:
   - navigation
@@ -23,11 +23,11 @@ hide:
 
       <div class="living-install" aria-label="Installation command">
         <span class="living-install__prompt" aria-hidden="true">$</span>
-        <code tabindex="0">pip install pylopdf</code>
+        <code tabindex="0">pip install pdfust</code>
         <button
           class="living-install__copy"
           type="button"
-          data-copy-command="pip install pylopdf"
+          data-copy-command="pip install pdfust"
           data-copied-label="Copied"
           aria-label="Copy installation command"
         ><span data-copy-label>Copy</span></button>
@@ -56,7 +56,7 @@ hide:
           <div class="living-line living-line--medium"></div>
           <div class="living-line living-line--cobalt"></div>
           <div class="living-line living-line--short"></div>
-          <div class="living-code-sample">doc = pylopdf.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("total")</div>
+          <div class="living-code-sample">doc = pdfust.open("input.pdf")<br>page = doc[0]<br>hits = page.search_for("total")</div>
         </div>
         <span class="living-markup-circle"></span>
       </div>
@@ -99,7 +99,7 @@ hide:
       <p class="living-eyebrow">Useful constraints, visible evidence</p>
       <h2 id="living-evidence-title">Small enough for deployment. Complete enough for real workflows.</h2>
       <p>
-        pylopdf combines lopdf for editing, hayro for rendering and extraction,
+        pdfust combines lopdf for editing, hayro for rendering and extraction,
         and krilla with HarfRust for generated text and form appearances.
       </p>
     </div>
@@ -134,7 +134,7 @@ hide:
     </div>
     <div class="living-scope">
       <div class="living-scope__column">
-        <h3>Inside pylopdf</h3>
+        <h3>Inside pdfust</h3>
         <ul>
           <li>Page management, metadata, outlines and encryption</li>
           <li>Positioned text extraction, search and Markdown conversion</li>

@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench.feature_cases import page_pdf, text_op
 from bench.structure import ARTIFACTS, PATCH_PROMPT, QWEN_MODEL, QWEN_REVISION, write_json
 from bench.structure_core import score_tables, validate_patch
@@ -67,7 +67,7 @@ def build_dataset() -> list[dict[str, Any]]:  # noqa: C901, PLR0912
         directory = root / f"example-{index:02d}"
         directory.mkdir(exist_ok=True)
         (directory / "input.pdf").write_bytes(data)
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[0]
             page.get_pixmap(dpi=72 * 640 / 792, background=(255, 255, 255)).save(directory / "page.png")
             words = [

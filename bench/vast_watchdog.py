@@ -1,4 +1,4 @@
-"""Independent teardown backstop for jev-pdf Vast instances.
+"""Independent teardown backstop for pdfust Vast instances.
 
 A systemd user timer runs ``tick`` every two minutes. Each armed state file
 lists the instance IDs this project created. Ticks destroy them after the hard

@@ -14,7 +14,7 @@ from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
 
-import pylopdf
+import pdfust
 from bench.ocr import _cer
 from bench.pipeline_layout_detector import _Measure
 
@@ -122,7 +122,7 @@ def freeze(output: Path) -> dict[str, Any]:
         cases = []
         for scale in SCALES:
             pdf_path = output / f"{name}-scale{scale:g}.pdf"
-            with pylopdf.open() as doc:
+            with pdfust.open() as doc:
                 page = doc.new_page(
                     width=source["image"].width * 0.5 * scale, height=source["image"].height * 0.5 * scale
                 )
@@ -215,7 +215,7 @@ def run(output: Path) -> dict[str, Any]:
     if plan["scales"] != list(SCALES) or plan["arms"] != list(ARMS):
         raise ValueError("Unrecognized frozen plan")
     with _Measure() as init:
-        engine = pylopdf.OcrEngine(threads=4, max_concurrent=1)
+        engine = pdfust.OcrEngine(threads=4, max_concurrent=1)
     report: dict[str, Any] = {
         "plan_sha256": digest((output / "plan.json").read_bytes()),
         "platform": platform.platform(),
@@ -228,7 +228,7 @@ def run(output: Path) -> dict[str, Any]:
             path = Path(pdf["pdf"])
             if digest(path.read_bytes()) != pdf["sha256"]:
                 raise ValueError("Frozen source PDF hash mismatch")
-            with pylopdf.open(path) as doc:
+            with pdfust.open(path) as doc:
                 page = doc[0]
                 viewport = list(page.rect)
                 for arm in ARMS:

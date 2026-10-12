@@ -18,7 +18,7 @@ def verify_gate(
     trusted: dict[str, dict[str, str]] | None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Rebuild literal source packets/pixels and admit only frozen or fallback states."""
-    import pylopdf
+    import pdfust
     from bench import generalization_run as regions
     from bench import p003_gate_run as runner
     from bench.p003_gate_image import transform
@@ -98,7 +98,7 @@ def verify_gate(
         if len(page["regions"]) > len(original_regions):
             raise ValueError("Fresh gate added a source region")
         states, consumed = {}, []
-        with pylopdf.open(stream=guard_path(Path(records[ident]["pdf_path"])).read_bytes()) as document:
+        with pdfust.open(stream=guard_path(Path(records[ident]["pdf_path"])).read_bytes()) as document:
             pdf_page = document[records[ident]["page_number"]]
             if pdf_page.rotation != original["original_rotation"]:
                 raise ValueError("Fresh gate source rotation changed")

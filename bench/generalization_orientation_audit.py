@@ -17,14 +17,14 @@ from bench.silver_structure import process_peak_rss
 
 def source_cases() -> list[dict[str, Any]]:
     """Construct compensated display-upright and physically sideways scans."""
-    import pylopdf
+    import pdfust
 
     cases = []
     specifications = [(f"compensated-{rotation}", rotation, 0, False) for rotation in (90, 180, 270)]
     specifications += [(f"physical-{rotation}", 0, rotation, False) for rotation in (90, 180, 270)]
     specifications += [("mixed-physical-90", 0, 90, True), ("upright-control", 0, 0, False)]
     for identifier, page_rotation, image_rotation, native in specifications:
-        with pylopdf.Document() as document:
+        with pdfust.Document() as document:
             page = document.new_page(width=600, height=800)
             page.set_rotation(page_rotation)
             if native:
@@ -59,20 +59,20 @@ def construction_references() -> dict[str, Any]:
 
 def run(directory: Path) -> dict[str, Any]:
     """Run all candidate costs before joining independent construction references."""
-    import pylopdf
+    import pdfust
 
     sources = source_cases()
     directory.mkdir(parents=True, exist_ok=True)
     for source in sources:
         (directory / (source["id"] + ".pdf")).write_bytes(source["pdf"])
     start, cpu = time.perf_counter(), time.process_time()
-    engine = pylopdf.OcrEngine(threads=1)
+    engine = pdfust.OcrEngine(threads=1)
     rows = []
     for source in sources:
         for normalize in (False, True):
-            with pylopdf.Document(stream=source["pdf"]) as document:
+            with pdfust.Document(stream=source["pdf"]) as document:
                 original = document.tobytes()
-                with pylopdf.Document() as owned:
+                with pdfust.Document() as owned:
                     owned.insert_pdf(document)
                     page = owned[0]
                     if normalize:
@@ -123,7 +123,7 @@ DENSE_DPIS = (150, 300)
 
 def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
     """Compare fixed upright whitespace source inventories without quality labels."""
-    import pylopdf
+    import pdfust
     from bench.pipeline_ocr_sources import SOURCE_ADMISSION_VERSION, SourceAdmissionError, extract
 
     manifest = json.loads(manifest_path.read_text())
@@ -140,7 +140,7 @@ def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
         message = "Retained dense results use another admission version; choose a separate output arm"
         raise ValueError(message)
     start, cpu = time.perf_counter(), time.process_time()
-    engine = pylopdf.OcrEngine(threads=1)
+    engine = pdfust.OcrEngine(threads=1)
     rows = []
     for identifier in DENSE_IDS:
         record = selected[identifier]
@@ -154,7 +154,7 @@ def dense_audit(manifest_path: Path, directory: Path) -> dict[str, Any]:
                 "pdf_path": record["pdf_path"],
                 "page_number": record.get("page_number", 0),
             }
-            with pylopdf.open(record["pdf_path"]) as document:
+            with pdfust.open(record["pdf_path"]) as document:
                 before = document.tobytes()
                 try:
                     extracted = extract(

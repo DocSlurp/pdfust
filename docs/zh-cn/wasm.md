@@ -1,12 +1,12 @@
 # WebAssembly 兼容性
 
-pylopdf 为 Pyodide 0.28.3 和 Cloudflare Python Workers 使用的 Python 3.13 ABI
+pdfust 为 Pyodide 0.28.3 和 Cloudflare Python Workers 使用的 Python 3.13 ABI
 构建静态 PyEmscripten wheel。它包含与原生 wheel 相同的 Rust PDF 引擎，不使用
 JavaScript PDF 实现或 wasm-bindgen shim。
 
 !!! note "发布状态"
 
-    WebAssembly wheel 已从 pylopdf 0.11 开始发布。v0.10.0 仅包含原生 wheel。
+    WebAssembly wheel 已从 pdfust 0.11 开始发布。v0.10.0 仅包含原生 wheel。
 
 ## 已验证环境
 
@@ -41,7 +41,7 @@ repository 包含一个
 
 ```bash
 git clone https://github.com/yhay81/pylopdf.git
-cd pylopdf/examples/cloudflare-worker
+cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
 ```
@@ -58,15 +58,15 @@ curl --request POST \
 ```
 
 确认所选 Cloudflare plan 的上限和 compatibility date 后，再运行
-`uv run pywrangler deploy`。CI 会复制这个实际 example，只将公开 pylopdf requirement
+`uv run pywrangler deploy`。CI 会复制这个实际 example，只将公开 pdfust requirement
 替换为刚构建的 wheel，再通过 `workers-py` 解析并运行
 `wrangler deploy --dry-run`，随后启动本地 `workerd` 并请求 `/health`。因此
-module-scope 的 `import pylopdf` 必须在不依赖启动阶段不可用的 entropy 或
+module-scope 的 `import pdfust` 必须在不依赖启动阶段不可用的 entropy 或
 request 专用 runtime state 的情况下完成。
 
 example将输入限制为4 MiB，将完整rendering／extraction PDF snapshot限制为16 MiB，
 将累计带位置文本限制为16,384个glyph record，并对结构和解压后数据采用比
-`DocumentLimits.web()`更严格的budget。由于pylopdf当前接受
+`DocumentLimits.web()`更严格的budget。由于pdfust当前接受
 path或完整bytes，request body必须完整缓冲。Cloudflare的128 MiB isolate budget还包含
 Python、JavaScript、WebAssembly linear memory和request buffer；周边代码需要更多空间时
 应进一步降低file、interpretation和text budget。
@@ -82,7 +82,7 @@ await pyodide.loadPackage("micropip");
 await pyodide.runPythonAsync(`
 import micropip
 await micropip.install(
-    "https://example.invalid/pylopdf-0.13.0-"
+    "https://example.invalid/pdfust-0.13.0-"
     "cp310-abi3-pyodide_2025_0_wasm32.whl"
 )
 `);
@@ -101,10 +101,10 @@ Emscripten、Pyodide cross environment 和 retag verifier。如果未来 ABI 没
 
 ```python
 import sys
-import pylopdf
+import pdfust
 
 assert sys.platform == "emscripten"
-with pylopdf.Document(stream=pdf_bytes, limits=pylopdf.DocumentLimits.web()) as doc:
+with pdfust.Document(stream=pdf_bytes, limits=pdfust.DocumentLimits.web()) as doc:
     text = doc.get_page_text(0) if doc.page_count else ""
     output = doc.tobytes()
 ```
@@ -157,7 +157,7 @@ RTen inference runtime 不会移除 PDF 抽取、rendering、生成或外部 OCR
 固定 CI artifact 是 3.772 MiB wheel 和 9.910 MiB 解压后 Wasm extension。测试的
 Worker bundle 压缩后为 3.817 MiB，解压后为 10.383 MiB。因此它超过 Cloudflare
 Workers Free 的 3 MB 压缩限制，但符合 paid plan 的 10 MB 压缩限制和共享的 64 MB
-未压缩限制。pylopdf 支持 paid-plan deployment 路径，不发布功能削减的独立 distribution。
+未压缩限制。pdfust 支持 paid-plan deployment 路径，不发布功能削减的独立 distribution。
 fat LTO 与单个 codegen unit 仅用于 PyEmscripten artifact；native release profile
 保持不变。
 
@@ -185,7 +185,7 @@ native Python 通过就假设 Wasm 有更大 memory budget；两端都应使用�
 
 ## 支持与发布策略
 
-每个发布 Wasm wheel 的 pylopdf release 都必须通过：
+每个发布 Wasm wheel 的 pdfust release 都必须通过：
 
 1. reproducible build 与 wheel metadata/import verifier；
 2. native/Pyodide 共享逻辑兼容 suite；
@@ -196,7 +196,7 @@ native Python 通过就假设 Wasm 有更大 memory budget；两端都应使用�
 6. 最终创建 GitHub Release 前，从 PyPI artifact 重复相同解析、bundle 与
    runtime health gate。
 
-runtime 更新会作为新的验证 matrix，而不会自动假设兼容。固定版本在对应 pylopdf minor
+runtime 更新会作为新的验证 matrix，而不会自动假设兼容。固定版本在对应 pdfust minor
 release 中受到支持；新的 Pyodide、PyEmscripten、Emscripten、`workers-py` 或 Wrangler
 只有通过完整 gate 后才加入支持声明。测量值和 regression 会一起发布到
 [`bench/results/wasm-latest.md`](https://github.com/yhay81/pylopdf/blob/main/bench/results/wasm-latest.md)。

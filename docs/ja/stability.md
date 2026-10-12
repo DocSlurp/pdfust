@@ -1,11 +1,11 @@
 ---
 title: API安定性
-description: pylopdfの公開API境界、セマンティックバージョニング、非推奨化のライフサイクル、互換性レビュー手順。
+description: pdfustの公開API境界、セマンティックバージョニング、非推奨化のライフサイクル、互換性レビュー手順。
 ---
 
 # API安定性
 
-pylopdfは[Semantic Versioning 2.0.0](https://semver.org/)に従います。このページでは、
+pdfustは[Semantic Versioning 2.0.0](https://semver.org/)に従います。このページでは、
 結果がPDF生成元、フォント、renderer、対応runtimeにも依存するPython libraryにおいて、
 その方針が何を意味するかを定義します。
 
@@ -23,16 +23,16 @@ pylopdfは[Semantic Versioning 2.0.0](https://semver.org/)に従います。こ�
 
 対応する公開APIは次の範囲です。
 
-- `pylopdf.__all__`がexportする名前と`pylopdf.__version__`
+- `pdfust.__all__`がexportする名前と`pdfust.__version__`
 - それらのclassで文書化されたpublic member
 - callableのparameter名、種類、default、文書化されたreturn contract
 - 文書化された定数とenum値
 - TypedDictの必須・任意key、NamedTuple field、public type alias
 - 文書化された例外階層と`LimitError.code`などの機械可読属性
 
-`_`で始まる名前、`pylopdf.pylopdf_core`、Rust実装詳細、objectの`repr`、例外messageの
+`_`で始まる名前、`pdfust.pdfust_core`、Rust実装詳細、objectの`repr`、例外messageの
 完全一致、warning順序、未文書化属性はprivateです。public objectを実装moduleから
-importしても、そのmodule pathはpublicになりません。`pylopdf`からimportしてください。
+importしても、そのmodule pathはpublicになりません。`pdfust`からimportしてください。
 
 `save()`が生成するPDF byte列とPNG/SVGの正確なserializationは、byte単位で固定された
 formatではありません。文書化された見た目、構造、抽出の意味論がcontractです。
@@ -63,7 +63,7 @@ v1.0以降、削除予定のpublic APIは通常次の順序で扱います。
 3. 少なくとも2回のminor releaseかつ6か月間維持する。
 4. major releaseでのみ削除する。
 
-`DeprecationWarning`は開発者の移行用です。`PylopdfWarning`はPDF解釈時の運用warning
+`DeprecationWarning`は開発者の移行用です。`PdfustWarning`はPDF解釈時の運用warning
 に使い続け、非推奨通知には使いません。
 
 security、legal、またはupstream runtimeの緊急事態では期間を短縮することがあります。
@@ -83,7 +83,7 @@ resource limitにより、以前は処理を試みた攻撃的または想定外
 対応範囲はreleaseごとに文書化されたPython version、platform、ABI、WebAssembly
 runtime matrixで定義します。upstreamのEOL後、または対応継続がsecurity/correctness
 修正を妨げる場合、minor releaseでruntimeを外すことがあります。理由と移行期間を
-公開します。Pyodide互換性はruntime更新を推測せず、pylopdfのminor lineごとに固定して
+公開します。Pyodide互換性はruntime更新を推測せず、pdfustのminor lineごとに固定して
 検証します。
 
 ## 互換性レビュー { #compatibility-review }

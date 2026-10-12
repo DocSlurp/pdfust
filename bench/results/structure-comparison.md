@@ -15,8 +15,8 @@ Snapshot SHA-256: `e443782cffb2123b2f542d3e99150d7b3286c35a515d353883efd6eb972b7
 
 | Adapter | Calls | Unsupported | Positive exact | Negative exact | Cells | Relation recall | Precision | Corpus cells | Errors | Truncated |
 | --- | ---: | ---: | --- | --- | --- | --- | --- | --- | ---: | ---: |
-| pylopdf | 28 | 0 | 2/9 | 6/6 | 18/83 | 24/111 | 24/24 | 12/35 | 0 | 0 |
-| pylopdf-text | 28 | 0 | 3/9 | 5/6 | 26/83 | 34/111 | 34/56 | 12/35 | 0 | 0 |
+| pdfust | 28 | 0 | 2/9 | 6/6 | 18/83 | 24/111 | 24/24 | 12/35 | 0 | 0 |
+| pdfust-text | 28 | 0 | 3/9 | 5/6 | 26/83 | 34/111 | 34/56 | 12/35 | 0 | 0 |
 | yolo-geometry | 28 | 0 | 3/9 | 6/6 | 34/83 | 43/111 | 43/46 | 6/35 | 0 | 0 |
 | yolo-geometry-wrapped | 28 | 0 | 4/9 | 6/6 | 46/83 | 60/111 | 60/63 | 6/35 | 0 | 0 |
 | olmocr-image | 28 | 0 | 4/9 | 6/6 | 65/83 | 90/111 | 90/121 | 0/35 | 0 | 1 |

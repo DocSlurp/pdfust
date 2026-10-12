@@ -1,15 +1,15 @@
-# Contributing to pylopdf
+# Contributing to pdfust
 
-Thank you for helping improve pylopdf. Contributions are welcome for PDF
+Thank you for helping improve pdfust. Contributions are welcome for PDF
 correctness, extraction quality, rendering fidelity, editing behavior,
 performance, documentation, packaging, and ecosystem interoperability.
 
 ## Report an issue
 
-Search existing issues first and test with the latest pylopdf release when
+Search existing issues first and test with the latest pdfust release when
 possible. A useful report includes:
 
-- the pylopdf, Python, and operating-system versions;
+- the pdfust, Python, and operating-system versions;
 - a minimal Python reproducer;
 - the expected and actual behavior, including warnings and tracebacks;
 - a minimal PDF or a script that generates it.
@@ -25,7 +25,7 @@ instead of opening a public issue.
 
 ## Development setup
 
-pylopdf is a Python library backed by a Rust extension. The supported
+pdfust is a Python library backed by a Rust extension. The supported
 development workflow uses [uv](https://docs.astral.sh/uv/):
 
 ```powershell
@@ -68,7 +68,7 @@ bash tools/build_pyodide.sh
 
 Toolchains and downloads are isolated under `.tmp/pyodide-0.28.3`; the wheel is
 written to `dist/pyodide-0.28.3`. Rust compilation defaults to two jobs to
-bound memory use; set `PYLOPDF_PYODIDE_BUILD_JOBS` only after measuring the
+bound memory use; set `PDFUST_PYODIDE_BUILD_JOBS` only after measuring the
 builder. The command validates the
 `cp310-abi3-pyodide_2025_0_wasm32` tag, the imported WebAssembly exception tag,
 and the absence of wasm-bindgen shims before installing the wheel into the
@@ -76,7 +76,7 @@ Pyodide 0.28.3 Node runtime. Its smoke test loads a PDF from bytes, checks page
 count, text extraction, and batch rendering, and verifies that a malformed-
 input `PdfError` does not terminate the runtime. Builds outside a Git checkout
 must provide an integer commit timestamp through
-`PYLOPDF_SOURCE_DATE_EPOCH`.
+`PDFUST_SOURCE_DATE_EPOCH`.
 
 ## Pull requests
 

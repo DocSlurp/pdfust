@@ -8,7 +8,7 @@ import os
 import shutil
 from pathlib import Path
 
-import pylopdf
+import pdfust
 from bench import p003_rolling_tracks as rolling
 from bench import p003_structure_geometry as geometry
 from bench import p003_yolo_resolution as detector
@@ -127,7 +127,7 @@ def prepare(directory: Path, output: Path, *, structure_trust: Path, detector_tr
             pdf = guard_path(Path(record["pdf_path"])).read_bytes()
             if sha(pdf) != record["pdf_sha256"]:
                 raise ValueError("Original PDF identity differs")
-            with pylopdf.open(stream=pdf) as document:
+            with pdfust.open(stream=pdf) as document:
                 p = document[record["page_number"]]
                 if list(p.rect) != source["page_size"] or p.rotation != page["original_rotation"] or p.rotation != page["effective_rotation"]:
                     raise ValueError("Original drawing/display coordinate identity differs")

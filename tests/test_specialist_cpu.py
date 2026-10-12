@@ -14,7 +14,7 @@ from bench.specialist_cpu import (
 )
 from bench.structure_core import score_tables
 
-import pylopdf
+import pdfust
 
 
 def test_cpu_provider_must_be_exclusive() -> None:
@@ -75,7 +75,7 @@ def test_raster_requires_opaque_compositing_and_visible_content() -> None:
 def test_pdf_fixture_renders_visible_on_white() -> None:
     np = pytest.importorskip("numpy")
 
-    with pylopdf.open(stream=page_pdf(text_op("Visible input", 40, 700))) as document:
+    with pdfust.open(stream=page_pdf(text_op("Visible input", 40, 700))) as document:
         pixmap = document[0].get_pixmap(dpi=72, background=(255, 255, 255))
         rgba = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(pixmap.height, pixmap.width, 4)
         assert bool((rgba[:, :, 3] == 255).all())

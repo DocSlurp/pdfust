@@ -236,7 +236,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
     """Preserve all region responses/costs before strict atomic page admission."""
     from PIL import Image
 
-    import pylopdf
+    import pdfust
 
     began, cpu = time.perf_counter(), time.process_time()
     result: dict[str, Any] = {
@@ -287,7 +287,7 @@ def process(record: dict[str, Any], config: dict[str, Any], output: Path, client
             raise ValueError("Frozen source PDF hash changed")
         result["pdf_sha256"] = sha(data)
         stage = "detector"
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             viewport = list(page.rect)
             result.update(viewport=viewport, original_rotation=page.rotation, rotation_normalized=False)

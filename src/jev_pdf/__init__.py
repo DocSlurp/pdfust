@@ -1,9 +1,8 @@
-"""PDF editing, rendering, extraction and generation under the jev-pdf name.
+"""Compatibility import for the former ``jev-pdf`` distribution name; use ``pdfust``.
 
-The public API shares its implementation and object identities with the compatible
-``pylopdf`` import. The Rust extension remains private to that implementation.
+The public API shares its implementation and object identities with ``pdfust``.
 """
 
-from pylopdf import *  # noqa: F403 - re-export the complete established public API.
-from pylopdf import __all__ as __all__
-from pylopdf import __version__ as __version__
+from pdfust import *  # noqa: F403 - re-export the complete established public API.
+from pdfust import __all__ as __all__
+from pdfust import __version__ as __version__

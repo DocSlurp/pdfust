@@ -32,14 +32,14 @@ class PageRender:
         """Authenticate and render exactly one admitted source page."""
         from PIL import Image
 
-        import pylopdf
+        import pdfust
 
         self.image = None
         self.viewport = list(page_result["viewport"])
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Frozen selector source PDF hash changed")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             if list(page.rect) != self.viewport or page.rotation != page_result["original_rotation"]:
                 raise ValueError("Selector rerender geometry differs from frozen generation source")

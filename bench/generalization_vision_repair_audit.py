@@ -21,7 +21,7 @@ def _sha(data: bytes) -> str:
 
 def evaluate(directories: list[Path], manifest_path: Path, target_path: Path) -> dict[str, Any]:
     """Prepare every source-only repair before opening references and scoring."""
-    import pylopdf
+    import pdfust
 
     adapter = importlib.import_module("bench.pipeline_vision_transcription")
     scorer = importlib.import_module("bench.generalization_scoring")
@@ -47,7 +47,7 @@ def evaluate(directories: list[Path], manifest_path: Path, target_path: Path) ->
             original_bytes = response_path.read_bytes()
             raw = json.loads(original_bytes)
             source = source_records[identifier]
-            with pylopdf.open(source["pdf_path"]) as document:
+            with pdfust.open(source["pdf_path"]) as document:
                 viewport = list(document[source.get("page_number", 0)].rect)
             row: dict[str, Any] = {
                 "id": identifier,

@@ -14,25 +14,25 @@ PyPI의 최신 릴리스만 보안 수정 지원을 받습니다.
 
 ## 신뢰할 수 없는 PDF 처리 { #untrusted-pdfs }
 
-pylopdf는 Rust로 작성되었고 필수 Python 의존성이 없지만, 악의적인 PDF 입력을
+pdfust는 Rust로 작성되었고 필수 Python 의존성이 없지만, 악의적인 PDF 입력을
 파싱하는 작업에는 본질적인 위험이 있습니다.
 
 !!! warning "전체 리소스 정책을 사용하세요"
-    `pylopdf.open()`에`limits=pylopdf.DocumentLimits.web()`을 전달하세요.
+    `pdfust.open()`에`limits=pdfust.DocumentLimits.web()`을 전달하세요.
     메모리가 제한된 Web 또는 queue worker에서 사용자 업로드를 처리하기 위한
     보수적인 시작점입니다.
 
 ```python
-import pylopdf
+import pdfust
 
 try:
-    with pylopdf.open(
+    with pdfust.open(
         "upload.pdf",
-        limits=pylopdf.DocumentLimits.web(),
+        limits=pdfust.DocumentLimits.web(),
     ) as doc:
         facts = doc.complexity
         preview = doc[0].get_pixmap(dpi=144)
-except pylopdf.LimitError as error:
+except pdfust.LimitError as error:
     reject_upload(error.code)
 ```
 
@@ -77,7 +77,7 @@ open은 호환성을 유지하고 이page-tree 검사를 첫page-indexing 작업
 `decompression_unverifiable` 중
 하나이며 같은 값은`error.args[0]`에도 있습니다.
 안전하게 상한을 계산할 수 없는 filter chain은 낙관적으로 디코딩하지 않고 거부합니다.
-pylopdf가 소유한 제한된lopdf 디코딩 경로는 filter 목록을materialize하기 전에
+pdfust가 소유한 제한된lopdf 디코딩 경로는 filter 목록을materialize하기 전에
 16개 layer를 초과하는`/Filter` chain도 거부합니다.
 
 `doc.complexity`는 stream 디코딩이나 renderer 호출 없이 페이지, object, stream 수,
@@ -87,7 +87,7 @@ routing하는 데 사용할 수 있습니다. 구조 및 압축 해제 예산은
 직접 깊이 검증과complexity 검사의 반복 순회stack은 fallible하게 확장되므로
 allocation refusal은 부분facts가 아닌`PdfError`가 됩니다.
 
-`max_interpretation_size`는 hayro가 보관된 input을 처음 읽을 때와 pylopdf가 편집,
+`max_interpretation_size`는 hayro가 보관된 input을 처음 읽을 때와 pdfust가 편집,
 복호화 또는 AcroForm state 선택 후 현재 상태를 serialize할 때 적용됩니다. 상한이 있는
 writer는 경계를 넘는 write를 거부하며 불완전한 renderer／extractor cache를 설치하지
 않습니다. 호환성을 위한 기본값은`None`이고`DocumentLimits.web()`은64 MiB입니다.
@@ -106,7 +106,7 @@ table 해석은 하나의 누적admission을 공유하며 거부된page는budget
 관대한 열기는 한 가지 제한된 복구만 수행합니다. 같은 마지막 revision에 온전한
 classic xref table이 있고 원래 제한 아래에서 전체 parse가 성공할 때만 잘못된 마지막
 `startxref`를 바꿉니다. object header 검색, xref stream 복구, 이전 revision으로의
-rollback은 하지 않습니다. 복구 시`PylopdfWarning`이 발생하고
+rollback은 하지 않습니다. 복구 시`PdfustWarning`이 발생하고
 `doc.is_repaired`（metadata probe의`repaired`）가`True`가 되며, 저장하면 xref data를
 정규화합니다.
 
@@ -144,7 +144,7 @@ rollback은 하지 않습니다. 복구 시`PylopdfWarning`이 발생하고
   `text_input_size` 또는`text_line_count`입니다. AcroForm text／choice appearance는
   고정4,096줄layout 상한을 유지합니다. UAX #14／grapheme index, 줄collection,
   유지하는 줄text는fallible하게 확장되므로 allocation refusal은 부분layout이나
-  document 편집을 노출하지 않습니다. pylopdf가 소유한 정규화, grapheme 참조,
+  document 편집을 노출하지 않습니다. pdfust가 소유한 정규화, grapheme 참조,
   shaped line／glyph collection, WinAnsi 출력, 입력 기반text operator 확장도
   fallible합니다. Standard 14 너비 검사는encoded text copy를 할당하지 않습니다.
   allocation refusal은`PdfError`를 반환하며 삽입은non-mutating이고 form fill은
@@ -161,7 +161,7 @@ rollback은 하지 않습니다. 복구 시`PylopdfWarning`이 발생하고
 - `render_page_svg()`와`Page.render_svg()`의UTF-8 출력 기본 상한은64 MiB이며
   PyO3가Python string을 만들기 전에 초과 결과를 거부합니다. `max_size=None`으로
   명시적으로 해제할 수 있습니다. hayro-svg 0.7은 완성된`String`만 반환하므로
-  pylopdf가 경계를 적용하기 전의 내부Rust string 하나는 이 제한의 대상이 아닙니다.
+  pdfust가 경계를 적용하기 전의 내부Rust string 하나는 이 제한의 대상이 아닙니다.
 - 그리기 삽입은cache 무효화, 입력decode 또는dependent object 생성 전에page
   `/Contents`의raw array와 참조chain을 검사합니다. raw array는4,096 entry,
   chain은 깊이32, 최종array는 한 번만 추가되는`q`/`Q` isolation pair를 포함해
@@ -272,7 +272,7 @@ encoded output 예산, pixel 상한, cache entry 수와`render_pages()`의 worke
 upload service에는 host deadline과 memory 제한이 있는 worker를 사용하세요.
 Python future 대기 timeout은 실행 중인 native 작업을 취소하지 않습니다. host가 worker를
 종료할 수 있어야 합니다. 측정한 memory 동작에 따라 worker를 교체하고, 불완전한 추출이나
-render가 허용되지 않으면`PylopdfWarning`도 확인하세요.
+render가 허용되지 않으면`PdfustWarning`도 확인하세요.
 
 open, edit, save는 PDF를 무해하게 만들지 않습니다. JavaScript는 실행하지 않지만 save가
 action, attachment 또는 민감한 metadata 제거를 보장하지 않습니다. highlight, overlay와

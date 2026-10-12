@@ -11,9 +11,9 @@ produced by one of:
 * ``libreoffice``: Writer converts flat ODF (tagged or untagged export);
   equations are LibreOffice Math objects.
 * ``reportlab``: platypus, untagged; Standard 14 Type 1, embedded TrueType or
-  non-embedded CID fonts; native vector charts; AcroForm widgets that pylopdf
+  non-embedded CID fonts; native vector charts; AcroForm widgets that pdfust
   fills with ``Document.set_form_field``.
-* ``pylopdf``: ``insert_textbox`` with krilla-subset Noto fonts, vector rules
+* ``pdfust``: ``insert_textbox`` with krilla-subset Noto fonts, vector rules
   through ``show_pdf_page`` and ``insert_image``.
 
 Renderers break pages explicitly and shrink a document uniformly until every
@@ -251,7 +251,7 @@ def produce(doc: dict[str, Any], folder: Path, profile: Path, lo_profile: Path, 
 
             pages = render(doc, assets, pdf, scale)
         else:
-            from bench.wild_v2_templates.render_pylopdf import Overflow, render
+            from bench.wild_v2_templates.render_pdfust import Overflow, render
 
             try:
                 pages = render(doc, assets, pdf, scale)
@@ -296,12 +296,12 @@ def _authored_json(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 def fill_form(doc: dict[str, Any], pdf: Path) -> dict[str, Any]:
-    """Fill every AcroForm field with pylopdf ``set_form_field`` and verify the stored values."""
-    import pylopdf
+    """Fill every AcroForm field with pdfust ``set_form_field`` and verify the stored values."""
+    import pdfust
     from bench.wild_v2_templates.fonts import stack
 
     fields = [spec for page in doc["pages"] for b in core.leaves(page) if b["kind"] == "form" for row in b["rows"] for spec in row]
-    document = pylopdf.Document(str(pdf))
+    document = pdfust.Document(str(pdf))
     embedded = 0
     for spec in fields:
         value = spec["value"]
@@ -318,7 +318,7 @@ def fill_form(doc: dict[str, Any], pdf: Path) -> dict[str, Any]:
                     document.set_form_field(spec["name"], value, fontfile=str(path), fontindex=index)
                     embedded += 1
                     break
-                except pylopdf.PdfError as error:
+                except pdfust.PdfError as error:
                     last = error
             else:
                 raise RuntimeError(f"{doc['doc_id']}: cannot fill {spec['name']}: {last}")
@@ -336,7 +336,7 @@ def fill_form(doc: dict[str, Any], pdf: Path) -> dict[str, Any]:
     filled.replace(pdf)
     if mismatches:
         raise RuntimeError(f"{doc['doc_id']}: form values not stored: {mismatches}")
-    return {"filled_by": f"pylopdf set_form_field {pylopdf.__version__}", "fields": len(fields), "embedded_font_values": embedded}
+    return {"filled_by": f"pdfust set_form_field {pdfust.__version__}", "fields": len(fields), "embedded_font_values": embedded}
 
 
 # ------------------------------------------------------------------ verification
@@ -347,7 +347,7 @@ def _norm(text: str) -> str:
 
 
 def page_check(pdf: Path, record: dict[str, Any]) -> dict[str, Any]:
-    """Probe each native text block on its assigned page with pylopdf extraction.
+    """Probe each native text block on its assigned page with pdfust extraction.
 
     A probe is the first 10 normalized letters/digits of the block's longest native
     string. ``elsewhere`` counts probes found only on another page (a pagination
@@ -356,11 +356,11 @@ def page_check(pdf: Path, record: dict[str, Any]) -> dict[str, Any]:
     """
     import warnings
 
-    import pylopdf
+    import pdfust
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        document = pylopdf.Document(str(pdf))
+        document = pdfust.Document(str(pdf))
         pages = [_norm(page.get_text()) for page in document]
         document.close()
     counts: Counter[str] = Counter()
@@ -421,7 +421,7 @@ def tool_versions() -> dict[str, str]:
     import pypdf
     import reportlab
 
-    import pylopdf
+    import pdfust
 
     versions = {}
     for name, command in (("chromium", ["chromium", "--version"]), ("soffice", ["soffice", "--version"])):
@@ -429,7 +429,7 @@ def tool_versions() -> dict[str, str]:
             versions[name] = subprocess.run(command, capture_output=True, text=True, timeout=60, check=False).stdout.strip()
         except (OSError, subprocess.SubprocessError):
             versions[name] = ""
-    versions.update(reportlab=reportlab.Version, pylopdf=pylopdf.__version__, pypdf=pypdf.__version__, pillow=PIL.__version__,
+    versions.update(reportlab=reportlab.Version, pdfust=pdfust.__version__, pypdf=pypdf.__version__, pillow=PIL.__version__,
                     python=sys.version.split()[0])
     return versions
 

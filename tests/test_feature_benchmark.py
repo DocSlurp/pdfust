@@ -4,7 +4,7 @@ import pytest
 from bench.feature_cases import FeatureCase, build_cases
 from bench.features import inspect_output
 
-import pylopdf
+import pdfust
 
 
 @pytest.fixture(scope="module")
@@ -14,21 +14,21 @@ def cases() -> dict[str, FeatureCase]:
 
 
 def test_feature_fixtures_contain_links_images_merged_cells_and_unicode(cases: dict[str, FeatureCase]) -> None:
-    with pylopdf.open(stream=cases["links-and-outline"].data) as doc:
+    with pdfust.open(stream=cases["links-and-outline"].data) as doc:
         links = doc[0].get_links()
-        assert [link["kind"] for link in links] == [pylopdf.LINK_URI, pylopdf.LINK_GOTO, pylopdf.LINK_GOTO]
+        assert [link["kind"] for link in links] == [pdfust.LINK_URI, pdfust.LINK_GOTO, pdfust.LINK_GOTO]
         assert links[1]["page"] == links[2]["page"] == 1
         assert links[2]["nameddest"] == "section-two"
         assert doc.get_toc() == [[1, "Outline destination", 2]]
-    with pylopdf.open(stream=cases["image-only"].data) as doc:
+    with pdfust.open(stream=cases["image-only"].data) as doc:
         assert doc.get_text() == ""
         assert len(doc[0].get_images()) == 1
         assert doc[0].get_drawings()
-    with pylopdf.open(stream=cases["table-merged"].data) as doc:
+    with pdfust.open(stream=cases["table-merged"].data) as doc:
         table = doc[0].find_tables()[0]
         assert table.extract()[0][:2] == ["Merged header", None]
         assert table.extract()[-1][-1] == ""
-    with pylopdf.open(stream=cases["unicode-cmap-and-emoji"].data) as doc:
+    with pdfust.open(stream=cases["unicode-cmap-and-emoji"].data) as doc:
         assert doc.metadata["title"] == cases["unicode-cmap-and-emoji"].source_values["title"]
         assert b"D83DDE00" in cases["unicode-cmap-and-emoji"].data
         assert all(value in doc.get_text() for value in cases["unicode-cmap-and-emoji"].expected_text)

@@ -1,11 +1,11 @@
 ---
 title: API 안정성
-description: pylopdf의 공개 API 경계, 시맨틱 버전 보장, 사용 중단 수명 주기와 호환성 검토 절차.
+description: pdfust의 공개 API 경계, 시맨틱 버전 보장, 사용 중단 수명 주기와 호환성 검토 절차.
 ---
 
 # API 안정성
 
-pylopdf는 [Semantic Versioning 2.0.0](https://semver.org/)을 따릅니다. 이 페이지는
+pdfust는 [Semantic Versioning 2.0.0](https://semver.org/)을 따릅니다. 이 페이지는
 결과가 PDF 생성기, font, renderer, 지원 runtime에도 의존하는 Python library에서 이
 정책이 무엇을 의미하는지 정의합니다.
 
@@ -23,17 +23,17 @@ surface 변경을 감지하고 검토하여 최종 v1.0 경계를 우연이 아�
 
 지원하는 공개 API는 다음과 같습니다.
 
-- `pylopdf.__all__`이 export하는 이름과 `pylopdf.__version__`
+- `pdfust.__all__`이 export하는 이름과 `pdfust.__version__`
 - 해당 class에서 문서화한 public member
 - callable parameter의 이름, 종류, default와 문서화한 return contract
 - 문서화한 상수와 enum 값
 - TypedDict의 필수/선택 key, NamedTuple field, public type alias
 - 문서화한 예외 계층과 `LimitError.code` 같은 기계 판독 속성
 
-`_`로 시작하는 이름, `pylopdf.pylopdf_core`, Rust 구현 세부 사항, object `repr`,
+`_`로 시작하는 이름, `pdfust.pdfust_core`, Rust 구현 세부 사항, object `repr`,
 정확한 예외 message, warning 순서와 문서화하지 않은 속성은 private입니다. 구현
 module에서 public object를 import해도 그 module path가 공개 API가 되지는 않습니다.
-`pylopdf`에서 import하십시오.
+`pdfust`에서 import하십시오.
 
 `save()`가 생성한 PDF byte와 정확한 PNG/SVG serialization은 byte 단위 안정 format이
 아닙니다. 문서화한 시각적, 구조적, 추출 의미가 contract입니다.
@@ -64,7 +64,7 @@ v1.0 이후 제거할 public API는 일반적으로 다음 절차를 따릅니�
 3. 최소 두 번의 minor release와 6개월 동안 유지합니다.
 4. major release에서만 제거합니다.
 
-`DeprecationWarning`은 개발자 이전용입니다. `PylopdfWarning`은 PDF 해석 과정의 운영
+`DeprecationWarning`은 개발자 이전용입니다. `PdfustWarning`은 PDF 해석 과정의 운영
 warning에 계속 사용하며 사용 중단 channel로 쓰지 않습니다.
 
 security, legal 또는 upstream runtime 긴급 상황에서는 기간을 줄일 수 있습니다. 이러한
@@ -83,7 +83,7 @@ error code를 사용하며, 사람이 읽는 message 본문은 API가 아닙니�
 지원 범위는 각 release에 문서화한 Python version, platform, ABI와 WebAssembly runtime
 matrix로 정의합니다. upstream EOL 이후이거나 지원 유지가 security/correctness 수정을
 막는 경우 minor release에서 runtime을 제외할 수 있으며, 이유와 이전 기간을 공개합니다.
-Pyodide 호환성은 runtime 업그레이드 전반에 걸쳐 가정하지 않고 pylopdf minor line별로
+Pyodide 호환성은 runtime 업그레이드 전반에 걸쳐 가정하지 않고 pdfust minor line별로
 고정해 검증합니다.
 
 ## 호환성 검토 { #compatibility-review }

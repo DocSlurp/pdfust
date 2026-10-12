@@ -95,7 +95,7 @@ fn temporary_sibling(target: &Path) -> io::Result<(PathBuf, File)> {
             encoded[index * 2 + 1] = HEX[usize::from(byte & 0x0f)];
         }
         let suffix = std::str::from_utf8(&encoded).expect("hex digits are valid UTF-8");
-        let path = parent.join(format!(".pylopdf-{suffix}.tmp"));
+        let path = parent.join(format!(".pdfust-{suffix}.tmp"));
         let mut options = OpenOptions::new();
         options.write(true).create_new(true);
         // Keep encoded output private until its final permissions are applied.
@@ -119,7 +119,7 @@ fn temporary_sibling(target: &Path) -> io::Result<(PathBuf, File)> {
 /// Pixel map for a rendered page.
 ///
 /// Data is row-major RGBA8 with straight, non-premultiplied alpha.
-#[pyclass(frozen, module = "pylopdf.pylopdf_core")]
+#[pyclass(frozen, module = "pdfust.pdfust_core")]
 pub struct Pixmap {
     pub(crate) width: u32,
     pub(crate) height: u32,

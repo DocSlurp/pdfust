@@ -171,7 +171,7 @@ def _spdx_package(
         "SPDXID": f"SPDXRef-Package-{archive_kind}",
         "versionInfo": metadata.version,
         "packageFileName": artifact_path.name,
-        "supplier": "Organization: pylopdf contributors",
+        "supplier": "Organization: pdfust contributors",
         "downloadLocation": "NOASSERTION",
         "filesAnalyzed": True,
         "packageVerificationCode": {"packageVerificationCodeValue": _verification_code(sha1_values)},
@@ -267,7 +267,7 @@ def generate_font_sbom(
         "name": f"{metadata.name}-{metadata.version}-release",
         "documentNamespace": f"{_REPOSITORY}/sbom/{metadata.name}/{metadata.version}/{source_commit}",
         "creationInfo": {
-            "creators": ["Organization: pylopdf contributors", "Tool: pylopdf-font-sbom/1"],
+            "creators": ["Organization: pdfust contributors", "Tool: pdfust-font-sbom/1"],
             "created": created,
         },
         "documentDescribes": package_ids,

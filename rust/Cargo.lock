@@ -854,6 +854,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pdfust-core"
+version = "0.13.0"
+dependencies = [
+ "flate2",
+ "getrandom",
+ "harfrust",
+ "hayro",
+ "hayro-svg",
+ "jpeg-encoder",
+ "krilla",
+ "kurbo",
+ "lopdf",
+ "pdf-base14-metrics",
+ "png",
+ "pyo3",
+ "pyo3-build-config",
+ "rayon",
+ "read-fonts 0.41.0",
+ "rten",
+ "rten-tensor",
+ "unicode-bidi",
+ "unicode-linebreak",
+ "unicode-segmentation",
+ "zune-jpeg",
+]
+
+[[package]]
 name = "peniko"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -960,33 +987,6 @@ name = "pxfm"
 version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
-
-[[package]]
-name = "pylopdf-core"
-version = "0.13.0"
-dependencies = [
- "flate2",
- "getrandom",
- "harfrust",
- "hayro",
- "hayro-svg",
- "jpeg-encoder",
- "krilla",
- "kurbo",
- "lopdf",
- "pdf-base14-metrics",
- "png",
- "pyo3",
- "pyo3-build-config",
- "rayon",
- "read-fonts 0.41.0",
- "rten",
- "rten-tensor",
- "unicode-bidi",
- "unicode-linebreak",
- "unicode-segmentation",
- "zune-jpeg",
-]
 
 [[package]]
 name = "pyo3"

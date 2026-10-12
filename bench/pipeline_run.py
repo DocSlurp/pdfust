@@ -50,13 +50,13 @@ GATE_REVIEW_MARGIN = 0.25
 def runtime_fingerprints() -> dict[str, Any]:
     """Identify installed packages and the exact extraction implementation."""
     versions: dict[str, str | None] = {}
-    for name in ("jev-pdf", "pylopdf-ocr-models", "Pillow", "psutil", "requests"):
+    for name in ("pdfust", "pdfust-ocr-models", "Pillow", "psutil", "requests"):
         try:
             versions[name] = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             versions[name] = None
     modules = {}
-    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial", "pylopdf._markdown"):
+    for name in ("pdfust", "pdfust.pdfust_core", "pdfust._spatial", "pdfust._markdown"):
         module = importlib.import_module(name)
         if module.__file__ is None:
             message = f"Extraction module has no fingerprintable file: {name}"
@@ -149,9 +149,9 @@ def image(page: Any, edge: int) -> tuple[str | None, dict[str, Any]]:
 @lru_cache(maxsize=1)
 def ocr_engine() -> Any:
     """Load one CPU RTen engine lazily; initialization is inside first-use timing."""
-    import pylopdf
+    import pdfust
 
-    return pylopdf.OcrEngine(threads=4, max_concurrent=1)
+    return pdfust.OcrEngine(threads=4, max_concurrent=1)
 
 
 def body(
@@ -261,7 +261,7 @@ def process(  # noqa: PLR0912 - retain each experimental route and failure.
     record: dict[str, Any], config: dict[str, Any], output: Path, client: DecisionClient | None
 ) -> dict[str, Any]:
     """Run one complete page; failures preserve provenance and remain in scoring."""
-    import pylopdf
+    import pdfust
 
     started, cpu = time.perf_counter(), time.process_time()
     campaign = config.get("campaign", "P001")
@@ -272,7 +272,7 @@ def process(  # noqa: PLR0912 - retain each experimental route and failure.
         data = pdf.read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Frozen source PDF hash changed")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             result["original_rotation"] = page.rotation
             if config.get("normalize_rotation") and page.rotation:

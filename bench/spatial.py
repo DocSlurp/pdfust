@@ -17,7 +17,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pylopdf
+import pdfust
 from bench.feature_cases import page_pdf, text_op
 
 if TYPE_CHECKING:
@@ -31,10 +31,10 @@ ARTIFACTS = ROOT / "bench/results/spatial-artifacts"
 class Example:
     """Independent intended relationship, plus the actual extracted candidates."""
 
-    layout: pylopdf.PageLayout
-    spec: pylopdf.FieldSpec
+    layout: pdfust.PageLayout
+    spec: pdfust.FieldSpec
     expected: str | None
-    candidates: tuple[pylopdf.FieldCandidate, ...]
+    candidates: tuple[pdfust.FieldCandidate, ...]
     input_sha256: str
 
 
@@ -62,9 +62,9 @@ def example(seed: int, *, held_out: bool = False, negative: bool = False) -> Exa
     data = page_pdf("\n".join(objects))
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     (ARTIFACTS / f"input-{seed}.pdf").write_bytes(data)
-    with pylopdf.open(stream=data) as doc:
+    with pdfust.open(stream=data) as doc:
         layout = doc[0].get_layout(table_strategy=None)
-    spec = pylopdf.FieldSpec("account", anchor=label, direction=direction, max_distance=240, value_type="number")
+    spec = pdfust.FieldSpec("account", anchor=label, direction=direction, max_distance=240, value_type="number")
     candidates = layout.extract_fields([spec])[0].candidates
     return Example(layout, spec, None if negative else value, candidates, hashlib.sha256(data).hexdigest())
 
@@ -91,7 +91,7 @@ def fit(examples: list[Example]) -> tuple[tuple[float, ...], float]:
     return tuple(weights), bias
 
 
-def evaluate(examples: list[Example], model: pylopdf.PlacementModel | None) -> dict[str, int]:
+def evaluate(examples: list[Example], model: pdfust.PlacementModel | None) -> dict[str, int]:
     """Count abstentions and wrong accepted values, not just schema validity."""
     result = {
         "cases": len(examples),
@@ -153,7 +153,7 @@ def page_timings() -> list[dict[str, float | str]]:
         for mode in ("separate_words_and_tables", "spatial_snapshot"):
             samples = []
             for _ in range(7):
-                with pylopdf.open(stream=data) as doc:
+                with pdfust.open(stream=data) as doc:
                     page = doc[0]
                     start = time.perf_counter_ns()
                     if mode == "spatial_snapshot":
@@ -186,7 +186,7 @@ def main() -> None:
     weights, bias = fit(training)
     fit_seconds = time.perf_counter() - fitting_started
     candidates = [
-        pylopdf.PlacementModel(weights, bias, threshold=threshold, margin=margin)
+        pdfust.PlacementModel(weights, bias, threshold=threshold, margin=margin)
         for threshold in (0.7, 0.8, 0.9, 0.95, 0.99)
         for margin in (0.1, 0.2, 0.3)
     ]
@@ -229,7 +229,7 @@ def main() -> None:
         "timings": timings,
         "cold_public_api_timings": cold_timings,
         "model_bytes_json": len(json.dumps(asdict(model)).encode()),
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "training_inputs": [case.input_sha256 for case in training],
         "validation_inputs": [case.input_sha256 for case in validation],
         "held_out_inputs": [case.input_sha256 for case in testing],

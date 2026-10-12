@@ -14,7 +14,7 @@ import pytest
 from bench import generalization_hybrid_run as hybrid
 from bench.silver import sha, write_json
 
-import pylopdf
+import pdfust
 
 
 @pytest.fixture
@@ -198,7 +198,7 @@ def test_detector_wrapper_refuses_repeated_calls(setup: dict[str, Any], tmp_path
 
 
 def test_actual_native_and_empty_crop_children_compose_without_inference(tmp_path: Path) -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=600, height=800)
         page.insert_text((20, 40), "Literal native prose")
         content = document.tobytes()

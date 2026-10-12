@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import pylopdf
+import pdfust
 
 MAX_FIXTURES = 12
 MAX_CROP_GLYPHS = 1024
@@ -169,7 +169,7 @@ def build_evidence(fixture: VisualFixture, output: Path) -> dict[str, Any]:
     if hashlib.sha256(raw).hexdigest() != fixture.source_sha256:
         msg = f"source hash changed for {fixture.id}"
         raise ValueError(msg)
-    with pylopdf.open(stream=raw, limits=pylopdf.DocumentLimits.web()) as doc:
+    with pdfust.open(stream=raw, limits=pdfust.DocumentLimits.web()) as doc:
         doc._ensure_fallback_fonts()  # noqa: SLF001 - match public extraction setup
         width, height, rows, skipped = doc._doc.extract_glyph_snapshot(fixture.page + 1)  # noqa: SLF001
         doc._emit_warnings()  # noqa: SLF001 - preserve interpretation warnings

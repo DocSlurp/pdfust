@@ -126,28 +126,28 @@ def _small(producer: str) -> dict[str, Any]:
             "theme": {}, "running_footer": "Page {page} of {pages}", "pages": pages}
 
 
-@pytest.mark.parametrize("producer", ["reportlab", "pylopdf"])
+@pytest.mark.parametrize("producer", ["reportlab", "pdfust"])
 def test_python_producers_are_deterministic(producer: str, tmp_path: Path) -> None:
-    from bench.wild_v2_templates import render_pylopdf, render_reportlab
+    from bench.wild_v2_templates import render_pdfust, render_reportlab
 
-    render = render_reportlab.render if producer == "reportlab" else render_pylopdf.render
+    render = render_reportlab.render if producer == "reportlab" else render_pdfust.render
     first, second = tmp_path / "a.pdf", tmp_path / "b.pdf"
     assert render(_small(producer), tmp_path, first) == 3
     assert render(_small(producer), tmp_path, second) == 3
     assert first.read_bytes() == second.read_bytes()
 
 
-def test_reportlab_form_filled_by_pylopdf(tmp_path: Path) -> None:
+def test_reportlab_form_filled_by_pdfust(tmp_path: Path) -> None:
     from bench.wild_v2_templates import render_reportlab
 
-    import pylopdf
+    import pdfust
 
     doc = _small("reportlab")
     pdf = tmp_path / "source.pdf"
     render_reportlab.render(doc, tmp_path, pdf)
     detail = wild_v2.fill_form(doc, pdf)
     assert detail["fields"] == 2
-    values = {f["name"]: f["value"] for f in pylopdf.Document(str(pdf)).get_form_fields()}
+    values = {f["name"]: f["value"] for f in pdfust.Document(str(pdf)).get_form_fields()}
     assert values["name"] == "Zoë Ångström"
     assert values["ok"] not in {None, "", "Off"}
 

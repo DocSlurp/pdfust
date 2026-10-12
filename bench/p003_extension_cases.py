@@ -13,7 +13,7 @@ from pathlib import Path
 from statistics import median
 from typing import Any
 
-import pylopdf
+import pdfust
 from bench import p003_random_values_corpus as random_values
 from bench.decision_evidence_designs import fragments
 from bench.pipeline_assembly import _clean_table, _native
@@ -69,7 +69,7 @@ def authored(plan: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]], dict[st
     data, targets, receipt = random_values.authored(plan)
     if plan["family"] == "mixed":
         bottom = max(t["bbox"][3] for t in targets)
-        with pylopdf.Document(stream=data) as document:
+        with pdfust.Document(stream=data) as document:
             page = document[0]
             for index, paragraph in enumerate(plan["prose"]):
                 top = bottom + 18 + index * 38
@@ -79,7 +79,7 @@ def authored(plan: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]], dict[st
     return data, targets, receipt
 
 
-def _vector(table: pylopdf.Table) -> dict[str, Any]:
+def _vector(table: pdfust.Table) -> dict[str, Any]:
     """Project actual source-detected boxes/anchors; discard detected text/confidence."""
     spans = []
     for anchor in sorted(set(table._cell_anchors)):
@@ -94,7 +94,7 @@ def _vector(table: pylopdf.Table) -> dict[str, Any]:
 
 def extract_source(data: bytes, identity: str) -> tuple[dict[str, Any], list[list[float]], list[dict[str, Any]]]:
     """Read only the rendered PDF and source library geometry, never authored receipts."""
-    with pylopdf.Document(stream=data) as document:
+    with pdfust.Document(stream=data) as document:
         page = document[0]
         words = [{"id": "w" + sha(f"{identity}/word/{i}".encode())[:16], "bbox": list(w[:4]), "text": w[4]}
                  for i, w in enumerate(page.get_text("words"))]
@@ -298,7 +298,7 @@ def build(output: Path, *, seed: str = SEED) -> dict[str, Any]:
         write_json(output / "stress" / (ident + ".json"), {"id": ident, "synthetic_stress_only": True, "treatments": stress})
         menu_counts.append({"id": ident, "native_table_count": len(states[0]["tables"]), "text_table_count": len(states[1]["tables"]),
                             "candidate_count": len(menu["candidates"]), "stress_count": len(stress)})
-        with pylopdf.Document(stream=data) as document:
+        with pdfust.Document(stream=data) as document:
             (output / "images" / (ident + ".png")).write_bytes(document[0].render(scale=768 / 792))
         pages.append({"id": ident, "pdf_path": str(pdf_path), "pdf_sha256": sha(data), "page_number": 0,
                       "family": "authored/extension/" + plan["family"], "cohort": "authored", "input_kind": "authored_native_pdf",

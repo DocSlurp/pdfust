@@ -11,7 +11,7 @@ import pytest
 from bench import lowlevel_large_images as large
 from PIL import Image
 
-import pylopdf
+import pdfust
 
 
 def template() -> dict[str, Any]:
@@ -43,7 +43,7 @@ def template() -> dict[str, Any]:
 
 def test_fresh_render_uses_source_at_each_resolution(tmp_path: Path) -> None:
     source = tmp_path / "source.pdf"
-    with pylopdf.Document() as doc:
+    with pdfust.Document() as doc:
         page = doc.new_page(width=200, height=100)
         page.insert_text((20, 40), "Fresh source pixels")
         doc.save(source)

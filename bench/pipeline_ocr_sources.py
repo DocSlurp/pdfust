@@ -165,7 +165,7 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
     orientation: str = "fixed",
 ) -> dict[str, Any]:
     """Return global source words and diagnostics, preserving the supplied document."""
-    import pylopdf
+    import pdfust
 
     if orientation not in ("fixed", "candidates"):
         raise ValueError("Unknown OCR orientation mode")
@@ -222,7 +222,7 @@ def extract(  # noqa: PLR0913 - experimental controls are explicit
         raise ValueError("Parent document exceeds OCR clone page admission")
     # Import only the selected page; merge materializes inherited page attributes.
     clone_started = time.perf_counter()
-    with pylopdf.Document() as owned:
+    with pdfust.Document() as owned:
         owned.insert_pdf(page.parent, from_page=page.number, to_page=page.number)
         diagnostics["clone_serialized_bytes"] = len(owned.tobytes(max_size=MAX_CLONE_BYTES))
         diagnostics["clone_seconds"] = time.perf_counter() - clone_started
@@ -380,7 +380,7 @@ class Measurement:
 
 def audit(directory: Path, dpi: int) -> None:
     """Freeze metadata selection before OCR; retain complete outputs without scoring input."""
-    import pylopdf
+    import pdfust
 
     directory = guard_path(directory)
     output = directory / "ocr-evidence"
@@ -405,11 +405,11 @@ def audit(directory: Path, dpi: int) -> None:
     if result_path.exists():
         raise ValueError("OCR measurement already retained")
     with Measurement() as initialization:
-        engine = pylopdf.OcrEngine(threads=4, max_concurrent=1)
+        engine = pdfust.OcrEngine(threads=4, max_concurrent=1)
     rows = []
     for row in selected:
         try:
-            with Measurement() as measured, pylopdf.Document(row["pdf_path"]) as document:
+            with Measurement() as measured, pdfust.Document(row["pdf_path"]) as document:
                 result = extract(document[row["page_number"]], dpi=dpi, engine=engine)
             rows.append({"id": row["id"], "status": "ok", "output": result, "measurement": measured.summary})
         except Exception as error:

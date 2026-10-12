@@ -66,7 +66,7 @@ def fragments(words: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def snapshot(case: dict[str, Any]) -> dict[str, Any]:
     """Read only PDF bytes and page index; per-case labels/metadata cannot affect evidence."""
-    import pylopdf
+    import pdfust
 
     pdf, index = case["pdf_bytes"], case["page_index"]
     if (
@@ -77,7 +77,7 @@ def snapshot(case: dict[str, Any]) -> dict[str, Any]:
         or index < 0
     ):
         raise ValueError("Invalid bounded source PDF/page")
-    with pylopdf.open(stream=pdf) as document:
+    with pdfust.open(stream=pdf) as document:
         page = document[index]
         raw = page.get_text("words")
         if len(raw) > MAX_WORDS:
@@ -306,12 +306,12 @@ def prepare(directory: Path, output: Path, model: str, *, assembly: bool = True)
                 }
             )
     rss, measurement = process_peak_rss()
-    import pylopdf
+    import pdfust
 
     manifest = {
         "schema": 1,
-        "native_sha256": hashlib.sha256(Path(pylopdf.pylopdf_core.__file__).read_bytes()).hexdigest(),
-        "python_sha256": hashlib.sha256(Path(pylopdf.__file__).read_bytes()).hexdigest(),
+        "native_sha256": hashlib.sha256(Path(pdfust.pdfust_core.__file__).read_bytes()).hexdigest(),
+        "python_sha256": hashlib.sha256(Path(pdfust.__file__).read_bytes()).hexdigest(),
         "model": model,
         "assembly": assembly,
         "arms": ARMS,

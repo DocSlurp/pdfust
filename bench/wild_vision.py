@@ -26,7 +26,7 @@ from typing import Any
 
 from PIL import Image
 
-import pylopdf
+import pdfust
 from bench import wild_corpus as wild
 from bench.silver import guard_path, sha, write_json
 
@@ -67,7 +67,7 @@ SCHEMA = {
 
 def page_image(pdf: Path, index: int) -> tuple[str, dict[str, Any]]:
     """Render one page on white to a JPEG data URL with a 1568 px long edge."""
-    with pylopdf.open(str(guard_path(pdf))) as doc:
+    with pdfust.open(str(guard_path(pdf))) as doc:
         page = doc[index]
         width, height = page.rect.width, page.rect.height
         scale = LONG_EDGE / max(width, height)
@@ -227,7 +227,7 @@ def run_arm(  # noqa: PLR0913 - one named arm and its inputs.
             pdf = WILD / "variants" / doc_id / f"{level}.pdf"
             if not pdf.exists():
                 continue
-            with pylopdf.open(str(pdf)) as doc:
+            with pdfust.open(str(pdf)) as doc:
                 pages = len(doc)
             jobs.extend((doc_id, level, index, pages) for index in range(pages))
     lock = threading.Lock()

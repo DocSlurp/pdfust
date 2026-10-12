@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-import pylopdf
+import pdfust
 
 ROOT = Path(__file__).parents[1]
 DEFAULT_INPUT = ROOT / "tests" / "assets" / "real_world" / "bill-hr815.pdf"
@@ -38,7 +38,7 @@ class BenchmarkReport:
 
 
 def _extract(data: bytes) -> str:
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         return "".join(document.get_page_text(index) for index in range(document.page_count))
 
 
@@ -66,11 +66,11 @@ def _format_report(result: BenchmarkReport) -> str:
     """Format one complete, independently reproducible benchmark report."""
     speedup = result.sequential_seconds / result.parallel_seconds
     lines = [
-        "# pylopdf free-threaded benchmark",
+        "# pdfust free-threaded benchmark",
         "",
         f"- Run at: {result.run_at}",
         f"- Environment: {result.environment}",
-        f"- pylopdf: {result.version}",
+        f"- pdfust: {result.version}",
         f"- Input: `{result.input_path}`",
         f"- Workload: {result.copies} independent documents, all-page text extraction",
         f"- Repetitions: one warmup + median of {result.repetitions} paired, alternating-order runs",
@@ -110,7 +110,7 @@ def main() -> None:
         parser.error("run this benchmark with a free-threaded CPython build")
     is_gil_enabled = getattr(sys, "_is_gil_enabled", None)
     if is_gil_enabled is None or is_gil_enabled():
-        parser.error("the GIL must remain disabled after importing pylopdf")
+        parser.error("the GIL must remain disabled after importing pdfust")
     if args.copies < MIN_COPIES:
         parser.error("--copies must be at least 2")
     if args.repetitions < 1:
@@ -155,7 +155,7 @@ def main() -> None:
             parallel_seconds=parallel,
             python_command="py -3.14t" if os.name == "nt" else "python3.14t",
             run_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-            version=pylopdf.__version__,
+            version=pdfust.__version__,
         )
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

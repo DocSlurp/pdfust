@@ -105,11 +105,11 @@ Two same-baseline Courier10 runs suffice:
 ```python
 from bench.feature_cases import page_pdf
 from bench.lowlevel_cases import _operators
-import pylopdf
+import pdfust
 
 runs = [("ABCDEFG", 100, 557), ("105", 40, 557)]
 for encoding in ("runs", "positioned"):
-    with pylopdf.Document(stream=page_pdf(_operators(runs, encoding))) as document:
+    with pdfust.Document(stream=page_pdf(_operators(runs, encoding))) as document:
         print(encoding, [w[4] for w in document[0].get_text("words")])
 # runs: ['105', 'ABCDEFG']
 # positioned: ['1', 'G', '05', 'ABCDEF']

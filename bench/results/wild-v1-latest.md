@@ -68,7 +68,7 @@ Text F1 is character-bigram multiset overlap against the native text truth (orde
 
 ## Layer-aware OCR, 2026-10-11 18:40 UTC
 
-Three OCR policies on the same pages, all pylopdf PP-OCRv6 small at 200 dpi
+Three OCR policies on the same pages, all pdfust PP-OCRv6 small at 200 dpi
 with four threads (getrusage, one process, no sampling):
 
 | Level | Native | `+ocr` (textless pages) | `+ocr-adaptive` (page rule) | `+ocr-fill` (word gap fill) |
@@ -78,7 +78,7 @@ with four threads (getrusage, one process, no sampling):
 | L9 broken ToUnicode | 0.003 | 0.529 | 0.751 | **0.745** |
 
 `+ocr-fill` recognizes each page without modifying it and inserts only OCR
-boxes that contain no native word centre. When pylopdf reports glyphs without
+boxes that contain no native word centre. When pdfust reports glyphs without
 Unicode and native text is under half of the recognized text, the native
 layer is treated as unreliable and every OCR box is inserted (32 pages).
 It took 732 s wall, 2,443 s CPU and 486 MiB peak RSS for 96 variants. On
@@ -100,7 +100,7 @@ re-distilled (L1) exact tables from 5 to 13.
 | Latin presentation ligatures expand to letters | 21 | 13 |
 | Combining marks stay with their base | 21 | 13 |
 
-`+ocr` levels apply pylopdf's PP-OCRv6 small engine at 200 dpi, four
+`+ocr` levels apply pdfust's PP-OCRv6 small engine at 200 dpi, four
 threads, to pages with no extractable text. 144 variants took 875 s wall and
 2,928 s CPU with a 486 MiB peak RSS (getrusage, one process, no sampling).
 OCR recovers text F1 0.76 on outlined and clean raster pages, 0.67 on
@@ -142,14 +142,14 @@ Cross-checked against Poppler `pdftotext` and PyMuPDF on the same L0 files.
    extracts as `株 式 会 社 ⻘ 葉`, with U+2F00-block radicals such as `⽇` in
    place of `日`. Poppler and PyMuPDF return clean unified ideographs with no
    spaces. NFKC recovers the radicals (CJK recall 0.81 exact, 0.99 NFKC) but
-   not the spacing. These are pylopdf bugs.
+   not the spacing. These are pdfust bugs.
 2. **Arabic is broken.** The output contains NUL characters, presentation
    forms and scrambled order (exact Arabic recall 0.25, NFKC 0.76). Poppler is
-   readable but over-spaced; PyMuPDF has order errors; pylopdf is the worst.
+   readable but over-spaced; PyMuPDF has order errors; pdfust is the worst.
 3. **Vietnamese lines split at stacked diacritics** (`Lị\nch`, `nhe ̣`), and
    decomposed (NFD) truth text comes back precomposed (combining-mark survival
    0.40). Poppler and PyMuPDF keep the lines intact, so the line splits are a
-   pylopdf bug.
+   pdfust bug.
 4. **Hebrew lines that mix in numbers or Latin stay in visual order.** This is
    the documented mixed-direction limitation; pure Hebrew lines are correct.
 5. Invisible characters are dropped as expected: bidi controls 0/11, soft

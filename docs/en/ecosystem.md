@@ -1,11 +1,11 @@
 ---
 title: Ecosystem recipes
-description: Tested recipes connecting pylopdf with Typst, pyHanko, veraPDF and OCR engines.
+description: Tested recipes connecting pdfust with Typst, pyHanko, veraPDF and OCR engines.
 ---
 
 # Ecosystem recipes
 
-pylopdf deliberately does **not** reimplement typesetting, PDF/A generation or
+pdfust deliberately does **not** reimplement typesetting, PDF/A generation or
 digital signatures. Each is solved by pairing with an established library, and
 every recipe below is guarded by integration tests in
 [`tests/test_interop.py`](https://github.com/yhay81/pylopdf/blob/main/tests/test_interop.py).
@@ -14,14 +14,14 @@ every recipe below is guarded by integration tests in
 
 Typeset reports with [typst](https://typst.app/) (via
 [typst-py](https://pypi.org/project/typst/)) and feed the bytes straight into
-pylopdf:
+pdfust:
 
 ```python
 import typst
-import pylopdf
+import pdfust
 
 pdf_bytes = typst.compile("report.typ")   # typesetting: typst
-doc = pylopdf.open(stream=pdf_bytes)      # editing / extraction / merging: pylopdf
+doc = pdfust.open(stream=pdf_bytes)      # editing / extraction / merging: pdfust
 ```
 
 ## PDF/A for new documents — typst { #new-pdfa }
@@ -31,7 +31,7 @@ export:
 
 ```python
 pdf_a: bytes = typst.compile("report.typ", pdf_standards="a-2b")
-pylopdf.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
+pdfust.open(stream=pdf_a).get_pdfa_claim()   # (2, "B")
 ```
 
 Converting or validating *existing* PDFs is a different problem —
@@ -40,20 +40,20 @@ Converting or validating *existing* PDFs is a different problem —
 
 ## Typeset CJK watermarks & headers — typst × show_pdf_page { #cjk-watermarks }
 
-pylopdf can draw Japanese directly with `insert_text()` after installing
-`pylopdf[jp]`; corresponding `[ko]`, `[zh-cn]`, and `[zh-tw]` extras preserve
+pdfust can draw Japanese directly with `insert_text()` after installing
+`pdfust[jp]`; corresponding `[ko]`, `[zh-cn]`, and `[zh-tw]` extras preserve
 regional CJK glyph forms. When a stamp needs richer, full-page typesetting, use
 typst (fonts get subset-embedded) and burn it onto every page as vectors:
 
 ```python
-from pylopdf_fonts_jp import sans_path  # pip install pylopdf[jp]
+from pdfust_fonts_jp import sans_path  # pip install pdfust[jp]
 
 stamp_typ = """
 #set page(width: 595pt, height: 842pt, fill: none)
 #set text(font: "Noto Sans JP", size: 48pt, fill: rgb(255, 0, 0, 40%))
 #align(center + horizon)[社外秘]
 """
-stamp = pylopdf.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
+stamp = pdfust.open(stream=typst.compile(stamp_typ.encode(), font_paths=[str(sans_path().parent)]))
 for page in doc:
     page.show_pdf_page((0, 0, page.rect.width, page.rect.height), stamp)
 ```
@@ -63,7 +63,7 @@ The stamp stays extractable text afterwards — `page.get_text()` finds `社外�
 ## Digital signatures (PAdES) — pyHanko { #signatures }
 
 [pyHanko](https://pypi.org/project/pyHanko/) (MIT) signs with an incremental
-update, so the bytes produced by pylopdf remain untouched as a prefix of the
+update, so the bytes produced by pdfust remain untouched as a prefix of the
 signed file (asserted byte-for-byte in our tests):
 
 ```python
@@ -80,7 +80,7 @@ out = signers.sign_pdf(
 signed_pdf: bytes = out.getvalue()
 ```
 
-pylopdf's own signature-field API intentionally refuses to fill signature
+pdfust's own signature-field API intentionally refuses to fill signature
 fields and points here instead.
 
 ## OCR — bring your own engine { #ocr }

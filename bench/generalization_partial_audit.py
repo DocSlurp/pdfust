@@ -56,7 +56,7 @@ def _index(rows: list[dict[str, Any]], ids: list[str], label: str) -> dict[str, 
 
 def gallery(manifest: dict[str, Any], partials: list[dict[str, Any]], output: Path) -> dict[str, Any]:
     """Render every source page and escaped partial tables without reference access."""
-    import pylopdf
+    import pdfust
 
     pages = manifest["pages"]
     by_id = _index(partials, [p["id"] for p in pages], "gallery partials")
@@ -71,7 +71,7 @@ def gallery(manifest: dict[str, Any], partials: list[dict[str, Any]], output: Pa
         data = path.read_bytes()
         if hashlib.sha256(data).hexdigest() != record["pdf_sha256"]:
             raise ValueError("Source PDF changed before gallery rendering")
-        with pylopdf.open(stream=data) as document:
+        with pdfust.open(stream=data) as document:
             page = document[record["page_number"]]
             pixels = page.render(scale=767 / max(page.rect.width, page.rect.height), background=(255, 255, 255))
             image_info = {

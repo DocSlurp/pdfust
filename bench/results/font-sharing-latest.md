@@ -1,6 +1,6 @@
 # Bundled locale font sharing
 
-Measured on Linux x86-64, CPython 3.14.7, pylopdf 0.13.0 with this hardening
+Measured on Linux x86-64, CPython 3.14.7, pdfust 0.13.0 with this hardening
 branch's native extension. Each fresh process retained 16 empty Documents with
 the same bundled Japanese sans/serif font pair. No pages were interpreted.
 

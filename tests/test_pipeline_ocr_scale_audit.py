@@ -7,7 +7,7 @@ from typing import cast
 import pytest
 from bench.pipeline_ocr_scale_audit import compare_geometry, digest, dpi_for, freeze, normalize, run, sources
 
-import pylopdf
+import pdfust
 
 
 def test_arm_scale_invariance() -> None:
@@ -53,10 +53,10 @@ def test_geometry_abstains_when_text_sequence_changes() -> None:
 
 def test_run_retains_native_mapping_results_and_failures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     freeze(tmp_path)
-    monkeypatch.setattr(pylopdf, "OcrEngine", lambda **_kwargs: object())
+    monkeypatch.setattr(pdfust, "OcrEngine", lambda **_kwargs: object())
     calls = []
 
-    def mocked_ocr(self: pylopdf.Page, **kwargs: object) -> list[pylopdf.OcrWord]:
+    def mocked_ocr(self: pdfust.Page, **kwargs: object) -> list[pdfust.OcrWord]:
         calls.append(kwargs)
         if len(calls) == 1:
             msg = "mock recognition failure"
@@ -64,12 +64,12 @@ def test_run_retains_native_mapping_results_and_failures(tmp_path: Path, monkeyp
         return [
             {
                 "text": "ITEM",
-                "bbox": cast("pylopdf.Rect", (0, 0, self.rect[2] / 2, self.rect[3] / 2)),
+                "bbox": cast("pdfust.Rect", (0, 0, self.rect[2] / 2, self.rect[3] / 2)),
                 "confidence": 0.9,
             }
         ]
 
-    monkeypatch.setattr(pylopdf.Page, "get_text_ocr", mocked_ocr)
+    monkeypatch.setattr(pdfust.Page, "get_text_ocr", mocked_ocr)
     result = run(tmp_path)
     assert len(calls) == 18
     assert result["rows"][0]["status"] == "error"

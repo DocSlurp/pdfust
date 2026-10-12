@@ -16,7 +16,7 @@ from bench import p003_regions_run as run
 from bench import pipeline_run as baseline
 from bench.silver import sha
 
-import pylopdf
+import pdfust
 
 
 def raw(matrix: list[list[str]] | None = None, bbox: list[float] | None = None) -> dict[str, Any]:
@@ -66,7 +66,7 @@ def test_declared_small_area_policy_changes_conflict_order_without_geometry_chan
 
 
 def record(tmp_path: Path, *, rotation: int = 0) -> dict[str, Any]:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=600, height=800)
         page.set_rotation(rotation)
         data = document.tobytes()
@@ -368,7 +368,7 @@ def test_union_runtime_keeps_source_inventory_and_gates_every_retained_candidate
 def test_real_native_source_child_and_proposal_acquisition_without_inference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    with pylopdf.Document() as document:
+    with pdfust.Document() as document:
         page = document.new_page(width=400, height=500)
         for row in range(4):
             for column in range(3):

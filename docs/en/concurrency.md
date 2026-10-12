@@ -5,7 +5,7 @@ description: The supported threading boundaries for Documents, Pages, Pixmaps, p
 
 # Concurrency and free-threaded Python
 
-Starting with v0.10, pylopdf publishes both one `abi3` wheel per platform for
+Starting with v0.10, pdfust publishes both one `abi3` wheel per platform for
 GIL-enabled CPython 3.10–3.14 and a version-specific `cp314-cp314t` wheel for
 free-threaded CPython 3.14. Importing the latter does not re-enable the GIL.
 
@@ -31,11 +31,11 @@ For independent files, give each worker its own document:
 ```python
 from concurrent.futures import ThreadPoolExecutor
 
-import pylopdf
+import pdfust
 
 
 def extract(path: str) -> str:
-    with pylopdf.open(path) as document:
+    with pdfust.open(path) as document:
         return document.to_markdown()
 
 

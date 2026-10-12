@@ -454,7 +454,7 @@ def _hybrid_render_version(directory: Path, frozen: dict[str, Any] | None = None
 def _verify_orientation_runtime(frozen: dict[str, Any]) -> None:
     """Require exact installed extraction and baseline-orientation implementation."""
     recorded = frozen.get("runtime", {}).get("extraction_modules", {})
-    for name in ("pylopdf", "pylopdf.pylopdf_core", "pylopdf._spatial", "pylopdf._markdown"):
+    for name in ("pdfust", "pdfust.pdfust_core", "pdfust._spatial", "pdfust._markdown"):
         module = importlib.import_module(name)
         path = Path(module.__file__) if module.__file__ is not None else None
         expected = {"filename": path.name, "sha256": sha(path.read_bytes())} if path is not None else None
@@ -528,7 +528,7 @@ def _verify_hybrid_output(
         data = guard_path(Path(record["pdf_path"])).read_bytes()
         if sha(data) != record["pdf_sha256"]:
             raise ValueError("Original source PDF changed before orientation replay")
-        with importlib.import_module("pylopdf").open(stream=data) as document:
+        with importlib.import_module("pdfust").open(stream=data) as document:
             evidence = orientation.evidence(document[record["page_number"]], native_boxes)
         if evidence != prediction.get("native_orientation_evidence"):
             raise ValueError("Native orientation evidence differs from exact original PDF replay")
@@ -682,7 +682,7 @@ def _verify_gate_instructions(directory: Path, prediction: dict[str, Any], confi
 def _verify_gate_images(
     directory: Path, prediction: dict[str, Any], config: dict[str, Any]) -> None:
     """Replay encoded gate payloads from frozen source, including failed attempts."""
-    import pylopdf
+    import pdfust
     from bench.generalization_run import region_image
     from bench.p003_gate_image import transform
 
@@ -701,7 +701,7 @@ def _verify_gate_images(
     if len(indexes) != len(set(indexes)) or not required <= set(indexes):
         raise ValueError("Gate image evidence omits or duplicates an actual gate attempt")
     regions = {r["id"]: r for r in prediction.get("region_plan", {}).get("regions", [])}
-    with pylopdf.open(stream=data) as document:
+    with pdfust.open(stream=data) as document:
         page = document[record["page_number"]]
         normalize = config.get("normalize_rotation", True) and config.get("rotation_mode", "always") != "preserve"
         if normalize and config.get("rotation_mode", "always") == "native":

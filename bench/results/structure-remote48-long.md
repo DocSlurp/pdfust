@@ -30,7 +30,7 @@ The provenance device is the requested backend; native geometry/OCR and replay/r
   "remote_spend_usd": 1.024262108,
   "remote_instance_id": 54777034,
   "remote_hourly_usd": 0.4333333333333333,
-  "native_runtime": "published pylopdf 0.13.0 wheel used only to import runner; all model inputs frozen locally",
+  "native_runtime": "published pdfust 0.13.0 wheel used only to import runner; all model inputs frozen locally",
   "host_scope": "48 GiB A6000 memory/output-budget controls; separate from 24 GiB baseline",
   "seed_metadata_started_at": "2026-10-08T04:51:00.292628+00:00",
   "original_archive_report_sha256": "3138c2d400d91afe1c8fb1e42bfbac3359ea5aebf23ff7c42a4a1ff69ec1a6d7",

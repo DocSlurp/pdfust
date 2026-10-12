@@ -238,7 +238,7 @@ def score(target: dict[str, Any], observed: list[dict[str, Any]]) -> dict[str, A
 
 def run(directory: Path) -> dict[str, Any]:
     """Freeze separate companion corpus and unchanged routes, then extract and score."""
-    import pylopdf
+    import pdfust
 
     directory = guard_path(directory)
     cases = generate_cases()
@@ -276,7 +276,7 @@ def run(directory: Path) -> dict[str, Any]:
     rows, sources = [], []
     began, cpu = time.perf_counter(), time.process_time()
     for case in cases:
-        with pylopdf.open(pdfs / (case["id"] + ".pdf")) as document:
+        with pdfust.open(pdfs / (case["id"] + ".pdf")) as document:
             page = document[0]
             try:
                 vector = [observed_table(table) for table in page.find_tables().tables]

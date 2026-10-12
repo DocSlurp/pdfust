@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from conftest import build_pdf, build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def build_drawing_pdf(*, rotation: int = 0) -> bytes:
@@ -29,12 +29,12 @@ def build_drawing_pdf(*, rotation: int = 0) -> bytes:
 
 
 def test_get_drawings_returns_styled_paths() -> None:
-    drawings = pylopdf.open(stream=build_drawing_pdf())[0].get_drawings()
+    drawings = pdfust.open(stream=build_drawing_pdf())[0].get_drawings()
     assert len(drawings) == 2
 
     rectangle = drawings[0]
     assert rectangle["type"] == "fs"
-    assert rectangle["rect"] == pytest.approx(pylopdf.Rect(10, 70, 50, 90))
+    assert rectangle["rect"] == pytest.approx(pdfust.Rect(10, 70, 50, 90))
     assert rectangle["closePath"]
     assert len(rectangle["items"]) == 4
     assert all(item[0] == "l" for item in rectangle["items"])
@@ -51,7 +51,7 @@ def test_get_drawings_returns_styled_paths() -> None:
     curve = drawings[1]
     assert curve["type"] == "f"
     assert not curve["closePath"]
-    assert curve["rect"] == pytest.approx(pylopdf.Rect(60, 70, 120, 90))
+    assert curve["rect"] == pytest.approx(pdfust.Rect(60, 70, 120, 90))
     assert [item[0] for item in curve["items"]] == ["c"]
     assert curve["color"] is None
     assert curve["fill"] == pytest.approx((0, 1, 0))
@@ -64,12 +64,12 @@ def test_get_drawings_returns_styled_paths() -> None:
 
 
 def test_get_drawings_uses_rotated_display_coordinates() -> None:
-    drawing = pylopdf.open(stream=build_drawing_pdf(rotation=90))[0].get_drawings()[0]
-    assert drawing["rect"] == pytest.approx(pylopdf.Rect(10, 10, 30, 50))
+    drawing = pdfust.open(stream=build_drawing_pdf(rotation=90))[0].get_drawings()[0]
+    assert drawing["rect"] == pytest.approx(pdfust.Rect(10, 10, 30, 50))
 
 
 def test_get_drawings_ignores_text() -> None:
-    assert pylopdf.open(stream=build_pdf(["Text only"]))[0].get_drawings() == []
+    assert pdfust.open(stream=build_pdf(["Text only"]))[0].get_drawings() == []
 
 
 def test_get_drawings_rejects_excessive_path_count() -> None:
@@ -83,8 +83,8 @@ def test_get_drawings_rejects_excessive_path_count() -> None:
         }
     )
 
-    with pytest.raises(pylopdf.PdfError, match="8192-path safety limit"):
-        pylopdf.open(stream=pdf)[0].get_drawings()
+    with pytest.raises(pdfust.PdfError, match="8192-path safety limit"):
+        pdfust.open(stream=pdf)[0].get_drawings()
 
 
 def test_get_drawings_rejects_excessive_command_count() -> None:
@@ -98,8 +98,8 @@ def test_get_drawings_rejects_excessive_command_count() -> None:
         }
     )
 
-    with pytest.raises(pylopdf.PdfError, match="131072-command safety limit"):
-        pylopdf.open(stream=pdf)[0].get_drawings()
+    with pytest.raises(pdfust.PdfError, match="131072-command safety limit"):
+        pdfust.open(stream=pdf)[0].get_drawings()
 
 
 def test_get_drawings_bounds_aggregate_dash_values() -> None:
@@ -113,7 +113,7 @@ def test_get_drawings_bounds_aggregate_dash_values() -> None:
             4: f"<< /Length {len(exact_stream)} >>\nstream\n{exact_stream}\nendstream",
         }
     )
-    exact_result = pylopdf.open(stream=exact_pdf)[0].get_drawings()[0]["dashes"]
+    exact_result = pdfust.open(stream=exact_pdf)[0].get_drawings()[0]["dashes"]
     assert exact_result is not None
     assert exact_result.count("1") == 131_072
 
@@ -126,5 +126,5 @@ def test_get_drawings_bounds_aggregate_dash_values() -> None:
             4: (f"<< /Length {len(excessive_stream)} >>\nstream\n{excessive_stream}\nendstream"),
         }
     )
-    with pytest.raises(pylopdf.PdfError, match="131072-dash-value safety limit"):
-        pylopdf.open(stream=excessive_pdf)[0].get_drawings()
+    with pytest.raises(pdfust.PdfError, match="131072-dash-value safety limit"):
+        pdfust.open(stream=excessive_pdf)[0].get_drawings()

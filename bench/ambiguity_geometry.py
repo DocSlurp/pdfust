@@ -402,11 +402,11 @@ def extract(
     source_pdf: Path, target_boxes: list[list[float]], *, page_index: int = 0, scope_bbox: list[float] | None = None
 ) -> dict[str, Any]:
     """Extract fresh bounded native layout, font spans and interpreted paths on CPU."""
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
     source_pdf = _safe(source_pdf)
     raw = _read(source_pdf, CONFIG["max_pdf_bytes"])
-    with pylopdf.Document(stream=raw, limits=pylopdf.DocumentLimits.web()) as document:
+    with pdfust.Document(stream=raw, limits=pdfust.DocumentLimits.web()) as document:
         page = document[page_index]
         layout = page.get_layout()
         words = [{"bbox": list(word.bbox), "direction": list(word.direction)} for word in layout.words]

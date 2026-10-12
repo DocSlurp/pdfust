@@ -1,11 +1,11 @@
 ---
 title: API stability
-description: pylopdf's public API boundary, semantic-versioning guarantees, deprecation lifecycle, and compatibility review process.
+description: pdfust's public API boundary, semantic-versioning guarantees, deprecation lifecycle, and compatibility review process.
 ---
 
 # API stability
 
-pylopdf follows [Semantic Versioning 2.0.0](https://semver.org/). This page
+pdfust follows [Semantic Versioning 2.0.0](https://semver.org/). This page
 defines what that means for a Python library whose results also depend on PDF
 producers, fonts, renderers, and supported runtimes.
 
@@ -24,7 +24,7 @@ does not use the pre-1.0 version number as permission for silent breakage.
 
 The supported public API consists of:
 
-- names exported by `pylopdf.__all__`, plus `pylopdf.__version__`;
+- names exported by `pdfust.__all__`, plus `pdfust.__version__`;
 - documented public members of those classes;
 - callable parameter names, kinds, defaults, and documented return contracts;
 - documented constants and enum values;
@@ -33,10 +33,10 @@ The supported public API consists of:
 - the documented exception hierarchy and machine-readable attributes such as
   `LimitError.code`.
 
-Names beginning with `_`, `pylopdf.pylopdf_core`, Rust implementation details,
+Names beginning with `_`, `pdfust.pdfust_core`, Rust implementation details,
 object `repr` output, exact exception messages, warning order, and undocumented
 attributes are private. Importing a public object from its implementation
-module does not make that module path public; import it from `pylopdf`.
+module does not make that module path public; import it from `pdfust`.
 
 The PDF bytes produced by `save()` and the exact PNG/SVG serialization are not
 stable byte-for-byte formats. The documented visual, structural, and extraction
@@ -71,7 +71,7 @@ After v1.0, a public API scheduled for removal is normally:
 3. retained for at least two minor releases and six months;
 4. removed only in a major release.
 
-`DeprecationWarning` is for developer migration. `PylopdfWarning` remains for
+`DeprecationWarning` is for developer migration. `PdfustWarning` remains for
 operational PDF interpretation warnings and is not a deprecation channel.
 
 Security, legal, or upstream-runtime emergencies may require a shorter path.
@@ -95,7 +95,7 @@ Support is defined by the Python versions, platforms, ABIs, and WebAssembly
 runtime matrix documented for each release. A runtime may be dropped in a minor
 release after its upstream end of life or when maintaining it would prevent a
 security or correctness fix. The reason and migration window are published.
-Pyodide compatibility is pinned and tested per pylopdf minor line rather than
+Pyodide compatibility is pinned and tested per pdfust minor line rather than
 assumed across runtime upgrades.
 
 ## Compatibility review { #compatibility-review }

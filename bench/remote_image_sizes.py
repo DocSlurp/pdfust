@@ -32,14 +32,14 @@ ALLOWED_METADATA = ("image_pixels", "image_mode", "png_bit_depth")
 
 def renderer_runtime() -> dict[str, str]:
     """Pin the installed native renderer bytes alongside published versions."""
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
-    native_file = sys.modules[pylopdf._Document.__module__].__file__  # noqa: SLF001
+    native_file = sys.modules[pdfust._Document.__module__].__file__  # noqa: SLF001
     if native_file is None:
         _fail("Native renderer module has no reproducible source file")
     native = Path(cast("str", native_file))
     return {
-        "pylopdf_version": pylopdf.__version__,
+        "pdfust_version": pdfust.__version__,
         "native_module_sha256": _digest(_read(native, 128 * 1024 * 1024)),
         "pillow_version": pillow_version,
     }
@@ -47,7 +47,7 @@ def renderer_runtime() -> dict[str, str]:
 
 def raster(source: Path, bbox: list[float], edge: int) -> tuple[Image.Image, dict[str, Any]]:
     """Fresh hayro clip and downsample with the same L015 raster contract."""
-    import pylopdf  # noqa: PLC0415
+    import pdfust  # noqa: PLC0415
 
     if edge not in EDGES or len(bbox) != BBOX_COORDINATES or not all(math.isfinite(value) for value in bbox):
         _fail("Unadmitted fresh crop size/coordinates")
@@ -55,7 +55,7 @@ def raster(source: Path, bbox: list[float], edge: int) -> tuple[Image.Image, dic
     if min(width, height) <= 0:
         _fail("Empty source crop")
     scale = (edge + 2) / max(width, height)
-    with pylopdf.Document(_safe(source)) as document:
+    with pdfust.Document(_safe(source)) as document:
         page = document[0]
         rect = page.rect
         if math.ceil(rect.width * scale) * math.ceil(rect.height * scale) > MAX_RASTER_PIXELS:

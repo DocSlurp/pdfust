@@ -7,24 +7,24 @@ from pathlib import Path
 
 import pytest
 
-import pylopdf
+import pdfust
 
 NOTO_SANS_JP = (
-    Path(__file__).parents[1] / "fonts" / "pylopdf-fonts-jp" / "src" / "pylopdf_fonts_jp" / "NotoSansJP-Regular.otf"
+    Path(__file__).parents[1] / "fonts" / "pdfust-fonts-jp" / "src" / "pdfust_fonts_jp" / "NotoSansJP-Regular.otf"
 )
 
 
-def _new_page() -> tuple[pylopdf.Document, pylopdf.Page]:
-    doc = pylopdf.Document()
+def _new_page() -> tuple[pdfust.Document, pdfust.Page]:
+    doc = pdfust.Document()
     return doc, doc.new_page(width=400, height=200)
 
 
-def _dict_line_texts(page: pylopdf.Page) -> list[str]:
+def _dict_line_texts(page: pdfust.Page) -> list[str]:
     layout = page.get_text("dict")
     return ["".join(span["text"] for span in line["spans"]) for block in layout["blocks"] for line in block["lines"]]
 
 
-def _word_line_texts(page: pylopdf.Page) -> list[str]:
+def _word_line_texts(page: pdfust.Page) -> list[str]:
     lines: defaultdict[tuple[int, int], list[str]] = defaultdict(list)
     for *_, text, block_no, line_no, _word_no in page.get_text("words"):
         lines[(block_no, line_no)].append(text)
@@ -32,7 +32,7 @@ def _word_line_texts(page: pylopdf.Page) -> list[str]:
 
 
 def _assert_text_views(
-    doc: pylopdf.Document,
+    doc: pdfust.Document,
     expected_lines: list[str],
 ) -> None:
     page = doc[0]

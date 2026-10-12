@@ -40,11 +40,11 @@
     "PageLayout",
     "PasswordError",
     "PdfError",
+    "PdfustWarning",
     "Permissions",
     "Pixmap",
     "PlacementModel",
     "Point",
-    "PylopdfWarning",
     "Rect",
     "SpatialCell",
     "SpatialTable",
@@ -1031,7 +1031,7 @@
     },
     "DocumentClosedError": {
       "bases": [
-        "pylopdf.PdfError"
+        "pdfust.PdfError"
       ],
       "kind": "exception",
       "members": {}
@@ -1247,11 +1247,11 @@
     },
     "DrawingItem": {
       "kind": "type-alias",
-      "target": "tuple[Literal['l'], pylopdf.Point, pylopdf.Point] | tuple[Literal['c'], pylopdf.Point, pylopdf.Point, pylopdf.Point, pylopdf.Point]"
+      "target": "tuple[Literal['l'], pdfust.Point, pdfust.Point] | tuple[Literal['c'], pdfust.Point, pdfust.Point, pdfust.Point, pdfust.Point]"
     },
     "EncryptedDocumentError": {
       "bases": [
-        "pylopdf.PdfError"
+        "pdfust.PdfError"
       ],
       "kind": "exception",
       "members": {}
@@ -1530,7 +1530,7 @@
     },
     "LimitError": {
       "bases": [
-        "pylopdf.PdfError"
+        "pdfust.PdfError"
       ],
       "kind": "exception",
       "members": {
@@ -1543,7 +1543,7 @@
     "LinkInfo": {
       "fields": {
         "file": "str | None",
-        "from": "pylopdf.Rect",
+        "from": "pdfust.Rect",
         "kind": "int",
         "name": "str | None",
         "nameddest": "str",
@@ -1724,7 +1724,7 @@
     },
     "OcrError": {
       "bases": [
-        "pylopdf.PdfError"
+        "pdfust.PdfError"
       ],
       "kind": "exception",
       "members": {}
@@ -2772,7 +2772,7 @@
     },
     "PasswordError": {
       "bases": [
-        "pylopdf.PdfError"
+        "pdfust.PdfError"
       ],
       "kind": "exception",
       "members": {}
@@ -2780,6 +2780,13 @@
     "PdfError": {
       "bases": [
         "ValueError"
+      ],
+      "kind": "exception",
+      "members": {}
+    },
+    "PdfustWarning": {
+      "bases": [
+        "UserWarning"
       ],
       "kind": "exception",
       "members": {}
@@ -2953,13 +2960,6 @@
           }
         ]
       }
-    },
-    "PylopdfWarning": {
-      "bases": [
-        "UserWarning"
-      ],
-      "kind": "exception",
-      "members": {}
     },
     "Rect": {
       "annotations": {
@@ -3249,7 +3249,7 @@
     },
     "StalePageError": {
       "bases": [
-        "pylopdf.PdfError"
+        "pdfust.PdfError"
       ],
       "kind": "exception",
       "members": {}

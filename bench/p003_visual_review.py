@@ -354,9 +354,9 @@ def difference_image(rows: list[dict[str, Any]]) -> Image.Image:
 
 def render_page(record: dict[str, Any], target: dict[str, Any], marks: dict[str, Any], directory: Path) -> Image.Image:
     """Retain the real full-page raster and translucent gold table overlays."""
-    import pylopdf
+    import pdfust
 
-    with pylopdf.Document(record["pdf_path"]) as document:
+    with pdfust.Document(record["pdf_path"]) as document:
         page = document[record["page_number"]]
         rect = page.rect
         pixmap = page.get_pixmap(scale=1600 / rect.width, background=(255, 255, 255))

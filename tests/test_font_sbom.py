@@ -13,26 +13,26 @@ _COMMIT = "0123456789abcdef0123456789abcdef01234567"
 _GENERATOR = Path(__file__).resolve().parents[1] / "tools" / "generate_font_sbom.py"
 _METADATA = b"""\
 Metadata-Version: 2.4
-Name: pylopdf-fonts-test
+Name: pdfust-fonts-test
 Version: 0.1.0
-Summary: Test fonts for pylopdf
+Summary: Test fonts for pdfust
 
 """
 
 
 def _write_distributions(dist_dir: Path) -> None:
     dist_dir.mkdir()
-    wheel = dist_dir / "pylopdf_fonts_test-0.1.0-py3-none-any.whl"
+    wheel = dist_dir / "pdfust_fonts_test-0.1.0-py3-none-any.whl"
     with zipfile.ZipFile(wheel, "w") as archive:
-        archive.writestr("pylopdf_fonts_test/__init__.py", '__version__ = "0.1.0"\n')
-        archive.writestr("pylopdf_fonts_test/font.otf", b"font payload")
-        archive.writestr("pylopdf_fonts_test-0.1.0.dist-info/METADATA", _METADATA)
+        archive.writestr("pdfust_fonts_test/__init__.py", '__version__ = "0.1.0"\n')
+        archive.writestr("pdfust_fonts_test/font.otf", b"font payload")
+        archive.writestr("pdfust_fonts_test-0.1.0.dist-info/METADATA", _METADATA)
 
-    sdist = dist_dir / "pylopdf_fonts_test-0.1.0.tar.gz"
+    sdist = dist_dir / "pdfust_fonts_test-0.1.0.tar.gz"
     with tarfile.open(sdist, "w:gz") as archive:
         for name, payload in (
-            ("pylopdf_fonts_test-0.1.0/PKG-INFO", _METADATA),
-            ("pylopdf_fonts_test-0.1.0/src/pylopdf_fonts_test/font.otf", b"font payload"),
+            ("pdfust_fonts_test-0.1.0/PKG-INFO", _METADATA),
+            ("pdfust_fonts_test-0.1.0/src/pdfust_fonts_test/font.otf", b"font payload"),
         ):
             member = tarfile.TarInfo(name)
             member.size = len(payload)
@@ -76,23 +76,23 @@ def test_font_sbom_describes_both_archives_and_every_member(tmp_path: Path) -> N
     document = json.loads(output.read_text(encoding="utf-8"))
 
     assert document["spdxVersion"] == "SPDX-2.3"
-    assert document["name"] == "pylopdf-fonts-test-0.1.0-release"
+    assert document["name"] == "pdfust-fonts-test-0.1.0-release"
     assert document["creationInfo"]["created"] == "1970-01-01T00:00:00Z"
-    assert document["documentNamespace"].endswith(f"/pylopdf-fonts-test/0.1.0/{_COMMIT}")
+    assert document["documentNamespace"].endswith(f"/pdfust-fonts-test/0.1.0/{_COMMIT}")
     assert document["documentDescribes"] == ["SPDXRef-Package-Wheel", "SPDXRef-Package-Sdist"]
 
     packages = document["packages"]
     assert len(packages) == 2
     assert {package["packageFileName"] for package in packages} == {
-        "pylopdf_fonts_test-0.1.0-py3-none-any.whl",
-        "pylopdf_fonts_test-0.1.0.tar.gz",
+        "pdfust_fonts_test-0.1.0-py3-none-any.whl",
+        "pdfust_fonts_test-0.1.0.tar.gz",
     }
     for package in packages:
-        assert package["name"] == "pylopdf-fonts-test"
+        assert package["name"] == "pdfust-fonts-test"
         assert package["versionInfo"] == "0.1.0"
         assert package["filesAnalyzed"] is True
         assert package["licenseDeclared"] == "OFL-1.1"
-        assert package["externalRefs"][0]["referenceLocator"] == "pkg:pypi/pylopdf-fonts-test@0.1.0"
+        assert package["externalRefs"][0]["referenceLocator"] == "pkg:pypi/pdfust-fonts-test@0.1.0"
         assert len(package["checksums"][0]["checksumValue"]) == 64
 
     files = document["files"]

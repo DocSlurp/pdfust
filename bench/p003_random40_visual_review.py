@@ -19,7 +19,7 @@ IDS = ("r4fa2f36b57caf506679ba995", "r536e002b19beb540f99f33e9", "r46eb52c32e5e1
 
 def form_audit(batch: Path, run_dir: Path, output: Path) -> Path:
     """Show a separately labelled qualitative source review, preserving original strict FP."""
-    import pylopdf
+    import pdfust
 
     started, cpu = time.monotonic(), time.process_time()
     receipts: dict[str, str] = {}
@@ -42,7 +42,7 @@ def form_audit(batch: Path, run_dir: Path, output: Path) -> Path:
     with Image.open(original_path) as image:
         original = image.convert("RGB")
     original.save(destination / "original.png")
-    with pylopdf.Document(record["pdf_path"]) as document:
+    with pdfust.Document(record["pdf_path"]) as document:
         scale = original.width / document[record["page_number"]].rect.width
     table = result["tables"][0]
     crop = original.crop(tuple(round(v * scale) for v in table["bbox"]))

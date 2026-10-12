@@ -8,7 +8,7 @@ from typing import BinaryIO, cast
 
 import pytest
 
-from pylopdf.pylopdf_core import PdfError, _Document
+from pdfust.pdfust_core import PdfError, _Document
 
 
 @pytest.mark.parametrize("object_streams", [False, True])

@@ -79,7 +79,7 @@ pyodide.FS.writeFile(
   "/tmp/pyodide_compat.py",
   await readFile(path.join(repositoryRoot, "tools", "pyodide_compat.py")),
 );
-const compatibilityRoot = "/tmp/pylopdf-compat";
+const compatibilityRoot = "/tmp/pdfust-compat";
 for (const relativePath of assets) {
   const destination = path.posix.join(compatibilityRoot, ...relativePath.split(/[\\/]/));
   pyodide.FS.mkdirTree(path.posix.dirname(destination));
@@ -117,9 +117,9 @@ memory.after_install = {
   node_rss_bytes: nodeRssBytes(),
 };
 
-const pylopdfImportStart = performance.now();
-await pyodide.runPythonAsync("import pylopdf");
-timings.import_pylopdf = elapsed(pylopdfImportStart);
+const pdfustImportStart = performance.now();
+await pyodide.runPythonAsync("import pdfust");
+timings.import_pdfust = elapsed(pdfustImportStart);
 memory.after_import = {
   wasm_linear_bytes: wasmBytes(pyodide),
   node_rss_bytes: nodeRssBytes(),
@@ -131,8 +131,8 @@ import json
 import platform
 from pathlib import Path
 
-package_root = Path(pylopdf.__file__).parent
-extension = next(package_root.glob("pylopdf_core*.so"))
+package_root = Path(pdfust.__file__).parent
+extension = next(package_root.glob("pdfust_core*.so"))
 json.dumps({
     "python": platform.python_version(),
     "extension_bytes": extension.stat().st_size,
@@ -146,18 +146,18 @@ const { python: pythonVersion, ...installedArtifactSizes } = installedSizes;
 await pyodide.runPythonAsync(`
 from pathlib import Path
 
-_pylopdf_measurement_data = Path(
+_pdfust_measurement_data = Path(
     "${path.posix.join(compatibilityRoot, "tests/assets/real_world/f1040.pdf")}"
 ).read_bytes()
 
-def _pylopdf_process_measurement():
-    with pylopdf.Document(
-        stream=_pylopdf_measurement_data,
-        limits=pylopdf.DocumentLimits.web(),
+def _pdfust_process_measurement():
+    with pdfust.Document(
+        stream=_pdfust_measurement_data,
+        limits=pdfust.DocumentLimits.web(),
     ) as document:
         return len(document.get_page_text(0))
 `);
-const processFixture = pyodide.globals.get("_pylopdf_process_measurement");
+const processFixture = pyodide.globals.get("_pdfust_process_measurement");
 const firstDocumentStart = performance.now();
 const firstTextLength = processFixture();
 timings.first_document_open_and_extract = elapsed(firstDocumentStart);
@@ -204,11 +204,11 @@ memory.after_compatibility_suite = {
 
 const parsed = JSON.parse(result);
 const ocrBoundary = await pyodide.runPythonAsync(`
-import pylopdf
+import pdfust
 
 try:
-    pylopdf.OcrEngine("/tmp/detector.rten", "/tmp/recognizer.rten", "/tmp/dictionary.txt")
-except pylopdf.OcrError as error:
+    pdfust.OcrEngine("/tmp/detector.rten", "/tmp/recognizer.rten", "/tmp/dictionary.txt")
+except pdfust.OcrError as error:
     message = str(error)
     if "unavailable on Emscripten" not in message:
         raise RuntimeError(f"unexpected Emscripten OCR error: {message}")
@@ -256,7 +256,7 @@ const runtimeMetrics = {
     node: process.version,
     pyodide: "0.28.3",
     python: pythonVersion,
-    pylopdf: parsed.pylopdf_version,
+    pdfust: parsed.pdfust_version,
   },
   artifact: {
     wheel_bytes: (await stat(wheel)).size,
@@ -271,7 +271,7 @@ const runtimeMetrics = {
   node_rss_checkpoint_high_water_bytes: Math.max(...nodeRssCheckpoints),
   measured_text_length: firstTextLength,
 };
-const benchmarkOutput = process.env.PYLOPDF_PYODIDE_BENCHMARK_OUTPUT;
+const benchmarkOutput = process.env.PDFUST_PYODIDE_BENCHMARK_OUTPUT;
 if (benchmarkOutput) {
   const resolvedOutput = path.resolve(benchmarkOutput);
   await mkdir(path.dirname(resolvedOutput), { recursive: true });
@@ -281,7 +281,7 @@ if (benchmarkOutput) {
     "utf8",
   );
 }
-const metricsOutput = process.env.PYLOPDF_PYODIDE_METRICS_OUTPUT;
+const metricsOutput = process.env.PDFUST_PYODIDE_METRICS_OUTPUT;
 if (metricsOutput) {
   const resolvedOutput = path.resolve(metricsOutput);
   await mkdir(path.dirname(resolvedOutput), { recursive: true });
@@ -292,7 +292,7 @@ if (metricsOutput) {
   );
 }
 process.stdout.write(
-  `Pyodide compatibility suite passed: pylopdf ${parsed.pylopdf_version}, schema ${parsed.schema}\n` +
+  `Pyodide compatibility suite passed: pdfust ${parsed.pdfust_version}, schema ${parsed.schema}\n` +
     `Pyodide OCR boundary passed: ${ocrBoundary}\n` +
     `Pyodide size/startup metrics: ${JSON.stringify(runtimeMetrics)}\n` +
     `Pyodide limit benchmark: ${JSON.stringify(benchmarkRecord)}\n` +

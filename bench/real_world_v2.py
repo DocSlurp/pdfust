@@ -11,7 +11,7 @@ Commands::
 
     python -m bench.real_world_v2 fetch [--id ID ...]     # sequential, polite
     python -m bench.real_world_v2 profile                 # producer/version/features
-    python -m bench.real_world_v2 health                  # pylopdf vs pdftotext vs PyMuPDF
+    python -m bench.real_world_v2 health                  # pdfust vs pdftotext vs PyMuPDF
     python -m bench.real_world_v2 candidates --id ID --page N   # truth drafting aid
     python -m bench.real_world_v2 validate                # manifest + truth schemas
 
@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIRECTORY = ROOT / "bench/results/pdf-master-artifacts/real-world-v2"
 # Wikimedia's robot policy rejects anonymous clients, so name the project URL (no email).
 USER_AGENT = (
-    "pylopdf-real-world-v2-benchmark/0.1 (+https://github.com/justsml/jev-pdf; "
+    "pdfust-real-world-v2-benchmark/0.1 (+https://github.com/justsml/jev-pdf; "
     "PDF research corpus, sequential low-volume downloads)"
 )
 MAX_DOWNLOAD_BYTES = 60 * 1024 * 1024
@@ -880,9 +880,9 @@ path, tool = sys.argv[1], sys.argv[2]
 start = time.perf_counter()
 out = {"tool": tool}
 try:
-    if tool == "pylopdf":
-        import pylopdf
-        with pylopdf.open(path) as doc:
+    if tool == "pdfust":
+        import pdfust
+        with pdfust.open(path) as doc:
             text = doc.get_text()
             pages = doc.page_count
     elif tool == "pymupdf":
@@ -1187,14 +1187,14 @@ def _cmd_health(args: argparse.Namespace) -> None:
     for record in manifest["documents"]:
         path = directory / record["path"]
         row = {"id": record["id"], "producer_family": record.get("producer_family", "")}
-        for tool in ("pylopdf", "pdftotext", "pymupdf"):
+        for tool in ("pdfust", "pdftotext", "pymupdf"):
             row[tool] = health_pdf(path, tool)
-        texts = {tool: row[tool].pop("text", None) for tool in ("pylopdf", "pdftotext", "pymupdf")}
+        texts = {tool: row[tool].pop("text", None) for tool in ("pdfust", "pdftotext", "pymupdf")}
         for other in ("pdftotext", "pymupdf"):
-            if texts["pylopdf"] is not None and texts[other] is not None:
-                row[f"pylopdf_vs_{other}_bigram_f1"] = bigram_f1(texts["pylopdf"], texts[other])
+            if texts["pdfust"] is not None and texts[other] is not None:
+                row[f"pdfust_vs_{other}_bigram_f1"] = bigram_f1(texts["pdfust"], texts[other])
         rows.append(row)
-        tools = ("pylopdf", "pdftotext", "pymupdf")
+        tools = ("pdfust", "pdftotext", "pymupdf")
         print(record["id"], {tool: row[tool].get("nonspace", row[tool].get("error")) for tool in tools})
     measurement = (
         "Each tool runs in its own isolated subprocess, sequentially; seconds are wall time inside "
@@ -1205,8 +1205,8 @@ def _cmd_health(args: argparse.Namespace) -> None:
     )
     lines = [
         (
-            "| Document | Producer | pylopdf | pdftotext | PyMuPDF | F1 vs pdftotext | F1 vs PyMuPDF "
-            "| pylopdf s | pylopdf CPU s | pylopdf RSS MiB |"
+            "| Document | Producer | pdfust | pdftotext | PyMuPDF | F1 vs pdftotext | F1 vs PyMuPDF "
+            "| pdfust s | pdfust CPU s | pdfust RSS MiB |"
         ),
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
@@ -1216,11 +1216,11 @@ def _cmd_health(args: argparse.Namespace) -> None:
             return f"ERROR {result['error'][:60]}" if "error" in result else str(result["nonspace"])
 
         lines.append(
-            f"| {row['id']} | {row['producer_family']} | {cell(row['pylopdf'])} | "
+            f"| {row['id']} | {row['producer_family']} | {cell(row['pdfust'])} | "
             f"{cell(row['pdftotext'])} | {cell(row['pymupdf'])} | "
-            f"{row.get('pylopdf_vs_pdftotext_bigram_f1', '')} | {row.get('pylopdf_vs_pymupdf_bigram_f1', '')} | "
-            f"{row['pylopdf'].get('seconds', '')} | {row['pylopdf'].get('cpu_seconds', '')} | "
-            f"{round(row['pylopdf'].get('peak_rss_kib', 0) / 1024, 1)} |"
+            f"{row.get('pdfust_vs_pdftotext_bigram_f1', '')} | {row.get('pdfust_vs_pymupdf_bigram_f1', '')} | "
+            f"{row['pdfust'].get('seconds', '')} | {row['pdfust'].get('cpu_seconds', '')} | "
+            f"{round(row['pdfust'].get('peak_rss_kib', 0) / 1024, 1)} |"
         )
     (directory / "health.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
@@ -1240,12 +1240,12 @@ def _cmd_candidates(args: argparse.Namespace) -> None:
     ).stdout.decode("utf-8", "replace")
     (out / f"p{page}.pdftotext.txt").write_text(layout)
     script = (
-        "import sys, warnings, pymupdf, pylopdf\nwarnings.simplefilter('ignore')\n"
+        "import sys, warnings, pymupdf, pdfust\nwarnings.simplefilter('ignore')\n"
         "p, n, o = sys.argv[1], int(sys.argv[2]) - 1, sys.argv[3]\n"
         "with pymupdf.open(p) as d: open(o + '.pymupdf.txt', 'w').write(d[n].get_text())\n"
-        "with pylopdf.open(p) as d:\n"
-        "    pg = d[n]\n    open(o + '.pylopdf.txt', 'w').write(pg.get_text())\n"
-        "    open(o + '.pylopdf.md', 'w').write(d.to_markdown(pages=[n]))\n"
+        "with pdfust.open(p) as d:\n"
+        "    pg = d[n]\n    open(o + '.pdfust.txt', 'w').write(pg.get_text())\n"
+        "    open(o + '.pdfust.md', 'w').write(d.to_markdown(pages=[n]))\n"
     )
     subprocess.run([sys.executable, "-c", script, str(pdf), str(page), str(out / f"p{page}")], check=True)
     subprocess.run(

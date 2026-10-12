@@ -7,7 +7,7 @@ import zlib
 import pytest
 from conftest import build_pdf, build_raw_pdf
 
-import pylopdf
+import pdfust
 
 
 def _compressed_embfile_pdf(
@@ -15,7 +15,7 @@ def _compressed_embfile_pdf(
     *,
     filter_name: bytes = b"/FlateDecode",
 ) -> bytes:
-    """Build one attachment without asking pylopdf to decode it first."""
+    """Build one attachment without asking pdfust to decode it first."""
     encoded = zlib.compress(payload) if filter_name in {b"/FlateDecode", b"/Fl"} else payload
     return build_raw_pdf(
         {
@@ -38,24 +38,24 @@ def _compressed_embfile_pdf(
 
 
 def test_embfile_add_get_roundtrip() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     payload = b"\x00\x01binary\xff\xfe" * 100
     doc.embfile_add("invoice.xml", payload, filename="請求書データ.xml", desc="請求書の構造化データ")
     assert doc.embfile_names() == ["invoice.xml"]
     assert doc.embfile_get("invoice.xml") == payload
 
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert reopened.embfile_names() == ["invoice.xml"]
     assert reopened.embfile_get("invoice.xml") == payload
 
 
 def test_embfile_add_bounds_input_atomically() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     payload = b"1234"
 
     doc.embfile_add("exact.bin", payload, max_size=len(payload))
     before = doc.tobytes()
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.embfile_add("too-large.bin", payload, max_size=len(payload) - 1)
     assert caught.value.code == "embedded_file_size"
     assert doc.tobytes() == before
@@ -67,29 +67,29 @@ def test_embfile_add_bounds_input_atomically() -> None:
 
 @pytest.mark.parametrize("max_size", [True, 1.5, "1024"])
 def test_embfile_add_rejects_non_integer_size_limits(max_size: object) -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     with pytest.raises(TypeError, match="max_size"):
         doc.embfile_add("x", b"x", max_size=max_size)  # type: ignore[arg-type]
 
 
 @pytest.mark.parametrize("max_size", [0, -1])
 def test_embfile_add_rejects_non_positive_size_limits(max_size: int) -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     with pytest.raises(ValueError, match="max_size"):
         doc.embfile_add("x", b"x", max_size=max_size)
 
 
 def test_embfile_survives_compressed_and_garbage_save() -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     payload = b"repetitive " * 1000
     doc.embfile_add("data.txt", payload)
     data = doc.tobytes(garbage=True, deflate=True, object_streams=True)
-    reopened = pylopdf.open(stream=data)
+    reopened = pdfust.open(stream=data)
     assert reopened.embfile_get("data.txt") == payload
 
 
 def test_embfile_multiple_names_sorted() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc.embfile_add("b.txt", b"B")
     doc.embfile_add("a.txt", b"A")
@@ -111,7 +111,7 @@ def test_inline_filespec_reads_do_not_mutate_document() -> None:
             4: b"<< /Type /EmbeddedFile /Length 3 >>\nstream\nabc\nendstream",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     before = len(doc.tobytes())
 
     for _ in range(4):
@@ -127,25 +127,25 @@ def test_inline_filespec_reads_do_not_mutate_document() -> None:
 
 
 def test_embfile_del_removes() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc.embfile_add("a.txt", b"A")
     doc.embfile_add("b.txt", b"B")
     doc.embfile_del("a.txt")
     assert doc.embfile_names() == ["b.txt"]
-    reopened = pylopdf.open(stream=doc.tobytes())
+    reopened = pdfust.open(stream=doc.tobytes())
     assert reopened.embfile_names() == ["b.txt"]
 
 
 def test_embfile_errors() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc.embfile_add("a.txt", b"A")
-    with pytest.raises(pylopdf.PdfError, match="already exists"):
+    with pytest.raises(pdfust.PdfError, match="already exists"):
         doc.embfile_add("a.txt", b"other")
-    with pytest.raises(pylopdf.PdfError, match="not found"):
+    with pytest.raises(pdfust.PdfError, match="not found"):
         doc.embfile_get("missing.txt")
-    with pytest.raises(pylopdf.PdfError, match="not found"):
+    with pytest.raises(pdfust.PdfError, match="not found"):
         doc.embfile_del("missing.txt")
     with pytest.raises(ValueError, match="name"):
         doc.embfile_add("", b"x")
@@ -153,9 +153,9 @@ def test_embfile_errors() -> None:
 
 def test_embfile_get_bounds_compressed_output_before_materializing_it() -> None:
     payload = b"attachment payload " * 100_000
-    doc = pylopdf.open(stream=_compressed_embfile_pdf(payload))
+    doc = pdfust.open(stream=_compressed_embfile_pdf(payload))
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.embfile_get("payload.bin", max_size=1024)
     assert caught.value.code == "embedded_file_size"
     assert "1024-byte" in str(caught.value)
@@ -165,10 +165,10 @@ def test_embfile_get_bounds_compressed_output_before_materializing_it() -> None:
 
 
 def test_embfile_get_applies_the_same_limit_to_uncompressed_content() -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc.embfile_add("raw.bin", b"1234")
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.embfile_get("raw.bin", max_size=3)
     assert caught.value.code == "embedded_file_size"
     assert doc.embfile_get("raw.bin", max_size=4) == b"1234"
@@ -176,35 +176,35 @@ def test_embfile_get_applies_the_same_limit_to_uncompressed_content() -> None:
 
 def test_embfile_get_accepts_filter_abbreviations_and_rejects_decode_failures() -> None:
     payload = b"abbreviated Flate attachment"
-    abbreviated = pylopdf.open(
+    abbreviated = pdfust.open(
         stream=_compressed_embfile_pdf(payload, filter_name=b"/Fl"),
     )
     assert abbreviated.embfile_get("payload.bin") == payload
 
-    unsupported = pylopdf.open(
+    unsupported = pdfust.open(
         stream=_compressed_embfile_pdf(b"encoded", filter_name=b"/DCTDecode"),
     )
-    with pytest.raises(pylopdf.PdfError, match="failed to decode attachment"):
+    with pytest.raises(pdfust.PdfError, match="failed to decode attachment"):
         unsupported.embfile_get("payload.bin")
 
-    malformed = pylopdf.open(
+    malformed = pdfust.open(
         stream=_compressed_embfile_pdf(b"encoded", filter_name=b"123"),
     )
-    with pytest.raises(pylopdf.PdfError, match="invalid Filter"):
+    with pytest.raises(pdfust.PdfError, match="invalid Filter"):
         malformed.embfile_get("payload.bin")
 
     filters = b"[" + b" ".join([b"/FlateDecode"] * 17) + b"]"
-    excessive = pylopdf.open(
+    excessive = pdfust.open(
         stream=_compressed_embfile_pdf(b"", filter_name=filters),
     )
-    with pytest.raises(pylopdf.LimitError) as filter_count:
+    with pytest.raises(pdfust.LimitError) as filter_count:
         excessive.embfile_get("payload.bin")
     assert filter_count.value.code == "stream_filter_count"
 
 
 @pytest.mark.parametrize("max_size", [True, 1.5, "1024"])
 def test_embfile_get_rejects_non_integer_size_limits(max_size: object) -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc.embfile_add("x", b"x")
     with pytest.raises(TypeError, match="max_size"):
@@ -213,7 +213,7 @@ def test_embfile_get_rejects_non_integer_size_limits(max_size: object) -> None:
 
 @pytest.mark.parametrize("max_size", [0, -1])
 def test_embfile_get_rejects_non_positive_size_limits(max_size: int) -> None:
-    doc = pylopdf.Document()
+    doc = pdfust.Document()
     doc.new_page()
     doc.embfile_add("x", b"x")
     with pytest.raises(ValueError, match="max_size"):
@@ -231,7 +231,7 @@ def test_embfile_name_tree_reference_cycle_is_visited_once() -> None:
             6: b"<< /Type /EmbeddedFile /Length 1 >>\nstream\nx\nendstream",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     assert doc.embfile_names() == ["x.txt"]
     assert doc.embfile_get("x.txt") == b"x"
 
@@ -248,8 +248,8 @@ def test_embfile_name_tree_rejects_excessive_depth() -> None:
     objects[37] = "<< /Type /Filespec /F (x.txt) /EF << /F 38 0 R >> >>"
     objects[38] = b"<< /Type /EmbeddedFile /Length 1 >>\nstream\nx\nendstream"
 
-    doc = pylopdf.open(stream=build_raw_pdf(objects))
-    with pytest.raises(pylopdf.PdfError, match="32-level safety limit"):
+    doc = pdfust.open(stream=build_raw_pdf(objects))
+    with pytest.raises(pdfust.PdfError, match="32-level safety limit"):
         doc.embfile_names()
 
 
@@ -265,10 +265,10 @@ def test_embfile_name_tree_rejects_excessive_entries_without_partial_output() ->
             6: b"<< /Type /EmbeddedFile /Length 1 >>\nstream\nx\nendstream",
         }
     )
-    doc = pylopdf.open(stream=pdf)
-    with pytest.raises(pylopdf.PdfError, match="4096-entry safety limit"):
+    doc = pdfust.open(stream=pdf)
+    with pytest.raises(pdfust.PdfError, match="4096-entry safety limit"):
         doc.embfile_names()
-    with pytest.raises(pylopdf.PdfError, match="4096-entry safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-entry safety limit"):
         doc.embfile_get("name-0")
 
 
@@ -284,9 +284,9 @@ def test_embfile_add_refuses_to_create_an_unreadable_oversized_tree() -> None:
             6: b"<< /Type /EmbeddedFile /Length 1 >>\nstream\nx\nendstream",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     before = doc.tobytes()
-    with pytest.raises(pylopdf.PdfError, match="4096-entry safety limit is reached"):
+    with pytest.raises(pdfust.PdfError, match="4096-entry safety limit is reached"):
         doc.embfile_add("one-too-many", b"x")
     assert doc.tobytes() == before
 
@@ -305,14 +305,14 @@ def test_embfile_writes_bound_inline_filespec_clone_shape() -> None:
             4: b"<< /Type /EmbeddedFile /Length 1 >>\nstream\nx\nendstream",
         }
     )
-    doc = pylopdf.open(stream=pdf)
+    doc = pdfust.open(stream=pdf)
     before = doc.tobytes()
 
     assert doc.embfile_names() == ["x.txt"]
     assert doc.embfile_get("x.txt") == b"x"
-    with pytest.raises(pylopdf.PdfError, match="4096-object safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-object safety limit"):
         doc.embfile_add("y.txt", b"y")
-    with pytest.raises(pylopdf.PdfError, match="4096-object safety limit"):
+    with pytest.raises(pdfust.PdfError, match="4096-object safety limit"):
         doc.embfile_del("x.txt")
     assert doc.tobytes() == before
 
@@ -329,10 +329,10 @@ def test_embfile_add_bounds_input_metadata_atomically(
     filename: str | None,
     desc: str | None,
 ) -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     before = doc.tobytes()
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         doc.embfile_add("x", b"x", filename=filename, desc=desc)
     assert caught.value.code == "embedded_file_input_size"
     assert doc.tobytes() == before
@@ -340,7 +340,7 @@ def test_embfile_add_bounds_input_metadata_atomically(
 
 @pytest.mark.parametrize("method", ["get", "del"])
 def test_embfile_lookup_bounds_name_input_before_traversal(method: str) -> None:
-    doc = pylopdf.open(stream=build_pdf(["Hello"]))
+    doc = pdfust.open(stream=build_pdf(["Hello"]))
     doc.embfile_add("x", b"x")
     before = doc.tobytes()
     name = "é" * (512 * 1024 + 1)
@@ -351,7 +351,7 @@ def test_embfile_lookup_bounds_name_input_before_traversal(method: str) -> None:
         else:
             doc.embfile_del(name)
 
-    with pytest.raises(pylopdf.LimitError) as caught:
+    with pytest.raises(pdfust.LimitError) as caught:
         call()
 
     assert caught.value.code == "embedded_file_input_size"

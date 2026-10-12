@@ -349,7 +349,7 @@ def test_region_verifier_replays_source_prerequisite_raster_and_empty_yolo(
     from test_p003_boundary_run import baseline
     from test_p003_regions_run import record
 
-    import pylopdf
+    import pdfust
 
     source_record = record(tmp_path)
     source_record["id"] = "p0"
@@ -369,7 +369,7 @@ def test_region_verifier_replays_source_prerequisite_raster_and_empty_yolo(
     }
     settings = processor._configuration(config)
     source = {key: child["source"][key] for key in ("page_size", "words")}
-    with pylopdf.open(source_record["pdf_path"]) as document:
+    with pdfust.open(source_record["pdf_path"]) as document:
         page = document[0]
         viewport = list(page.rect)
         pixels = page.render(
