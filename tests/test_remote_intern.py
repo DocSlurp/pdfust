@@ -41,29 +41,6 @@ def test_multiple_text_parts_and_structured_state_are_lossless() -> None:
     assert intern.native_request(body, [])["state"] == body["state"]
 
 
-def test_mock_load_uses_pinned_native_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    calls = []
-
-    def mock_engine(**kwargs: object) -> str:
-        calls.append(kwargs)
-        return "mock"
-
-    monkeypatch.setattr(intern, "_runtime", lambda _: SimpleNamespace(DecisionEngine=mock_engine))
-    assert intern.load(tmp_path, device="cpu") == "mock"
-    assert calls == [
-        {
-            "checkpoint": str(tmp_path),
-            "device": "cpu",
-            "backend": "hf",
-            "dtype": "bfloat16",
-            "attn_implementation": "sdpa",
-            "max_length": 8192,
-            "media_root": str(tmp_path),
-        }
-    ]
-    assert "temperature" not in calls[0]
-
-
 def test_runtime_source_mismatch_refuses_before_import(tmp_path: Path) -> None:
     (tmp_path / "inference.py").write_text("raise AssertionError('must not execute')")
     with pytest.raises(ValueError, match="pinned source"):

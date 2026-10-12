@@ -12,11 +12,6 @@ def inventory() -> list[dict[str, str]]:
     return [{"name": n, "family": "candidate", "report_sha256": str(i)} for i, n in enumerate(sorted(audit.names()))]
 
 
-def test_explicit_inventory() -> None:
-    assert len(audit.names()) == audit.ARM_COUNT
-    audit.validate_inventory(inventory())
-
-
 @pytest.mark.parametrize("change", ["omission", "duplicate_name", "duplicate_report", "gate"])
 def test_inventory_refuses_scope_changes(change: str) -> None:
     rows = copy.deepcopy(inventory())

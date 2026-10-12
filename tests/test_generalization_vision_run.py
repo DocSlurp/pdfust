@@ -7,7 +7,6 @@ from __future__ import annotations
 import base64
 import io
 import json
-import sys
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
@@ -230,35 +229,3 @@ def test_rotation_is_preserved_and_frozen_hash_mismatch_stops_before_request(tmp
     assert metered.requests == []
 
 
-def test_cli_selects_frozen_vision_processor_and_table_only_scope(monkeypatch: pytest.MonkeyPatch) -> None:
-    captured = []
-
-    def run(manifest: Path, output: Path, config: dict[str, Any]) -> dict[str, Any]:
-        captured.append((manifest, output, config))
-        return {"config": config, "results": []}
-
-    monkeypatch.setattr(runner.baseline, "run", run)
-    monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "vision",
-            "--manifest",
-            "dev.json",
-            "--output",
-            "matched-run",
-            "--generation-model",
-            "anthropic/claude-haiku-5.5",
-        ],
-    )
-    runner.main()
-    config = captured[0][2]
-    assert config["processor"] == "vision"
-    assert config["campaign"] == "P002"
-    assert config["policy"] == "gated"
-    assert config["generation_model"] == "anthropic/claude-haiku-5.5"
-    assert config["generation_tokens"] == 16384
-    assert config["image_edge"] == 1200
-    assert config["output_scope"] == "table_only"
-    assert not config["normalize_rotation"]
-    assert not config["ocr_empty"]

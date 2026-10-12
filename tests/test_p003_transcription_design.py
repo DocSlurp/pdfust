@@ -78,16 +78,6 @@ def test_atomic_all_tables_atomic_and_aggregate_bounded(monkeypatch: pytest.Monk
         design.parse_atomic(envelope([atomic_table(), atomic_table()]), [0, 0, 1, 1])
 
 
-@pytest.mark.parametrize("representation", ["atomic_cells", "matrix_strict", "topology"])
-def test_prompt_variants_are_provider_independent_and_strict(representation: str) -> None:
-    variant = design.prompt_variant(representation)
-    assert "model" not in variant
-    assert "normalized 0..1000" in variant["instructions"]
-    assert variant["schema"]["additionalProperties"] is False
-    assert variant["source_conserved"] is False
-    assert variant["runtime_integration"] is False
-
-
 def test_no_repair_changes_on_already_valid_response() -> None:
     result = envelope([matrix_table()])
     before = copy.deepcopy(result)

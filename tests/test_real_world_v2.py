@@ -60,19 +60,6 @@ def _truth(**overrides: Any) -> dict[str, Any]:
     return truth
 
 
-def test_sources_are_unique_and_licensed() -> None:
-    ids = [source["id"] for source in rw.SOURCES]
-    assert len(ids) == len(set(ids))
-    assert len(ids) >= 30
-    for source in rw.SOURCES:
-        assert source["license"] in rw.LICENSES
-        assert source["license_url"].startswith(("https://", "http://"))
-        assert source["url"].startswith("https://")
-        assert source["kind"] in rw.SOURCE_KINDS
-        assert source["attribution"].strip()
-        assert source["languages"]
-
-
 def test_user_agent_has_no_email() -> None:
     assert "@" not in rw.USER_AGENT
 

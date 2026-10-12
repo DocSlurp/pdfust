@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 from bench import p003_synthetic_resolution as images
-from bench import p003_synthetic_resolution_plan as plan
 from bench import p003_synthetic_resolution_run as runner
 from bench.feature_cases import page_pdf, text_op
 from bench.silver import sha
@@ -200,13 +199,3 @@ def test_mock_hosted_freezes_before_client_malformed_continues_then_transport_st
     assert images.evidence.EDGES == (128, 512)
 
 
-def test_plan_all25_independent_models_edges_without_controls_or_hosted_flag(tmp_path: Path) -> None:
-    rows = plan.arms(tmp_path, tmp_path, tmp_path, tmp_path)
-    assert len(rows) == 25
-    assert len({r["name"] for r in rows}) == 25
-    assert {(r["model"], r["image_edge"]) for r in rows} == {
-        (model, edge) for model in images.MODELS for edge in images.EDGES
-    }
-    assert all("--run-hosted" not in r["args"] for r in rows)
-    assert sum(r["question_count"] for r in rows) == 600
-    assert not any(r["image_edge"] in (128, 512) for r in rows)

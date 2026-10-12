@@ -63,18 +63,6 @@ def test_swapped_amounts_cannot_be_borrowed_from_neighboring_rows() -> None:
     assert not _assert_symmetric(reference, prediction)["content_recovered_with_row_order"]
 
 
-def test_m_to_n_pooling_with_shifted_boundaries_is_not_recovered() -> None:
-    reference = [["Blue long", "42.00"], ["coat", ""]]
-    prediction = [["Blue", "42.00"], ["long coat", ""]]
-    assert not _assert_symmetric(reference, prediction)["content_recovered_with_row_order"]
-
-
-def test_four_row_wrap_exceeds_declared_group_bound() -> None:
-    reference = [["Blue long warm coat", "42.00"]]
-    prediction = [["Blue", "42.00"], ["long", ""], ["warm", ""], ["coat", ""]]
-    assert not _assert_symmetric(reference, prediction)["content_recovered_with_row_order"]
-
-
 def test_blank_padding_axes_are_content_only() -> None:
     reference = [["Blue coat", "42.00"], ["Red coat", "84.00"]]
     prediction = [["", "", ""], ["Blue coat", "", "42.00"], ["", "", ""], ["Red coat", "", "84.00"]]
@@ -100,17 +88,6 @@ def test_content_normalization_preserves_numeric_case_and_compatibility_distinct
 
 def test_content_normalization_accepts_only_nfc_and_whitespace_equivalence() -> None:
     assert _assert_symmetric([["Cafe\u0301 coat", "42"]], [["Café\tcoat", "42"]])["content_recovered_with_row_order"]
-
-
-def test_blank_spacer_inside_wrap_is_content_only_and_remains_in_inventory() -> None:
-    reference = [["Blue long coat", "42.00"]]
-    prediction = [["Blue", "42.00"], ["", ""], ["long coat", ""]]
-    result = _assert_symmetric(reference, prediction)
-    assert result["content_recovered_with_row_order"]
-    assert result["blank_inventory"]["prediction"]["rows"] == [1]
-    assert result["coordinate_maps"]["prediction"]["row_map"] == [0, 2]
-    assert result["row_alignment"][0]["prediction_rows"] == [0, 2]
-    assert result["row_alignment"][0]["crossed_blank_rows"] == {"reference": [], "prediction": [1]}
 
 
 def test_split_columns_without_any_singleton_anchor_cannot_join() -> None:

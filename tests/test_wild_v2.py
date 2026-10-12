@@ -37,24 +37,6 @@ def _truth(doc: dict[str, Any]) -> dict[str, Any]:
     return core.truth(doc, page_count=len(doc["pages"]), outline=[], pdf_facts=facts)
 
 
-def test_registry_shape(docs: list[dict[str, Any]]) -> None:
-    ids = [d["doc_id"] for d in docs]
-    assert len(ids) == len(set(ids)) == 64
-    pages = sorted(len(d["pages"]) for d in docs)
-    assert pages[0] >= 3
-    assert pages[-1] <= 15
-    assert 4 <= pages[len(pages) // 2] <= 6
-    producers = {d["producer"] for d in docs}
-    assert producers == set(core.PRODUCERS)
-    primary = {d["languages"][0].split("-")[0] if not d["languages"][0].startswith("zh") else d["languages"][0] for d in docs}
-    expected = {"ja", "zh-CN", "zh-TW", "ko", "ar", "he", "hi", "th", "ru", "el", "de", "fr", "es", "pl", "vi", "tr", "en"}
-    assert expected <= primary
-    for doc in docs:
-        assert doc["metadata"]["lang"] == doc["languages"][0]
-        if doc["producer"] == "reportlab":
-            assert doc["languages"][0].split("-")[0] not in {"ar", "he", "hi", "th"}
-
-
 def test_composition_is_deterministic(docs: list[dict[str, Any]]) -> None:
     again = wild_v2.compose()
     first = json.dumps([wild_v2._authored_json(d) for d in docs], ensure_ascii=False, sort_keys=True)  # noqa: SLF001

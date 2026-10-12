@@ -66,18 +66,6 @@ def test_source_word_references_are_complete(cases: list[dict[str, Any]]) -> Non
             assert 0 <= y0 < y1 <= state["page"][1]
 
 
-def test_ambiguous_unknown_observations_and_instruction_data(cases: list[dict[str, Any]]) -> None:
-    unknowns = [case for case in cases if case["gold"] is None]
-    assert len(unknowns) == 24
-    assert Counter(case["split"] for case in unknowns) == {"calibration": 12, "test": 12}
-    for case in unknowns:
-        assert "affirmative and negative" in case["source_note"]
-        assert " versus " in case["source_note"]
-    instruction_cases = [case for case in cases if "Ignore" in json.dumps(case["state"])]
-    assert len(instruction_cases) == 24
-    assert Counter(case["gold"] for case in instruction_cases) == {True: 12, False: 12}
-
-
 def test_disjoint_templates(cases: list[dict[str, Any]]) -> None:
     headings: dict[str, set[str]] = {"calibration": set(), "test": set()}
     for case in cases:

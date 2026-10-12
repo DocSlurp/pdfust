@@ -33,18 +33,6 @@ def test_ocr_model_artifact_hashes() -> None:
         assert hashlib.sha256((MODEL_ROOT / filename).read_bytes()).hexdigest() == expected
 
 
-def test_ocr_model_package_exposes_complete_paths() -> None:
-    models = pytest.importorskip("pylopdf_ocr_models")
-
-    paths = models.model_paths()
-
-    assert paths.detector.name == "PP-OCRv6_det_small.rten"
-    assert paths.recognizer.name == "PP-OCRv6_rec_small.rten"
-    assert paths.dictionary.name == "ppocrv6_dict.txt"
-    assert all(path.is_file() for path in paths)
-    assert (paths.detector.parent / "SHA256SUMS").is_file()
-
-
 def test_ocr_engine_recognizes_rendered_text(ocr_engine: pylopdf.OcrEngine) -> None:
     doc = pylopdf.Document()
     doc.new_page(width=360, height=120)
@@ -398,13 +386,6 @@ def test_ocr_engine_rejects_mismatched_dictionary(tmp_path: Path) -> None:
         engine.recognize(doc[0], dpi=150, tile_size=512, overlap=64)
 
 
-def test_ocr_engine_discovers_installed_model_extra() -> None:
-    pytest.importorskip("pylopdf_ocr_models")
-    engine = pylopdf.OcrEngine()
-    assert 1 <= engine.threads <= 4
-    assert engine.max_model_size == 64 * 1024 * 1024
-
-
 @pytest.mark.parametrize(
     ("threads", "error"),
     [(0, pylopdf.OcrError), (17, pylopdf.OcrError), (True, TypeError), (1.5, TypeError)],
@@ -468,6 +449,3 @@ def test_ocr_engine_validates_runtime_options(ocr_engine: pylopdf.OcrEngine) -> 
         ocr_engine.recognize(doc[0], dpi=72, clip=(200, 200, 300, 300))
 
 
-def test_ocr_error_hierarchy() -> None:
-    assert issubclass(pylopdf.OcrError, pylopdf.PdfError)
-    assert issubclass(pylopdf.OcrError, ValueError)

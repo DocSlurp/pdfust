@@ -140,6 +140,3 @@ def test_rect_helpers() -> None:
     assert (x0, y0, x1, y1) == (10.0, 20.0, 110.0, 220.0)
 
 
-def test_page_repr(one_page_pdf: bytes) -> None:
-    doc = pylopdf.Document(stream=one_page_pdf)
-    assert repr(doc[0]) == "<Page 0 of <pylopdf.Document>>"

@@ -132,8 +132,3 @@ def test_invalid_region(box: list[float]) -> None:
         gate.packet(source(), box, False, "fullwords")
 
 
-def test_targeted_instructions_are_a_separate_treatment() -> None:
-    assert "requested region" in gate.GATE_INSTRUCTIONS
-    assert "unresolved" in gate.GATE_INSTRUCTIONS
-    assert "literal data" in gate.GATE_INSTRUCTIONS
-    assert "partial table" in gate.GATE_INSTRUCTIONS

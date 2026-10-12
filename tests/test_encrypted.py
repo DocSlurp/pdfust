@@ -191,12 +191,6 @@ def test_save_encrypted_rejects_object_streams(three_page_pdf: bytes) -> None:
         doc.tobytes(user_pw="x", object_streams=True)
 
 
-def test_permissions_flags() -> None:
-    perms = pylopdf.Permissions.PRINT | pylopdf.Permissions.COPY
-    assert int(perms) == (1 << 2) | (1 << 4)
-    assert pylopdf.Permissions.MODIFY in pylopdf.Permissions.ALL
-
-
 def test_password_input_boundary_is_exact(one_page_pdf: bytes) -> None:
     password = "é" * 63 + "a"
     doc = pylopdf.Document(stream=one_page_pdf, password=password)

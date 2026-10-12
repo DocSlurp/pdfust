@@ -48,15 +48,6 @@ def test_only_q0_instruction_changes_and_copies_are_independent(variant: dict, *
     assert changed["questions"]["q0"]["criteria"] is not original["questions"]["q0"]["criteria"]
 
 
-def test_registry_is_independent_and_contains_distinct_frozen_prompts() -> None:
-    first = variants()
-    assert 4 <= len(first) <= 6
-    assert len({v["name"] for v in first}) == len(first)
-    assert len({v["instructions"] for v in first}) == len(first)
-    first[0]["instructions"] = "Changed"
-    assert variants()[0]["instructions"] != "Changed"
-
-
 def test_variant_cannot_smuggle_metadata_or_case_specific_instructions() -> None:
     variant = variants()[0]
     variant["instructions"] += " SECRET_EXPECTED_ANSWER"

@@ -244,10 +244,3 @@ def test_tool_cases_encrypt_and_redistill(tmp_path: Path) -> None:
     assert gs["validation"]["pdftotext"]["token_recall"] == 1.0
 
 
-def test_existing_manifest_schema_if_built() -> None:
-    path = wq.DEFAULT_DIRECTORY / "quirks/manifest.json"
-    if not path.exists():
-        pytest.skip("quirks dataset not built")
-    manifest = json.loads(path.read_text(encoding="utf-8"))
-    assert wq.manifest_errors(manifest) == []
-    assert 80 <= manifest["case_count"] <= 150

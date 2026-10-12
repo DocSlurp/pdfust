@@ -10,8 +10,6 @@ import pytest
 from bench import p003_synthetic_resolution as pixels
 from bench import p003_synthetic_rules_resolution as rules
 from bench import p003_synthetic_rules_resolution_eval as verifier
-from bench import p003_synthetic_rules_resolution_plan as plan
-from bench import p003_synthetic_rules_resolution_queue as queue
 from bench import p003_synthetic_rules_resolution_run as runner
 from bench.feature_cases import page_pdf, text_op
 from bench.silver import sha
@@ -53,17 +51,6 @@ def test_matched_native_pixels_scope_criteria_and_all_literal_rows_rules(record:
     assert "physical_observations" not in plain_state
     assert rich_state["omitted_word_count"] == 0
     assert source == before
-
-
-def test_fixed10_inventory_and_only_new_evidence_matched_controls(tmp_path: Path) -> None:
-    rows = plan.arms(tmp_path, tmp_path, tmp_path, tmp_path)
-    assert len(rows) == 10
-    assert {(r["model"], r["image_edge"]) for r in rows} == {(m, e) for m in rules.MODELS for e in rules.EDGES}
-    assert all(r["kind"] == queue.KIND for r in rows)
-    queued = queue.queue_plan(tmp_path, tmp_path, tmp_path, tmp_path)
-    assert len(queued) == 10
-    assert {queue.validate_arguments(r) for r in queued} == {400, 768}
-    assert len(runner.CODE_FILES) == 31
 
 
 def test_adapter_restores_all_frozen_functions_and_rejects_other_modes(

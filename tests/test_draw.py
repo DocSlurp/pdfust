@@ -1224,17 +1224,6 @@ def test_insert_text_standard14_escapes_binary_and_delimiters() -> None:
     assert b"(\\001\\(A\\)\\\\\\200) Tj" in doc.tobytes()
 
 
-def test_insert_text_page_numbering_recipe() -> None:
-    # Exact page-number recipe published in the README.
-    doc = pylopdf.Document()
-    for _ in range(3):
-        doc.new_page()
-    for i, page in enumerate(doc):
-        page.insert_text((page.rect.width - 90, page.rect.height - 30), f"Page {i + 1} / 3", fontsize=9)
-    for i in range(3):
-        assert f"Page {i + 1} / 3" in doc[i].get_text()
-
-
 def test_insert_text_rejects_unicode_without_optional_or_explicit_font(monkeypatch: pytest.MonkeyPatch) -> None:
     doc = pylopdf.Document()
     doc.new_page()

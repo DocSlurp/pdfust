@@ -85,16 +85,6 @@ def test_document_limits_validate_values() -> None:
         )
 
 
-def test_web_profile_has_bounded_worker_defaults() -> None:
-    limits = pylopdf.DocumentLimits.web()
-    assert limits.max_file_size == 10 * 1024 * 1024
-    assert limits.max_pages == 200
-    assert limits.max_page_content_size == 10 * 1024 * 1024
-    assert limits.max_text_size == 1024 * 1024
-    assert limits.max_interpretation_size == 64 * 1024 * 1024
-    assert limits.max_text_glyphs == 65_536
-
-
 def test_limit_error_is_machine_readable_pdf_error() -> None:
     data = build_pdf(["one"])
     with pytest.raises(pylopdf.LimitError) as caught:

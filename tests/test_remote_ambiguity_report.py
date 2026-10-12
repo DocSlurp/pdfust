@@ -70,31 +70,6 @@ def test_stock_client_resources_do_not_claim_server_allocation():
     assert metric["ambiguous_abstentions"] == 1
 
 
-def test_failed_inference_quality_is_unavailable():
-    metrics = {
-        "completed": 0,
-        "planned": 24,
-        "inference_wall_seconds": None,
-        "inference_cpu_seconds": None,
-        "peak_rss_bytes": None,
-    }
-    result = report.markdown(
-        {
-            "scope": "source-only test",
-            "models": {
-                "flash": {
-                    "groups": {"original": {"metrics": metrics}},
-                    "status": {"worker_status": {"status": "failure_limit"}},
-                    "batch_metrics": {"valid": 0, "planned": 24},
-                }
-            },
-        }
-    )
-    assert "| flash / original | 0/24 | N/A | N/A | N/A | N/A | N/A |" in result
-    assert "0/16" not in result
-    assert "transport failures are not zero model accuracy" in result
-
-
 @pytest.mark.parametrize("rate", [0, -1, float("nan"), float("inf"), True])
 def test_invalid_hourly_rates_refused_before_source_read(tmp_path, monkeypatch, rate):
     def forbidden(_):

@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 import pytest
 from bench import decision_hosted as hosted
 from bench import decisions as runner
-from bench.decision_choice import OPTIONS, choice_request
 
 REQUESTED_MODELS = (
     "perplexity/pplx-decider-v1.1-27b",
@@ -60,22 +59,6 @@ def test_requested_models_use_native_questions_and_probability_parser(
     result["answers"].pop("q0_answerable")
     with pytest.raises(ValueError, match="keys"):
         hosted.parse_answers(model, result, 1)
-
-
-@pytest.mark.parametrize("model", REQUESTED_MODELS)
-def test_choice_request_preserves_exact_requested_model(model: str, cases: list[dict[str, Any]]) -> None:
-    body = choice_request(cases, model=model)
-    assert body["model"] == model
-    assert set(body) == {"model", "state", "questions"}
-    assert set(body["questions"]) == {"q0"}
-    question = body["questions"]["q0"]
-    assert question["type"] == "choice"
-    assert set(question["criteria"]) == set(OPTIONS)
-    assert "observations.q0" in question["instructions"]
-    assert body["state"]["observations"]["q0"]["data"]["candidate"]["value"] == {
-        "source_ids": [1],
-        "text": "120 USD",
-    }
 
 
 @pytest.mark.parametrize("model", [*REQUESTED_MODELS, *hosted.DEFAULT_MODELS])

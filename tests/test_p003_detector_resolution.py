@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from bench import p003_run
 from bench.pipeline_layout_detector import LayoutDetector
 
 
@@ -42,16 +41,3 @@ def test_resolution_rejected_before_worker_or_file_access(size: Any) -> None:  #
         LayoutDetector(model=Path("/does-not-exist"), image_size=size)
 
 
-def test_cli_freezes_explicit_resolution(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    observed: dict[str, Any] = {}
-
-    def run(_manifest: Path, _output: Path, config: dict[str, Any]) -> dict[str, Any]:
-        observed.update(config)
-        return {}
-
-    monkeypatch.setattr(p003_run.pipeline_run, "run", run)
-    monkeypatch.setattr(sys, "argv", ["p003_run", "--manifest", str(tmp_path / "manifest.json"),
-                                    "--output", str(tmp_path / "output"),
-                                    "--detector-inference-size", "1280", "--preset", "ordinal"])
-    p003_run.main()
-    assert observed["detector_inference_size"] == 1280

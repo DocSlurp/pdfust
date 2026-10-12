@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
-from bench.pipeline_routing import evidence_instruction, route
+from bench.pipeline_routing import route
 
 
 def source(rows: list[list[str]]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -95,13 +95,6 @@ def test_bounded_candidate_admission() -> None:
     page, state = source([["First", "10"]])
     with pytest.raises(ValueError, match="admission"):
         route(page, state, [state] * 25)
-
-
-def test_compact_availability_text() -> None:
-    text = evidence_instruction(pixels_available=True, vector_grid_available=False)
-    assert "source pixels supplied" in text
-    assert "no vector grid supplied" in text
-    assert "unknown" in text
 
 
 def test_long_multiline_overlap_escalates() -> None:

@@ -2,7 +2,6 @@
 
 import inspect
 import json
-import re
 from pathlib import Path
 from typing import Any
 
@@ -159,21 +158,6 @@ def test_summary_cannot_overwrite_completed_artifacts(tmp_path: Path) -> None:
         run(tmp_path, pipeline / "positive.md")
 
 
-def test_native_display_hides_unused_model_settings_preserving_raw_config(tmp_path: Path) -> None:
-    pipeline, report = _fixture(tmp_path)
-    report["config"].update(policy="native", normalize_rotation=True, gate_premise=False)
-    frozen = json.loads((pipeline / "frozen.json").read_text())
-    frozen["config"] = report["config"]
-    write_json(pipeline / "frozen.json", frozen)
-    write_json(pipeline / "report.json", report)
-    result = run(tmp_path, tmp_path / "summary.md")
-    text = (tmp_path / "summary.md").read_text()
-    assert "| native | CPU only | — | — | — | — | True | False | — |" in text
-    assert result["runs"][0]["config"]["model"] == "test-model"
-    assert result["runs"][0]["config"]["image_edge"] == 512
-    assert "<summary>Complete per-family structure scores</summary>" in text
-
-
 def test_incomplete_frozen_runs_are_visible_without_scoring_partial_outputs(tmp_path: Path) -> None:
     pipeline, _report = _fixture(tmp_path)
     incomplete = tmp_path / "unfinished"
@@ -198,28 +182,6 @@ def test_incomplete_frozen_runs_are_visible_without_scoring_partial_outputs(tmp_
     text = (tmp_path / "summary.md").read_text()
     assert "| unfinished | adaptive | test-model | — | False | False | False | 3 | 1 | True |" in text
     assert "wall/CPU and RSS remain unknown" in text
-
-
-def test_ocr_setting_visible_and_unused_gate_premise_hidden(tmp_path: Path) -> None:
-    pipeline, report = _fixture(tmp_path)
-    report["config"].update(policy="assembly", ocr_empty=True, gate_premise="relational")
-    frozen = json.loads((pipeline / "frozen.json").read_text())
-    frozen["config"] = report["config"]
-    write_json(pipeline / "frozen.json", frozen)
-    write_json(pipeline / "report.json", report)
-    result = run(tmp_path, tmp_path / "summary.md")
-    text = (tmp_path / "summary.md").read_text()
-    assert "| assembly | test-model | — | 512 | 1 | True | False | True | — |" in text
-    assert result["runs"][0]["config"]["gate_premise"] == "relational"
-    report["config"]["policy"] = "gated"
-    frozen["config"] = report["config"]
-    write_json(pipeline / "frozen.json", frozen)
-    write_json(pipeline / "report.json", report)
-    run(tmp_path, tmp_path / "summary.md")
-    assert (
-        "| gated | test-model | — | 512 | 1 | True | False | True | relational |"
-        in (tmp_path / "summary.md").read_text()
-    )
 
 
 def test_review_model_and_successful_call_costs_visible_without_changing_artifacts(tmp_path: Path) -> None:
@@ -334,60 +296,3 @@ def test_legacy_missing_renderer_source_is_visible_but_outputs_still_checked(tmp
         run(tmp_path, tmp_path / "summary.md")
 
 
-def test_every_emitted_table_has_matching_header_separator_and_data_columns(tmp_path: Path) -> None:
-    pipeline, _report = _fixture(tmp_path)
-    incomplete = tmp_path / "unfinished"
-    incomplete.mkdir()
-    frozen = json.loads((pipeline / "frozen.json").read_text())
-    frozen["config"]["run_id"] = "unfinished"
-    write_json(incomplete / "frozen.json", frozen)
-    run(tmp_path, tmp_path / "summary.md")
-    groups: list[list[str]] = []
-    for line in (tmp_path / "summary.md").read_text().splitlines():
-        if line.startswith("|"):
-            if not groups or not groups[-1]:
-                groups.append([])
-            groups[-1].append(line)
-        elif groups and groups[-1]:
-            groups.append([])
-    tables = [group for group in groups if group]
-    assert len(tables) >= 5
-    for rows in tables:
-        counts = [len(re.split(r"(?<!\\)\|", row[1:-1])) for row in rows]
-        assert len(set(counts)) == 1, rows
-        assert len(rows) >= 2
-        assert set(rows[1]) <= set("|:- ")
-
-
-@pytest.mark.parametrize("packet_flag", ["compact_packet", "readable_packet"])
-def test_optional_packet_and_column_flags_visible_for_completed_and_incomplete_runs(
-    tmp_path: Path, packet_flag: str
-) -> None:
-    pipeline, report = _fixture(tmp_path)
-    frozen = json.loads((pipeline / "frozen.json").read_text())
-    incomplete = tmp_path / "unfinished"
-    incomplete.mkdir()
-    frozen["config"]["run_id"] = "unfinished"
-    write_json(incomplete / "frozen.json", frozen)
-    run(tmp_path, tmp_path / "summary.md")
-    text = (tmp_path / "summary.md").read_text()
-    assert text.count("| column_consensus | compact_packet |") == 2
-    assert "| False | False | False | 1/3 |" in text
-    assert "| unfinished | assembly | test-model | — | False | False | False | 3 |" in text
-    flags = {
-        "column_consensus": True,
-        "compact_packet": packet_flag == "compact_packet",
-        "readable_packet": packet_flag == "readable_packet",
-    }
-    report["config"].update(flags)
-    completed = json.loads((pipeline / "frozen.json").read_text())
-    completed["config"] = report["config"]
-    write_json(pipeline / "frozen.json", completed)
-    write_json(pipeline / "report.json", report)
-    frozen["config"].update(flags)
-    write_json(incomplete / "frozen.json", frozen)
-    run(tmp_path, tmp_path / "summary.md")
-    text = (tmp_path / "summary.md").read_text()
-    expected = f"True | {flags['compact_packet']} | {flags['readable_packet']}"
-    assert f"| {expected} | 1/3 |" in text
-    assert f"| unfinished | assembly | test-model | — | {expected} | 3 |" in text

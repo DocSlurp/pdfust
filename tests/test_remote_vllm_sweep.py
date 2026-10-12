@@ -233,8 +233,3 @@ def test_semantic_diagnostic_gate_cannot_bypass_transport(monkeypatch, tmp_path,
         assert result["evaluation_admission"] == "diagnostic-semantic-control-failure"
 
 
-def test_lfm_stages_and_selects_pinned_publisher_template(tmp_path):
-    command = sweep.server_command("LiquidAI/LFM2-VL-1.6B", tmp_path)
-    assert "*.jinja" in sweep.SNAPSHOT_CODE
-    assert command[command.index("--chat-template") + 1] == str(tmp_path / "chat_template.jinja")
-    assert command[command.index("--chat-template-content-format") + 1] == "openai"

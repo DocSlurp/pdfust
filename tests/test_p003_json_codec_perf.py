@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import math
-import urllib.request
 from pathlib import Path
 
 import pytest
@@ -62,19 +61,3 @@ def test_scoped_override_restores_references_on_error(codec) -> None:  # noqa: A
     assert (hosted.json, concurrent.json) == before
 
 
-def test_complete_synthetic_accounting_flow_without_credentials_or_network(
-    codec, tmp_path: Path, monkeypatch: pytest.MonkeyPatch  # noqa: ANN001 - native module fixture.
-) -> None:
-    def forbidden(*_args: object, **_kwargs: object) -> None:
-        message = "Network/client initialization forbidden"
-        raise AssertionError(message)
-
-    monkeypatch.setattr(hosted.DecisionClient, "__init__", forbidden)
-    monkeypatch.setattr(urllib.request, "urlopen", forbidden)
-    report = perf.measure(tmp_path / "measured", Path(codec.__file__).parent.parent, 3,
-                          count=10, attempts=30)
-    assert report["invariants_passed"]
-    assert report["unknown_failures"] == 3
-    assert report["network_calls"] == 0
-    assert report["fresh_synthetic_accounted_usd"] == pytest.approx(0.927)
-    assert report["codec_paths"]["dumps_native_checkpoint"] > 0

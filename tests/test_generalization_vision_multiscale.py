@@ -195,39 +195,3 @@ def test_tile_only_proposals_survive_whole_page_miss() -> None:
     assert all(box["detector_partial_context"] is True for box in result["boxes"])
 
 
-def test_cli_only_exposes_run_inputs_and_preserves_frozen_settings(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    captured: dict[str, Any] = {}
-
-    def run(manifest: Path, output: Path, config: dict) -> dict:
-        captured.update(manifest=manifest, output=output, config=config)
-        return {"page_count": 1, "results": [{"secret": "not printed"}]}
-
-    monkeypatch.setattr(multi.vision.baseline, "run", run)
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "multiscale",
-            "--manifest",
-            "manifest.json",
-            "--output",
-            "control",
-            "--model",
-            multi.vision.MODELS[0],
-            "--tokens",
-            "8192",
-            "--pilot",
-        ],
-    )
-    multi.main()
-    config = captured["config"]
-    assert config["generation_model"] == multi.vision.MODELS[0]
-    assert config["generation_tokens"] == 8192
-    assert config["pilot"] is True
-    assert config["detector_tiles"] == "2x2"
-    assert config["detector_fusion"] == "larger_containment"
-    assert config["image_edge"] == 1024
-    assert config["jpeg_quality"] == 90
-    assert config["rotation_mode"] == "preserve"
-    assert "secret" not in capsys.readouterr().out

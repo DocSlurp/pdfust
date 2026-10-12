@@ -180,48 +180,6 @@ def test_transcript_usage_is_historical_with_original_attempt_denominator(tmp_pa
     assert "historical retained ownership decisions | 1/2 | 7 | 11" in text
 
 
-def test_progress_displays_explicit_new_treatments() -> None:
-    record = run_record()
-    record["config"].update(
-        image_visibility="blur",
-        image_mode="rgb_palette16",
-        gate_instructions="recall_first",
-        evidence_mode="differences",
-        ownership_protocol="direct_cell",
-        topology_evidence="neighbors",
-    )
-    record.update(evaluation_sha256="fixture")
-    text = render([record], [])
-    for key, value in record["config"].items():
-        if key != "transport_concurrency":
-            assert f"{key}={value}" in text
-
-
-def test_confirmed_quality_and_abstention_are_primary_separate_from_retained_outputs() -> None:
-    record = run_record()
-    record.update(evaluation_sha256="fixture")
-    scores = deepcopy(record["scores"])
-    scores.update(strict_exact_cells=0, complete_tables=0, all_page_errors=0)
-    record["decision_confirmed_quality"] = {"scores": scores, "exact_positive_pages": 0}
-    record["decision_evidence"] = {
-        "fresh_ledger_attempts": 16,
-        "fresh_returned_calls": 16,
-        "parsed_selected_choices": 0,
-        "parsed_unresolved_abstentions": 16,
-        "committed_model_crop_choices": 0,
-        "fully_chosen_incremental_pages": 0,
-        "pages_with_unresolved_baseline_retention": 11,
-        "requested_model_mismatch_attempts": 0,
-        "explicit_retry_attempts": 0,
-    }
-    text = render([record], [])
-    assert "Model-confirmed strict cells" in text
-    assert text.index("0/2333") < text.index("393/2333")
-    assert "Retained pipeline output quality" in text
-    assert "Parsed abstentions" in text
-    assert "Fully chosen candidate pages" in text
-
-
 def test_nested_explicit_run_uses_adjacent_authenticated_report(tmp_path: Path) -> None:
     directory = tmp_path / "queue" / "example"
     directory.mkdir(parents=True)

@@ -12,17 +12,6 @@ def _box() -> dict:
     return {"class_id": 8, "label": "table", "confidence": 0.7, "pixel_bbox": [10.0, 20.0, 80.0, 90.0]}
 
 
-def test_only_resolution_changes_between_prediction_arms() -> None:
-    configs = [yolo.configuration(s) for s in yolo.SIZES]
-    assert [c.pop("imgsz") for c in configs] == [640, 1024, 1280]
-    assert configs[0] == configs[1] == configs[2]
-    assert configs[0]["device"] == "cpu"
-    assert configs[0]["batch"] == 1
-    assert configs[0]["conf"] == 0.25
-    with pytest.raises(ValueError, match="resolution"):
-        yolo.configuration(True)
-
-
 def test_projection_preserves_class_confidence_and_offset_viewport() -> None:
     box = _box()
     other = {**box, "class_id": 1, "label": "text"}

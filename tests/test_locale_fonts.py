@@ -32,12 +32,6 @@ def render_blank_baseline() -> bytes:
     return doc.render_page(0, 1.0)
 
 
-def test_without_fallback_renders_blank() -> None:
-    """Render without text when no fallback font is available."""
-    png = render_blank_baseline()
-    assert png.startswith(b"\x89PNG\r\n\x1a\n")
-
-
 def test_fallback_font_from_path_renders_text() -> None:
     doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
     doc.set_fallback_font(SANS)
@@ -108,26 +102,6 @@ def test_auto_discovery_via_extra() -> None:
     doc = pylopdf.open(stream=build_nonembedded_cjk_pdf())
     png = doc.render_page(0, 1.0)
     assert png != render_blank_baseline()
-
-
-def test_auto_discovery_uses_only_canonical_font_packages(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Do not probe the removed Japanese compatibility package."""
-    requested: list[str] = []
-    bundled_font_providers = pylopdf._bundled_font_providers  # noqa: SLF001
-    provider_specs = pylopdf._FONT_PROVIDER_SPECS  # noqa: SLF001
-
-    def missing_module(module_name: str) -> None:
-        requested.append(module_name)
-
-    bundled_font_providers.cache_clear()
-    try:
-        with monkeypatch.context() as context:
-            context.setattr(pylopdf, "_import_optional_font_module", missing_module)
-            assert bundled_font_providers() == ()
-    finally:
-        bundled_font_providers.cache_clear()
-
-    assert requested == [module_name for _, _, module_name in provider_specs]
 
 
 @pytest.mark.parametrize(

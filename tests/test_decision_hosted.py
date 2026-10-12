@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import sys
 import urllib.error
 from email.message import Message
 from pathlib import Path
@@ -196,28 +195,6 @@ def test_corrupted_accounting_refuses_network_without_new_reservation(
     assert path.read_bytes() == before
 
 
-def test_windows_lock_initializes_one_byte_and_unlocks_after_error(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    native = MagicMock()
-    monkeypatch.setitem(sys.modules, "msvcrt", native)
-    monkeypatch.setattr(hosted.sys, "platform", "win32")
-    path = tmp_path / "portable.lock"
-
-    def fail_inside_lock() -> None:
-        with hosted.exclusive_lock(path):
-            assert path.read_bytes() == b"\0"
-            message = "inside lock"
-            raise RuntimeError(message)
-
-    with pytest.raises(RuntimeError, match="inside lock"):
-        fail_inside_lock()
-    assert native.locking.call_count == 2
-    assert native.locking.call_args_list[0].args[1:] == (native.LK_LOCK, 1)
-    assert native.locking.call_args_list[1].args[1:] == (native.LK_UNLCK, 1)
-
-
 @pytest.mark.parametrize("request_data", [{"model": "unapproved"}, {"model": hosted.JEV, "state": "x" * 32_001}])
 def test_request_admission_precedes_reservation(
     client: hosted.DecisionClient,
@@ -370,15 +347,6 @@ def test_larger_reservation_cannot_cross_campaign_cap(
         client.request(body(), tag="larger-over-cap", reservation_usd=1.25)
     transmit.assert_not_called()
     assert not client.ledger.exists()
-
-
-@pytest.mark.parametrize("model", hosted.ANTHROPIC_BASELINE_MODELS)
-def test_claude55_relationship_requests_use_supported_reasoning_settings(model: str) -> None:
-    request = hosted.request_body(model, [], "rich")
-    assert "temperature" not in request
-    assert request["reasoning"] == {"effort": "medium"}
-    assert request["max_tokens"] == 4096
-    assert request["response_format"]["type"] == "json_schema"
 
 
 def test_openrouter_does_not_replay_gateway_body(

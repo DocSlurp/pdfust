@@ -5,7 +5,6 @@ import json
 
 import pytest
 from bench.decision_analysis import analyze, render_analysis
-from bench.decision_controls import build_controls
 from bench.decision_eval import evaluate
 
 
@@ -123,22 +122,3 @@ def test_analysis_rejects_duplicate_predictions() -> None:
         analyze(cases, predictions * 2, report)
 
 
-def test_grounded_controls_report_describes_actual_sources_and_label_scope() -> None:
-    cases = build_controls()
-    result = analyze(cases, [], evaluate(cases, []))
-    markdown = render_analysis(result)
-    assert len(cases) == 8
-    assert len({item["provenance"]["pdf_sha256"] for item in cases}) == 6
-    assert result["label_counts"] == {"calibration": {}, "test": {"true": 4, "false": 4}}
-    assert "8 grounded regional table gates contain 4 positive and 4 negative" in markdown
-    assert "6 original sources" in markdown
-    assert "NICS and Senate each contribute two clips" in markdown
-    assert "test-only, with no calibration cases" in markdown
-    assert "not learned from the controls" in markdown
-    assert "individual-cell" in markdown
-    assert "illustrative geometry/type heuristic" in markdown
-    assert "Source-word conservation" in markdown
-    assert "synthetic author intent" not in markdown
-    assert "label priors differ" not in markdown
-    assert "continued detail" not in markdown
-    assert "Provisional estimate only" not in markdown

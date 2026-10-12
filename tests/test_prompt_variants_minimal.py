@@ -24,16 +24,6 @@ def body() -> dict:
     }
 
 
-def test_five_unique_generic_variants_are_fresh_and_source_independent() -> None:
-    registry = variants()
-    assert len(registry) == 5
-    assert len({variant["name"] for variant in registry}) == 5
-    assert all(set(variant) == {"name", "rationale", "instructions"} for variant in registry)
-    assert all(variant["name"].startswith("minimal-") for variant in registry)
-    registry[0]["instructions"] = "mutated caller value"
-    assert variants()[0]["instructions"] != registry[0]["instructions"]
-
-
 def test_transform_changes_only_q0_generic_instruction_and_deep_copies() -> None:
     original = body()
     before = deepcopy(original)

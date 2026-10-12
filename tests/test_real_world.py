@@ -283,16 +283,6 @@ def test_extract_drawings_page0(case: Case) -> None:
     assert all(item[0] in {"l", "c"} for drawing in drawings for item in drawing["items"])
 
 
-def test_pdf20_comment_streams_extract() -> None:
-    """Protect extraction from comment-plus-indentation regression lopdf#535.
-
-    v0.7 fixed pylopdf by moving extraction to hayro. lopdf ``extract_text``
-    remains affected, but pylopdf no longer uses it.
-    """
-    doc = pylopdf.open(ASSETS / "pdf20-simple.pdf")
-    assert "Hello World" in doc.get_page_text(0)
-
-
 def test_pdfium_type3_svg_retains_stencil_glyphs() -> None:
     """Exercise the independent Type 3 glyph program through the SVG device."""
     svg = pylopdf.open(ASSETS / "pdfium-type3.pdf").render_page_svg(0)

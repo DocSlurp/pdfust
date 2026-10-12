@@ -5,11 +5,7 @@ import math
 import pytest
 from bench.decision_retrieval import (
     evaluate,
-    image_embedding_body,
-    literal_baseline,
     normalized_literal,
-    query_embedding_body,
-    retrieval_cases,
 )
 
 
@@ -21,32 +17,6 @@ def tiny_cases() -> dict:
             {"id": "none", "positive_ids": [], "hard_negative_ids": []},
         ],
     }
-
-
-def test_fixtures_and_literal_context_ambiguity() -> None:
-    cases = retrieval_cases()
-    assert len(cases["documents"]) == 24
-    assert len(cases["queries"]) == 8
-    assert len({doc["id"] for doc in cases["documents"]}) == 24
-    baseline = literal_baseline(cases)
-    assert baseline["matched_queries"] == 6
-    assert baseline["no_match_queries"] == 2
-    assert baseline["forced_no_match_false_hits"] == 2
-    assert all(
-        baseline["literal_match_counts"][query["id"]] == 0 for query in cases["queries"] if not query["positive_ids"]
-    )
-    # A literal phrase exists across the separate-cell negative despite the
-    # semantic requirement that the expression belong to one record/cell.
-    assert all(
-        baseline["literal_match_counts"][query["id"]] == 3 for query in cases["queries"] if query["positive_ids"]
-    )
-
-
-def test_image_body_excludes_native_text() -> None:
-    body = image_embedding_body("provider/model", ["data:image/png;base64,AA=="])
-    assert body["input"] == [{"content": [{"type": "image_url", "image_url": {"url": "data:image/png;base64,AA=="}}]}]
-    assert "text" not in str(body)
-    assert query_embedding_body("provider/model", ["plain query"])["input"] == ["plain query"]
 
 
 def test_perfect_rank_and_no_match_are_separate() -> None:

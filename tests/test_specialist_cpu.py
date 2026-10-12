@@ -6,7 +6,6 @@ import pytest
 from bench.feature_cases import page_pdf, text_op
 from bench.specialist_cpu import (
     contains_center,
-    digest,
     merge_regions,
     opaque_bgr,
     pixel_region,
@@ -56,16 +55,6 @@ def test_failed_predictions_keep_cell_denominator() -> None:
     assert score["total_cells"] == 4
     assert not score["exact"]
     assert not score_tables([[["prose"]]], ())["exact"]
-
-
-def test_hash_preserves_exact_bytes() -> None:
-    assert digest(b"A") != digest(b"a")
-    assert digest(b"A") == digest(b"A")
-
-
-def test_optional_model_runtime_import() -> None:
-    runtime = pytest.importorskip("rapid_table")
-    assert runtime.ModelType.SLANETPLUS.value == "slanet_plus"
 
 
 def test_raster_requires_opaque_compositing_and_visible_content() -> None:

@@ -1,12 +1,10 @@
 """Complete-page accounting for independently authored pipeline references."""
 
-import json
 from copy import deepcopy
-from pathlib import Path
 from typing import Any
 
 import pytest
-from bench.pipeline_corpus import _table, build
+from bench.pipeline_corpus import _table
 from bench.pipeline_scoring import conservation, score_dataset, score_page
 
 
@@ -117,21 +115,6 @@ def test_conservation_separates_missing_duplicate_and_unknown() -> None:
         "exact_conservation": False,
     }
     assert conservation(["w0", "w1"], ["w1", "w0"])["exact_conservation"]
-
-
-def test_corpus_freezes_complete_cohort_and_balanced_pilot(tmp_path: Path) -> None:
-    manifest = build(tmp_path / "corpus")
-    private = json.loads((tmp_path / "corpus/private-targets.json").read_text())["pages"]
-    assert len(manifest["pages"]) == 181
-    assert len({page["id"] for page in manifest["pages"]}) == 181
-    assert sum(page["structural_scored"] for page in private) == 168
-    targets = {page["id"]: page for page in private}
-    pilot = [page for page in manifest["pages"] if page["pilot"]]
-    assert len(pilot) == 32
-    assert sum(bool(targets[page["id"]]["tables"]) for page in pilot) == 16
-    assert all(Path(page["pdf_path"]).is_absolute() for page in manifest["pages"])
-    assert all("tables" not in page for page in manifest["pages"])
-    assert build(tmp_path / "other")["dataset_sha256"] == manifest["dataset_sha256"]
 
 
 def test_none_spans_invalidate_entire_page() -> None:

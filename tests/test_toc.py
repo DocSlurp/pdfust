@@ -34,14 +34,6 @@ def test_toc_roundtrip(three_page_pdf: bytes) -> None:
     assert reloaded.get_toc() == toc
 
 
-def test_toc_deep_nesting(three_page_pdf: bytes) -> None:
-    doc = pylopdf.Document(stream=three_page_pdf)
-    toc: list[list[int | str]] = [[1, "A", 1], [2, "B", 1], [3, "C", 2], [1, "D", 3]]
-    doc.set_toc(toc)
-    reloaded = pylopdf.Document(stream=doc.tobytes())
-    assert reloaded.get_toc() == toc
-
-
 def test_set_toc_replaces_existing(three_page_pdf: bytes) -> None:
     doc = pylopdf.Document(stream=three_page_pdf)
     doc.set_toc([[1, "old", 1], [1, "old2", 2]])

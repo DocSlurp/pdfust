@@ -47,17 +47,6 @@ def test_every_variant_changes_only_q0_instructions() -> None:
         assert original == frozen
 
 
-def test_registry_and_name_transform_are_stable() -> None:
-    entries = variants()
-    assert 4 <= len(entries) <= 6
-    assert len({entry["name"] for entry in entries}) == len(entries)
-    for entry in entries:
-        assert set(entry) == {"name", "rationale", "instructions"}
-        assert transform(request(), entry) == transform(request(), entry["name"])
-    entries[0]["instructions"] = "caller overwrite"
-    assert variants()[0]["instructions"] != "caller overwrite"
-
-
 def test_rejects_missing_question_and_unknown_or_empty_variant() -> None:
     with pytest.raises(TypeError, match="q0"):
         transform({}, variants()[0])

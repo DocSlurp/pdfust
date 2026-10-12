@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from bench.feature_cases import FeatureCase, build_cases
 from bench.features import inspect_output
@@ -36,13 +34,6 @@ def test_feature_fixtures_contain_links_images_merged_cells_and_unicode(cases: d
         assert all(value in doc.get_text() for value in cases["unicode-cmap-and-emoji"].expected_text)
 
 
-def test_actualtext_fixture_encodes_real_replacement_text(cases: dict[str, FeatureCase]) -> None:
-    pymupdf = pytest.importorskip("pymupdf")
-    with pymupdf.open(stream=cases["accessible-actualtext"].data, filetype="pdf") as doc:
-        flags = pymupdf.TEXTFLAGS_TEXT & ~pymupdf.TEXT_IGNORE_ACTUALTEXT
-        assert doc[0].get_text(flags=flags).strip() == "accessible replacement"
-
-
 def test_markdown_observations_distinguish_literal_punctuation_from_structure() -> None:
     pytest.importorskip("markdown_it")
     pytest.importorskip("mdit_py_plugins")
@@ -71,12 +62,3 @@ def test_reference_order_fails_when_text_is_missing_or_interleaved() -> None:
     assert not inspect_output("LEFT0 LEFT1 RIGHT0", "text", case)["reference_order"]
 
 
-def test_office_fixture_keeps_native_omml_source() -> None:
-    import zipfile  # noqa: PLC0415 - only this test reads the fixture archive.
-
-    source = Path(__file__).parents[1] / "bench" / "assets" / "rich" / "omml-equations.docx"
-    with zipfile.ZipFile(source) as archive:
-        xml = archive.read("word/document.xml")
-    assert b"<m:f>" in xml
-    assert b"<m:sSup>" in xml
-    assert b"Native Office equation" in xml

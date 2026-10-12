@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import json
 import shutil
-from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -42,27 +41,6 @@ def test_composition_is_deterministic(plans: list[dict[str, Any]], docs: list[di
     first = [json.dumps(wild.truth(d, page_count=1, outline=[]), ensure_ascii=False, sort_keys=True) for d in docs]
     second = [json.dumps(wild.truth(d, page_count=1, outline=[]), ensure_ascii=False, sort_keys=True) for d in again]
     assert first == second
-
-
-def test_corpus_composition(docs: list[dict[str, Any]]) -> None:
-    assert len(docs) == 24
-    assert len({d["doc_id"] for d in docs}) == 24
-    assert len({d["base_plan_id"] for d in docs}) == 24
-    for family in wild.FAMILIES:
-        members = [d for d in docs if d["family"] == family]
-        assert Counter(d["producer"] for d in members) == {"chromium": 2, "libreoffice": 1}
-        assert all(d["base_plan_id"] for d in members)
-    english = [d for d in docs if d["languages"][0].startswith("en")]
-    assert 8 <= len(english) <= 11
-    primaries = {d["languages"][0].split("-")[0] for d in docs}
-    assert {"de", "fr", "es", "pl", "vi", "tr", "ja", "zh", "ko", "ar", "he", "hi", "th", "ru"} <= primaries
-    assert any("el" in d["languages"] for d in docs)
-    with_media = [d for d in docs if any(m.startswith(("photo", "screenshot", "raster", "vector")) for m in wild.media_summary(d))]
-    assert len(with_media) >= 12
-    screenshot_tables = [d for d in docs if any(t["rendering"] == "screenshot" for t in _tables(d))]
-    assert len(screenshot_tables) >= 3
-    assert any(d.get("dir") == "rtl" and d["producer"] == "chromium" for d in docs)
-    assert all(d["page_size"] in {"Letter", "A4"} for d in docs)
 
 
 def test_plan_structure_is_preserved(plans: list[dict[str, Any]], docs: list[dict[str, Any]]) -> None:

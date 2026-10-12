@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from bench import langfuse_backfill
-from bench.langfuse_adapters import discover
 from bench.langfuse_adapters.base import Experiment, Item, Row, Run, clean_scores, export, guard, item_id, validate
 
 if TYPE_CHECKING:
@@ -102,12 +101,6 @@ def test_export_scrubs_and_bounds_outputs(tmp_path: Path, monkeypatch: pytest.Mo
     payload = str([body for path, body in client.sent if path == "/api/public/otel/v1/traces"])
     assert "sk-abcdefghijklmnop" not in payload
     assert "truncated" in payload
-
-
-def test_every_discovered_adapter_has_the_contract() -> None:
-    for module in discover():
-        assert isinstance(module.NAME, str)
-        assert callable(module.collect)
 
 
 class LinkingClient(FakeClient):

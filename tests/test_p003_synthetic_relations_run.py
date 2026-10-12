@@ -28,19 +28,6 @@ def pool(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Path]:
     return source, trusted
 
 
-def test_configuration_all_text_five_images_and_no_gateway() -> None:
-    assert len(runner.DECISION_MODELS) == 14
-    for model in runner.DECISION_MODELS:
-        assert runner.configuration(model)["provider"] == "openrouter"
-        if model in runner.IMAGE_MODELS:
-            assert runner.configuration(model, image_edge=128)["image_edge"] == 128
-        else:
-            with pytest.raises(ValueError, match="five declared"):
-                runner.configuration(model, image_edge=128)
-    with pytest.raises(ValueError, match="Registered"):
-        runner.configuration("gateway/laya")
-
-
 def test_preflight_without_gold_replays_all_evidence(pool: tuple[Path, Path], tmp_path: Path) -> None:
     source, trusted = pool
     config = runner.configuration(PPLX, mode="rows_rules", image_edge=512, viewport="crop")

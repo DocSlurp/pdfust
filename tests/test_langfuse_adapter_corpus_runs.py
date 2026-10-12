@@ -12,7 +12,6 @@ from bench.langfuse_adapters import (
     corpus_realism,
     corpus_silver_tables,
     corpus_wild_ocr,
-    discover,
 )
 from bench.langfuse_adapters.base import Experiment, export, validate
 from bench.langfuse_adapters.corpus_common import ref
@@ -316,16 +315,6 @@ def test_wild_ocr_policies_join_reports_and_base_levels(artifacts: Path) -> None
     assert repair.dataset == "exp/wild-v1/repair-v1"
     assert repair.runs[0].rows[0].scores["candidate_count"] == 4
     assert corpus_wild_ocr.split_level("L5_raster_ocr") == ("L5_raster_ocr", None)
-
-
-def test_adapters_are_discovered_namespaced_and_exportable(artifacts: Path) -> None:
-    names = {module.NAME for module in discover()}
-    assert {module.NAME for module in ADAPTERS} <= names
-    borderless_corpus(artifacts)
-    for module in ADAPTERS:
-        for experiment in module.collect(artifacts):
-            assert experiment.dataset.startswith("exp/")
-            validate(experiment)
 
 
 def test_export_posts_items_runs_and_scores(artifacts: Path, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

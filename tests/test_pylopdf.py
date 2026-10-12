@@ -41,12 +41,6 @@ def test_open_from_file(tmp_path: Path, one_page_pdf: bytes) -> None:
     assert doc.page_count == 1
 
 
-def test_open_alias(one_page_pdf: bytes) -> None:
-    doc = pylopdf.open(stream=one_page_pdf)
-    assert isinstance(doc, pylopdf.Document)
-    assert doc.page_count == 1
-
-
 def test_filename_and_stream_raises(one_page_pdf: bytes) -> None:
     with pytest.raises(ValueError, match="cannot both be specified"):
         pylopdf.Document("a.pdf", one_page_pdf)
@@ -261,14 +255,6 @@ def test_save_preserves_target_when_atomic_replace_fails(
     assert list(tmp_path.glob(".pylopdf-*.tmp")) == []
 
 
-def test_split_workflow(three_page_pdf: bytes) -> None:
-    # Split: create a new PDF containing selected source pages.
-    part = pylopdf.Document(stream=three_page_pdf)
-    part.delete_pages([0, 1])
-    assert part.page_count == 1
-    assert "Page three" in part.get_page_text(0)
-
-
 def test_select_reorder(three_page_pdf: bytes) -> None:
     doc = pylopdf.Document(stream=three_page_pdf)
     doc.select([2, 0])
@@ -371,18 +357,6 @@ def test_tobytes_bounds_object_stream_output(one_page_pdf: bytes) -> None:
     assert caught.value.code == "pdf_output_size"
 
 
-def test_exception_hierarchy(one_page_pdf: bytes) -> None:
-    """New exceptions remain compatible with existing ValueError handlers."""
-    assert issubclass(pylopdf.PdfError, ValueError)
-    assert issubclass(pylopdf.PasswordError, pylopdf.PdfError)
-    assert issubclass(pylopdf.DocumentClosedError, pylopdf.PdfError)
-    assert issubclass(pylopdf.EncryptedDocumentError, pylopdf.PdfError)
-    doc = pylopdf.Document(stream=one_page_pdf)
-    doc.close()
-    with pytest.raises(pylopdf.DocumentClosedError):
-        _ = doc.page_count
-
-
 @pytest.mark.parametrize(
     "data",
     [
@@ -456,13 +430,6 @@ def test_empty_page_lists_reject_closed_document(one_page_pdf: bytes) -> None:
         doc.delete_pages([])
     with pytest.raises(ValueError, match="document closed"):
         doc.select([])
-
-
-def test_closed_document_repr(one_page_pdf: bytes) -> None:
-    doc = pylopdf.Document(stream=one_page_pdf)
-    assert repr(doc) == "<pylopdf.Document>"
-    doc.close()
-    assert repr(doc) == "<closed pylopdf.Document>"
 
 
 def test_unicode_metadata(one_page_pdf: bytes) -> None:

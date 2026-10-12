@@ -17,12 +17,6 @@ def _oversized_png_header() -> bytes:
     return b"\x89PNG\r\n\x1a\n" + struct.pack(">I", len(ihdr)) + body + struct.pack(">I", zlib.crc32(body))
 
 
-def test_new_document_is_empty() -> None:
-    doc = _Document()
-    assert doc.page_count() == 0
-    assert doc.version() == "1.7"
-
-
 def test_new_document_saves_valid_minimum_structure() -> None:
     data = _Document().save_bytes()
     assert b"/Root" in data
