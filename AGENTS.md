@@ -270,7 +270,11 @@ overview.
   `DocumentLimits.max_text_glyphs` bounds cumulative positioned glyph records
   before caching or structured Python output. Text and table interpretations
   of one page share one admission, failed pages consume no budget, and
-  refusals use `text_glyph_count`. The compatible default is `None`;
+  refusals use `text_glyph_count`. Readers count a page differently (text
+  skips unmapped and, with `skip_invisible_text`, invisible glyphs; scans and
+  glyph snapshots report them), so a re-read of an admitted page gets the
+  budget the other pages leave and the page is charged once, at its largest
+  reader; re-reads never double-charge. The compatible default is `None`;
   `DocumentLimits.web()` sets 65,536.
   When `max_text_size` is configured, plain-text assembly preflights its exact
   UTF-8 size and caps one extraction batch at twice that payload budget

@@ -411,6 +411,62 @@ def test_text_glyph_budget_is_cumulative_without_double_charging_pages() -> None
     assert cumulative[2].get_text() == ""
 
 
+def _visible_and_hidden_pdf(pages: list[tuple[str, str]]) -> bytes:
+    """One page per ``(visible, invisible)`` pair; invisible text uses render mode 3."""
+    count = len(pages)
+    objects: dict[int, bytes | str] = {
+        1: "<< /Type /Catalog /Pages 2 0 R >>",
+        2: "<< /Type /Pages /Kids [{}] /Count {} >>".format(" ".join(f"{4 + 2 * i} 0 R" for i in range(count)), count),
+        3: "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    }
+    for index, (visible, hidden) in enumerate(pages):
+        content = f"BT /F1 12 Tf 20 150 Td ({visible}) Tj ET\nBT 3 Tr /F1 12 Tf 20 100 Td ({hidden}) Tj ET"
+        objects[4 + 2 * index] = (
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] "
+            f"/Resources << /Font << /F1 3 0 R >> >> /Contents {5 + 2 * index} 0 R >>"
+        )
+        objects[5 + 2 * index] = f"<< /Length {len(content)} >>\nstream\n{content}\nendstream"
+    return build_raw_pdf(objects)
+
+
+def test_reread_by_another_reader_is_not_limited_to_the_first_readers_charge() -> None:
+    # Text leaves out glyphs without Unicode; the scan counts them. A scan after
+    # text must get the budget other pages leave, not exactly what text used.
+    path = Path(__file__).parent / "assets" / "real_world" / "pdfium-type3.pdf"
+    doc = pdfust.open(path, limits=pdfust.DocumentLimits(max_text_glyphs=3))
+    with pytest.warns(pdfust.PdfustWarning):
+        doc[0].get_text()
+    assert doc[0].scan()["stats"]["glyphs"] == 3
+
+    # Same with invisible text left out of extraction but reported by the scan.
+    hidden = pdfust.open(
+        stream=_visible_and_hidden_pdf([("AB", "CDEF")]),
+        limits=pdfust.DocumentLimits(max_text_glyphs=6),
+    )
+    hidden.skip_invisible_text = True
+    assert hidden[0].get_text() == "AB\n"
+    assert hidden[0].scan()["stats"]["invisible"] == 4
+    assert hidden[0].get_text() == "AB\n"
+    assert hidden[0].to_markdown() == "AB"
+
+
+def test_reread_charges_a_page_at_its_largest_reader() -> None:
+    doc = pdfust.open(
+        stream=_visible_and_hidden_pdf([("AB", "CDEF"), ("GH", "")]),
+        limits=pdfust.DocumentLimits(max_text_glyphs=6),
+    )
+    doc.skip_invisible_text = True
+    assert doc[0].get_text() == "AB\n"
+    doc[0].scan()
+    # Page 1 is now charged 6 glyphs (its scan), leaving nothing for page 2.
+    with pytest.raises(pdfust.LimitError) as exc:
+        doc[1].get_text()
+    assert _error_code(exc.value) == "text_glyph_count"
+    # Re-reading an admitted page still never fails or double-charges.
+    assert doc[0].get_text() == "AB\n"
+    doc[0].scan()
+
+
 def test_interpretation_budget_bounds_original_and_edited_snapshots(tmp_path: Path) -> None:
     source = build_pdf(["one"])
     exact_source = pdfust.open(

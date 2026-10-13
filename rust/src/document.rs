@@ -5258,22 +5258,38 @@ impl _Document {
         Ok(Some(limit.saturating_sub(used)))
     }
 
-    /// Record one page's text resources without charging cache re-interpretation.
+    /// Record one page's text resources. A page is charged once, at the largest
+    /// amount any reader (text, tables, spans, scan, words) interpreted for it,
+    /// so re-reading a page never double-charges it and the cumulative charge
+    /// still bounds every retained interpretation.
     fn admit_text_usage(
         &mut self,
         page_number: u32,
         text_size: usize,
         glyph_count: usize,
     ) -> PyResult<()> {
-        if self.interpreted_text_sizes.contains_key(&page_number) {
-            debug_assert!(self.interpreted_glyph_counts.contains_key(&page_number));
-            return Ok(());
-        }
-        debug_assert!(!self.interpreted_glyph_counts.contains_key(&page_number));
+        debug_assert_eq!(
+            self.interpreted_text_sizes.contains_key(&page_number),
+            self.interpreted_glyph_counts.contains_key(&page_number)
+        );
+        let text_size = text_size.max(
+            self.interpreted_text_sizes
+                .get(&page_number)
+                .copied()
+                .unwrap_or(0),
+        );
+        let glyph_count = glyph_count.max(
+            self.interpreted_glyph_counts
+                .get(&page_number)
+                .copied()
+                .unwrap_or(0),
+        );
         if let Some(limit) = self.max_text_size {
             let used = self
                 .interpreted_text_sizes
-                .values()
+                .iter()
+                .filter(|(number, _)| **number != page_number)
+                .map(|(_, value)| value)
                 .try_fold(text_size, |total, value| total.checked_add(*value))
                 .ok_or_else(|| {
                     limit_err(
@@ -5293,7 +5309,9 @@ impl _Document {
         if let Some(limit) = self.max_text_glyphs {
             let used = self
                 .interpreted_glyph_counts
-                .values()
+                .iter()
+                .filter(|(number, _)| **number != page_number)
+                .map(|(_, value)| value)
                 .try_fold(glyph_count, |total, value| total.checked_add(*value))
                 .ok_or_else(|| {
                     limit_err(
