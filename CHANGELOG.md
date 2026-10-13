@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The Rust core builds without PyO3: the default `python` feature produces the
+  extension module, and `--no-default-features --features native` exposes the
+  plain-Rust `document::native` API used by the Node binding. Wheels and the
+  PyEmscripten build are unchanged.
 - The project is renamed **pdfust**: distribution `pdfust`, import `pdfust`, native
   extension `pdfust.pdfust_core`, and data packages `pdfust-fonts-*` and
   `pdfust-ocr-models`. `jev_pdf` and `pylopdf` remain as compatibility imports with
@@ -16,6 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/PACKAGE_NAME.md`.
 
 ### Fixed
+- Markdown no longer fuses words when a span ends at a size or font change
+  (`Thecommitteesimplified` on OCR layers that size each word): the word gap
+  stays with the preceding span. Span `font` names Type 1 and other
+  non-embedded fonts from their `BaseFont` instead of reporting an empty name.
+- Owner passwords now open RC4 and AES-128 documents (revisions 2–4); the user
+  password is recovered from `/O` instead of keying the file from the owner
+  password. Files whose cross-reference **stream** carries `/Encrypt` inline
+  now open as well.
+- With `DocumentLimits.max_text_glyphs` or `max_text_size`, reading an
+  already-extracted page through a different reader (`scan()`, spans, words,
+  tables) no longer fails with a limit error because that reader counts
+  unmapped or invisible glyphs the first one skipped. The page is charged
+  once, at its largest reader, so the cumulative bound still holds.
 - Glyphs whose PDF has no (or incomplete) `ToUnicode` map are recovered from the font
   itself: the Adobe collection's CID-to-Unicode map for CJK Type 0 fonts, then glyph
   names and the Unicode `cmap` of the embedded font. On the DEV wild corpora the
@@ -35,6 +52,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without a password; previously they failed with `object ID 1 0 not found`.
 
 ### Added
+- `Document.skip_invisible_text` and `include_invisible=` on `get_text()` and
+  `to_markdown()` leave out text painted in render mode 3 (such as the OCR
+  layer under a scan). Invisible text is still extracted by default.
+- `UnsupportedEncryptionError` (a `PdfError`) for unknown security handlers or
+  unsupported `/V` or `/R` values, which previously surfaced as a password
+  error.
+- Private N-API binding for Node.js in `bindings/node` (`@pdfust/node`, never
+  published; packed by `bindings/node/scripts/pack.sh`). It serves text,
+  Markdown, words, spans, page scans, tables, drawings, images, rendering,
+  inspection, encryption and OCR fill from the same Rust engine with stable
+  error codes (`PDF_LOCKED`, `PDF_UNSUPPORTED_ENCRYPTION`, `PDF_LIMIT`,
+  `PDF_ERROR`, `INVALID_ARGUMENT`, `PDF_CLOSED`, `NATIVE_PDF_UNSUPPORTED`) and
+  `web`/`worker` limit profiles. Its single-page Markdown is a Rust port of the
+  Python builder; `tests/test_markdown_rust_parity.py` keeps them identical.
 - `Page.scan()` spans include `wmode` (vertical writing mode of the font).
 - `PDFUST_FONTS_DIR` lets native consumers without Python extras supply the CJK
   fallback fonts used for non-embedded CJK fonts at render time.
