@@ -125,7 +125,11 @@ enum Orientation {
 
 fn orientation_of((x, y): (f64, f64)) -> Orientation {
     if x.abs() >= y.abs() {
-        if x >= 0.0 { Orientation::Right } else { Orientation::Left }
+        if x >= 0.0 {
+            Orientation::Right
+        } else {
+            Orientation::Left
+        }
     } else if y >= 0.0 {
         Orientation::Down
     } else {
@@ -221,7 +225,10 @@ fn transpose(rows: &[Vec<Option<String>>]) -> Vec<Vec<Option<String>>> {
         .collect()
 }
 
-fn orient_rows(rows: Vec<Vec<Option<String>>>, orientation: Orientation) -> Vec<Vec<Option<String>>> {
+fn orient_rows(
+    rows: Vec<Vec<Option<String>>>,
+    orientation: Orientation,
+) -> Vec<Vec<Option<String>>> {
     match orientation {
         Orientation::Right => rows,
         Orientation::Down => {
@@ -274,11 +281,19 @@ fn table_to_markdown(
     let mut rendered = Vec::with_capacity(rows.len() + 1);
     rendered.push(format!(
         "| {} |",
-        rows[0].iter().map(escape_cell).collect::<Vec<_>>().join(" | ")
+        rows[0]
+            .iter()
+            .map(escape_cell)
+            .collect::<Vec<_>>()
+            .join(" | ")
     ));
     rendered.push(format!(
         "| {} |",
-        rows[0].iter().map(|_| "---").collect::<Vec<_>>().join(" | ")
+        rows[0]
+            .iter()
+            .map(|_| "---")
+            .collect::<Vec<_>>()
+            .join(" | ")
     ));
     for row in &rows[1..] {
         rendered.push(format!(
@@ -459,11 +474,9 @@ fn word_lines(words: &[BlockTuple]) -> WordLines {
     let mut map: WordLines = HashMap::new();
     for (block_index, block) in words.iter().enumerate() {
         for (line_index, line) in block.1.iter().enumerate() {
-            map.entry((block_index, line_index)).or_default().extend(
-                line.2
-                    .iter()
-                    .map(|word| (word.0, word.1.clone())),
-            );
+            map.entry((block_index, line_index))
+                .or_default()
+                .extend(line.2.iter().map(|word| (word.0, word.1.clone())));
         }
     }
     map
@@ -686,11 +699,7 @@ pub fn page_markdown(
             let spans = &line.1;
             let pending = events.at.get(&position);
             if !events.memberships[position].is_empty() {
-                let (before, after) = events
-                    .residuals
-                    .get(&position)
-                    .cloned()
-                    .unwrap_or_default();
+                let (before, after) = events.residuals.get(&position).cloned().unwrap_or_default();
                 builder.append_classified(classify_line(spans, &levels, Some(&before)));
                 if let Some(indices) = pending {
                     builder.append_tables(&rendered, indices);
@@ -721,6 +730,11 @@ pub fn page_markdown(
 pub fn overlap_ratio(left: BBox, right: BBox) -> f64 {
     let width = (left.2.min(right.2) - left.0.max(right.0)).max(0.0);
     let height = (left.3.min(right.3) - left.1.max(right.1)).max(0.0);
-    let smaller = ((left.2 - left.0) * (left.3 - left.1)).min((right.2 - right.0) * (right.3 - right.1));
-    if smaller <= 0.0 { 0.0 } else { width * height / smaller }
+    let smaller =
+        ((left.2 - left.0) * (left.3 - left.1)).min((right.2 - right.0) * (right.3 - right.1));
+    if smaller <= 0.0 {
+        0.0
+    } else {
+        width * height / smaller
+    }
 }

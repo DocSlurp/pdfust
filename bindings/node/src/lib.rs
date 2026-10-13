@@ -10,8 +10,8 @@ use std::sync::{Arc, Mutex};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use pdfust::document::native::{
-    ImageFormat, NativeDoc, NativeError, NativeLimits, NativeOcrEngine, NativeOcrFill, NativeOcrOptions,
-    NativeRender, TableStrategy,
+    ImageFormat, NativeDoc, NativeError, NativeLimits, NativeOcrEngine, NativeOcrFill,
+    NativeOcrOptions, NativeRender, TableStrategy,
 };
 
 type Shared = Arc<Mutex<Option<NativeDoc>>>;
@@ -34,7 +34,10 @@ fn release_heap() {
 fn release_heap() {}
 
 fn fail(error: NativeError) -> Error {
-    let limit = error.limit.map(|limit| format!(":{limit}")).unwrap_or_default();
+    let limit = error
+        .limit
+        .map(|limit| format!(":{limit}"))
+        .unwrap_or_default();
     Error::new(
         Status::GenericFailure,
         format!("[{}{limit}] {}", error.code, error.message),
@@ -64,7 +67,9 @@ fn bbox(value: (f64, f64, f64, f64)) -> Vec<f64> {
 }
 
 fn count(value: Option<f64>) -> Option<usize> {
-    value.filter(|value| value.is_finite() && *value >= 0.0).map(|value| value as usize)
+    value
+        .filter(|value| value.is_finite() && *value >= 0.0)
+        .map(|value| value as usize)
 }
 
 #[napi(object)]
@@ -134,7 +139,9 @@ fn limits_of(options: &Option<OpenOptions>) -> Result<NativeLimits> {
 }
 
 fn password_of(options: &Option<OpenOptions>) -> Option<&str> {
-    options.as_ref().and_then(|options| options.password.as_deref())
+    options
+        .as_ref()
+        .and_then(|options| options.password.as_deref())
 }
 
 #[napi]
@@ -726,7 +733,10 @@ impl PdfPage {
     }
 
     #[napi(ts_return_type = "Promise<string>")]
-    pub fn markdown_async(&self, options: Option<MarkdownOptions>) -> Result<AsyncTask<MarkdownTask>> {
+    pub fn markdown_async(
+        &self,
+        options: Option<MarkdownOptions>,
+    ) -> Result<AsyncTask<MarkdownTask>> {
         let strategy = strategy_of(options.as_ref().and_then(|o| o.table_strategy.as_deref()))?;
         Ok(AsyncTask::new(MarkdownTask {
             shared: Arc::clone(&self.shared),
@@ -763,7 +773,10 @@ impl PdfPage {
     pub fn scan(&self, options: Option<ScanOptions>) -> Result<PageScan> {
         let want_spans = options.as_ref().and_then(|o| o.spans).unwrap_or(true);
         let want_images = options.as_ref().and_then(|o| o.images).unwrap_or(true);
-        let coverage = options.as_ref().and_then(|o| o.host_coverage).unwrap_or(0.25);
+        let coverage = options
+            .as_ref()
+            .and_then(|o| o.host_coverage)
+            .unwrap_or(0.25);
         with_doc(&self.shared, |doc| {
             let scan = doc.scan(self.index, want_spans, want_images, coverage)?;
             Ok(PageScan {
@@ -825,7 +838,10 @@ impl PdfPage {
             Ok(doc
                 .words(self.index)?
                 .into_iter()
-                .map(|word| Word { text: word.text, bbox: bbox(word.bbox) })
+                .map(|word| Word {
+                    text: word.text,
+                    bbox: bbox(word.bbox),
+                })
                 .collect())
         })
     }
@@ -878,7 +894,10 @@ impl PdfPage {
                 paths: stats
                     .paths
                     .into_iter()
-                    .map(|path| DrawingPath { bbox: bbox(path.bbox), paint: path.paint })
+                    .map(|path| DrawingPath {
+                        bbox: bbox(path.bbox),
+                        paint: path.paint,
+                    })
                     .collect(),
             })
         })
@@ -972,10 +991,7 @@ impl PdfPage {
     /// page text and Markdown including the new invisible layer (the document is modified
     /// in memory). Rejects with `NATIVE_PDF_UNSUPPORTED` when no OCR models are configured.
     #[napi(ts_return_type = "Promise<OcrFillResult>")]
-    pub fn ocr_fill_async(
-        &self,
-        options: Option<OcrFillOptions>,
-    ) -> AsyncTask<OcrFillTask> {
+    pub fn ocr_fill_async(&self, options: Option<OcrFillOptions>) -> AsyncTask<OcrFillTask> {
         let options = options.unwrap_or(OcrFillOptions {
             policy: None,
             dpi: None,
@@ -1088,7 +1104,11 @@ impl Task for OcrFillTask {
         Ok((filled, name, policy))
     }
 
-    fn resolve(&mut self, _env: Env, (filled, engine, policy): Self::Output) -> Result<Self::JsValue> {
+    fn resolve(
+        &mut self,
+        _env: Env,
+        (filled, engine, policy): Self::Output,
+    ) -> Result<Self::JsValue> {
         Ok(OcrFillResult {
             text: filled.text,
             markdown: filled.markdown,

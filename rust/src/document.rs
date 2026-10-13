@@ -9,6 +9,7 @@ use std::io::{self, Read, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
+use crate::py::*;
 use hayro::hayro_interpret::InterpreterCache;
 use hayro::hayro_interpret::font::{FallbackFontQuery, FontData, FontQuery};
 use hayro::hayro_interpret::hayro_cmap::CidFamily;
@@ -22,7 +23,6 @@ use lopdf::{
     Bookmark, DecompressError, Dictionary, Document, LoadOptions, Object, ObjectId, PdfMetadata,
     SaveOptions, Stream, StringFormat, decode_text_string, dictionary, text_string,
 };
-use crate::py::*;
 #[cfg(not(target_os = "emscripten"))]
 use rayon::prelude::*;
 
@@ -1204,10 +1204,16 @@ fn top_level_dictionary_entries(dict: &[u8]) -> Option<Vec<(Vec<u8>, std::ops::R
 /// carries `/Encrypt <<...>>` inline. Append an incremental update holding the
 /// dictionary as an indirect object plus a new uncompressed xref stream that
 /// references it (and repeats Root/Info/ID) with `/Prev` to the old one.
-fn lift_inline_encrypt_dictionary_xref_stream(data: &[u8], previous_xref: usize) -> Option<Vec<u8>> {
+fn lift_inline_encrypt_dictionary_xref_stream(
+    data: &[u8],
+    previous_xref: usize,
+) -> Option<Vec<u8>> {
     let mut dict_open = previous_xref;
     // Skip `N G obj` and whitespace up to the dictionary.
-    let header_end = data.get(dict_open..)?.windows(3).position(|w| w == b"obj")?;
+    let header_end = data
+        .get(dict_open..)?
+        .windows(3)
+        .position(|w| w == b"obj")?;
     dict_open += header_end + 3;
     while matches!(data.get(dict_open), Some(byte) if is_pdf_whitespace(*byte)) {
         dict_open += 1;
@@ -1234,13 +1240,18 @@ fn lift_inline_encrypt_dictionary_xref_stream(data: &[u8], previous_xref: usize)
     let root = value(b"Root")?;
     let id = value(b"ID");
     let info = value(b"Info");
-    let size: u32 = std::str::from_utf8(value(b"Size")?).ok()?.trim().parse().ok()?;
+    let size: u32 = std::str::from_utf8(value(b"Size")?)
+        .ok()?
+        .trim()
+        .parse()
+        .ok()?;
     let encrypt_number = size;
     let stream_number = size.checked_add(1)?;
     u32::try_from(data.len()).ok()?;
 
     let mut out = Vec::new();
-    out.try_reserve_exact(data.len() + encrypt.len() + 512).ok()?;
+    out.try_reserve_exact(data.len() + encrypt.len() + 512)
+        .ok()?;
     out.extend_from_slice(data);
     if out.last() != Some(&b'\n') {
         out.push(b'\n');
@@ -1256,7 +1267,9 @@ fn lift_inline_encrypt_dictionary_xref_stream(data: &[u8], previous_xref: usize)
         rows.extend_from_slice(&u32::try_from(offset).ok()?.to_be_bytes());
         rows.extend_from_slice(&0u16.to_be_bytes());
     }
-    out.extend_from_slice(format!("{stream_number} 0 obj\n<</Type/XRef/Size {}", size + 2).as_bytes());
+    out.extend_from_slice(
+        format!("{stream_number} 0 obj\n<</Type/XRef/Size {}", size + 2).as_bytes(),
+    );
     out.extend_from_slice(format!("/W[1 4 2]/Index[{encrypt_number} 2]/Root ").as_bytes());
     out.extend_from_slice(root);
     if let Some(info) = info {
@@ -1268,10 +1281,16 @@ fn lift_inline_encrypt_dictionary_xref_stream(data: &[u8], previous_xref: usize)
         out.extend_from_slice(id);
     }
     out.extend_from_slice(
-        format!("/Encrypt {encrypt_number} 0 R/Prev {previous_xref}/Length {}>>\nstream\n", rows.len()).as_bytes(),
+        format!(
+            "/Encrypt {encrypt_number} 0 R/Prev {previous_xref}/Length {}>>\nstream\n",
+            rows.len()
+        )
+        .as_bytes(),
     );
     out.extend_from_slice(&rows);
-    out.extend_from_slice(format!("\nendstream\nendobj\nstartxref\n{stream_offset}\n%%EOF\n").as_bytes());
+    out.extend_from_slice(
+        format!("\nendstream\nendobj\nstartxref\n{stream_offset}\n%%EOF\n").as_bytes(),
+    );
     Some(out)
 }
 
@@ -1350,7 +1369,8 @@ fn lift_inline_encrypt_dictionary(data: &[u8]) -> Option<Vec<u8>> {
     let object_number = size;
 
     let mut out = Vec::new();
-    out.try_reserve_exact(data.len() + trailer.len() + 512).ok()?;
+    out.try_reserve_exact(data.len() + trailer.len() + 512)
+        .ok()?;
     out.extend_from_slice(data);
     if out.last() != Some(&b'\n') {
         out.push(b'\n');
@@ -1432,13 +1452,26 @@ fn user_password_from_owner(document: &Document, password: &str) -> Option<Strin
     }
     let algorithm = lopdf::encryption::PasswordAlgorithm::try_from(document).ok()?;
     let sanitized = algorithm.sanitize_password(password).ok()?;
-    if algorithm.authenticate_user_password(document, &sanitized).is_ok() {
+    if algorithm
+        .authenticate_user_password(document, &sanitized)
+        .is_ok()
+    {
         return None;
     }
-    algorithm.authenticate_owner_password(document, &sanitized).ok()?;
+    algorithm
+        .authenticate_owner_password(document, &sanitized)
+        .ok()?;
     let owner_entry = dict.get(b"O").ok()?.as_str().ok()?;
-    let length_bits = dict.get(b"Length").ok().and_then(|v| v.as_i64().ok()).unwrap_or(40);
-    let key_len = if revision >= 3 { usize::try_from(length_bits / 8).ok()? } else { 5 };
+    let length_bits = dict
+        .get(b"Length")
+        .ok()
+        .and_then(|v| v.as_i64().ok())
+        .unwrap_or(40);
+    let key_len = if revision >= 3 {
+        usize::try_from(length_bits / 8).ok()?
+    } else {
+        5
+    };
     if key_len == 0 || key_len > 16 {
         return None;
     }
@@ -1475,11 +1508,18 @@ fn user_password_from_owner(document: &Document, password: &str) -> Option<Strin
 
 /// Swap an owner password for the user password it unlocks (see
 /// `user_password_from_owner`); other passwords pass through unchanged.
-fn effective_password(data: &[u8], options: &LoadOptions, password: Option<String>) -> Option<String> {
+fn effective_password(
+    data: &[u8],
+    options: &LoadOptions,
+    password: Option<String>,
+) -> Option<String> {
     let Some(supplied) = password.as_deref() else {
         return password;
     };
-    let probe = LoadOptions { password: None, ..options.clone() };
+    let probe = LoadOptions {
+        password: None,
+        ..options.clone()
+    };
     match Document::load_mem_with_options(data, probe) {
         Ok(document) => user_password_from_owner(&document, supplied).or(password),
         Err(_) => password,
@@ -6642,17 +6682,16 @@ impl _Document {
             .checked_sub(1)
             .and_then(|index| pages.get(index as usize))
             .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
-        let text_page =
-            crate::extract::TextPage::new(
-                pdf,
-                page,
-                cache,
-                settings,
-                self.skip_invisible_text,
-                text_budget,
-                glyph_budget,
-            )
-                .map_err(text_page_limit_err)?;
+        let text_page = crate::extract::TextPage::new(
+            pdf,
+            page,
+            cache,
+            settings,
+            self.skip_invisible_text,
+            text_budget,
+            glyph_budget,
+        )
+        .map_err(text_page_limit_err)?;
         self.admit_text_usage(page_number, text_page.text_size(), text_page.glyph_count())?;
         self.warn_skipped_no_unicode(text_page.skipped_no_unicode());
 
@@ -6768,17 +6807,16 @@ impl _Document {
             .checked_sub(1)
             .and_then(|index| pages.get(index as usize))
             .ok_or_else(|| PdfError::new_err(format!("page {page_number} does not exist")))?;
-        let table_page =
-            crate::extract::TablePage::new(
-                pdf,
-                page,
-                cache,
-                settings,
-                self.skip_invisible_text,
-                text_budget,
-                glyph_budget,
-            )
-                .map_err(text_page_limit_err)?;
+        let table_page = crate::extract::TablePage::new(
+            pdf,
+            page,
+            cache,
+            settings,
+            self.skip_invisible_text,
+            text_budget,
+            glyph_budget,
+        )
+        .map_err(text_page_limit_err)?;
         self.admit_text_usage(
             page_number,
             table_page.text_size(),
@@ -8507,7 +8545,7 @@ impl _Document {
     /// decoding pixels. Fresh interpretation; text/table caches are untouched.
     ///
     /// Return `(width, height, spans, images, unmapped_glyphs, glyphs)`.
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy::type_complexity, clippy::too_many_arguments)]
     #[pyo3(signature = (page_number, *, spans=true, images=true, host_coverage=0.25, max_glyphs=65_536, max_text_bytes=1_048_576))]
     fn scan_page(
         &mut self,
@@ -8549,7 +8587,7 @@ impl _Document {
 
     /// `scan_page` with the writing mode appended to each span's direction:
     /// the twelfth span field is `(dx, dy, writing_mode)`.
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy::type_complexity, clippy::too_many_arguments)]
     #[pyo3(signature = (page_number, *, spans=true, images=true, host_coverage=0.25, max_glyphs=65_536, max_text_bytes=1_048_576))]
     fn scan_page_ext(
         &mut self,
@@ -9935,11 +9973,7 @@ impl _Document {
     /// subtype, embedded, has ToUnicode, is Type 3, subset, encoding, pages)`.
     #[allow(clippy::type_complexity)]
     #[pyo3(signature = (page_number=None))]
-    fn inspect_fonts(
-        &self,
-        py: Python<'_>,
-        page_number: Option<u32>,
-    ) -> PyResult<Vec<FontRow>> {
+    fn inspect_fonts(&self, py: Python<'_>, page_number: Option<u32>) -> PyResult<Vec<FontRow>> {
         py.detach(|| {
             let ordered = self.ordered_page_ids()?;
             let pages: Vec<(u32, ObjectId)> = match page_number {
@@ -9972,6 +10006,7 @@ impl _Document {
     }
 
     /// Locate JavaScript actions: `(scope, one-based page, trigger)` rows.
+    #[allow(clippy::type_complexity)]
     fn inspect_javascript(
         &self,
         py: Python<'_>,
@@ -9991,6 +10026,7 @@ impl _Document {
     }
 
     /// Optional content groups: `(object number, name, visible, intents)`.
+    #[allow(clippy::type_complexity)]
     fn inspect_optional_content(
         &self,
         py: Python<'_>,
@@ -10012,7 +10048,15 @@ impl _Document {
         py.detach(|| {
             Ok(crate::inspect::collect_attachments(&self.doc)
                 .into_iter()
-                .map(|file| (file.name, file.stored_size, file.size, file.mime, file.description))
+                .map(|file| {
+                    (
+                        file.name,
+                        file.stored_size,
+                        file.size,
+                        file.mime,
+                        file.description,
+                    )
+                })
                 .collect())
         })
     }
@@ -10024,25 +10068,37 @@ impl _Document {
         &self,
         py: Python<'_>,
         page_number: u32,
-    ) -> PyResult<Vec<(String, String, Option<String>, bool, bool, bool, (f64, f64, f64, f64))>> {
+    ) -> PyResult<
+        Vec<(
+            String,
+            String,
+            Option<String>,
+            bool,
+            bool,
+            bool,
+            (f64, f64, f64, f64),
+        )>,
+    > {
         py.detach(|| {
             let (crop, rotation) = self.page_display_geometry(page_number)?;
             let page_id = self.page_id(page_number)?;
             let to_display = |rect: [f64; 4]| draw::pdf_rect_to_display(crop, rotation, rect);
-            Ok(crate::inspect::collect_widgets(&self.doc, page_id, &to_display)
-                .into_iter()
-                .map(|w| {
-                    (
-                        w.kind.to_owned(),
-                        w.name,
-                        w.value,
-                        w.filled,
-                        w.read_only,
-                        w.required,
-                        (w.bbox[0], w.bbox[1], w.bbox[2], w.bbox[3]),
-                    )
-                })
-                .collect())
+            Ok(
+                crate::inspect::collect_widgets(&self.doc, page_id, &to_display)
+                    .into_iter()
+                    .map(|w| {
+                        (
+                            w.kind.to_owned(),
+                            w.name,
+                            w.value,
+                            w.filled,
+                            w.read_only,
+                            w.required,
+                            (w.bbox[0], w.bbox[1], w.bbox[2], w.bbox[3]),
+                        )
+                    })
+                    .collect(),
+            )
         })
     }
 

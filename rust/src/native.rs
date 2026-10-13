@@ -10,8 +10,8 @@ use std::collections::{BTreeSet, HashMap};
 
 use hayro::hayro_interpret::font::Glyph;
 use hayro::hayro_interpret::{
-    BlendMode, ClipPath, Context, Device, GlyphDrawMode, Image, Paint, PathDrawMode,
-    SoftMask, TransformExt, interpret_page,
+    BlendMode, ClipPath, Context, Device, GlyphDrawMode, Image, Paint, PathDrawMode, SoftMask,
+    TransformExt, interpret_page,
 };
 use kurbo::{Affine, Point, Rect};
 
@@ -495,18 +495,13 @@ impl NativeDoc {
         let info = self.doc.get_metadata(py())?;
         let get = |key: &str| info.get(key).cloned();
         let encrypted = self.doc.was_encrypted();
-        let permissions = self
-            .doc
-            .doc
-            .encryption_state
-            .as_ref()
-            .map(|state| {
-                state
-                    .permissions()
-                    .iter_names()
-                    .map(|(name, _)| name.to_ascii_lowercase())
-                    .collect()
-            });
+        let permissions = self.doc.doc.encryption_state.as_ref().map(|state| {
+            state
+                .permissions()
+                .iter_names()
+                .map(|(name, _)| name.to_ascii_lowercase())
+                .collect()
+        });
         Ok(NativeMetadata {
             title: get("Title"),
             author: get("Author"),
@@ -601,7 +596,11 @@ impl NativeDoc {
                 is_type3: font.is_type3,
                 subset: font.subset,
                 encoding: font.encoding,
-                pages: font.pages.into_iter().map(|n| n.saturating_sub(1)).collect(),
+                pages: font
+                    .pages
+                    .into_iter()
+                    .map(|n| n.saturating_sub(1))
+                    .collect(),
             })
             .collect())
     }
@@ -710,7 +709,11 @@ impl NativeDoc {
                     let (mut invisible, mut stroke, mut total) = (0u32, 0u32, 0u32);
                     for bucket in (bbox.1.floor() as i64 - 1)..=(bbox.3.ceil() as i64 + 1) {
                         for &(x, y, mode) in buckets.get(&bucket).into_iter().flatten() {
-                            if x >= bbox.0 - 1.0 && x <= bbox.2 + 1.0 && y >= bbox.1 - 1.0 && y <= bbox.3 + 1.0 {
+                            if x >= bbox.0 - 1.0
+                                && x <= bbox.2 + 1.0
+                                && y >= bbox.1 - 1.0
+                                && y <= bbox.3 + 1.0
+                            {
                                 total += 1;
                                 match mode {
                                     "invisible" => invisible += 1,
@@ -758,15 +761,37 @@ impl NativeDoc {
     ) -> NativeResult<NativeScan> {
         let number = self.page_number(index)?;
         if !host_coverage.is_finite() || !(0.0..=1.0).contains(&host_coverage) {
-            return Err(NativeError::invalid("hostCoverage must be a number from 0 to 1"));
+            return Err(NativeError::invalid(
+                "hostCoverage must be a number from 0 to 1",
+            ));
         }
         let (width, height, raw_spans, raw_images, unmapped_total, glyph_total) =
-            self.doc
-                .scan_page_ext(py(), number, spans, images, host_coverage, 65_536, 1_048_576)?;
+            self.doc.scan_page_ext(
+                py(),
+                number,
+                spans,
+                images,
+                host_coverage,
+                65_536,
+                1_048_576,
+            )?;
         let spans: Vec<NativeScanSpan> = raw_spans
             .into_iter()
             .map(
-                |(text, bbox, font, size, flags, mode, unmapped, glyphs, type3, controls, over, direction)| {
+                |(
+                    text,
+                    bbox,
+                    font,
+                    size,
+                    flags,
+                    mode,
+                    unmapped,
+                    glyphs,
+                    type3,
+                    controls,
+                    over,
+                    direction,
+                )| {
                     NativeScanSpan {
                         text,
                         bbox,
@@ -781,7 +806,7 @@ impl NativeDoc {
                         control_chars: controls,
                         over_image: over,
                         direction: (direction.0, direction.1),
-                        writing_mode: direction.2 as u8,
+                        writing_mode: direction.2,
                     }
                 },
             )
@@ -789,16 +814,18 @@ impl NativeDoc {
         let images = raw_images
             .into_iter()
             .enumerate()
-            .map(|(index, (bbox, width_px, height_px, dpi_x, dpi_y, stencil))| NativeScanImage {
-                index: index as u32,
-                bbox,
-                width_px,
-                height_px,
-                dpi_x,
-                dpi_y,
-                dpi: dpi_x.min(dpi_y),
-                stencil,
-            })
+            .map(
+                |(index, (bbox, width_px, height_px, dpi_x, dpi_y, stencil))| NativeScanImage {
+                    index: index as u32,
+                    bbox,
+                    width_px,
+                    height_px,
+                    dpi_x,
+                    dpi_y,
+                    dpi: dpi_x.min(dpi_y),
+                    stencil,
+                },
+            )
             .collect();
         let sum = |pick: &dyn Fn(&NativeScanSpan) -> u32| -> u32 {
             spans.iter().map(pick).fold(0u32, u32::saturating_add)
@@ -810,12 +837,24 @@ impl NativeDoc {
             mapped: glyphs.saturating_sub(unmapped),
             unmapped,
             invisible: sum(&|s| if s.invisible { s.glyphs } else { 0 }),
-            stroke: sum(&|s| if matches!(s.render_mode, 1 | 2) { s.glyphs } else { 0 }),
+            stroke: sum(&|s| {
+                if matches!(s.render_mode, 1 | 2) {
+                    s.glyphs
+                } else {
+                    0
+                }
+            }),
             type3: sum(&|s| if s.type3 { s.glyphs } else { 0 }),
             control_chars: sum(&|s| s.control_chars),
             over_image: sum(&|s| s.over_image),
         };
-        Ok(NativeScan { width, height, spans, images, stats })
+        Ok(NativeScan {
+            width,
+            height,
+            spans,
+            images,
+            stats,
+        })
     }
 
     /// Words with boxes, in layout order. Unlike `spans`, a line shared by
@@ -828,7 +867,10 @@ impl NativeDoc {
         for block in &blocks {
             for line in &block.1 {
                 for (bbox, text) in &line.2 {
-                    words.push(NativeWord { text: text.clone(), bbox: *bbox });
+                    words.push(NativeWord {
+                        text: text.clone(),
+                        bbox: *bbox,
+                    });
                 }
             }
         }
@@ -891,7 +933,10 @@ impl NativeDoc {
         let number = self.page_number(index)?;
         let (width, height, _) = self.size(index)?;
         let (paths, truncated) = self.doc.extract_drawings_partial(py(), number)?;
-        let mut stats = NativeDrawings { truncated, ..Default::default() };
+        let mut stats = NativeDrawings {
+            truncated,
+            ..Default::default()
+        };
         // Union area on a 1 pt grid so overlapping fills are not double counted.
         let columns = (width.ceil() as usize).clamp(1, 4096);
         let rows = (height.ceil() as usize).clamp(1, 4096);
@@ -927,18 +972,20 @@ impl NativeDoc {
         let (crop, rotation) = self.doc.page_display_geometry(number)?;
         let page_id = self.doc.page_id(number)?;
         let to_display = |rect: [f64; 4]| draw::pdf_rect_to_display(crop, rotation, rect);
-        Ok(crate::inspect::collect_widgets(&self.doc.doc, page_id, &to_display)
-            .into_iter()
-            .map(|w| NativeWidget {
-                kind: w.kind.to_owned(),
-                name: (!w.name.is_empty()).then_some(w.name),
-                value: w.value,
-                filled: w.filled,
-                read_only: w.read_only,
-                required: w.required,
-                bbox: (w.bbox[0], w.bbox[1], w.bbox[2], w.bbox[3]),
-            })
-            .collect())
+        Ok(
+            crate::inspect::collect_widgets(&self.doc.doc, page_id, &to_display)
+                .into_iter()
+                .map(|w| NativeWidget {
+                    kind: w.kind.to_owned(),
+                    name: (!w.name.is_empty()).then_some(w.name),
+                    value: w.value,
+                    filled: w.filled,
+                    read_only: w.read_only,
+                    required: w.required,
+                    bbox: (w.bbox[0], w.bbox[1], w.bbox[2], w.bbox[3]),
+                })
+                .collect(),
+        )
     }
 
     pub fn annotations(&self, index: u32) -> NativeResult<Vec<NativeAnnotation>> {
@@ -990,9 +1037,9 @@ impl NativeDoc {
         }
         let scale = scale as f32;
         // Opaque white keeps JPEG/PNG output compact and avoids alpha for scans.
-        let pixmap = self
-            .doc
-            .render_pixmap_impl(py(), number, scale, Some((255, 255, 255, 255)))?;
+        let pixmap =
+            self.doc
+                .render_pixmap_impl(py(), number, scale, Some((255, 255, 255, 255)))?;
         let (pixel_width, pixel_height) = (u32::from(pixmap.width()), u32::from(pixmap.height()));
         let (out_width, out_height, rgba) = match options.clip {
             Some(clip) => cropped_rgba_bytes(pixmap, pixel_width, pixel_height, scale, clip)
@@ -1023,12 +1070,22 @@ fn glyph_bbox(x: f64, y: f64, size: f64, advance: f64, direction: (f64, f64)) ->
         return (x, y - size * ASCENT, x + advance, y + size * DESCENT);
     }
     let block = (-direction.1, direction.0);
-    let mut bbox = (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
+    let mut bbox = (
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    );
     for inline in [0.0, advance] {
         for cross in [-size * ASCENT, size * DESCENT] {
             let px = x + direction.0 * inline + block.0 * cross;
             let py = y + direction.1 * inline + block.1 * cross;
-            bbox = (bbox.0.min(px), bbox.1.min(py), bbox.2.max(px), bbox.3.max(py));
+            bbox = (
+                bbox.0.min(px),
+                bbox.1.min(py),
+                bbox.2.max(px),
+                bbox.3.max(py),
+            );
         }
     }
     bbox
@@ -1041,7 +1098,8 @@ fn is_rect_path(items: &[crate::extract::DrawingItemTuple]) -> bool {
     }
     items.iter().all(|item| {
         item.1.len() == 2
-            && ((item.1[0].0 - item.1[1].0).abs() < 1e-3 || (item.1[0].1 - item.1[1].1).abs() < 1e-3)
+            && ((item.1[0].0 - item.1[1].0).abs() < 1e-3
+                || (item.1[0].1 - item.1[1].1).abs() < 1e-3)
     })
 }
 
@@ -1057,7 +1115,15 @@ impl Device<'_> for PlacementCollector {
     fn draw_path(&mut self, _: &kurbo::BezPath, _: Affine, _: &Paint<'_>, _: &PathDrawMode) {}
     fn push_clip_path(&mut self, _: &ClipPath) {}
     fn push_transparency_group(&mut self, _: f32, _: Option<SoftMask<'_>>, _: BlendMode) {}
-    fn draw_glyph(&mut self, _: &Glyph<'_>, _: Affine, _: Affine, _: &Paint<'_>, _: &GlyphDrawMode) {}
+    fn draw_glyph(
+        &mut self,
+        _: &Glyph<'_>,
+        _: Affine,
+        _: Affine,
+        _: &Paint<'_>,
+        _: &GlyphDrawMode,
+    ) {
+    }
     fn pop_clip_path(&mut self) {}
     fn pop_transparency_group(&mut self) {}
 
@@ -1071,14 +1137,28 @@ impl Device<'_> for PlacementCollector {
         let (width, height) = (raster.width(), raster.height());
         let [a, b, c, d, _, _] = transform.as_coeffs();
         let dpi = |scale: f64| {
-            if scale.is_finite() && scale > 0.0 { 72.0 / scale } else { 0.0 }
+            if scale.is_finite() && scale > 0.0 {
+                72.0 / scale
+            } else {
+                0.0
+            }
         };
         let (dpi_x, dpi_y) = (dpi(a.hypot(b)), dpi(c.hypot(d)));
         let (w, h) = (f64::from(width), f64::from(height));
-        let mut bbox = (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
+        let mut bbox = (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        );
         for (px, py) in [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)] {
             let p = transform * Point::new(px, py);
-            bbox = (bbox.0.min(p.x), bbox.1.min(p.y), bbox.2.max(p.x), bbox.3.max(p.y));
+            bbox = (
+                bbox.0.min(p.x),
+                bbox.1.min(p.y),
+                bbox.2.max(p.x),
+                bbox.3.max(p.y),
+            );
         }
         self.images.push(NativeImage {
             index: self.images.len() as u32,
@@ -1094,13 +1174,13 @@ fn encode(rgba: &[u8], width: u32, height: u32, options: &NativeRender) -> Nativ
     let pixels = (width as usize) * (height as usize);
     let samples = if options.gray {
         let mut luma = Vec::with_capacity(pixels);
-        for px in rgba.chunks_exact(4) {
+        for px in rgba.as_chunks::<4>().0 {
             luma.push(luma_of(px[0], px[1], px[2]));
         }
         luma
     } else {
         let mut rgb = Vec::with_capacity(pixels * 3);
-        for px in rgba.chunks_exact(4) {
+        for px in rgba.as_chunks::<4>().0 {
             rgb.extend_from_slice(&px[..3]);
         }
         rgb
@@ -1120,7 +1200,11 @@ fn encode_samples(
     options: &NativeRender,
 ) -> NativeResult<Vec<u8>> {
     let (png_color, jpeg_color, channels) = if options.gray {
-        (png::ColorType::Grayscale, jpeg_encoder::ColorType::Luma, 1u8)
+        (
+            png::ColorType::Grayscale,
+            jpeg_encoder::ColorType::Luma,
+            1u8,
+        )
     } else {
         (png::ColorType::Rgb, jpeg_encoder::ColorType::Rgb, 3u8)
     };
@@ -1143,14 +1227,18 @@ fn encode_samples(
             crate::extract::PngEncodeError::Encoding(error) => {
                 encoding_error(format!("failed to encode PNG: {error}"))
             }
-            crate::extract::PngEncodeError::OutputLimit => encoding_error("PNG output limit".into()),
+            crate::extract::PngEncodeError::OutputLimit => {
+                encoding_error("PNG output limit".into())
+            }
         }),
         ImageFormat::Jpeg => {
             let mut out = Vec::new();
             let encoder = jpeg_encoder::Encoder::new(&mut out, options.quality.clamp(1, 100));
             let (w, h) = (
-                u16::try_from(width).map_err(|_| encoding_error("image too wide for JPEG".into()))?,
-                u16::try_from(height).map_err(|_| encoding_error("image too tall for JPEG".into()))?,
+                u16::try_from(width)
+                    .map_err(|_| encoding_error("image too wide for JPEG".into()))?,
+                u16::try_from(height)
+                    .map_err(|_| encoding_error("image too tall for JPEG".into()))?,
             );
             encoder
                 .encode(&samples, w, h, jpeg_color)
@@ -1176,11 +1264,14 @@ fn encode_samples(
 fn pixmap_samples(pixmap: hayro::vello_cpu::Pixmap, gray: bool) -> NativeResult<Vec<u8>> {
     let pixels = pixmap.take_unpremultiplied();
     let channels = if gray { 1 } else { 3 };
-    let length = pixels.len().checked_mul(channels).ok_or_else(|| NativeError {
-        code: "PDF_ERROR",
-        limit: None,
-        message: "rendered raster size overflowed".to_owned(),
-    })?;
+    let length = pixels
+        .len()
+        .checked_mul(channels)
+        .ok_or_else(|| NativeError {
+            code: "PDF_ERROR",
+            limit: None,
+            message: "rendered raster size overflowed".to_owned(),
+        })?;
     let mut out = Vec::new();
     out.try_reserve_exact(length).map_err(|error| NativeError {
         code: "PDF_ERROR",
@@ -1242,7 +1333,10 @@ fn ocr_slots() -> &'static OcrSlots {
             .ok()
             .and_then(|value| value.parse::<usize>().ok())
             .map_or(1, |value| value.clamp(1, 16));
-        OcrSlots { free: std::sync::Mutex::new(limit), ready: std::sync::Condvar::new() }
+        OcrSlots {
+            free: std::sync::Mutex::new(limit),
+            ready: std::sync::Condvar::new(),
+        }
     })
 }
 
@@ -1251,9 +1345,15 @@ struct OcrSlot;
 impl OcrSlot {
     fn acquire() -> Self {
         let slots = ocr_slots();
-        let mut free = slots.free.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut free = slots
+            .free
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         while *free == 0 {
-            free = slots.ready.wait(free).unwrap_or_else(|poisoned| poisoned.into_inner());
+            free = slots
+                .ready
+                .wait(free)
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
         }
         *free -= 1;
         Self
@@ -1263,7 +1363,10 @@ impl OcrSlot {
 impl Drop for OcrSlot {
     fn drop(&mut self) {
         let slots = ocr_slots();
-        *slots.free.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) += 1;
+        *slots
+            .free
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) += 1;
         slots.ready.notify_one();
     }
 }
@@ -1287,13 +1390,19 @@ impl NativeOcrEngine {
                     .to_owned(),
             })?;
         let threads = threads.unwrap_or_else(|| {
-            std::thread::available_parallelism().map_or(1, usize::from).min(4)
+            std::thread::available_parallelism()
+                .map_or(1, usize::from)
+                .min(4)
         });
         if !(1..=16).contains(&threads) {
-            return Err(NativeError::invalid("ocr threads must be from 1 through 16"));
+            return Err(NativeError::invalid(
+                "ocr threads must be from 1 through 16",
+            ));
         }
         let key = (dir.clone(), threads);
-        let mut cache = ocr_engines().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut cache = ocr_engines()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(engine) = cache.get(&key) {
             return Ok(std::sync::Arc::clone(engine));
         }
@@ -1379,7 +1488,7 @@ impl NativeDoc {
         if !options.dpi.is_finite() || !(36.0..=600.0).contains(&options.dpi) {
             return Err(NativeError::invalid("dpi must be from 36 through 600"));
         }
-        if !(256..=2048).contains(&options.tile_size) || options.tile_size % 32 != 0 {
+        if !(256..=2048).contains(&options.tile_size) || !options.tile_size.is_multiple_of(32) {
             return Err(NativeError::invalid(
                 "tileSize must be a multiple of 32 from 256 through 2048",
             ));
@@ -1393,9 +1502,9 @@ impl NativeDoc {
         let (page_width, page_height, _) = self.size(index)?;
         let _slot = OcrSlot::acquire();
         let scale = (options.dpi / 72.0) as f32;
-        let pixmap = self
-            .doc
-            .render_pixmap_impl(py(), number, scale, Some((255, 255, 255, 255)))?;
+        let pixmap =
+            self.doc
+                .render_pixmap_impl(py(), number, scale, Some((255, 255, 255, 255)))?;
         let (pixel_width, pixel_height) = (u32::from(pixmap.width()), u32::from(pixmap.height()));
         let pixel_to_page = 72.0 / options.dpi;
         let (width, height, rgba, offset_x, offset_y) = match clip {
@@ -1406,8 +1515,9 @@ impl NativeDoc {
                     clip.2.min(page_width),
                     clip.3.min(page_height),
                 );
-                let (w, h, rgba) = cropped_rgba_bytes(pixmap, pixel_width, pixel_height, scale, clip)
-                    .map_err(NativeError::invalid)?;
+                let (w, h, rgba) =
+                    cropped_rgba_bytes(pixmap, pixel_width, pixel_height, scale, clip)
+                        .map_err(NativeError::invalid)?;
                 (
                     w,
                     h,
@@ -1438,7 +1548,11 @@ impl NativeDoc {
                 options.overlap,
                 min_confidence,
             )
-            .map_err(|message| NativeError { code: "PDF_ERROR", limit: None, message })?;
+            .map_err(|message| NativeError {
+                code: "PDF_ERROR",
+                limit: None,
+                message,
+            })?;
         Ok(found
             .into_iter()
             .map(|(x0, y0, x1, y1, text, _)| {
@@ -1459,8 +1573,10 @@ impl NativeDoc {
         let mut chunk: Vec<OcrWord> = Vec::new();
         let mut bytes = 0usize;
         for word in words.iter().filter(|word| !word.4.is_empty()) {
-            if chunk.len() == OCR_LAYER_CHUNK_WORDS || bytes + word.4.len() > OCR_LAYER_CHUNK_BYTES {
-                self.doc.insert_ocr_layer(py(), number, std::mem::take(&mut chunk), 0)?;
+            if chunk.len() == OCR_LAYER_CHUNK_WORDS || bytes + word.4.len() > OCR_LAYER_CHUNK_BYTES
+            {
+                self.doc
+                    .insert_ocr_layer(py(), number, std::mem::take(&mut chunk), 0)?;
                 bytes = 0;
             }
             bytes += word.4.len();
@@ -1482,20 +1598,28 @@ impl NativeDoc {
         options: &NativeOcrOptions,
     ) -> NativeResult<NativeOcrFill> {
         let fill_confidence = options.min_confidence.unwrap_or(OCR_FILL_MIN_CONFIDENCE);
-        let adaptive_confidence = options.min_confidence.unwrap_or(OCR_ADAPTIVE_MIN_CONFIDENCE);
+        let adaptive_confidence = options
+            .min_confidence
+            .unwrap_or(OCR_ADAPTIVE_MIN_CONFIDENCE);
         for value in [fill_confidence, adaptive_confidence] {
             if !value.is_finite() || !(0.0..=1.0).contains(&value) {
-                return Err(NativeError::invalid("minConfidence must be a number from 0 to 1"));
+                return Err(NativeError::invalid(
+                    "minConfidence must be a number from 0 to 1",
+                ));
             }
         }
         let native_words = self.words(index)?;
         let unmapped_native = self.scan(index, false, false, 0.25)?.stats.unmapped > 0;
-        let mut result = NativeOcrFill { unmapped_native, ..Default::default() };
+        let mut result = NativeOcrFill {
+            unmapped_native,
+            ..Default::default()
+        };
         if options.adaptive {
             let native_chars = self.text(index)?.trim().chars().count();
             if unmapped_native || native_chars < OCR_ADAPTIVE_MIN_NATIVE_CHARS {
                 result.replaced_pages = 1;
-                let found = self.ocr_recognize(index, engine, options, adaptive_confidence, None)?;
+                let found =
+                    self.ocr_recognize(index, engine, options, adaptive_confidence, None)?;
                 result.recognized += found.len() as u32;
                 if !found.is_empty() {
                     self.ocr_insert(index, &found)?;
@@ -1535,7 +1659,10 @@ impl NativeDoc {
             let found = self.ocr_recognize(index, engine, options, fill_confidence, None)?;
             result.recognized = found.len() as u32;
             let native_boxes: Vec<BBox> = native_words.iter().map(|word| word.bbox).collect();
-            let native_chars: usize = native_words.iter().map(|word| word.text.chars().count()).sum();
+            let native_chars: usize = native_words
+                .iter()
+                .map(|word| word.text.chars().count())
+                .sum();
             let (replace_page, keep) = _Document::select_ocr_fill_words(
                 native_boxes,
                 native_chars,
@@ -1545,7 +1672,10 @@ impl NativeDoc {
                 OCR_FILL_UNRELIABLE_RATIO,
             );
             result.replaced_pages = u32::from(replace_page);
-            let fresh: Vec<OcrWord> = keep.into_iter().filter_map(|i| found.get(i).cloned()).collect();
+            let fresh: Vec<OcrWord> = keep
+                .into_iter()
+                .filter_map(|i| found.get(i).cloned())
+                .collect();
             if !fresh.is_empty() {
                 self.ocr_insert(index, &fresh)?;
                 result.filled_words = fresh.iter().filter(|w| !w.4.is_empty()).count() as u32;

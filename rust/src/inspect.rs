@@ -54,15 +54,19 @@ pub(crate) fn pdf_text(bytes: &[u8]) -> String {
     let bytes = &bytes[..bytes.len().min(MAX_NAME_BYTES)];
     if let Some(rest) = bytes.strip_prefix(&[0xFE, 0xFF]) {
         let units: Vec<u16> = rest
-            .chunks_exact(2)
-            .map(|pair| u16::from_be_bytes([pair[0], pair[1]]))
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u16::from_be_bytes(*pair))
             .collect();
         return String::from_utf16_lossy(&units);
     }
     if let Some(rest) = bytes.strip_prefix(&[0xFF, 0xFE]) {
         let units: Vec<u16> = rest
-            .chunks_exact(2)
-            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u16::from_le_bytes(*pair))
             .collect();
         return String::from_utf16_lossy(&units);
     }
@@ -627,7 +631,7 @@ pub(crate) fn collect_attachments(doc: &Document) -> Vec<AttachmentInfo> {
             continue;
         };
         if let Some(pairs) = get(doc, node, b"Names").and_then(|o| o.as_array().ok()) {
-            for pair in pairs.chunks_exact(2) {
+            for pair in pairs.as_chunks::<2>().0 {
                 if out.len() >= MAX_ATTACHMENTS {
                     break;
                 }

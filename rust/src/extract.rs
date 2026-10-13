@@ -3361,10 +3361,7 @@ fn split_spans(line: &[GlyphRecord]) -> Result<Vec<SpanTuple>, TextPageLimit> {
             // A word gap that falls exactly on a font or size change belongs
             // to the span it follows; otherwise adjacent one-word spans (OCR
             // layers vary size per word) would concatenate without a space.
-            if i < line.len()
-                && needs_gap(previous, &line[i])
-                && !text.ends_with(' ')
-            {
+            if i < line.len() && needs_gap(previous, &line[i]) && !text.ends_with(' ') {
                 try_push_str_text(&mut text, " ", "layout span text")?;
             }
             let mut font_name = String::new();
@@ -6044,6 +6041,7 @@ struct PageMarks {
 ///
 /// The caller owns the interpreter cache so one batched call can reuse parsed
 /// fonts across pages instead of re-parsing them for every page.
+#[allow(clippy::too_many_arguments)]
 fn collect_page_marks<'a>(
     pdf: &'a Pdf,
     page: &Page<'a>,

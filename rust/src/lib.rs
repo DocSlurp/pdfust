@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "python"), allow(dead_code, unused_imports))]
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
-pub(crate) mod py;
 mod actual_text;
 mod cjk_radicals;
 pub mod document;
@@ -15,13 +14,17 @@ mod inspect;
 mod layout;
 pub mod markdown;
 mod ocr;
-#[cfg(all(any(feature = "python", feature = "native"), not(target_os = "emscripten")))]
+#[cfg(all(
+    any(feature = "python", feature = "native"),
+    not(target_os = "emscripten")
+))]
 pub(crate) mod ocr_engine;
 #[cfg(all(feature = "python", target_os = "emscripten"))]
 #[path = "ocr_engine_emscripten.rs"]
 mod ocr_engine;
 #[cfg_attr(not(feature = "python"), allow(dead_code))]
 mod pixmap;
+pub(crate) mod py;
 #[cfg(feature = "python")]
 mod python_writer;
 mod text_replace;
@@ -41,7 +44,10 @@ fn pdfust_core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("PdfError", m.py().get_type::<PdfError>())?;
     m.add("LimitError", m.py().get_type::<LimitError>())?;
     m.add("PasswordError", m.py().get_type::<PasswordError>())?;
-    m.add("UnsupportedEncryptionError", m.py().get_type::<UnsupportedEncryptionError>())?;
+    m.add(
+        "UnsupportedEncryptionError",
+        m.py().get_type::<UnsupportedEncryptionError>(),
+    )?;
     m.add("OcrError", m.py().get_type::<OcrError>())?;
     Ok(())
 }
