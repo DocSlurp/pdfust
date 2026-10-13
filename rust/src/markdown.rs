@@ -2,7 +2,9 @@
 //!
 //! This is a Rust port of `src/pdfust/_markdown.py` (single-page form) so the
 //! Node binding produces the same Markdown as `Page.to_markdown()` without
-//! Python. Keep the two in lockstep: the Node parity tests compare their output.
+//! Python. Keep the two in lockstep: `tests/test_markdown_rust_parity.py`
+//! compares them through `_Document.page_markdown` on every pytest run, and the
+//! Node parity tests repeat the check through the binding.
 
 use std::collections::{BTreeSet, HashMap};
 

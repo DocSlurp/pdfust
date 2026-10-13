@@ -8667,6 +8667,74 @@ impl _Document {
         })
     }
 
+    /// Single-page Markdown assembled in Rust (`crate::markdown`, a port of
+    /// `_markdown.py`). The Node binding serves `markdown()` from this; Python
+    /// keeps `Page.to_markdown()` on `_markdown.py`, and the parity tests in
+    /// `tests/test_markdown_rust_parity.py` hold the two byte-identical.
+    /// Heading sizes come from this page alone.
+    #[pyo3(signature = (page_number, table_strategy=Some("lines"), max_size=Some(64 * 1024 * 1024)))]
+    fn page_markdown(
+        &mut self,
+        py: Python<'_>,
+        page_number: u32,
+        table_strategy: Option<&str>,
+        max_size: Option<usize>,
+    ) -> PyResult<String> {
+        let text_tables = match table_strategy {
+            None => None,
+            Some("lines") => Some(false),
+            Some("text") => Some(true),
+            Some(_) => {
+                return Err(PyValueError::new_err(
+                    "table_strategy must be 'lines', 'text', or None",
+                ));
+            }
+        };
+        let (_, _, blocks) = self.extract_layout(py, page_number, true, false)?;
+        let mut tables = Vec::new();
+        if let Some(text_tables) = text_tables {
+            tables = self.find_tables(py, page_number, "lines", None)?;
+            if text_tables {
+                for candidate in self.find_tables(py, page_number, "text", None)? {
+                    if tables
+                        .iter()
+                        .all(|table| crate::markdown::overlap_ratio(candidate.0, table.0) < 0.5)
+                    {
+                        tables.push(candidate);
+                    }
+                }
+            }
+            tables.sort_by(|left, right| {
+                (left.0.1, left.0.0)
+                    .partial_cmp(&(right.0.1, right.0.0))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+        let words = if tables.is_empty() {
+            None
+        } else {
+            Some(self.extract_layout(py, page_number, false, true)?.2)
+        };
+        let tables: Vec<crate::markdown::MarkdownTable> = tables
+            .into_iter()
+            .map(|table| crate::markdown::MarkdownTable {
+                bbox: table.0,
+                columns: table.2 as usize,
+                cells: table.3.into_iter().map(|cell| cell.map(|c| c.1)).collect(),
+                anchors: table.4,
+            })
+            .collect();
+        crate::markdown::page_markdown(&blocks, &tables, words.as_deref(), max_size).map_err(|_| {
+            limit_err(
+                "markdown_output_size",
+                format!(
+                    "Markdown exceeds the {}-byte output limit",
+                    max_size.unwrap_or(usize::MAX)
+                ),
+            )
+        })
+    }
+
     /// Detect high-confidence tables on a one-based page.
     #[pyo3(signature = (page_number, strategy, clip=None))]
     fn find_tables(

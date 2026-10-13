@@ -205,6 +205,21 @@ overview.
 - `_Document` (`rust/src/document.rs`) is a thin conversion and error-mapping
   layer. The Python `Document` (`src/pdfust/__init__.py`) owns validation,
   zero-/one-based conversion, and closed-state handling.
+- `rust/` builds two ways. The default `python` feature (maturin passes it
+  explicitly) is the PyO3 extension. With `default-features = false` and
+  `native`, the same engine compiles without PyO3 for the private N-API
+  binding in `bindings/node` (its own Cargo workspace; repeat any
+  `[patch.crates-io]` there). `rust/src/py.rs` re-exports PyO3 or plain
+  stand-ins (`PyErr` with class/code/message, a no-op `Python` token) and
+  `rust/pdfust-shim` turns the PyO3 attributes into no-ops, so `#[pymethods]`
+  bodies serve both. `document::native` (`rust/src/native.rs`) is the
+  binding-neutral API: zero-based pages, owned structs, and stable error codes
+  mapped from the Python exception classes. `rust/src/markdown.rs` ports the
+  single-page `_markdown.py` builder for Node through `_Document.page_markdown`;
+  `tests/test_markdown_rust_parity.py` keeps the two byte-identical, so change
+  both together. Check both builds with clippy (`--all-targets` and
+  `--no-default-features --features native`) and run `npm test` in
+  `bindings/node` after `npm run build`.
 - Python API page numbers are zero-based; Rust/lopdf page numbers are one-based.
   Keep the conversion centralized in `_lopdf_page_number`.
 - `merge` and `select` must materialize inherited page attributes (`Resources`,

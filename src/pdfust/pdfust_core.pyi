@@ -330,6 +330,12 @@ class _Document:
             ]
         ],
     ]: ...
+    def page_markdown(
+        self,
+        page_number: int,
+        table_strategy: str | None = "lines",
+        max_size: int | None = 67108864,
+    ) -> str: ...
     def find_tables(
         self,
         page_number: int,

@@ -19,8 +19,14 @@ type BBox = (f64, f64, f64, f64);
 
 /// Error with a stable machine-readable code.
 ///
-/// Codes: `PDF_LOCKED` (password needed or wrong), `PDF_LIMIT` (a resource limit,
-/// see `limit`), `PDF_ERROR` (malformed or unsupported input), `INVALID_ARGUMENT`.
+/// Codes, mapped from the Python exception classes the engine raises:
+/// `PDF_LOCKED` (`PasswordError`: password needed or wrong),
+/// `PDF_UNSUPPORTED_ENCRYPTION` (`UnsupportedEncryptionError`: unknown security
+/// handler or unsupported /V or /R), `PDF_LIMIT` (`LimitError`; `limit` carries its
+/// stable `code`), `INVALID_ARGUMENT` (`ValueError`/`TypeError`), `PDF_ERROR`
+/// (`PdfError` and `OcrError`: malformed input or engine failure), and
+/// `NATIVE_PDF_UNSUPPORTED` (a capability this build cannot serve, such as OCR
+/// without models). The binding adds `PDF_CLOSED`.
 #[derive(Debug, Clone)]
 pub struct NativeError {
     pub code: &'static str,
@@ -630,60 +636,21 @@ impl NativeDoc {
     /// Markdown for one page. Heading sizes are inferred from this page alone.
     pub fn markdown(&mut self, index: u32, strategy: TableStrategy) -> NativeResult<String> {
         let number = self.page_number(index)?;
-        let settings = self.doc.interpreter_settings();
-        let _ = settings;
-        let (_, _, blocks) = self.doc.extract_layout(py(), number, true, false)?;
-        let mut tables = self.markdown_tables(number, strategy)?;
-        let words = if tables.is_empty() {
-            None
-        } else {
-            Some(self.doc.extract_layout(py(), number, false, true)?.2)
+        let strategy = match strategy {
+            TableStrategy::Lines => Some("lines"),
+            TableStrategy::Text => Some("text"),
+            TableStrategy::None => None,
         };
-        let tables: Vec<crate::markdown::MarkdownTable> = tables
-            .drain(..)
-            .map(|table| crate::markdown::MarkdownTable {
-                bbox: table.0,
-                columns: table.2 as usize,
-                cells: table.3.into_iter().map(|cell| cell.map(|c| c.1)).collect(),
-                anchors: table.4,
-            })
-            .collect();
-        crate::markdown::page_markdown(&blocks, &tables, words.as_deref(), Some(MAX_PAGE_OUTPUT))
-            .map_err(|_| NativeError {
-                code: "PDF_LIMIT",
-                limit: Some("markdown_output_size"),
-                message: format!("Markdown exceeds the {MAX_PAGE_OUTPUT}-byte output limit"),
-            })
+        Ok(self
+            .doc
+            .page_markdown(py(), number, strategy, Some(MAX_PAGE_OUTPUT))?)
     }
 
-    fn markdown_tables(
+    pub fn tables(
         &mut self,
-        number: u32,
+        index: u32,
         strategy: TableStrategy,
-    ) -> NativeResult<Vec<crate::extract::TableTuple>> {
-        if strategy == TableStrategy::None {
-            return Ok(Vec::new());
-        }
-        let mut tables = self.doc.find_tables(py(), number, "lines", None)?;
-        if strategy == TableStrategy::Text {
-            for candidate in self.doc.find_tables(py(), number, "text", None)? {
-                if tables
-                    .iter()
-                    .all(|table| crate::markdown::overlap_ratio(candidate.0, table.0) < 0.5)
-                {
-                    tables.push(candidate);
-                }
-            }
-        }
-        tables.sort_by(|left, right| {
-            (left.0.1, left.0.0)
-                .partial_cmp(&(right.0.1, right.0.0))
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-        Ok(tables)
-    }
-
-    pub fn tables(&mut self, index: u32, strategy: TableStrategy) -> NativeResult<Vec<NativeTable>> {
+    ) -> NativeResult<Vec<NativeTable>> {
         let number = self.page_number(index)?;
         let name = match strategy {
             TableStrategy::Text => "text",
