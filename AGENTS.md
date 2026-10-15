@@ -20,7 +20,10 @@ overview.
 - The user explicitly authorized pushing the completed work to private
   `origin/main` on 2026-10-08. Keep future pushes within the user's requested
   scope. Do not open public pull requests, publish packages, or upload raw
-  development artifacts. The local pre-push hook permits only this private
+  development artifacts. One exception, authorized on 2026-10-15: the `pdfust` crate
+  name is reserved on crates.io by a source-free placeholder (`pdfust` 0.0.1, built
+  outside this repository); `rust/Cargo.toml` keeps `publish = false` because
+  crates.io ignores the vendored `[patch.crates-io]` hayro-interpret. The local pre-push hook permits only this private
   repository's main branch and verifies private visibility; do not bypass it.
   GitHub Actions remain disabled. Previously published history remains public.
 - The distribution is `pdfust`, with public import `pdfust`. Keep `jev_pdf` and
