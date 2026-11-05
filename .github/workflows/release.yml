@@ -1,8 +1,14 @@
-# Release CI: build wheels for every platform and publish on a v* tag.
+# Release CI: on a v* tag, build every artifact, publish it and create the GitHub release.
 #
-# Publishing requires a Trusted Publisher configured on PyPI:
-#   PyPI → project pdfust → Publishing → GitHub
-#   owner: justsml / repository: pdfust / workflow: release.yml / environment: pypi
+#   PyPI   pdfust            wheels + sdist      environment pypi       (Trusted Publishing)
+#   npm    @docslurp/pdfust  N-API tarball       environment npm        (Trusted Publishing, provenance)
+#   crates pdfust-shim, pdfust                   environment crates-io  (Trusted Publishing; only when
+#                                                the repository variable PUBLISH_CRATES is "true")
+#   GitHub release with wheels, sdist, npm tarball, SBOM and SHA256SUMS
+#
+# No long-lived registry token is stored in the repository. Each registry needs a
+# Trusted Publisher for owner DocSlurp, repository pdfust, workflow release.yml and
+# the environment above; RELEASING.md lists the exact settings.
 name: Release
 
 on:
@@ -26,11 +32,22 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Verify tag matches the package version
+      - name: Verify tag matches every package version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          package_version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
-          test "v${package_version}" = "${GITHUB_REF_NAME}"
+          python - <<'EOF'
+          import json, os, sys, tomllib
+          tag = os.environ["GITHUB_REF_NAME"]
+          versions = {
+              "pyproject.toml": tomllib.load(open("pyproject.toml", "rb"))["project"]["version"],
+              "rust/Cargo.toml": tomllib.load(open("rust/Cargo.toml", "rb"))["package"]["version"],
+              "rust/pdfust-shim/Cargo.toml": tomllib.load(open("rust/pdfust-shim/Cargo.toml", "rb"))["package"]["version"],
+              "bindings/node/package.json": json.load(open("bindings/node/package.json"))["version"],
+          }
+          bad = {path: version for path, version in versions.items() if f"v{version}" != tag}
+          if bad:
+              sys.exit(f"tag {tag} does not match: {bad}")
+          EOF
 
   build-wheels:
     name: wheel (${{ matrix.platform.target }})
@@ -195,6 +212,42 @@ jobs:
           name: sdist
           path: dist
 
+  build-npm:
+    name: npm package (linux-x64-gnu)
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: Build the reproducible npm tarball
+        run: bash bindings/node/scripts/pack.sh "$RUNNER_TEMP/npm"
+      - name: Smoke-test the installed tarball
+        run: |
+          mkdir -p dist-npm "$RUNNER_TEMP/npm-smoke"
+          cp "$RUNNER_TEMP"/npm/*.tgz dist-npm/
+          cd "$RUNNER_TEMP/npm-smoke"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund --ignore-scripts "$GITHUB_WORKSPACE"/dist-npm/*.tgz
+          node -e "const p = require('@docslurp/pdfust'); const v = p.version(); console.log(v); if (v.version !== process.argv[1]) process.exit(1)" "${GITHUB_REF_NAME#v}"
+      - name: Attest npm tarball build provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: dist-npm/*.tgz
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-package
+          path: dist-npm/*.tgz
+
   publish:
     name: Publish to PyPI
     if: startsWith(github.ref, 'refs/tags/')
@@ -212,7 +265,11 @@ jobs:
         with:
           merge-multiple: true
           path: dist
-      - run: mkdir -p release
+      # Every artifact is downloaded; keep only Python distributions for PyPI. The npm
+      # tarball (*.tgz, if build-npm already finished) is published by publish-npm.
+      - run: |
+          rm -f dist/*.tgz
+          mkdir -p release
       - name: Generate SPDX SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -233,6 +290,56 @@ jobs:
         with:
           name: release-sbom
           path: release/sbom.spdx.json
+
+  publish-npm:
+    name: Publish to npm
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-npm, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: npm-package
+          path: dist-npm
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      # Trusted Publishing needs npm 11.5.1 or later; provenance is generated automatically.
+      - run: npm install --global npm@11.21.2
+      - name: Publish with npm Trusted Publishing
+        run: npm publish dist-npm/*.tgz --access public --provenance
+
+  publish-crates:
+    name: Publish to crates.io
+    if: startsWith(github.ref, 'refs/tags/') && vars.PUBLISH_CRATES == 'true'
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: crates-io
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
+      - name: Authenticate with crates.io Trusted Publishing
+        id: crates-io-auth
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+      - name: Publish pdfust-shim, then pdfust
+        working-directory: rust
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
+        run: |
+          cargo publish --locked -p pdfust-shim
+          cargo publish --locked -p pdfust
 
   verify-pyemscripten-pypi:
     name: Verify PyEmscripten wheel from PyPI
@@ -263,7 +370,7 @@ jobs:
 
   github-release:
     name: Create immutable GitHub release
-    needs: verify-pyemscripten-pypi
+    needs: [verify-pyemscripten-pypi, publish-npm]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -273,6 +380,12 @@ jobs:
         with:
           path: release-assets
           merge-multiple: true
+      - name: Write SHA256SUMS
+        working-directory: release-assets
+        run: |
+          sha256sum -- * > "$RUNNER_TEMP/SHA256SUMS"
+          mv "$RUNNER_TEMP/SHA256SUMS" SHA256SUMS
+          cat SHA256SUMS
       - name: Create GitHub release
         run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes release-assets/*
         env:

@@ -129,12 +129,12 @@ python3.14t bench/free_threaded.py
 ```
 
 The generated source report is committed at
-[`bench/results/latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/latest.md).
+[`bench/results/latest.md`](https://github.com/DocSlurp/pdfust/blob/main/bench/results/latest.md).
 The separately generated free-threaded report is committed at
-[`bench/results/free-threaded-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/free-threaded-latest.md);
+[`bench/results/free-threaded-latest.md`](https://github.com/DocSlurp/pdfust/blob/main/bench/results/free-threaded-latest.md);
 rerunning `bench/run.py` cannot overwrite its CPython 3.14t evidence.
 The native/Pyodide resource-policy baseline is committed separately at
-[`bench/results/limits-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/limits-latest.md).
+[`bench/results/limits-latest.md`](https://github.com/DocSlurp/pdfust/blob/main/bench/results/limits-latest.md).
 The second command measures bounded open/extract and controlled rejection.
 CI runs the same cases inside Pyodide and records Wasm linear-memory growth;
 those timing and memory values are trends, not native/Wasm performance claims.

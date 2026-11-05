@@ -9,7 +9,7 @@ description: サポート対象、脆弱性の非公開報告、信頼できな�
 
 ## 脆弱性を報告する { #report-a-vulnerability }
 
-[GitHub Security Advisories](https://github.com/justsml/pdfust/security/advisories/new)
+[GitHub Security Advisories](https://github.com/DocSlurp/pdfust/security/advisories/new)
 から非公開で報告してください。公開Issueは作成しないでください。最初の応答は
 1週間以内を目安にしています。
 
@@ -286,4 +286,4 @@ CIはpull requestごとに`cargo audit`を実行し、Rust依存ツリーをRust
 のinstrumentationではありません。
 
 リポジトリ上の正本は
-[`SECURITY.md`](https://github.com/justsml/pdfust/blob/main/SECURITY.md)です。
+[`SECURITY.md`](https://github.com/DocSlurp/pdfust/blob/main/SECURITY.md)です。

@@ -26,11 +26,11 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/justsml/pdfust"
-Documentation = "https://github.com/justsml/pdfust#readme"
-Changelog = "https://github.com/justsml/pdfust/blob/main/CHANGELOG.md"
-Issues = "https://github.com/justsml/pdfust/issues"
-Source = "https://github.com/justsml/pdfust"
+Homepage = "https://github.com/DocSlurp/pdfust"
+Documentation = "https://github.com/DocSlurp/pdfust#readme"
+Changelog = "https://github.com/DocSlurp/pdfust/blob/main/CHANGELOG.md"
+Issues = "https://github.com/DocSlurp/pdfust/issues"
+Source = "https://github.com/DocSlurp/pdfust"
 
 [project.optional-dependencies]
 # Script and locale-specific fonts for automatic generation.

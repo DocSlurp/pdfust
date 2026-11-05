@@ -1,7 +1,7 @@
 # pdfust-fonts-hi
 
 Optional Devanagari generation fonts for
-[pdfust](https://github.com/justsml/pdfust):
+[pdfust](https://github.com/DocSlurp/pdfust):
 Noto Sans Devanagari and Noto Serif Devanagari variable fonts.
 
 ```bash
