@@ -1,6 +1,5 @@
-# Release build of the linux-x64-gnu addon against the same glibc/Node generation as
-# DocSlurp's worker/Dockerfile.lean (node:22-trixie-slim, Debian 13, glibc 2.41).
-# Building here keeps the .node file loadable there; it also loads on newer hosts.
+# Release build of the linux-x64-gnu addon on node:22-trixie (Debian 13, glibc 2.41).
+# scripts/pack.sh records the highest GLIBC symbol version the .node file needs.
 FROM node:22-trixie AS build
 ARG RUST_VERSION=1.99.0
 ARG PDFUST_GIT_SHA=unknown
