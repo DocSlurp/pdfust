@@ -1,6 +1,6 @@
 //! No-op replacements for the PyO3 attribute macros.
 //!
-//! `pdfust-core` keeps its document engine in `#[pymethods]` blocks. When the
+//! The `pdfust` crate keeps its document engine in `#[pymethods]` blocks. When the
 //! `python` feature is off (the Node binding), these attributes pass the item
 //! through unchanged so the same Rust source compiles without PyO3 or libpython.
 

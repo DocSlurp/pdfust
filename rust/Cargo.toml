@@ -1,14 +1,26 @@
 [package]
+# Not publishable yet: crates.io ignores the [patch.crates-io] below, and the
+# vendored hayro-interpret adds methods upstream lacks (Type3Glyph::advance_width,
+# OutlineGlyph::base_font_name and ::is_vertical, Glyph::as_unicode_declared).
+# Remove `publish = false` once a hayro release provides them; see RELEASING.md.
 publish = false
-name = "pdfust-core"
-description = "Rust core for pdfust PDF editing, rendering, extraction, and generation"
+name = "pdfust"
+description = "PDF editing, rendering, extraction, and generation engine (the Rust core of the pdfust Python library)"
 license = "MIT"
 homepage = "https://github.com/DocSlurp/pdfust"
 repository = "https://github.com/DocSlurp/pdfust.git"
 readme = "../README.md"
+documentation = "https://docs.rs/pdfust"
+keywords = ["pdf", "pdf-extraction", "markdown", "ocr", "rendering"]
+categories = ["parser-implementations", "text-processing", "multimedia::images"]
 version = "0.13.0"
 edition = "2024"
 authors = ["Yusuke Hayashi <yusuke8h@gmail.com>"]
+
+# pdfust-shim is a member so `cargo publish --workspace` releases both crates in
+# dependency order. bindings/node remains its own workspace root.
+[workspace]
+members = [".", "pdfust-shim"]
 
 [lib]
 name = "pdfust"
@@ -26,7 +38,7 @@ python = ["dep:pyo3", "dep:pyo3-build-config"]
 native = ["dep:image-webp"]
 
 [dependencies]
-pdfust-shim = { path = "pdfust-shim" }
+pdfust-shim = { path = "pdfust-shim", version = "=0.13.0" }
 # embed-fonts bundles Standard 14 substitutes so unresolved fonts still render.
 hayro = { version = "0.7", features = ["embed-fonts"] }
 hayro-svg = "0.7"
@@ -91,8 +103,8 @@ pyo3 = { version = "0.29.0", features = ["hashbrown"], optional = true }
 [build-dependencies]
 pyo3-build-config = { version = "0.29.0", optional = true }
 
-# Local hayro-interpret 0.7.0 with one added public method,
-# `Type3Glyph::advance_width`, so extraction can space Type 3 text by its real
-# widths. Remove once an upstream release exposes it.
+# Local hayro-interpret 0.7.0 with added public glyph accessors (Type 3 advance
+# widths, base font names, vertical writing mode, declared ToUnicode text) used by
+# extraction. Remove once an upstream release exposes them.
 [patch.crates-io]
 hayro-interpret = { path = "vendor/hayro-interpret" }

@@ -864,7 +864,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdfust-core"
+name = "pdfust"
 version = "0.13.0"
 dependencies = [
  "flate2",
