@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIRECTORY = ROOT / "bench/results/pdf-master-artifacts/real-world-v2"
 # Wikimedia's robot policy rejects anonymous clients, so name the project URL (no email).
 USER_AGENT = (
-    "pdfust-real-world-v2-benchmark/0.1 (+https://github.com/justsml/pdfust; "
+    "pdfust-real-world-v2-benchmark/0.1 (+https://github.com/DocSlurp/pdfust; "
     "PDF research corpus, sequential low-volume downloads)"
 )
 MAX_DOWNLOAD_BYTES = 60 * 1024 * 1024

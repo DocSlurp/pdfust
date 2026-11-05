@@ -10,7 +10,7 @@ Only the latest release on PyPI receives security fixes.
 ## Report a vulnerability { #report-a-vulnerability }
 
 Report vulnerabilities privately through
-[GitHub Security Advisories](https://github.com/justsml/pdfust/security/advisories/new).
+[GitHub Security Advisories](https://github.com/DocSlurp/pdfust/security/advisories/new).
 Do not open a public issue. You should receive an initial response within one
 week.
 
@@ -324,7 +324,7 @@ database on every pull request. Scheduled public-API fuzzing runs weekly; the
 `Fuzz health` observer reports unsuccessful or incomplete runs as failed checks.
 Maintainers must monitor these results. The normal extension build provides
 Python coverage feedback, not Rust branch instrumentation. See the
-[fuzzing guide](https://github.com/justsml/pdfust/blob/main/fuzz/README.md).
+[fuzzing guide](https://github.com/DocSlurp/pdfust/blob/main/fuzz/README.md).
 
 The repository copy of this policy is
-[`SECURITY.md`](https://github.com/justsml/pdfust/blob/main/SECURITY.md).
+[`SECURITY.md`](https://github.com/DocSlurp/pdfust/blob/main/SECURITY.md).

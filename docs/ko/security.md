@@ -9,7 +9,7 @@ PyPI의 최신 릴리스만 보안 수정 지원을 받습니다.
 
 ## 취약점 보고 { #report-a-vulnerability }
 
-[GitHub Security Advisories](https://github.com/justsml/pdfust/security/advisories/new)를
+[GitHub Security Advisories](https://github.com/DocSlurp/pdfust/security/advisories/new)를
 통해 비공개로 보고하세요. 공개 Issue를 만들지 마세요. 첫 답변은 일주일 이내를 목표로 합니다.
 
 ## 신뢰할 수 없는 PDF 처리 { #untrusted-pdfs }
@@ -290,4 +290,4 @@ CI는 pull request마다 RustSec 취약점 데이터베이스를 기준으로 Ru
 instrumentation은 포함하지 않습니다.
 
 저장소의 정책 원본은
-[`SECURITY.md`](https://github.com/justsml/pdfust/blob/main/SECURITY.md)입니다.
+[`SECURITY.md`](https://github.com/DocSlurp/pdfust/blob/main/SECURITY.md)입니다.

@@ -36,11 +36,11 @@ PyEmscripten tagのartifactだけです。
 ## Cloudflare Worker
 
 repositoryには
-[検証済みの抽出Worker](https://github.com/justsml/pdfust/tree/main/examples/cloudflare-worker)
+[検証済みの抽出Worker](https://github.com/DocSlurp/pdfust/tree/main/examples/cloudflare-worker)
 があります。上限を設定したPDF bodyを受け、page数と先頭pageのtextを返します。
 
 ```bash
-git clone https://github.com/justsml/pdfust.git
+git clone https://github.com/DocSlurp/pdfust.git
 cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
@@ -169,7 +169,7 @@ Node/Pyodide harnessではForm 1040の初回open・extractが117.634 ms、5回�
 28.506 msでした。Wasm linear memoryはinstall後39.688 MiB、互換性・resource suite完了後
 70.000 MiBです。これらは再現可能なCI trendであり、Cloudflareのrequest latencyやisolate
 resident memoryの測定ではありません。詳細は
-[size・startup report](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md)
+[size・startup report](https://github.com/DocSlurp/pdfust/blob/main/bench/results/wasm-latest.md)
 を参照してください。
 
 ## Runtime上の制約
@@ -206,5 +206,5 @@ Wasm wheelを配布する各pdfust releaseは、次をすべて通します。
 runtime更新は互換と仮定せず、新しい検証matrixとして扱います。固定versionは対応する
 pdfust minor releaseでsupportし、新しいPyodide、PyEmscripten、Emscripten、
 `workers-py`、Wranglerは完全なgateを通ってから対応範囲へ入れます。測定値とregressionは
-[`bench/results/wasm-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md)
+[`bench/results/wasm-latest.md`](https://github.com/DocSlurp/pdfust/blob/main/bench/results/wasm-latest.md)
 へ併記します。
