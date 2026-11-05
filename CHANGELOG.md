@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The repository is public at `DocSlurp/pdfust`. Tagged releases publish `pdfust` to
+  PyPI, the Node binding to npm as `@docslurp/pdfust` (renamed from the unpublished
+  `@pdfust/node`) with provenance, and a GitHub release with `SHA256SUMS`, all through
+  Trusted Publishing. The Rust engine crate is renamed `pdfust-core` → `pdfust`; it
+  is not on crates.io yet (see `RELEASING.md`).
 - The Rust core builds without PyO3: the default `python` feature produces the
   extension module, and `--no-default-features --features native` exposes the
   plain-Rust `document::native` API used by the Node binding. Wheels and the
