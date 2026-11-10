@@ -3,8 +3,8 @@ site_url: https://pylopdf.haya.works/
 site_description: Python-native PDF editing, extraction and rendering, powered by Rust. MIT licensed, no mandatory Python dependencies, lightweight wheels.
 site_author: Yusuke Hayashi
 copyright: Copyright &copy; 2026 Yusuke Hayashi · MIT License
-repo_url: https://github.com/justsml/pdfust
-repo_name: justsml/pdfust
+repo_url: https://github.com/DocSlurp/pdfust
+repo_name: DocSlurp/pdfust
 edit_uri: edit/main/docs/en/
 docs_dir: docs/en
 site_dir: site
@@ -68,7 +68,7 @@ nav:
       - Security: security.md
       - API stability: stability.md
       - Languages: languages.md
-  - Changelog: https://github.com/justsml/pdfust/blob/main/CHANGELOG.md
+  - Changelog: https://github.com/DocSlurp/pdfust/blob/main/CHANGELOG.md
 
 markdown_extensions:
   - admonition
@@ -91,7 +91,7 @@ plugins:
 extra:
   current_language: en
   announcement: "pdfust 0.13.0 · narrow-column reading order and allocation-hardened extraction"
-  announcement_url: "https://github.com/justsml/pdfust/releases/tag/v0.13.0"
+  announcement_url: "https://github.com/DocSlurp/pdfust/releases/tag/v0.13.0"
   social_image: "https://pylopdf.haya.works/assets/images/pylopdf-social-card.png"
   alternate:
     - name: English
@@ -108,7 +108,7 @@ extra:
       lang: ko
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/justsml/pdfust
+      link: https://github.com/DocSlurp/pdfust
       name: pdfust on GitHub
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/pylopdf/

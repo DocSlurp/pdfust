@@ -1,9 +1,26 @@
 {
-  "name": "@pdfust/node",
+  "name": "@docslurp/pdfust",
   "version": "0.13.0",
-  "description": "In-process Node binding for the pdfust Rust PDF core (private, never published)",
-  "private": true,
+  "description": "In-process Node.js binding (N-API) for the pdfust Rust PDF engine: text, Markdown, tables, rendering and OCR",
   "license": "MIT",
+  "author": "Yusuke Hayashi <yusuke8h@gmail.com>",
+  "homepage": "https://github.com/DocSlurp/pdfust/tree/main/bindings/node#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DocSlurp/pdfust.git",
+    "directory": "bindings/node"
+  },
+  "bugs": {
+    "url": "https://github.com/DocSlurp/pdfust/issues"
+  },
+  "keywords": [
+    "pdf",
+    "pdf-extraction",
+    "markdown",
+    "ocr",
+    "napi",
+    "rust"
+  ],
   "main": "index.js",
   "types": "index.d.ts",
   "files": [
@@ -11,12 +28,22 @@
     "index.d.ts",
     "native.js",
     "native.d.ts",
-    "*.node",
+    "pdfust-node.*.node",
     "README.md",
     "LICENSE"
   ],
   "engines": {
     "node": ">=20"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "napi": {
     "binaryName": "pdfust-node",

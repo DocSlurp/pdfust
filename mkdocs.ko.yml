@@ -3,8 +3,8 @@ site_url: https://pylopdf.haya.works/ko/
 site_description: Rust를 핵심으로 한 Python다운 PDF 편집, 추출, 렌더링 라이브러리. MIT 라이선스, 필수 Python 의존성 없음, 경량 wheel.
 site_author: Yusuke Hayashi
 copyright: Copyright &copy; 2026 Yusuke Hayashi · MIT License
-repo_url: https://github.com/justsml/pdfust
-repo_name: justsml/pdfust
+repo_url: https://github.com/DocSlurp/pdfust
+repo_name: DocSlurp/pdfust
 edit_uri: edit/main/docs/ko/
 docs_dir: docs/ko
 site_dir: site/ko
@@ -68,7 +68,7 @@ nav:
       - 보안: security.md
       - API 안정성: stability.md
       - 언어 정책: languages.md
-  - 변경 이력: https://github.com/justsml/pdfust/blob/main/CHANGELOG.md
+  - 변경 이력: https://github.com/DocSlurp/pdfust/blob/main/CHANGELOG.md
 
 markdown_extensions:
   - admonition
@@ -91,7 +91,7 @@ plugins:
 extra:
   current_language: ko
   announcement: "pdfust 0.13.0 · 좁은 다단 읽기 순서 복원과 메모리 할당 강화"
-  announcement_url: "https://github.com/justsml/pdfust/releases/tag/v0.13.0"
+  announcement_url: "https://github.com/DocSlurp/pdfust/releases/tag/v0.13.0"
   social_image: "https://pylopdf.haya.works/assets/images/pylopdf-social-card.png"
   alternate:
     - name: English
@@ -108,7 +108,7 @@ extra:
       lang: ko
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/justsml/pdfust
+      link: https://github.com/DocSlurp/pdfust
       name: GitHub의 pdfust
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/pylopdf/

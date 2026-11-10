@@ -1,7 +1,7 @@
 # pdfust-fonts-jp
 
 A data-only package containing Japanese fallback and generation fonts for
-[pdfust](https://github.com/justsml/pdfust). It renders PDFs that reference
+[pdfust](https://github.com/DocSlurp/pdfust). It renders PDFs that reference
 Japanese fonts without embedding the font programs and lets `insert_text` /
 `insert_textbox` auto-select a subset-embedded JP font for Japanese or Han text.
 
