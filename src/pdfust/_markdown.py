@@ -161,6 +161,8 @@ def _utf8_character_size(character: str) -> int:
 
 def utf8_size(value: str) -> int:
     """Return a string's strict UTF-8 size without materializing encoded bytes."""
+    if value.isascii():
+        return len(value)
     return sum(_utf8_character_size(character) for character in value)
 
 
@@ -562,6 +564,17 @@ def page_to_markdown(
     max_size: int | None = None,
 ) -> str:
     """Convert one page while bounding retained Markdown entries and output."""
+    return page_to_markdown_with_size(layout, levels, tables, words, max_size)[0]
+
+
+def page_to_markdown_with_size(
+    layout: TextPage,
+    levels: dict[float, int],
+    tables: list[_MarkdownTable] | None = None,
+    words: list[WordEntry] | None = None,
+    max_size: int | None = None,
+) -> tuple[str, int | None]:
+    """Return a page and its admitted UTF-8 size, or ``None`` when unbounded."""
     table_data = [] if tables is None else tables
     table_events, table_memberships, residual_texts = _table_events(layout, table_data, words)
     builder = _MarkdownBuilder(max_size)
@@ -589,4 +602,5 @@ def page_to_markdown(
             line_position += 1
         builder.flush_paragraph()
     builder.append_tables(table_data, table_events.get(line_position, []))
-    return builder.render()
+    rendered = builder.render()
+    return rendered, None if max_size is None else builder.output_size

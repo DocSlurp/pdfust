@@ -773,6 +773,9 @@ const MIN_VERTICAL_CJK_GLYPHS: usize = 3;
 /// Bound the conservative CJK geometry pass on pathological pages.
 const MAX_VERTICAL_CJK_CANDIDATES: usize = 4096;
 
+/// Amortize the spatial-index sort only on larger CJK candidate collections.
+const MIN_SPATIAL_CJK_CANDIDATES: usize = 128;
+
 /// Word threshold: synthesize a space above this factor × font size.
 /// Typical word gaps are about 0.25 em and kerning about ±0.05 em.
 const WORD_GAP: f64 = 0.15;
@@ -1063,12 +1066,56 @@ fn inferred_vertical_cjk_indices(
         return Ok(Vec::new());
     }
 
+    // Every accepted neighbour must lie within 1.8 times the larger font size
+    // along x. Index that necessary condition without changing either exact
+    // neighbour predicate below. Keep source order in cjk_indices/eligible.
+    let max_distance = cjk_indices
+        .iter()
+        .map(|&index| arena[index].size)
+        .fold(1.0_f64, f64::max)
+        * 1.8;
+    let mut spatial_indices = Vec::new();
+    if cjk_indices.len() >= MIN_SPATIAL_CJK_CANDIDATES
+        && max_distance.is_finite()
+        && cjk_indices.iter().all(|&index| arena[index].x.is_finite())
+    {
+        spatial_indices
+            .try_reserve_exact(cjk_indices.len())
+            .map_err(|error| {
+                TextPageLimit::Allocation(format!(
+                    "failed to allocate vertical-CJK spatial index: {error}"
+                ))
+            })?;
+        spatial_indices.extend_from_slice(&cjk_indices);
+        spatial_indices.sort_unstable_by(|&left, &right| {
+            arena[left]
+                .x
+                .total_cmp(&arena[right].x)
+                .then(left.cmp(&right))
+        });
+    }
+
     let mut eligible = Vec::new();
     for &index in &cjk_indices {
         let glyph = &arena[index];
+        let neighbours = if spatial_indices.is_empty() {
+            &cjk_indices[..]
+        } else {
+            // Use the same subtracted distance as the exact predicates, rather
+            // than rounded x +/- radius endpoints at extreme coordinates.
+            let start = spatial_indices.partition_point(|&other_index| {
+                let x = arena[other_index].x;
+                x < glyph.x && (x - glyph.x).abs() > max_distance
+            });
+            let end = spatial_indices.partition_point(|&other_index| {
+                let x = arena[other_index].x;
+                x <= glyph.x || (x - glyph.x).abs() <= max_distance
+            });
+            &spatial_indices[start..end]
+        };
         let mut has_vertical_neighbour = false;
         let mut has_horizontal_neighbour = false;
-        for &other_index in &cjk_indices {
+        for &other_index in neighbours {
             if other_index == index {
                 continue;
             }

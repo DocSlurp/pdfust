@@ -8,6 +8,7 @@ import pytest
 from conftest import build_raw_pdf
 
 import pdfust
+from pdfust import _markdown
 
 
 def _table_pdf(
@@ -261,6 +262,73 @@ def test_markdown_bounds_utf8_output_without_partial_result() -> None:
     assert caught.value.code == "markdown_output_size"
     assert doc.to_markdown(max_size=exact_size) == expected
     assert doc[1].to_markdown(max_size=len(expected_page.encode())) == expected_page
+
+
+def test_markdown_counted_output_preserves_multibyte_and_empty_page_boundaries() -> None:
+    doc = pdfust.Document()
+    for text in ("", "Première page 😀", "", "日本語のページ"):
+        doc.new_page(width=300, height=200)
+        if text:
+            doc[-1].insert_ocr_text_layer([(20, 20, 270, 40, text)])
+    pages = [2, 3, 1, 0, 3]
+    expected = doc.to_markdown(pages=pages, max_size=None)
+    exact_size = len(expected.encode())
+
+    for limit in range(1, exact_size):
+        with pytest.raises(pdfust.LimitError) as caught:
+            doc.to_markdown(pages=pages, max_size=limit)
+        assert caught.value.code == "markdown_output_size"
+    assert doc.to_markdown(pages=pages, max_size=exact_size) == expected
+    assert doc.to_markdown(pages=pages, max_size=exact_size + 1) == expected
+
+
+@pytest.mark.parametrize("payload", ["", "ASCII\x00\x7f", "café", "日本語", "emoji 😀", "a\u0301"])
+def test_counted_page_output_matches_independent_utf8_encoding(payload: str) -> None:
+    doc = pdfust.open(stream=_layout_pdf([[(24, 720, "Title"), (12, 680, "Body"), (12, 666, "More")]]))
+    layout = doc[0].get_text("dict")
+    for block in layout["blocks"]:
+        for line in block["lines"]:
+            for span in line["spans"]:
+                span["text"] = payload
+                span["flags"] = 16
+    output, size = _markdown.page_to_markdown_with_size(layout, {24: 1}, max_size=4096)
+    assert size == len(output.encode())
+    assert _markdown.page_to_markdown(layout, {24: 1}, max_size=4096) == output
+    assert _markdown.page_to_markdown_with_size(layout, {24: 1}, max_size=None) == (output, None)
+
+
+@pytest.mark.parametrize("codepoint", [0xD800, 0xDFFF])
+def test_counted_page_output_retains_strict_surrogate_handling(codepoint: int) -> None:
+    surrogate = chr(codepoint)
+    doc = pdfust.open(stream=_layout_pdf([[(12, 720, "Body")]]))
+    layout = doc[0].get_text("dict")
+    layout["blocks"][0]["lines"][0]["spans"][0]["text"] = surrogate
+    with pytest.raises(UnicodeEncodeError):
+        _markdown.page_to_markdown_with_size(layout, {}, max_size=4096)
+    assert _markdown.page_to_markdown_with_size(layout, {}, max_size=None) == (surrogate, None)
+
+
+def test_counted_unicode_tables_preserve_exact_budget_and_native_parity() -> None:
+    doc = pdfust.open(stream=_table_pdf(include_cells=False))
+    values = [("名前", "値"), ("é\\à", "😀"), ("a|b", "中文")]
+    doc[0].insert_ocr_text_layer(
+        [
+            (50 + column * 130, 100 + row * 40, 150 + column * 130, 120 + row * 40, text)
+            for row, cells in enumerate(values)
+            for column, text in enumerate(cells)
+        ]
+    )
+    expected = doc.to_markdown(max_size=None)
+    assert "a\\|b" in expected
+    assert "é\\\\à" in expected
+    exact_size = len(expected.encode())
+    assert doc.to_markdown(max_size=exact_size) == expected
+    native = doc._doc  # noqa: SLF001 - compare the independent native Markdown implementation.
+    assert native.page_markdown(1, "lines", exact_size) == expected
+    for extract in (doc.to_markdown, lambda *, max_size: native.page_markdown(1, "lines", max_size)):
+        with pytest.raises(pdfust.LimitError) as caught:
+            extract(max_size=exact_size - 1)
+        assert caught.value.code == "markdown_output_size"
 
 
 def test_markdown_bounds_page_entries_before_final_join(monkeypatch: pytest.MonkeyPatch) -> None:
