@@ -161,6 +161,8 @@ def _utf8_character_size(character: str) -> int:
 
 def utf8_size(value: str) -> int:
     """Return a string's strict UTF-8 size without materializing encoded bytes."""
+    if value.isascii():
+        return len(value)
     return sum(_utf8_character_size(character) for character in value)
 
 
