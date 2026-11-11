@@ -70,7 +70,7 @@ openpyxl==3.1.5
 packaging==26.3
 pandas==3.0.6
 pdftext==0.7.1
-pillow==10.4.0
+pillow==12.3.0
 platformdirs==4.12.4
 pluggy==1.6.0
 polyfactory==3.3.0
