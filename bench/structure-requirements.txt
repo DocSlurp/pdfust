@@ -1,3 +1,4 @@
+# Pillow 13 requires Python >=3.11; the measured GPU environment uses Python 3.12.
 # GPU experiment environment; install torch/torchvision from the CUDA 12.8 index first.
 accelerate==1.15.0
 bitsandbytes==0.50.2
