@@ -1,7 +1,7 @@
 # pdfust-fonts-ko
 
 A data-only package containing Korean fallback and generation fonts for
-[pdfust](https://github.com/justsml/pdfust). It renders non-embedded
+[pdfust](https://github.com/DocSlurp/pdfust). It renders non-embedded
 Adobe-Korea1 fonts and lets generated Hangul text select a locale-matching
 subset-embedded font automatically.
 

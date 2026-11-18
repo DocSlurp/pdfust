@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Build the private @pdfust/node tarball reproducibly from committed sources and print
-# its sha256. Never publishes: the package is `private` and this script only calls `npm pack`.
+# Build the @docslurp/pdfust npm tarball reproducibly from committed sources and print
+# its sha256. Never publishes: this script only calls `npm pack`; release.yml publishes.
 #
 #   bindings/node/scripts/pack.sh [output-dir]      (default: bindings/node/dist)
 #
-# Needs docker (BuildKit) and npm. The addon is compiled inside node:22-trixie so its
-# glibc requirement matches worker/Dockerfile.lean; sources come from `git archive HEAD`,
+# Needs docker (BuildKit) and npm. The addon is compiled inside node:22-trixie and needs at
+# most GLIBC_2.35, so it loads on Debian 12+/Ubuntu 22.04+; sources come from `git archive HEAD`,
 # so uncommitted edits are not packed.
 set -euo pipefail
 

@@ -1035,7 +1035,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pdfust-core"
+name = "pdfust"
 version = "0.13.0"
 dependencies = [
  "flate2",
@@ -1069,7 +1069,7 @@ dependencies = [
  "napi",
  "napi-build",
  "napi-derive",
- "pdfust-core",
+ "pdfust",
 ]
 
 [[package]]

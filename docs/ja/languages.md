@@ -30,4 +30,4 @@ pdfust は世界の Python コミュニティに向けたライブラリであ�
 
 スペイン語、ブラジルポルトガル語、フランス語、繁体字中国語は候補として追跡します。
 判断記録と昇格条件の全文は
-[`LANGUAGES.md`](https://github.com/justsml/pdfust/blob/main/LANGUAGES.md) にあります。
+[`LANGUAGES.md`](https://github.com/DocSlurp/pdfust/blob/main/LANGUAGES.md) にあります。

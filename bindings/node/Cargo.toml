@@ -16,7 +16,7 @@ name = "pdfust_node"
 crate-type = ["cdylib"]
 
 [dependencies]
-pdfust-core = { path = "../../rust", default-features = false, features = ["native"] }
+pdfust = { path = "../../rust", default-features = false, features = ["native"] }
 napi = { version = "3", default-features = false, features = ["napi9"] }
 napi-derive = "3"
 

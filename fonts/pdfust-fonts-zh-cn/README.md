@@ -1,7 +1,7 @@
 # pdfust-fonts-zh-cn
 
 A data-only package containing Simplified Chinese fallback and generation
-fonts for [pdfust](https://github.com/justsml/pdfust). It renders
+fonts for [pdfust](https://github.com/DocSlurp/pdfust). It renders
 non-embedded Adobe-GB1 fonts and provides locale-matching Simplified Chinese
 glyph forms for generated Han text.
 

@@ -7,7 +7,7 @@ description: 经过集成测试的pdfust与Typst、pyHanko、veraPDF及OCR引擎
 
 pdfust有意**不重复实现**排版、PDF/A生成或数字签名。每个领域都与成熟的库组合解决，
 以下方案均由
-[`tests/test_interop.py`](https://github.com/justsml/pdfust/blob/main/tests/test_interop.py)
+[`tests/test_interop.py`](https://github.com/DocSlurp/pdfust/blob/main/tests/test_interop.py)
 中的集成测试保护。
 
 ## 排版与新文档 — typst { #typesetting }

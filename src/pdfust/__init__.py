@@ -1254,10 +1254,10 @@ def _bounded_markdown_page_output(
     tables: list[tuple[tuple[float, float, float, float], str]],
     words: list[WordEntry] | None,
     budget: _MarkdownBudget,
-) -> str:
+) -> tuple[str, int | None]:
     """Render one page while translating the internal output-limit signal."""
     try:
-        return _markdown.page_to_markdown(
+        return _markdown.page_to_markdown_with_size(
             layout,
             levels,
             tables,
@@ -3493,7 +3493,7 @@ class Document:
                 remaining_size=page_budget,
             )
             words = self.get_page_text(pno, "words") if tables else None
-            page_markdown = _bounded_markdown_page_output(
+            page_markdown, page_bytes = _bounded_markdown_page_output(
                 layout,
                 levels,
                 markdown_tables,
@@ -3506,7 +3506,7 @@ class Document:
                 remaining = max_size - output_bytes - separator_bytes
                 if len(page_markdown) > remaining:
                     raise _markdown_output_limit_error(max_size)
-                page_bytes = _markdown.utf8_size(page_markdown)
+                page_bytes = cast("int", page_bytes)
                 if page_bytes > remaining:
                     raise _markdown_output_limit_error(max_size)
             else:

@@ -39,11 +39,11 @@ PyPI, provenance attestation, and the release SBOM.
 ## Cloudflare Worker
 
 The repository includes a
-[tested extraction Worker](https://github.com/justsml/pdfust/tree/main/examples/cloudflare-worker).
+[tested extraction Worker](https://github.com/DocSlurp/pdfust/tree/main/examples/cloudflare-worker).
 It accepts a bounded PDF body and returns the page count and first-page text:
 
 ```bash
-git clone https://github.com/justsml/pdfust.git
+git clone https://github.com/DocSlurp/pdfust.git
 cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
@@ -186,7 +186,7 @@ In the Node/Pyodide harness, the first Form 1040 open and extraction took
 reached 39.688 MiB after installation and 70.000 MiB after the full
 compatibility and resource suites. These are reproducible CI trends, not
 Cloudflare request latency or isolate resident-memory measurements. See the
-[complete size and startup report](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md).
+[complete size and startup report](https://github.com/DocSlurp/pdfust/blob/main/bench/results/wasm-latest.md).
 
 ## Runtime limits
 
@@ -230,4 +230,4 @@ The pinned versions stay supported for the corresponding pdfust minor release;
 new Pyodide, PyEmscripten, Emscripten, `workers-py`, or Wrangler versions enter
 the claim only after the complete gate passes. Measurements and any regressions
 are published together in
-[`bench/results/wasm-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md).
+[`bench/results/wasm-latest.md`](https://github.com/DocSlurp/pdfust/blob/main/bench/results/wasm-latest.md).

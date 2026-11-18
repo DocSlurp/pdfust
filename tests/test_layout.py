@@ -387,6 +387,44 @@ def test_vertical_cjk_inference_stops_at_candidate_boundary() -> None:
     assert line["wmode"] == 0
 
 
+@pytest.mark.parametrize("vertical", [False, True])
+def test_large_cjk_grids_preserve_horizontal_and_vertical_neighbours(*, vertical: bool) -> None:
+    """A spatial prefilter must preserve both kinds of local CJK neighbour."""
+    doc = pdfust.Document()
+    doc.new_page(width=500, height=500)
+    x_gap = 24 if vertical else 12
+    doc[0].insert_ocr_text_layer(
+        [
+            (20 + column * x_gap, 20 + row * 12, 30 + column * x_gap, 30 + row * 12, "日")
+            for row in range(16)
+            for column in range(16)
+        ]
+    )
+
+    line_text = "日" * 16 if vertical else " ".join(["日"] * 16)
+    assert doc.get_text().splitlines() == [line_text] * 16
+    lines = [line for block in doc[0].get_text("dict")["blocks"] for line in block["lines"]]
+    assert len(lines) == 16
+    assert {line["wmode"] for line in lines} == {int(vertical)}
+
+
+def test_large_cjk_neighbour_window_includes_larger_fonts() -> None:
+    """A distant large glyph can prevent a small vertical chain's inference."""
+    doc = pdfust.Document()
+    doc.new_page(width=2000, height=800)
+    words = [(20, 20, 30, 30, "日"), (20, 32, 30, 42, "本"), (100, 20, 180, 100, "語")]
+    words.extend(
+        (400 + column * 12, 20 + row * 12, 410 + column * 12, 30 + row * 12, "文")
+        for row in range(8)
+        for column in range(16)
+    )
+    doc[0].insert_ocr_text_layer(words)
+
+    lines = [line for block in doc[0].get_text("dict")["blocks"] for line in block["lines"]]
+    first = next(line for line in lines if any("日" in span["text"] for span in line["spans"]))
+    assert first["wmode"] == 0
+
+
 def test_vertical_cjk_columns_read_right_to_left_between_page_furniture() -> None:
     """Order vertical columns right-to-left between a heading and footer."""
     page = pdfust.open(stream=build_vertical_cjk_columns_pdf())[0]

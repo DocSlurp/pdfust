@@ -1,7 +1,7 @@
 # pdfust-fonts-he
 
 Optional Hebrew generation fonts for
-[pdfust](https://github.com/justsml/pdfust):
+[pdfust](https://github.com/DocSlurp/pdfust):
 Noto Sans Hebrew and Noto Serif Hebrew variable fonts.
 
 ```bash

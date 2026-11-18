@@ -2,12 +2,12 @@
 
 - Updated at: 2026-07-26 10:45 UTC
 - Whole-program LTO comparison:
-  [baseline run 30198436402](https://github.com/justsml/pdfust/actions/runs/30198436402)
+  [baseline run 30198436402](https://github.com/DocSlurp/pdfust/actions/runs/30198436402)
   versus
-  [LTO run 30198651300](https://github.com/justsml/pdfust/actions/runs/30198651300)
+  [LTO run 30198651300](https://github.com/DocSlurp/pdfust/actions/runs/30198651300)
 - LTO source head: `1b34373bdc0816764023cea9bed1c9adbb883c95`
 - Original RTen-removal measurement:
-  [run 30177351000](https://github.com/justsml/pdfust/actions/runs/30177351000),
+  [run 30177351000](https://github.com/DocSlurp/pdfust/actions/runs/30177351000),
   source `c82ee42059b1a660ceb0f80a2628e2a581e2437f`
 - Runtime: Pyodide 0.28.3 / CPython 3.13.2 / Emscripten 4.0.9 /
   Emscripten Node.js 20.18.0
