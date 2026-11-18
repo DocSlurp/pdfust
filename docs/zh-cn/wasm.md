@@ -36,11 +36,11 @@ release SBOM。
 ## Cloudflare Worker
 
 repository 包含一个
-[经过测试的抽取 Worker](https://github.com/justsml/pdfust/tree/main/examples/cloudflare-worker)，
+[经过测试的抽取 Worker](https://github.com/DocSlurp/pdfust/tree/main/examples/cloudflare-worker)，
 它接收有明确上限的 PDF body，并返回页数和第一页文本：
 
 ```bash
-git clone https://github.com/justsml/pdfust.git
+git clone https://github.com/DocSlurp/pdfust.git
 cd pdfust/examples/cloudflare-worker
 uv sync
 uv run pywrangler dev
@@ -165,7 +165,7 @@ fat LTO 与单个 codegen unit 仅用于 PyEmscripten artifact；native release 
 median 为 28.506 ms。Wasm linear memory 在安装后达到 39.688 MiB，在完整兼容与
 resource suite 后达到 70.000 MiB。这些是可复现 CI trend，不是 Cloudflare request
 latency 或 isolate resident-memory 测量。参见
-[完整 size 与 startup report](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md)。
+[完整 size 与 startup report](https://github.com/DocSlurp/pdfust/blob/main/bench/results/wasm-latest.md)。
 
 ## Runtime 限制
 
@@ -199,4 +199,4 @@ native Python 通过就假设 Wasm 有更大 memory budget；两端都应使用�
 runtime 更新会作为新的验证 matrix，而不会自动假设兼容。固定版本在对应 pdfust minor
 release 中受到支持；新的 Pyodide、PyEmscripten、Emscripten、`workers-py` 或 Wrangler
 只有通过完整 gate 后才加入支持声明。测量值和 regression 会一起发布到
-[`bench/results/wasm-latest.md`](https://github.com/justsml/pdfust/blob/main/bench/results/wasm-latest.md)。
+[`bench/results/wasm-latest.md`](https://github.com/DocSlurp/pdfust/blob/main/bench/results/wasm-latest.md)。

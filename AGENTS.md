@@ -13,19 +13,17 @@ overview.
 
 ## Working conventions
 
-- This workspace is private `pdfust` development (formerly `pdf-master`, then `jev-pdf`,
-  derived from upstream `pylopdf`). Remotes `origin` and `private` target
-  `justsml/pdfust`, verified private; it was `justsml/pdfust` until the 2026-10-12 rename.
-  Public upstream/fork remotes remain disconnected.
-- The user explicitly authorized pushing the completed work to private
-  `origin/main` on 2026-10-08. Keep future pushes within the user's requested
-  scope. Do not open public pull requests, publish packages, or upload raw
-  development artifacts. One exception, authorized on 2026-10-15: the `pdfust` crate
-  name is reserved on crates.io by a source-free placeholder (`pdfust` 0.0.1, built
-  outside this repository); `rust/Cargo.toml` keeps `publish = false` because
-  crates.io ignores the vendored `[patch.crates-io]` hayro-interpret. The local pre-push hook permits only this private
-  repository's main branch and verifies private visibility; do not bypass it.
-  GitHub Actions remain disabled. Previously published history remains public.
+- `pdfust` (formerly `pdf-master`, then `jev-pdf`, derived from upstream `pylopdf`)
+  lives in the public repository `DocSlurp/pdfust` (transferred from `justsml/pdfust`
+  on 2026-11-05). Public upstream/fork remotes remain disconnected.
+- On 2026-11-05 the owner made the repository public and authorized publishing its
+  packages (PyPI `pdfust`, npm `@docslurp/pdfust`, crates.io) and GitHub releases.
+  Publishing happens only through the tag-triggered release workflows with Trusted
+  Publishing; see [RELEASING.md](RELEASING.md). Do not push release tags, dispatch
+  release workflows or publish from a workstation without the owner's request, and
+  do not upload raw development artifacts. The crates.io name `pdfust` is held by a
+  source-free 0.0.1 placeholder until the engine crate can be published (see
+  RELEASING.md for the remaining blocker).
 - The distribution is `pdfust`, with public import `pdfust`. Keep `jev_pdf` and
   `pylopdf` as thin compatibility imports (`src/jev_pdf`, `src/pylopdf`; see
   `docs/PACKAGE_NAME.md`) and retain original authors, licenses and notices.

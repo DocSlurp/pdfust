@@ -8,7 +8,7 @@ description: Tested recipes connecting pdfust with Typst, pyHanko, veraPDF and O
 pdfust deliberately does **not** reimplement typesetting, PDF/A generation or
 digital signatures. Each is solved by pairing with an established library, and
 every recipe below is guarded by integration tests in
-[`tests/test_interop.py`](https://github.com/justsml/pdfust/blob/main/tests/test_interop.py).
+[`tests/test_interop.py`](https://github.com/DocSlurp/pdfust/blob/main/tests/test_interop.py).
 
 ## Typesetting & new documents — typst { #typesetting }
 

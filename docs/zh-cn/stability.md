@@ -83,7 +83,7 @@ line固定并测试，不会跨runtime升级作推测。
 
 ## 兼容性审查 { #compatibility-review }
 
-[`api/public-api.json`](https://github.com/justsml/pdfust/blob/main/api/public-api.json)
+[`api/public-api.json`](https://github.com/DocSlurp/pdfust/blob/main/api/public-api.json)
 记录经过审查的0.11候选surface。所有native Python lane都会比较该文件，检测export、
 signature、mapping key、type alias、enum/常量值、public member和异常继承的变化。
 

@@ -4,5 +4,5 @@ contact_links:
     url: https://pylopdf.haya.works/
     about: Read the guides, API overview, known limits, and pymupdf migration notes.
   - name: Security vulnerability
-    url: https://github.com/justsml/pdfust/security/advisories/new
+    url: https://github.com/DocSlurp/pdfust/security/advisories/new
     about: Report vulnerabilities privately instead of opening a public issue.

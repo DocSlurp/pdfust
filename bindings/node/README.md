@@ -1,11 +1,18 @@
-# @pdfust/node
+# @docslurp/pdfust
 
-In-process Node binding (N-API, napi-rs) of the pdfust Rust core. DocSlurp's worker calls it
-directly: no Python, no subprocess. **Private and unpublished** (`"private": true`); it ships as a
-tarball pinned by version and sha256.
+In-process Node.js binding (N-API, napi-rs) of the pdfust Rust PDF engine: no Python, no subprocess.
+Published to npm as [`@docslurp/pdfust`](https://www.npmjs.com/package/@docslurp/pdfust) with npm
+provenance; each release also attaches the same tarball and its SHA-256 to the
+[GitHub release](https://github.com/DocSlurp/pdfust/releases).
+
+```sh
+npm install @docslurp/pdfust
+```
+
+Prebuilt binaries cover `linux-x64-gnu` (glibc 2.35 or newer) only; see the known gaps below.
 
 ```js
-const pdfust = require('@pdfust/node')
+const pdfust = require('@docslurp/pdfust')
 const doc = pdfust.openPath('report.pdf', { password: 'optional', limits: { profile: 'web' } })
 const page = doc.page(0)                       // 0-based
 page.markdown({ tableStrategy: 'lines' })      // same output as Python Page.to_markdown()
@@ -18,11 +25,11 @@ Types: [`index.d.ts`](index.d.ts) re-exports the generated [`native.d.ts`](nativ
 problem), `PDF_LIMIT` (plus `limit`, e.g. `decompressed_size`), `PDF_ERROR`, `INVALID_ARGUMENT`, `PDF_CLOSED`,
 `NATIVE_PDF_UNSUPPORTED` (`NotImplementedError`).
 
-## Coverage of `ADAPTER-INTERFACE.md`
+## API coverage
 
 | Interface member | Status | Notes |
 |---|---|---|
-| `version()` | done | `{version, gitSha, features}`; sha comes from the commit the tarball was packed from |
+| `version()` | done | `{version, gitSha, features}`; sha comes from the commit the package was built from |
 | `openPath`, `openBuffer` + `password` | done | wrong or missing password throws `PDF_LOCKED`; unknown handlers throw `PDF_UNSUPPORTED_ENCRYPTION`; extra `limits` option (`profile: 'web'` for untrusted uploads, `'worker'` for server ingestion, or individual byte/page caps, `PDF_LIMIT`). Text and glyph limits are cumulative per document; a page already admitted is never charged again |
 | `pageCount`, `metadata` | done | adds author/subject/keywords/dates/pdfVersion/repaired; `permissions` are lopdf flag names |
 | `hasJavaScript`, `javaScript()` | done | shared `inspect` module (same as Python `get_javascript`): scope, zero-based page and trigger event per action |
@@ -115,7 +122,8 @@ npm test                 # unit tests + parity tests against the Python API (nee
 scripts/pack.sh          # reproducible release tarball via Docker; prints sha256
 ```
 
-`pack.sh` builds from `git archive HEAD` inside `node:22-trixie` (the generation `worker/Dockerfile.lean`
-uses; glibc 2.41, binary needs at most GLIBC_2.35) and runs `npm pack`. It never publishes.
+`pack.sh` builds from `git archive HEAD` inside `node:22-trixie` (glibc 2.41; the binary needs at most
+GLIBC_2.35) and runs `npm pack`. It never publishes. Releases are built and published by
+`.github/workflows/release.yml` on a `v*` tag; see [RELEASING.md](../../RELEASING.md).
 The Cargo layout: `rust/` is the core (feature `python` = wheel, feature `native` = `document::native`), and
 `bindings/node` is its own Cargo workspace root (the `[patch]` for the vendored hayro-interpret is repeated there).

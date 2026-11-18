@@ -1,7 +1,7 @@
 # pdfust-fonts-ar
 
 Optional Arabic generation fonts for
-[pdfust](https://github.com/justsml/pdfust):
+[pdfust](https://github.com/DocSlurp/pdfust):
 Noto Sans Arabic and Noto Naskh Arabic variable fonts.
 
 ```bash

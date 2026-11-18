@@ -1,6 +1,6 @@
 # pdfust
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/justsml/pdfust/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/DocSlurp/pdfust/blob/main/LICENSE)
 
 **PDF editing, rendering, extraction, and generation for Python — a
 pymupdf-style API on a pure-Rust core, MIT licensed, with no mandatory Python
@@ -48,18 +48,18 @@ Wheel sizes are the ranges of published files for pdfust 0.10.0, pymupdf
 ## Install
 
 ```bash
-pip install "pdfust @ git+https://github.com/justsml/pdfust.git"
+pip install pdfust
 ```
 
 Optional extras:
 
 ```bash
-pip install "pdfust[jp] @ git+https://github.com/justsml/pdfust.git"    # Japanese rendering fallback and text generation
-pip install "pdfust[ko] @ git+https://github.com/justsml/pdfust.git"    # Korean
-pip install "pdfust[zh-cn] @ git+https://github.com/justsml/pdfust.git" # Simplified Chinese
-pip install "pdfust[zh-tw] @ git+https://github.com/justsml/pdfust.git" # Traditional Chinese
-pip install "pdfust[ar] @ git+https://github.com/justsml/pdfust.git"    # Arabic generation (also: he, hi, th)
-pip install "pdfust[ocr] @ git+https://github.com/justsml/pdfust.git"   # offline PP-OCRv6 recognition, pure Rust,
+pip install "pdfust[jp]"     # Japanese rendering fallback and text generation
+pip install "pdfust[ko]"     # Korean
+pip install "pdfust[zh-cn]"  # Simplified Chinese
+pip install "pdfust[zh-tw]"  # Traditional Chinese
+pip install "pdfust[ar]"     # Arabic generation (also: he, hi, th)
+pip install "pdfust[ocr]"    # offline PP-OCRv6 recognition, pure Rust,
                              # no system executables or network at runtime
 ```
 
@@ -69,10 +69,16 @@ fonts for Arabic, Hebrew, Devanagari, and Thai. Choose `jp`, `ko`, `zh-cn`, or
 `zh-tw` explicitly for the required regional glyph conventions; there is no
 generic CJK font extra.
 
-The repository is private; source installation requires authorized GitHub access
-and a Rust toolchain. No `pdfust` package has been published. From a local
-checkout, install with `uv sync` or `pip install .`; use `pip install ".[ocr]"`
-for the optional OCR data package.
+Wheels are published to PyPI from tagged releases. To install the current
+`main` branch instead, use
+`pip install "pdfust @ git+https://github.com/DocSlurp/pdfust.git"` (needs a
+Rust toolchain). From a local checkout, install with `uv sync` or
+`pip install .`; use `pip install ".[ocr]"` for the optional OCR data package.
+
+Node.js users can install the in-process N-API binding with
+`npm install @docslurp/pdfust` (see [`bindings/node`](bindings/node/README.md)).
+[RELEASING.md](RELEASING.md) describes how PyPI, npm, crates.io and GitHub
+releases are produced.
 
 The public import is `pdfust`. The earlier names remain as compatibility
 imports in the same wheel, with identical public classes, functions and
@@ -130,7 +136,7 @@ for i, p in enumerate(doc):
 doc.set_form_field("customer", "Taro Yamada")
 doc.set_form_field("agree", True)
 
-# OCR: add a searchable text layer offline (pip install "pdfust[ocr] @ git+https://github.com/justsml/pdfust.git")
+# OCR: add a searchable text layer offline (pip install "pdfust[ocr]")
 engine = pdfust.OcrEngine(threads=4)
 page.apply_ocr(engine=engine)                # skips pages with existing text
 
@@ -236,9 +242,9 @@ Validating existing PDFs against PDF/A remains
 
 A reproducible benchmark suite ships with the repository — same corpus, same
 tasks, medians, and wins and losses published as-is:
-[latest results](https://github.com/justsml/pdfust/blob/main/bench/results/latest.md),
-[free-threaded extraction](https://github.com/justsml/pdfust/blob/main/bench/results/free-threaded-latest.md),
-and the [native OCR report](https://github.com/justsml/pdfust/blob/main/bench/results/ocr-latest.md)
+[latest results](https://github.com/DocSlurp/pdfust/blob/main/bench/results/latest.md),
+[free-threaded extraction](https://github.com/DocSlurp/pdfust/blob/main/bench/results/free-threaded-latest.md),
+and the [native OCR report](https://github.com/DocSlurp/pdfust/blob/main/bench/results/ocr-latest.md)
 with strict and NFKC character error rates on licensed Japanese fixtures.
 
 ```bash
@@ -1180,7 +1186,7 @@ with build provenance.
 ## Contributing
 
 Bug reports and focused contributions are welcome. See
-[CONTRIBUTING.md](https://github.com/justsml/pdfust/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/DocSlurp/pdfust/blob/main/CONTRIBUTING.md)
 for development commands, test expectations, and the rules for sharing PDF
 regression files:
 
@@ -1192,14 +1198,14 @@ uv run mypy src tests      # type check
 ```
 
 Report security vulnerabilities privately through
-[GitHub Security Advisories](https://github.com/justsml/pdfust/security/advisories/new).
+[GitHub Security Advisories](https://github.com/DocSlurp/pdfust/security/advisories/new).
 
 ## License
 
-[MIT](https://github.com/justsml/pdfust/blob/main/LICENSE). Bundled Rust
+[MIT](https://github.com/DocSlurp/pdfust/blob/main/LICENSE). Bundled Rust
 dependencies keep their own permissive licenses (lopdf and HarfRust are MIT;
 hayro and krilla are MIT/Apache-2.0) — see
-[NOTICE.md](https://github.com/justsml/pdfust/blob/main/NOTICE.md).
+[NOTICE.md](https://github.com/DocSlurp/pdfust/blob/main/NOTICE.md).
 
-This private continuation derives from [pylopdf](https://github.com/yhay81/pylopdf) by Yusuke Hayashi. Original
+This continuation derives from [pylopdf](https://github.com/yhay81/pylopdf) by Yusuke Hayashi. Original
 author attribution, MIT license and bundled dependency notices are preserved.
